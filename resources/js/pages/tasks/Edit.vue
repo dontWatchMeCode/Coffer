@@ -158,11 +158,9 @@ function updateAssignee(assigneeId: AcceptableValue): void {
 }
 
 function updateProgress(progress: number): void {
-    if (progress === selectedProgress.value) {
+    if (progress === props.task.progress) {
         return;
     }
-
-    selectedProgress.value = progress;
 
     router.patch(
         TaskController.update.url({
