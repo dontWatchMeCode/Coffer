@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
-#[Fillable(['team_id', 'project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'position', 'completed_at'])]
+#[Fillable(['team_id', 'project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'position'])]
 class Task extends Model
 {
     use BelongsToTeam;
@@ -26,6 +26,8 @@ class Task extends Model
     protected static function booted(): void
     {
         static::saving(function (Task $task): void {
+            static::syncCompletionTimestamp($task);
+
             if ($task->isDirty('project_id') || $task->isDirty('team_id')) {
                 $project = Project::withoutGlobalScopes()->find($task->project_id);
 
@@ -72,6 +74,27 @@ class Task extends Model
         if ($creator === null || ! $creator->belongsToTeamId((int) $task->team_id)) {
             throw new LogicException('The task creator must belong to the task team.');
         }
+    }
+
+    /**
+     * Sync the completion timestamp with the current status.
+     */
+    protected static function syncCompletionTimestamp(Task $task): void
+    {
+        if (! $task->isDirty('status')) {
+            return;
+        }
+
+        $newStatus = $task->getAttributes()['status'] ?? $task->getRawOriginal('status');
+        $status = is_string($newStatus) ? TaskStatus::tryFrom($newStatus) : null;
+
+        if ($status === TaskStatus::Completed) {
+            $task->completed_at ??= now();
+
+            return;
+        }
+
+        $task->completed_at = null;
     }
 
     /**
