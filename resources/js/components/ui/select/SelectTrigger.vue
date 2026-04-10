@@ -8,11 +8,11 @@ import { SelectIcon, SelectTrigger, useForwardProps } from "reka-ui"
 import { cn } from "@/lib/utils"
 
 const props = withDefaults(
-  defineProps<SelectTriggerProps & { class?: HTMLAttributes["class"], size?: "sm" | "default", variant?: "default" | "pill" }>(),
-  { size: "default", variant: "default" },
+  defineProps<SelectTriggerProps & { class?: HTMLAttributes["class"], size?: "sm" | "default", variant?: "default" | "pill", hideIcon?: boolean }>(),
+  { size: "default", variant: "default", hideIcon: false },
 )
 
-const delegatedProps = reactiveOmit(props, "class", "size", "variant")
+const delegatedProps = reactiveOmit(props, "class", "size", "variant", "hideIcon")
 const forwardedProps = useForwardProps(delegatedProps)
 
 const triggerClass = computed(() => {
@@ -34,7 +34,7 @@ const triggerClass = computed(() => {
     )"
   >
     <slot />
-    <SelectIcon as-child>
+    <SelectIcon v-if="!hideIcon" as-child>
       <ChevronDown class="size-4 opacity-50" />
     </SelectIcon>
   </SelectTrigger>

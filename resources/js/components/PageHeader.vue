@@ -36,7 +36,7 @@ useEventListener('keydown', (event: KeyboardEvent) => {
 <template>
     <div class="border-b px-4 py-4">
         <div
-            class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center"
+            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
             <div class="flex items-center gap-3">
                 <Button
@@ -70,7 +70,10 @@ useEventListener('keydown', (event: KeyboardEvent) => {
                 </div>
             </div>
 
-            <div v-if="$slots.actions" class="flex shrink-0 items-center gap-2 justify-end">
+            <div
+                v-if="$slots.actions"
+                class="flex shrink-0 items-center justify-end gap-2"
+            >
                 <slot name="actions" />
             </div>
         </div>

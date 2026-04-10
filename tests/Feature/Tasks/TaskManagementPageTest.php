@@ -255,6 +255,7 @@ test('tasks can be updated from the team tasks page', function () {
     ]);
 
     $response = actingAs($user)
+        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
             'project_id' => $project->id,
             'assigned_to' => '',
@@ -311,6 +312,7 @@ test('task status can be updated with a partial patch payload', function () {
     ]);
 
     $response = actingAs($user)
+        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
             'status' => TaskStatus::Completed->value,
         ]);
@@ -342,6 +344,7 @@ test('task completion timestamp is cleared when status changes away from complet
     ]);
 
     actingAs($user)
+        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
             'status' => TaskStatus::Planned->value,
         ])
@@ -372,4 +375,25 @@ test('task partial patch validates submitted fields', function () {
         'id' => $task->id,
         'progress' => 20,
     ]);
+});
+
+test('task update from list view redirects back to project page', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'status' => TaskStatus::Planned,
+    ]);
+
+    actingAs($user)
+        ->from(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]))
+        ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            'status' => TaskStatus::Completed->value,
+        ])
+        ->assertRedirect(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]));
+
+    expect($task->fresh()->status)->toBe(TaskStatus::Completed);
 });

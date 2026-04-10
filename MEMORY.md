@@ -117,3 +117,23 @@
 
 5. Index page lacked an authorization test — only show and edit were covered.
     - Fix: add a test asserting non-team-members get forbidden on the task index route.
+
+6. Progress slider guard compared against already-updated local value instead of server value.
+    - Fix: read server value fresh in guard closure via `taskForm.progress`.
+
+7. TaskController::update redirected to /edit path regardless of Referer.
+    - Fix: redirect back when Referer doesn't contain /edit (list view stays on list view after status/progress change).
+
+8. Nested interactive elements in list view (Link wrapping Select).
+    - Fix: replace Link wrapper with `div[role="link"]` + keyboard handler for accessibility.
+
+9. TooltipProvider was rendered per-row around status Select.
+    - Fix: hoist TooltipProvider to wrap entire task list; use TooltipTrigger to wrap the Select.
+
+10. SelectTrigger lacked customization for icon visibility and hover style.
+    - Fix: add `hideIcon` (removes chevron) and `hoverPrimary` (hover:bg-primary) props with transition-colors.
+
+### Session: QA Pass (Apr 2026)
+
+1. Added `hideIcon` to `reactiveOmit` in SelectTrigger.vue to prevent leaking non-standard HTML attribute to DOM.
+2. Added Space key support (`@keydown.enter.space.prevent`) to div[role="link"] in Show.vue task list for keyboard accessibility.

@@ -38,6 +38,12 @@ class TaskController extends Controller
 
         $task->update($validated);
 
+        $referer = $request->headers->get('referer', '');
+
+        if (! str_contains((string) $referer, '/tasks/'.$task->id.'/edit')) {
+            return back();
+        }
+
         return to_route('team.tasks.edit', ['current_team' => $currentTeam, 'project' => $validated['project_id'] ?? $task->project_id, 'task' => $task]);
     }
 }

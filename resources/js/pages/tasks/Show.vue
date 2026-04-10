@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, usePage, Link } from '@inertiajs/vue3';
+import { Form, Head, router, usePage } from '@inertiajs/vue3';
 import {
     Activity,
     Ban,
@@ -11,6 +11,7 @@ import {
     Settings,
     Trash2,
 } from 'lucide-vue-next';
+import type { AcceptableValue } from 'reka-ui';
 import { computed, ref } from 'vue';
 import ProjectController from '@/actions/App/Http/Controllers/Tasks/ProjectController';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
@@ -29,6 +30,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+} from '@/components/ui/select';
 import {
     Tooltip,
     TooltipContent,
@@ -105,6 +112,31 @@ const statusIcons = {
     trash: Trash2,
     help: CircleHelp,
 };
+
+function openTask(task: TaskItem): void {
+    router.visit(
+        edit({
+            current_team: currentTeamSlug.value,
+            project: props.project.id,
+            task: task.id,
+        }),
+    );
+}
+
+function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
+    if (typeof status !== 'string') {
+        return;
+    }
+
+    router.patch(
+        TaskController.update.url({
+            current_team: currentTeamSlug.value,
+            task: task.id,
+        }),
+        { status },
+        { preserveScroll: true },
+    );
+}
 </script>
 
 <template>
@@ -334,34 +366,78 @@ const statusIcons = {
                         archived tasks.
                     </div>
 
-                    <Link
-                        v-for="task in visibleTasks"
-                        :key="task.id"
-                        :href="
-                            edit({
-                                current_team: currentTeamSlug,
-                                project: project.id,
-                                task: task.id,
-                            })
-                        "
-                        class="group relative mx-2 flex items-center gap-3 rounded-2xl px-3 py-2 transition-colors hover:bg-muted/30"
-                    >
-                        <TooltipProvider>
+                    <TooltipProvider :delay-duration="300">
+                        <div
+                            v-for="task in visibleTasks"
+                            :key="task.id"
+                            class="group relative mx-2 flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2 transition-colors hover:bg-muted/30"
+                            role="link"
+                            :tabindex="0"
+                            @click="openTask(task)"
+                            @keydown.enter.space.prevent="openTask(task)"
+                        >
                             <Tooltip>
                                 <TooltipTrigger as-child>
-                                    <component
-                                        :is="
-                                            statusIcons[
-                                                getTaskStatusMeta(task.status)
-                                                    .icon as keyof typeof statusIcons
-                                            ]
+                                    <Select
+                                        :model-value="task.status"
+                                        @update:model-value="
+                                            (value) =>
+                                                updateTaskStatus(task, value)
                                         "
-                                        class="h-5 w-5 shrink-0"
-                                        :class="
-                                            getTaskStatusMeta(task.status)
-                                                .badgeColor
-                                        "
-                                    />
+                                    >
+                                        <SelectTrigger
+                                            class="cursor-pointer border-0"
+                                            hide-icon
+                                            variant="pill"
+                                            @click.stop
+                                        >
+                                            <component
+                                                :is="
+                                                    statusIcons[
+                                                        getTaskStatusMeta(
+                                                            task.status,
+                                                        )
+                                                            .icon as keyof typeof statusIcons
+                                                    ]
+                                                "
+                                                class="h-5 w-5"
+                                                :class="
+                                                    getTaskStatusMeta(
+                                                        task.status,
+                                                    ).badgeColor
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem
+                                                v-for="statusOption in props.statuses"
+                                                :key="statusOption.value"
+                                                :value="statusOption.value"
+                                            >
+                                                <span
+                                                    class="flex items-center gap-2"
+                                                >
+                                                    <component
+                                                        :is="
+                                                            statusIcons[
+                                                                getTaskStatusMeta(
+                                                                    statusOption.value,
+                                                                )
+                                                                    .icon as keyof typeof statusIcons
+                                                            ]
+                                                        "
+                                                        class="h-4 w-4"
+                                                        :class="
+                                                            getTaskStatusMeta(
+                                                                statusOption.value,
+                                                            ).badgeColor
+                                                        "
+                                                    />
+                                                    {{ statusOption.label }}
+                                                </span>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <p>
@@ -371,44 +447,67 @@ const statusIcons = {
                                     </p>
                                 </TooltipContent>
                             </Tooltip>
-                        </TooltipProvider>
 
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-center gap-2">
-                                <span class="truncate text-sm font-medium">{{
-                                    task.title
-                                }}</span>
-                            </div>
-                            <div
-                                class="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"
-                            >
-                                <span>{{ project.name }} #{{ task.id }}</span>
-                                <span class="text-border">•</span>
-                                <span v-if="task.creatorName">
-                                    by {{ task.creatorName }}
-                                </span>
-                                <span
-                                    v-if="task.completedAt"
-                                    class="text-border"
-                                    >•</span
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-2">
+                                    <span
+                                        class="truncate text-sm font-medium"
+                                        >{{ task.title }}</span
+                                    >
+                                </div>
+                                <div
+                                    class="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"
                                 >
-                                <span v-if="task.completedAt">
-                                    {{ formatRelativeTime(task.completedAt) }}
+                                    <span
+                                        >{{ project.name }} #{{ task.id }}</span
+                                    >
+                                    <span class="text-border">•</span>
+                                    <span v-if="task.creatorName">
+                                        by {{ task.creatorName }}
+                                    </span>
+                                    <span
+                                        v-if="task.completedAt"
+                                        class="text-border"
+                                        >•</span
+                                    >
+                                    <span v-if="task.completedAt">
+                                        {{
+                                            formatRelativeTime(task.completedAt)
+                                        }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex shrink-0 items-center gap-1">
+                                <div
+                                    class="h-1.5 w-16 overflow-hidden rounded-full bg-muted"
+                                >
+                                    <div
+                                        class="h-full rounded-full bg-primary transition-all"
+                                        :style="{
+                                            width: `${task.progress}%`,
+                                        }"
+                                    />
+                                </div>
+                                <span
+                                    class="w-8 text-right text-sm text-muted-foreground tabular-nums"
+                                >
+                                    {{ task.progress }}%
                                 </span>
                             </div>
-                        </div>
 
-                        <div
-                            v-if="
-                                task.commentsCount !== undefined &&
-                                task.commentsCount > 0
-                            "
-                            class="flex shrink-0 items-center gap-1 text-xs text-muted-foreground"
-                        >
-                            <MessageCircle class="h-3.5 w-3.5" />
-                            <span>{{ task.commentsCount }}</span>
+                            <div
+                                v-if="
+                                    task.commentsCount !== undefined &&
+                                    task.commentsCount > 0
+                                "
+                                class="flex shrink-0 items-center gap-1 text-xs text-muted-foreground"
+                            >
+                                <MessageCircle class="h-3.5 w-3.5" />
+                                <span>{{ task.commentsCount }}</span>
+                            </div>
                         </div>
-                    </Link>
+                    </TooltipProvider>
                 </div>
 
                 <div
