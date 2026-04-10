@@ -102,6 +102,14 @@ trait HasTeams
     }
 
     /**
+     * Determine if the user belongs to the given team id.
+     */
+    public function belongsToTeamId(int $teamId): bool
+    {
+        return $this->teams()->where('teams.id', $teamId)->exists();
+    }
+
+    /**
      * Determine if the given team is the user's current team.
      */
     public function isCurrentTeam(Team $team): bool
