@@ -1,0 +1,12 @@
+[mcp_servers.laravel-boost]
+command = "php"
+args = ["artisan", "boost:mcp"]
+cwd = "."
+
+[mcpServers.laravel-telescope]
+command = "php"
+args = ["artisan", "telescope-mcp:server"]
+cwd = "."
+
+[mcpServers.laravel-telescope.env]
+APP_ENV = "local"
