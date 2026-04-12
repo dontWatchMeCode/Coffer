@@ -537,7 +537,7 @@ function updateProgress(progress: number): void {
                             Progress
                         </h3>
                         <div class="mb-3 flex items-center gap-2">
-                            <div class="relative flex-1">
+                            <div class="group relative flex-1">
                                 <div
                                     class="h-2 overflow-hidden rounded-full bg-muted"
                                 >
@@ -546,6 +546,15 @@ function updateProgress(progress: number): void {
                                         :style="{
                                             width: `${selectedProgress}%`,
                                         }"
+                                    />
+                                </div>
+                                <div
+                                    class="pointer-events-none absolute inset-0 top-0 flex items-center justify-between opacity-0 transition-opacity group-hover:opacity-100"
+                                >
+                                    <div
+                                        v-for="n in 11"
+                                        :key="n"
+                                        class="h-1.5 w-1.5 rounded-full bg-foreground/20"
                                     />
                                 </div>
                                 <input
@@ -572,7 +581,9 @@ function updateProgress(progress: number): void {
                                     "
                                 />
                             </div>
-                            <span class="text-sm">{{ selectedProgress }}%</span>
+                            <span class="w-10 text-right text-sm"
+                                >{{ selectedProgress }}%</span
+                            >
                         </div>
                     </div>
 

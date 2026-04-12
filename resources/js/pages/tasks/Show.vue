@@ -155,11 +155,7 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
 
             <Dialog v-model:open="projectSettingsOpen">
                 <DialogTrigger as-child>
-                    <Button
-                        size="icon"
-                        title="Project settings"
-                        class="cursor-pointer"
-                    >
+                    <Button size="icon" title="Project settings">
                         <Settings class="h-4 w-4" />
                     </Button>
                 </DialogTrigger>
@@ -208,13 +204,13 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                             <InputError :message="errors.description" />
                         </div>
 
-                        <div class="flex items-center gap-2">
+                        <label class="flex cursor-pointer items-center gap-2">
                             <Checkbox
                                 name="archived"
                                 :default-checked="project.isArchived"
                             />
-                            <label class="text-sm">Archived</label>
-                        </div>
+                            <span class="text-sm">Archived</span>
+                        </label>
 
                         <div class="flex justify-end">
                             <Button type="submit" :disabled="processing"
@@ -227,11 +223,7 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
 
             <Dialog v-model:open="createTaskOpen">
                 <DialogTrigger as-child>
-                    <Button
-                        size="icon"
-                        title="Create task"
-                        class="cursor-pointer"
-                    >
+                    <Button size="icon" title="Create task">
                         <ListPlus class="h-4 w-4" />
                     </Button>
                 </DialogTrigger>
