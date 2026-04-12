@@ -64,7 +64,7 @@ class SaveTaskRequest extends FormRequest
             'title' => [...$this->requiredRule(), 'string', 'max:255'],
             'description' => [...$this->optionalOnPatchRule(), 'nullable', 'string'],
             'status' => [...$this->requiredRule(), Rule::enum(TaskStatus::class)],
-            'progress' => [...$this->requiredRule(), 'integer', 'between:0,100'],
+            'progress' => [...$this->optionalOnPatchRule(), 'sometimes', 'integer', 'between:0,100'],
             'position' => [...$this->optionalOnPatchRule(), 'nullable', 'integer', 'min:0'],
         ];
     }
@@ -82,6 +82,10 @@ class SaveTaskRequest extends FormRequest
 
         if ($this->isMethod('post') && ! $this->has('position')) {
             $data['position'] = 0;
+        }
+
+        if ($this->isMethod('post') && ! $this->has('progress')) {
+            $data['progress'] = 0;
         }
 
         if ($data !== []) {

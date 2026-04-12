@@ -35,6 +35,7 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import {
     Tooltip,
@@ -93,6 +94,9 @@ const createTaskOpen = ref(false);
 const createTaskFormKey = ref(0);
 const projectSettingsFormKey = ref(0);
 const showCompletedAndDropped = ref(false);
+const selectedStatus = ref('planned');
+const unassignedAssigneeValue = 'unassigned';
+const selectedAssignee = ref(unassignedAssigneeValue);
 
 const visibleTasks = computed(() => {
     if (showCompletedAndDropped.value) {
@@ -170,7 +174,10 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                         "
                         class="space-y-4"
                         v-slot="{ errors, processing }"
-                        @success="projectSettingsOpen = false"
+                        @success="
+                            projectSettingsOpen = false;
+                            projectSettingsFormKey++;
+                        "
                     >
                         <DialogHeader>
                             <DialogTitle>Project settings</DialogTitle>
@@ -207,7 +214,8 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                         <label class="flex cursor-pointer items-center gap-2">
                             <Checkbox
                                 name="archived"
-                                :default-checked="project.isArchived"
+                                value="1"
+                                :default-value="project.isArchived"
                             />
                             <span class="text-sm">Archived</span>
                         </label>
@@ -234,7 +242,11 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                         reset-on-success
                         class="space-y-4"
                         v-slot="{ errors, processing }"
-                        @success="createTaskOpen = false"
+                        @success="
+                            createTaskOpen = false;
+                            selectedStatus = 'planned';
+                            selectedAssignee = unassignedAssigneeValue;
+                        "
                     >
                         <DialogHeader>
                             <DialogTitle>Create task</DialogTitle>
@@ -273,58 +285,65 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                             <InputError :message="errors.description" />
                         </div>
 
-                        <div class="grid gap-4 md:grid-cols-2">
-                            <div class="grid gap-2">
-                                <Label for="task-status">Status</Label>
-                                <select
-                                    id="task-status"
+                        <div class="grid gap-2">
+                            <Label>Status</Label>
+                            <Select v-model="selectedStatus">
+                                <input
                                     name="status"
-                                    :class="taskInputLikeClass"
-                                    required
-                                >
-                                    <option
+                                    type="hidden"
+                                    :value="selectedStatus"
+                                />
+                                <SelectTrigger :class="taskInputLikeClass">
+                                    <SelectValue
+                                        placeholder="Select a status"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
                                         v-for="status in props.statuses"
                                         :key="status.value"
                                         :value="status.value"
-                                        :selected="status.value === 'planned'"
                                     >
                                         {{ status.label }}
-                                    </option>
-                                </select>
-                                <InputError :message="errors.status" />
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="task-progress">Progress</Label>
-                                <Input
-                                    id="task-progress"
-                                    name="progress"
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    default-value="0"
-                                    required
-                                />
-                                <InputError :message="errors.progress" />
-                            </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError :message="errors.status" />
                         </div>
 
                         <div class="grid gap-2">
-                            <Label for="task-assignee">Assignee</Label>
-                            <select
-                                id="task-assignee"
-                                name="assigned_to"
-                                :class="taskInputLikeClass"
-                            >
-                                <option value="">Unassigned</option>
-                                <option
-                                    v-for="member in members"
-                                    :key="member.id"
-                                    :value="member.id"
-                                >
-                                    {{ member.name }}
-                                </option>
-                            </select>
+                            <Label>Assignee</Label>
+                            <Select v-model="selectedAssignee">
+                                <input
+                                    name="assigned_to"
+                                    type="hidden"
+                                    :value="
+                                        selectedAssignee ===
+                                        unassignedAssigneeValue
+                                            ? ''
+                                            : selectedAssignee
+                                    "
+                                />
+                                <SelectTrigger :class="taskInputLikeClass">
+                                    <SelectValue
+                                        placeholder="Select an assignee"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        :value="unassignedAssigneeValue"
+                                    >
+                                        Unassigned
+                                    </SelectItem>
+                                    <SelectItem
+                                        v-for="member in members"
+                                        :key="member.id"
+                                        :value="member.id.toString()"
+                                    >
+                                        {{ member.name }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                             <InputError :message="errors.assigned_to" />
                         </div>
 

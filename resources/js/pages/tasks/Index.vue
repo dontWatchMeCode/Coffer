@@ -41,6 +41,10 @@ const createProjectOpen = ref(false);
 const createProjectFormKey = ref(0);
 const showArchived = ref(false);
 
+const hasArchivedProjects = computed(() =>
+    props.projects.some((p) => p.isArchived),
+);
+
 const visibleProjects = computed(() =>
     showArchived.value
         ? props.projects
@@ -77,6 +81,7 @@ function handleCreateProjectModal(value: boolean): void {
         >
             <template #actions>
                 <Button
+                    v-if="hasArchivedProjects"
                     variant="outline"
                     size="icon"
                     title="Show archived"
