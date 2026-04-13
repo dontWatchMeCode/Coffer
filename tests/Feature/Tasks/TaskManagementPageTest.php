@@ -3,6 +3,7 @@
 use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\Task;
+use App\Models\Team;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -27,6 +28,47 @@ test('team task page can be rendered', function () {
         );
 });
 
+test('task page stats treat dropped tasks as closed work', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    expect($team)->not->toBeNull();
+
+    $project = Project::factory()->create(['team_id' => $team->id]);
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'status' => TaskStatus::Planned,
+    ]);
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'status' => TaskStatus::Completed,
+    ]);
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'status' => TaskStatus::Dropped,
+    ]);
+
+    actingAs($user)
+        ->get(route('team.tasks.index', ['current_team' => $team]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tasks/Index')
+            ->where('stats.openTaskCount', 1)
+            ->where('stats.closedTaskCount', 2)
+            ->where('projects.0.openTasksCount', 1)
+            ->where('projects.0.closedTasksCount', 2),
+        );
+});
+
 test('team project detail page can be rendered', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
@@ -46,6 +88,30 @@ test('team project detail page can be rendered', function () {
             ->has('tasks', 1)
             ->has('members')
             ->has('statuses', 6),
+        );
+});
+
+test('task payload serializes completed timestamp as iso 8601', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'status' => TaskStatus::Completed,
+        'completed_at' => now(),
+    ]);
+
+    actingAs($user)
+        ->get(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tasks/Show')
+            ->where('tasks.0.id', $task->id)
+            ->where('tasks.0.completedAt', fn (?string $completedAt): bool => is_string($completedAt)
+                && str_contains($completedAt, 'T')
+                && (str_ends_with($completedAt, 'Z') || str_contains($completedAt, '+00:00'))),
         );
 });
 
@@ -90,7 +156,7 @@ test('non team members cannot view the team project detail page', function () {
 
     actingAs($outsider)
         ->get(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]))
-        ->assertNotFound();
+        ->assertForbidden();
 });
 
 test('non team members cannot view the task edit page', function () {
@@ -106,7 +172,7 @@ test('non team members cannot view the task edit page', function () {
 
     actingAs($outsider)
         ->get(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
-        ->assertNotFound();
+        ->assertForbidden();
 });
 
 test('duplicate project names are rejected on store', function () {
@@ -156,6 +222,28 @@ test('projects can be updated from the team tasks page', function () {
         ]);
 
     $response->assertRedirect(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]));
+
+    assertDatabaseHas('projects', [
+        'id' => $project->id,
+        'name' => 'Client Portal v2',
+        'archived' => true,
+    ]);
+});
+
+test('project partial patch keeps archived state when archived is omitted', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create([
+        'team_id' => $team->id,
+        'name' => 'Client Portal',
+        'archived' => true,
+    ]);
+
+    actingAs($user)
+        ->patch(route('team.tasks.projects.update', ['current_team' => $team, 'project' => $project->id]), [
+            'name' => 'Client Portal v2',
+        ])
+        ->assertRedirect(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]));
 
     assertDatabaseHas('projects', [
         'id' => $project->id,
@@ -255,9 +343,9 @@ test('tasks can be updated from the team tasks page', function () {
     ]);
 
     $response = actingAs($user)
-        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
             'project_id' => $project->id,
+            '_return_to_edit' => true,
             'assigned_to' => '',
             'title' => 'Ship launch checklist',
             'description' => 'Updated delivery plan',
@@ -312,8 +400,8 @@ test('task status can be updated with a partial patch payload', function () {
     ]);
 
     $response = actingAs($user)
-        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            '_return_to_edit' => true,
             'status' => TaskStatus::Completed->value,
         ]);
 
@@ -344,8 +432,8 @@ test('task completion timestamp is cleared when status changes away from complet
     ]);
 
     actingAs($user)
-        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            '_return_to_edit' => true,
             'status' => TaskStatus::Planned->value,
         ])
         ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task]));
@@ -365,8 +453,8 @@ test('task partial patch validates submitted fields', function () {
     ]);
 
     actingAs($user)
-        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            '_return_to_edit' => true,
             'progress' => 110,
         ])
         ->assertSessionHasErrors(['progress']);
@@ -396,4 +484,39 @@ test('task update from list view redirects back to project page', function () {
         ->assertRedirect(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]));
 
     expect($task->fresh()->status)->toBe(TaskStatus::Completed);
+});
+
+test('multi team members can view another team project routes after switching context', function () {
+    $user = User::factory()->create();
+    $primaryTeam = $user->currentTeam;
+    $secondaryTeam = Team::factory()->create();
+
+    expect($primaryTeam)->not->toBeNull();
+
+    $secondaryTeam->members()->attach($user, ['role' => 'member']);
+
+    $project = Project::factory()->create(['team_id' => $secondaryTeam->id]);
+    $task = Task::factory()->create([
+        'team_id' => $secondaryTeam->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+
+    actingAs($user)
+        ->get(route('team.tasks.show', ['current_team' => $secondaryTeam, 'project' => $project->id]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tasks/Show')
+            ->where('project.id', $project->id)
+            ->has('tasks', 1),
+        );
+
+    actingAs($user)
+        ->get(route('team.tasks.edit', ['current_team' => $secondaryTeam, 'project' => $project->id, 'task' => $task->id]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tasks/Edit')
+            ->where('project.id', $project->id)
+            ->where('task.id', $task->id),
+        );
 });

@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -33,8 +34,10 @@ class TaskPageController extends Controller
     /**
      * Display the task edit page.
      */
-    public function edit(Request $request, Team $currentTeam, Project $project, int $task): Response
+    public function edit(Request $request, Team $currentTeam, int $project, int $task): Response
     {
+        $project = $this->findTeamProject($currentTeam, $project);
+
         $task = Task::query()
             ->whereBelongsTo($currentTeam)
             ->whereBelongsTo($project)
@@ -59,10 +62,9 @@ class TaskPageController extends Controller
     /**
      * Display the selected project task page.
      */
-    public function show(Request $request, Team $currentTeam, Project $project): Response
+    public function show(Request $request, Team $currentTeam, int $project): Response
     {
-        $projects = $this->teamProjects($currentTeam);
-        $projectData = $this->projectData($projects);
+        $project = $this->findTeamProject($currentTeam, $project);
 
         $tasks = Task::query()
             ->whereBelongsTo($currentTeam)
@@ -79,7 +81,6 @@ class TaskPageController extends Controller
             ->get(['users.id', 'users.name', 'users.email']);
 
         return Inertia::render('tasks/Show', [
-            'projects' => $projectData,
             'project' => $this->projectPayloadWithCounts($project),
             'tasks' => array_map(fn (Task $task): array => $this->taskPayload($task, [
                 'commentsCount' => $task->comments_count ?? 0,
@@ -126,6 +127,8 @@ class TaskPageController extends Controller
      */
     protected function taskPayload(Task $task, array $extra = []): array
     {
+        $completedAt = $task->getAttribute('completed_at');
+
         return [
             'id' => $task->id,
             'projectId' => $task->project_id,
@@ -139,7 +142,9 @@ class TaskPageController extends Controller
             'assigneeName' => $task->assignee?->name,
             'creatorId' => $task->created_by,
             'creatorName' => $task->creator?->name,
-            'completedAt' => $task->getRawOriginal('completed_at'),
+            'completedAt' => $completedAt instanceof DateTimeInterface
+                ? $completedAt->format(DateTimeInterface::ATOM)
+                : null,
             ...$extra,
         ];
     }
@@ -187,11 +192,24 @@ class TaskPageController extends Controller
                     ->whereNot('status', TaskStatus::Completed->value)
                     ->whereNot('status', TaskStatus::Dropped->value),
                 'tasks as closed_tasks_count' => fn ($query) => $query
-                    ->where('status', TaskStatus::Completed->value),
+                    ->whereIn('status', [
+                        TaskStatus::Completed->value,
+                        TaskStatus::Dropped->value,
+                    ]),
             ])
             ->orderBy('archived')
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Resolve a project that belongs to the current team.
+     */
+    protected function findTeamProject(Team $currentTeam, int $projectId): Project
+    {
+        return Project::query()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($projectId);
     }
 
     /**
@@ -220,7 +238,7 @@ class TaskPageController extends Controller
             'projectCount' => count($projectData),
             'activeProjectCount' => count(array_filter($projectData, fn (array $project): bool => ! $project['isArchived'])),
             'openTaskCount' => array_sum(array_map(fn (array $project): int => $project['openTasksCount'], $projectData)),
-            'completedTaskCount' => array_sum(array_map(
+            'closedTaskCount' => array_sum(array_map(
                 fn (array $project): int => $project['closedTasksCount'] ?? 0,
                 $projectData,
             )),

@@ -7,7 +7,7 @@ export type TaskStats = {
     projectCount: number;
     activeProjectCount: number;
     openTaskCount: number;
-    completedTaskCount: number;
+    closedTaskCount: number;
 };
 
 export type TaskProject = {

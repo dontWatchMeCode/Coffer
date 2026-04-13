@@ -1,14 +1,21 @@
 import '@blocknote/core/fonts/inter.css';
+import type {
+    DefaultBlockSchema,
+    DefaultInlineContentSchema,
+    DefaultStyleSchema,
+} from '@blocknote/core';
 import { BlockNoteView } from '@blocknote/mantine';
+import type { BlockNoteViewProps } from '@blocknote/react';
 import '@blocknote/mantine/style.css';
 import { useCreateBlockNote } from '@blocknote/react';
-import { createElement, type FocusEventHandler } from 'react';
+import type { FocusEventHandler, FunctionComponent } from 'react';
+import { createElement } from 'react';
 import { useEffect, useRef } from 'react';
 import {
     normalizeBlockNoteDocument,
     serializeBlockNoteDocument,
-    type BlockNoteDocument,
 } from '@/components/blocknote/document';
+import type { BlockNoteDocument } from '@/components/blocknote/document';
 
 type ReactBlockNoteHostProps = {
     content?: BlockNoteDocument | null;
@@ -19,6 +26,14 @@ type ReactBlockNoteHostProps = {
     onFocus?: () => void;
     onReady?: () => void;
 };
+
+const DefaultBlockNoteView = BlockNoteView as FunctionComponent<
+    BlockNoteViewProps<
+        DefaultBlockSchema,
+        DefaultInlineContentSchema,
+        DefaultStyleSchema
+    >
+>;
 
 export default function ReactBlockNoteHost({
     content,
@@ -89,7 +104,7 @@ export default function ReactBlockNoteHost({
             onBlur: handleBlur,
             onFocus: handleFocus,
         },
-        createElement(BlockNoteView, {
+        createElement(DefaultBlockNoteView, {
             editor,
             editable,
             onChange: () => {

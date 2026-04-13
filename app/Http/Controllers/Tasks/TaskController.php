@@ -38,9 +38,7 @@ class TaskController extends Controller
 
         $task->update($validated);
 
-        $referer = $request->headers->get('referer', '');
-
-        if (! str_contains((string) $referer, '/tasks/'.$task->id.'/edit')) {
+        if (! $request->boolean('_return_to_edit')) {
             return back();
         }
 

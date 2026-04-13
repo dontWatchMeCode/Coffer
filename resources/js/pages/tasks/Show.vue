@@ -58,7 +58,6 @@ import type {
 
 type Props = {
     project: Pick<TaskProject, 'id' | 'name' | 'description' | 'isArchived'>;
-    projects: TaskProject[];
     tasks: TaskItem[];
     members: TaskMember[];
     statuses: TaskStatusOption[];

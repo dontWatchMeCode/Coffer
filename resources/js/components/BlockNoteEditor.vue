@@ -3,10 +3,8 @@ import { createElement } from 'react';
 import type { Root } from 'react-dom/client';
 import { createRoot } from 'react-dom/client';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import {
-    serializeBlockNoteDocument,
-    type BlockNoteDocument,
-} from '@/components/blocknote/document';
+import { serializeBlockNoteDocument } from '@/components/blocknote/document';
+import type { BlockNoteDocument } from '@/components/blocknote/document';
 import ReactBlockNoteHost from '@/components/blocknote/ReactBlockNoteHost';
 
 const props = withDefaults(

@@ -67,6 +67,10 @@ class SaveProjectRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        if (! $this->has('archived')) {
+            return;
+        }
+
         $this->merge([
             'archived' => $this->boolean('archived'),
         ]);

@@ -118,7 +118,10 @@ function updateStatus(status: AcceptableValue): void {
             current_team: currentTeamSlug.value,
             task: props.task.id,
         }),
-        { status },
+        {
+            status,
+            _return_to_edit: true,
+        },
         {
             preserveScroll: true,
             onError: () => {
@@ -141,6 +144,7 @@ function updateAssignee(assigneeId: AcceptableValue): void {
             task: props.task.id,
         }),
         {
+            _return_to_edit: true,
             assigned_to:
                 assigneeId === unassignedAssigneeValue
                     ? null
@@ -167,7 +171,10 @@ function updateProgress(progress: number): void {
             current_team: currentTeamSlug.value,
             task: props.task.id,
         }),
-        { progress },
+        {
+            progress,
+            _return_to_edit: true,
+        },
         {
             preserveScroll: true,
             onError: () => {
@@ -276,6 +283,7 @@ function updateProgress(progress: number): void {
                             type="hidden"
                             :value="project.id"
                         />
+                        <input name="_return_to_edit" type="hidden" value="1" />
 
                         <div class="rounded-lg border bg-card p-4">
                             <div class="space-y-4">

@@ -1,6 +1,15 @@
-import type { PartialBlock } from '@blocknote/core';
+import type {
+    DefaultBlockSchema,
+    DefaultInlineContentSchema,
+    DefaultStyleSchema,
+    PartialBlock,
+} from '@blocknote/core';
 
-export type BlockNoteDocument = PartialBlock[];
+export type BlockNoteDocument = PartialBlock<
+    DefaultBlockSchema,
+    DefaultInlineContentSchema,
+    DefaultStyleSchema
+>[];
 
 export const defaultBlockNoteDocument: BlockNoteDocument = [
     { type: 'paragraph', content: '' },
