@@ -6,6 +6,7 @@ use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Task;
+use App\Models\TaskComment;
 use App\Models\Team;
 use App\Models\User;
 use DateTimeInterface;
@@ -41,7 +42,14 @@ class TaskPageController extends Controller
         $task = Task::query()
             ->whereBelongsTo($currentTeam)
             ->whereBelongsTo($project)
-            ->with(['project:id,name', 'assignee:id,name', 'creator:id,name'])
+            ->with([
+                'project:id,name',
+                'assignee:id,name',
+                'creator:id,name',
+                'comments' => fn ($query) => $query
+                    ->with('user:id,name')
+                    ->oldest(),
+            ])
             ->withCount('comments')
             ->findOrFail($task);
 
@@ -54,6 +62,10 @@ class TaskPageController extends Controller
             'task' => $this->taskPayload($task, [
                 'commentsCount' => $task->comments_count ?? 0,
             ]),
+            'comments' => array_map(
+                fn (TaskComment $comment): array => $this->commentPayload($comment),
+                $task->comments->all(),
+            ),
             'members' => $this->memberPayload($members),
             'statuses' => $this->statusPayload(),
         ]);
@@ -146,6 +158,31 @@ class TaskPageController extends Controller
                 ? $completedAt->format(DateTimeInterface::ATOM)
                 : null,
             ...$extra,
+        ];
+    }
+
+    /**
+     * Transform a task comment for the frontend.
+     *
+     * @return array<string, mixed>
+     */
+    protected function commentPayload(TaskComment $comment): array
+    {
+        $createdAt = $comment->getAttribute('created_at');
+        $updatedAt = $comment->getAttribute('updated_at');
+
+        return [
+            'id' => $comment->id,
+            'taskId' => $comment->task_id,
+            'userId' => $comment->user_id,
+            'userName' => $comment->user?->name,
+            'body' => $comment->body,
+            'createdAt' => $createdAt instanceof DateTimeInterface
+                ? $createdAt->format(DateTimeInterface::ATOM)
+                : null,
+            'updatedAt' => $updatedAt instanceof DateTimeInterface
+                ? $updatedAt->format(DateTimeInterface::ATOM)
+                : null,
         ];
     }
 

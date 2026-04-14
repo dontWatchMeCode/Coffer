@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Form, Head, usePage, router } from '@inertiajs/vue3';
-import { Check, Trash2 } from 'lucide-vue-next';
+import { Form, Head, useForm, usePage, router } from '@inertiajs/vue3';
+import { Check, MessageCircle, Send, Trash2 } from 'lucide-vue-next';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, ref, watch } from 'vue';
+import TaskCommentController from '@/actions/App/Http/Controllers/Tasks/TaskCommentController';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -19,9 +20,14 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { getInitials } from '@/composables/useInitials';
-import { getTaskStatusMeta, taskInputLikeClass } from '@/lib/tasks';
+import {
+    formatRelativeTime,
+    getTaskStatusMeta,
+    taskInputLikeClass,
+} from '@/lib/tasks';
 import { index, show } from '@/routes/team/tasks/index';
 import type {
+    TaskCommentItem,
     TaskItem,
     TaskMember,
     TaskProject,
@@ -31,6 +37,7 @@ import type {
 type Props = {
     project: Pick<TaskProject, 'id' | 'name' | 'description' | 'isArchived'>;
     task: TaskItem;
+    comments: TaskCommentItem[];
     members: TaskMember[];
     statuses: TaskStatusOption[];
 };
@@ -45,6 +52,9 @@ const unassignedAssigneeValue = 'unassigned';
 const selectedAssignee = ref(
     props.task.assigneeId?.toString() ?? unassignedAssigneeValue,
 );
+const commentForm = useForm(`TaskComment:${props.task.id}`, {
+    body: '',
+});
 
 watch(
     () => props.task.status,
@@ -179,6 +189,21 @@ function updateProgress(progress: number): void {
             preserveScroll: true,
             onError: () => {
                 selectedProgress.value = props.task.progress;
+            },
+        },
+    );
+}
+
+function submitComment(): void {
+    commentForm.submit(
+        TaskCommentController.store({
+            current_team: currentTeamSlug.value,
+            task: props.task.id,
+        }),
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                commentForm.reset();
             },
         },
     );
@@ -409,6 +434,114 @@ function updateProgress(progress: number): void {
                             </Button>
                         </div>
                     </Form>
+
+                    <section
+                        class="space-y-4 rounded-2xl border bg-card/60 p-4 sm:p-5"
+                    >
+                        <div
+                            class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                            <div class="flex items-center gap-2">
+                                <MessageCircle
+                                    class="h-4 w-4 text-muted-foreground"
+                                />
+                                <h2 class="text-sm font-semibold">Comments</h2>
+                            </div>
+                            <span class="text-xs text-muted-foreground">
+                                {{ comments.length }}
+                                {{
+                                    comments.length === 1
+                                        ? 'comment'
+                                        : 'comments'
+                                }}
+                            </span>
+                        </div>
+
+                        <form class="space-y-3" @submit.prevent="submitComment">
+                            <div class="grid gap-2">
+                                <Label for="task-comment-body"
+                                    >Add comment</Label
+                                >
+                                <textarea
+                                    id="task-comment-body"
+                                    v-model="commentForm.body"
+                                    :class="taskInputLikeClass"
+                                    rows="4"
+                                    placeholder="Add context, decisions, or blockers..."
+                                />
+                                <InputError
+                                    :message="commentForm.errors.body"
+                                />
+                            </div>
+
+                            <div class="flex justify-end">
+                                <Button
+                                    type="submit"
+                                    :disabled="commentForm.processing"
+                                    class="gap-2"
+                                >
+                                    <Send class="h-4 w-4" />
+                                    Add comment
+                                </Button>
+                            </div>
+                        </form>
+
+                        <div
+                            v-if="comments.length === 0"
+                            class="rounded-xl border border-dashed p-6 text-sm text-muted-foreground"
+                        >
+                            No comments yet. Add one to capture backend notes,
+                            decisions, or follow-ups.
+                        </div>
+
+                        <div v-else class="space-y-3">
+                            <article
+                                v-for="comment in comments"
+                                :key="comment.id"
+                                class="rounded-xl border bg-background/70 p-4"
+                            >
+                                <div class="mb-3 flex items-start gap-3">
+                                    <Avatar class="h-9 w-9 shrink-0">
+                                        <AvatarFallback>
+                                            {{
+                                                getInitials(
+                                                    comment.userName ??
+                                                        undefined,
+                                                ) || '?'
+                                            }}
+                                        </AvatarFallback>
+                                    </Avatar>
+
+                                    <div class="min-w-0 flex-1">
+                                        <div
+                                            class="flex flex-wrap items-center gap-x-2 gap-y-1"
+                                        >
+                                            <span class="text-sm font-medium">
+                                                {{
+                                                    comment.userName ??
+                                                    'Unknown'
+                                                }}
+                                            </span>
+                                            <span
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                {{
+                                                    formatRelativeTime(
+                                                        comment.createdAt,
+                                                    )
+                                                }}
+                                            </span>
+                                        </div>
+                                        <p
+                                            class="mt-2 text-sm leading-6 whitespace-pre-wrap text-foreground/90"
+                                        >
+                                            {{ comment.body }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
                 </div>
 
                 <!-- Sidebar -->

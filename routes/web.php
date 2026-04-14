@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Tasks\ProjectController;
+use App\Http\Controllers\Tasks\TaskCommentController;
 use App\Http\Controllers\Tasks\TaskController;
 use App\Http\Controllers\Tasks\TaskPageController;
 use App\Http\Controllers\Teams\TeamInvitationController;
@@ -33,6 +34,9 @@ Route::prefix('{current_team}')
             ->whereNumber('project')
             ->name('team.tasks.projects.update');
         Route::post('tasks', [TaskController::class, 'store'])->name('team.tasks.store');
+        Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store'])
+            ->whereNumber('task')
+            ->name('team.tasks.comments.store');
         Route::patch('tasks/{task}', [TaskController::class, 'update'])
             ->whereNumber('task')
             ->name('team.tasks.update');

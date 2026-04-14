@@ -26,6 +26,16 @@ export type TaskMember = {
     email: string;
 };
 
+export type TaskCommentItem = {
+    id: number;
+    taskId: number;
+    userId: number;
+    userName?: string | null;
+    body: string;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+};
+
 export type TaskItem = {
     id: number;
     projectId: number;

@@ -3,6 +3,7 @@
 use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\Task;
+use App\Models\TaskComment;
 use App\Models\Team;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -133,8 +134,39 @@ test('task edit page can be rendered', function () {
             ->where('project.id', $project->id)
             ->where('task.id', $task->id)
             ->where('task.commentsCount', 0)
+            ->has('comments', 0)
             ->has('members')
             ->has('statuses', 6),
+        );
+});
+
+test('task edit page includes existing comments', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+    $comment = TaskComment::factory()->create([
+        'team_id' => $team->id,
+        'task_id' => $task->id,
+        'user_id' => $user->id,
+        'body' => 'First task note',
+    ]);
+
+    actingAs($user)
+        ->get(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tasks/Edit')
+            ->where('task.commentsCount', 1)
+            ->has('comments', 1)
+            ->where('comments.0.id', $comment->id)
+            ->where('comments.0.body', 'First task note')
+            ->where('comments.0.userId', $user->id)
+            ->where('comments.0.userName', $user->name),
         );
 });
 
@@ -365,6 +397,45 @@ test('tasks can be updated from the team tasks page', function () {
     ]);
 
     expect($task->fresh()->completed_at)->not->toBeNull();
+});
+
+test('task comments can be created from the task page', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+
+    actingAs($user)
+        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
+        ->post(route('team.tasks.comments.store', ['current_team' => $team, 'task' => $task->id]), [
+            'body' => 'Need API contract before frontend handoff.',
+        ])
+        ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]));
+
+    assertDatabaseHas('task_comments', [
+        'team_id' => $team->id,
+        'task_id' => $task->id,
+        'user_id' => $user->id,
+        'body' => 'Need API contract before frontend handoff.',
+    ]);
+});
+
+test('task comments cannot be created from another team route', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $task = Task::factory()->create();
+
+    actingAs($user)
+        ->post(route('team.tasks.comments.store', ['current_team' => $team, 'task' => $task->id]), [
+            'body' => 'Cross-team comment',
+        ])
+        ->assertForbidden();
+
+    expect(TaskComment::query()->count())->toBe(0);
 });
 
 test('tasks cannot be updated from another team route', function () {
