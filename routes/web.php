@@ -37,9 +37,18 @@ Route::prefix('{current_team}')
         Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store'])
             ->whereNumber('task')
             ->name('team.tasks.comments.store');
+        Route::patch('tasks/{task}/comments/{comment}', [TaskCommentController::class, 'update'])
+            ->whereNumber(['task', 'comment'])
+            ->name('team.tasks.comments.update');
+        Route::delete('tasks/{task}/comments/{comment}', [TaskCommentController::class, 'destroy'])
+            ->whereNumber(['task', 'comment'])
+            ->name('team.tasks.comments.destroy');
         Route::patch('tasks/{task}', [TaskController::class, 'update'])
             ->whereNumber('task')
             ->name('team.tasks.update');
+        Route::delete('tasks/{task}', [TaskController::class, 'destroy'])
+            ->whereNumber('task')
+            ->name('team.tasks.destroy');
     });
 
 Route::middleware(['auth'])->group(function () {

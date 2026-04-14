@@ -438,6 +438,174 @@ test('task comments cannot be created from another team route', function () {
     expect(TaskComment::query()->count())->toBe(0);
 });
 
+test('task comments can be edited by their creator', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+    $comment = TaskComment::factory()->create([
+        'team_id' => $team->id,
+        'task_id' => $task->id,
+        'user_id' => $user->id,
+        'body' => 'Original task note',
+    ]);
+
+    actingAs($user)
+        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
+        ->patch(route('team.tasks.comments.update', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]), [
+            'body' => 'Updated task note',
+        ])
+        ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]));
+
+    assertDatabaseHas('task_comments', [
+        'id' => $comment->id,
+        'body' => 'Updated task note',
+    ]);
+});
+
+test('task comments cannot be edited by another team member', function () {
+    $owner = User::factory()->create();
+    $editor = User::factory()->create();
+    $team = $owner->currentTeam;
+
+    $team->members()->attach($editor, ['role' => 'member']);
+
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $owner->id,
+    ]);
+    $comment = TaskComment::factory()->create([
+        'team_id' => $team->id,
+        'task_id' => $task->id,
+        'user_id' => $owner->id,
+        'body' => 'Owner only',
+    ]);
+
+    actingAs($editor)
+        ->patch(route('team.tasks.comments.update', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]), [
+            'body' => 'Unauthorized edit',
+        ])
+        ->assertForbidden();
+
+    assertDatabaseHas('task_comments', [
+        'id' => $comment->id,
+        'body' => 'Owner only',
+    ]);
+});
+
+test('task comments can be deleted by their creator', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+    $comment = TaskComment::factory()->create([
+        'team_id' => $team->id,
+        'task_id' => $task->id,
+        'user_id' => $user->id,
+        'body' => 'Remove me',
+    ]);
+
+    actingAs($user)
+        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
+        ->delete(route('team.tasks.comments.destroy', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]))
+        ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]));
+
+    expect(TaskComment::query()->whereKey($comment->id)->exists())->toBeFalse();
+});
+
+test('task comments cannot be deleted by another team member', function () {
+    $owner = User::factory()->create();
+    $editor = User::factory()->create();
+    $team = $owner->currentTeam;
+
+    $team->members()->attach($editor, ['role' => 'member']);
+
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $owner->id,
+    ]);
+    $comment = TaskComment::factory()->create([
+        'team_id' => $team->id,
+        'task_id' => $task->id,
+        'user_id' => $owner->id,
+        'body' => 'Still here',
+    ]);
+
+    actingAs($editor)
+        ->delete(route('team.tasks.comments.destroy', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]))
+        ->assertForbidden();
+
+    assertDatabaseHas('task_comments', [
+        'id' => $comment->id,
+        'body' => 'Still here',
+    ]);
+});
+
+test('tasks can be deleted from the task edit page', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+
+    actingAs($user)
+        ->delete(route('team.tasks.destroy', ['current_team' => $team, 'task' => $task->id]))
+        ->assertRedirect(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]));
+
+    expect(Task::query()->whereKey($task->id)->exists())->toBeFalse();
+});
+
+test('tasks cannot be deleted by non-team-members', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+
+    $outsider = User::factory()->create();
+
+    actingAs($outsider)
+        ->delete(route('team.tasks.destroy', ['current_team' => $team, 'task' => $task->id]))
+        ->assertForbidden();
+
+    assertDatabaseHas('tasks', ['id' => $task->id]);
+});
+
+test('tasks cannot be deleted from another team route', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $otherTeam = Team::factory()->create();
+    $otherProject = Project::factory()->create(['team_id' => $otherTeam->id]);
+    $otherTask = Task::factory()->create([
+        'team_id' => $otherTeam->id,
+        'project_id' => $otherProject->id,
+    ]);
+
+    actingAs($user)
+        ->delete(route('team.tasks.destroy', ['current_team' => $team, 'task' => $otherTask->id]))
+        ->assertForbidden();
+
+    assertDatabaseHas('tasks', ['id' => $otherTask->id]);
+});
+
 test('tasks cannot be updated from another team route', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

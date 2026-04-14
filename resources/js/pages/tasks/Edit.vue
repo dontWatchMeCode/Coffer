@@ -1,14 +1,36 @@
 <script setup lang="ts">
 import { Form, Head, useForm, usePage, router } from '@inertiajs/vue3';
-import { Check, MessageCircle, Send, Trash2 } from 'lucide-vue-next';
+import {
+    Check,
+    MessageCircle,
+    Pencil,
+    Plus,
+    Send,
+    Trash2,
+    X,
+} from 'lucide-vue-next';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, ref, watch } from 'vue';
-import TaskCommentController from '@/actions/App/Http/Controllers/Tasks/TaskCommentController';
+import {
+    destroy as destroyTaskComment,
+    store as storeTaskComment,
+    update as updateTaskComment,
+} from '@/actions/App/Http/Controllers/Tasks/TaskCommentController';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -19,8 +41,15 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { getInitials } from '@/composables/useInitials';
 import {
+    formatExactDateTime,
     formatRelativeTime,
     getTaskStatusMeta,
     taskInputLikeClass,
@@ -45,6 +74,7 @@ type Props = {
 const props = defineProps<Props>();
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
+const user = computed(() => page.props.auth.user);
 const isEditing = ref(false);
 const selectedStatus = ref(props.task.status);
 const selectedProgress = ref(props.task.progress);
@@ -53,6 +83,13 @@ const selectedAssignee = ref(
     props.task.assigneeId?.toString() ?? unassignedAssigneeValue,
 );
 const commentForm = useForm(`TaskComment:${props.task.id}`, {
+    body: '',
+});
+const isCreatingComment = ref(false);
+const editingCommentId = ref<number | null>(null);
+const commentPendingDeletion = ref<TaskCommentItem | null>(null);
+const taskDeleteDialogOpen = ref(false);
+const editCommentForm = useForm(`EditTaskComment:${props.task.id}`, {
     body: '',
 });
 
@@ -196,7 +233,7 @@ function updateProgress(progress: number): void {
 
 function submitComment(): void {
     commentForm.submit(
-        TaskCommentController.store({
+        storeTaskComment({
             current_team: currentTeamSlug.value,
             task: props.task.id,
         }),
@@ -204,8 +241,85 @@ function submitComment(): void {
             preserveScroll: true,
             onSuccess: () => {
                 commentForm.reset();
+                isCreatingComment.value = false;
             },
         },
+    );
+}
+
+function startCreatingComment(): void {
+    isCreatingComment.value = true;
+    commentForm.clearErrors();
+}
+
+function cancelCreatingComment(): void {
+    isCreatingComment.value = false;
+    commentForm.reset();
+    commentForm.clearErrors();
+}
+
+function startEditingComment(comment: TaskCommentItem): void {
+    editingCommentId.value = comment.id;
+    editCommentForm.body = comment.body;
+    editCommentForm.clearErrors();
+}
+
+function cancelEditingComment(): void {
+    editingCommentId.value = null;
+    editCommentForm.reset();
+    editCommentForm.clearErrors();
+}
+
+function updateComment(comment: TaskCommentItem): void {
+    editCommentForm.submit(
+        updateTaskComment({
+            current_team: currentTeamSlug.value,
+            task: props.task.id,
+            comment: comment.id,
+        }),
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                cancelEditingComment();
+            },
+        },
+    );
+}
+
+function deleteComment(comment: TaskCommentItem): void {
+    router.delete(
+        destroyTaskComment({
+            current_team: currentTeamSlug.value,
+            task: props.task.id,
+            comment: comment.id,
+        }),
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                commentPendingDeletion.value = null;
+
+                if (editingCommentId.value === comment.id) {
+                    cancelEditingComment();
+                }
+            },
+        },
+    );
+}
+
+function openDeleteCommentDialog(comment: TaskCommentItem): void {
+    commentPendingDeletion.value = comment;
+}
+
+function closeDeleteCommentDialog(): void {
+    commentPendingDeletion.value = null;
+}
+
+function deleteTask(): void {
+    router.delete(
+        TaskController.destroy.url({
+            current_team: currentTeamSlug.value,
+            task: props.task.id,
+        }),
     );
 }
 </script>
@@ -233,53 +347,21 @@ function submitComment(): void {
                 <div class="order-2 min-w-0 flex-1 space-y-6 xl:order-1">
                     <!-- Description -->
                     <div v-if="!isEditing" class="space-y-4">
-                        <div class="flex items-start gap-3">
-                            <Avatar class="h-10 w-10 shrink-0">
-                                <AvatarFallback>
-                                    {{
-                                        getInitials(
-                                            task.creatorName ?? undefined,
-                                        ) || '?'
-                                    }}
-                                </AvatarFallback>
-                            </Avatar>
-
-                            <div class="min-w-0 flex-1">
-                                <div
-                                    class="rounded-lg border bg-card p-4 shadow-sm"
-                                >
-                                    <div
-                                        class="mb-2 flex items-center justify-between"
-                                    >
-                                        <span class="font-medium">
-                                            {{ task.creatorName }}
-                                        </span>
-                                        <span
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            created this
-                                        </span>
-                                    </div>
-
-                                    <div
-                                        v-if="task.description"
-                                        class="prose prose-sm max-w-none"
-                                    >
-                                        <p class="whitespace-pre-wrap">
-                                            {{ task.description }}
-                                        </p>
-                                    </div>
-                                    <div
-                                        v-else
-                                        class="text-muted-foreground italic"
-                                    >
-                                        No description provided.
-                                    </div>
-                                </div>
+                        <div class="rounded-lg border bg-card p-4 shadow-sm">
+                            <div
+                                v-if="task.description"
+                                class="prose prose-sm max-w-none"
+                            >
+                                <p class="whitespace-pre-wrap">
+                                    {{ task.description }}
+                                </p>
+                            </div>
+                            <div v-else class="text-muted-foreground italic">
+                                No description provided.
                             </div>
                         </div>
 
-                        <div class="ml-13 flex gap-2">
+                        <div class="flex justify-end gap-2">
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -299,7 +381,7 @@ function submitComment(): void {
                                 task: task.id,
                             })
                         "
-                        class="ml-13 space-y-4"
+                        class="space-y-4"
                         v-slot="{ errors, processing }"
                         @success="isEditing = false"
                     >
@@ -333,91 +415,6 @@ function submitComment(): void {
                                     />
                                     <InputError :message="errors.description" />
                                 </div>
-
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <div class="grid gap-2">
-                                        <Label>Status</Label>
-                                        <Select v-model="selectedStatus">
-                                            <input
-                                                name="status"
-                                                type="hidden"
-                                                :value="selectedStatus"
-                                            />
-                                            <SelectTrigger
-                                                :class="taskInputLikeClass"
-                                            >
-                                                <SelectValue
-                                                    placeholder="Select a status"
-                                                />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem
-                                                    v-for="statusOption in statuses"
-                                                    :key="statusOption.value"
-                                                    :value="statusOption.value"
-                                                >
-                                                    {{ statusOption.label }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <InputError :message="errors.status" />
-                                    </div>
-
-                                    <div class="grid gap-2">
-                                        <Label>Assignee</Label>
-                                        <select
-                                            name="assigned_to"
-                                            :class="taskInputLikeClass"
-                                        >
-                                            <option value="">Unassigned</option>
-                                            <option
-                                                v-for="member in members"
-                                                :key="member.id"
-                                                :value="member.id"
-                                                :selected="
-                                                    member.id ===
-                                                    task.assigneeId
-                                                "
-                                            >
-                                                {{ member.name }}
-                                            </option>
-                                        </select>
-                                        <InputError
-                                            :message="errors.assigned_to"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <div class="grid gap-2">
-                                        <Label>Progress (%)</Label>
-                                        <Input
-                                            name="progress"
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            :default-value="task.progress"
-                                            required
-                                        />
-                                        <InputError
-                                            :message="errors.progress"
-                                        />
-                                    </div>
-
-                                    <div class="grid gap-2">
-                                        <Label>Position</Label>
-                                        <Input
-                                            name="position"
-                                            type="number"
-                                            min="0"
-                                            :default-value="task.position"
-                                            required
-                                        />
-                                        <InputError
-                                            :message="errors.position"
-                                        />
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -435,29 +432,35 @@ function submitComment(): void {
                         </div>
                     </Form>
 
-                    <section
-                        class="space-y-4 rounded-2xl border bg-card/60 p-4 sm:p-5"
-                    >
-                        <div
-                            class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                            <div class="flex items-center gap-2">
-                                <MessageCircle
-                                    class="h-4 w-4 text-muted-foreground"
-                                />
-                                <h2 class="text-sm font-semibold">Comments</h2>
-                            </div>
-                            <span class="text-xs text-muted-foreground">
+                    <section class="space-y-4">
+                        <div class="flex min-h-10 items-center gap-3">
+                            <MessageCircle
+                                class="h-4 w-4 text-muted-foreground"
+                            />
+                            <h2 class="text-sm font-semibold">Comments</h2>
+                            <Badge variant="secondary">
                                 {{ comments.length }}
-                                {{
-                                    comments.length === 1
-                                        ? 'comment'
-                                        : 'comments'
-                                }}
-                            </span>
+                            </Badge>
+                            <div class="flex-1" />
+                            <div class="flex min-w-[140px] justify-end">
+                                <Button
+                                    v-if="!isCreatingComment"
+                                    type="button"
+                                    variant="outline"
+                                    class="gap-2"
+                                    @click="startCreatingComment"
+                                >
+                                    <Plus class="h-4 w-4" />
+                                    Add comment
+                                </Button>
+                            </div>
                         </div>
 
-                        <form class="space-y-3" @submit.prevent="submitComment">
+                        <form
+                            v-if="isCreatingComment"
+                            class="space-y-3 rounded-xl border bg-background/70 p-4"
+                            @submit.prevent="submitComment"
+                        >
                             <div class="grid gap-2">
                                 <Label for="task-comment-body"
                                     >Add comment</Label
@@ -474,7 +477,16 @@ function submitComment(): void {
                                 />
                             </div>
 
-                            <div class="flex justify-end">
+                            <div class="flex justify-end gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    class="gap-2"
+                                    @click="cancelCreatingComment"
+                                >
+                                    <X class="h-4 w-4" />
+                                    Cancel
+                                </Button>
                                 <Button
                                     type="submit"
                                     :disabled="commentForm.processing"
@@ -500,7 +512,14 @@ function submitComment(): void {
                                 :key="comment.id"
                                 class="rounded-xl border bg-background/70 p-4"
                             >
-                                <div class="mb-3 flex items-start gap-3">
+                                <div
+                                    :class="[
+                                        'flex items-start gap-3',
+                                        editingCommentId === comment.id
+                                            ? ''
+                                            : 'mb-3',
+                                    ]"
+                                >
                                     <Avatar class="h-9 w-9 shrink-0">
                                         <AvatarFallback>
                                             {{
@@ -514,25 +533,208 @@ function submitComment(): void {
 
                                     <div class="min-w-0 flex-1">
                                         <div
-                                            class="flex flex-wrap items-center gap-x-2 gap-y-1"
+                                            class="flex flex-wrap items-center justify-between gap-2"
                                         >
-                                            <span class="text-sm font-medium">
-                                                {{
-                                                    comment.userName ??
-                                                    'Unknown'
-                                                }}
-                                            </span>
-                                            <span
-                                                class="text-xs text-muted-foreground"
+                                            <div
+                                                class="flex flex-wrap items-center gap-x-2 gap-y-1"
                                             >
-                                                {{
-                                                    formatRelativeTime(
-                                                        comment.createdAt,
-                                                    )
-                                                }}
-                                            </span>
+                                                <span
+                                                    class="text-sm font-medium"
+                                                >
+                                                    {{
+                                                        comment.userName ??
+                                                        'Unknown'
+                                                    }}
+                                                </span>
+                                                <TooltipProvider
+                                                    :delay-duration="150"
+                                                >
+                                                    <Tooltip>
+                                                        <TooltipTrigger
+                                                            as-child
+                                                        >
+                                                            <span
+                                                                class="text-xs text-muted-foreground"
+                                                            >
+                                                                {{
+                                                                    formatRelativeTime(
+                                                                        comment.createdAt,
+                                                                    )
+                                                                }}
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            {{
+                                                                formatExactDateTime(
+                                                                    comment.createdAt,
+                                                                )
+                                                            }}
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </div>
+                                            <TooltipProvider
+                                                v-if="
+                                                    comment.userId === user.id
+                                                "
+                                                :delay-duration="150"
+                                            >
+                                                <div
+                                                    class="flex items-center gap-1"
+                                                >
+                                                    <template
+                                                        v-if="
+                                                            editingCommentId ===
+                                                            comment.id
+                                                        "
+                                                    >
+                                                        <Tooltip>
+                                                            <TooltipTrigger
+                                                                as-child
+                                                            >
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    class="h-8 w-8 p-0"
+                                                                    @click="
+                                                                        cancelEditingComment
+                                                                    "
+                                                                >
+                                                                    <X
+                                                                        class="h-3.5 w-3.5"
+                                                                    />
+                                                                    <span
+                                                                        class="sr-only"
+                                                                        >Cancel
+                                                                        edit</span
+                                                                    >
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                Cancel
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger
+                                                                as-child
+                                                            >
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    class="h-8 w-8 p-0"
+                                                                    :disabled="
+                                                                        editCommentForm.processing
+                                                                    "
+                                                                    @click="
+                                                                        updateComment(
+                                                                            comment,
+                                                                        )
+                                                                    "
+                                                                >
+                                                                    <Check
+                                                                        class="h-3.5 w-3.5"
+                                                                    />
+                                                                    <span
+                                                                        class="sr-only"
+                                                                        >Save
+                                                                        comment</span
+                                                                    >
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                Save
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </template>
+                                                    <template v-else>
+                                                        <Tooltip>
+                                                            <TooltipTrigger
+                                                                as-child
+                                                            >
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    class="h-8 w-8 p-0"
+                                                                    @click="
+                                                                        startEditingComment(
+                                                                            comment,
+                                                                        )
+                                                                    "
+                                                                >
+                                                                    <Pencil
+                                                                        class="h-3.5 w-3.5"
+                                                                    />
+                                                                    <span
+                                                                        class="sr-only"
+                                                                        >Edit
+                                                                        comment</span
+                                                                    >
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                Edit comment
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger
+                                                                as-child
+                                                            >
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    class="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                                    @click="
+                                                                        openDeleteCommentDialog(
+                                                                            comment,
+                                                                        )
+                                                                    "
+                                                                >
+                                                                    <Trash2
+                                                                        class="h-3.5 w-3.5"
+                                                                    />
+                                                                    <span
+                                                                        class="sr-only"
+                                                                        >Delete
+                                                                        comment</span
+                                                                    >
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                Delete comment
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </template>
+                                                </div>
+                                            </TooltipProvider>
                                         </div>
+
+                                        <form
+                                            v-if="
+                                                editingCommentId === comment.id
+                                            "
+                                            class="mt-3"
+                                            @submit.prevent="
+                                                updateComment(comment)
+                                            "
+                                        >
+                                            <textarea
+                                                v-model="editCommentForm.body"
+                                                :class="taskInputLikeClass"
+                                                rows="4"
+                                            />
+                                            <InputError
+                                                v-if="
+                                                    editCommentForm.errors.body
+                                                "
+                                                class="mt-3"
+                                                :message="
+                                                    editCommentForm.errors.body
+                                                "
+                                            />
+                                        </form>
                                         <p
+                                            v-else
                                             class="mt-2 text-sm leading-6 whitespace-pre-wrap text-foreground/90"
                                         >
                                             {{ comment.body }}
@@ -541,6 +743,58 @@ function submitComment(): void {
                                 </div>
                             </article>
                         </div>
+
+                        <Dialog
+                            :open="commentPendingDeletion !== null"
+                            @update:open="
+                                (open) => {
+                                    if (!open) {
+                                        closeDeleteCommentDialog();
+                                    }
+                                }
+                            "
+                        >
+                            <DialogContent>
+                                <DialogHeader class="space-y-3">
+                                    <DialogTitle>Delete comment?</DialogTitle>
+                                    <DialogDescription>
+                                        This will permanently remove this
+                                        comment from the task activity.
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div
+                                    v-if="commentPendingDeletion"
+                                    class="rounded-lg border bg-muted/40 p-3 text-sm leading-6 text-muted-foreground"
+                                >
+                                    {{ commentPendingDeletion.body }}
+                                </div>
+
+                                <DialogFooter class="gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        @click="closeDeleteCommentDialog"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        v-if="commentPendingDeletion"
+                                        type="button"
+                                        variant="destructive"
+                                        class="gap-2"
+                                        @click="
+                                            deleteComment(
+                                                commentPendingDeletion,
+                                            )
+                                        "
+                                    >
+                                        <Trash2 class="h-4 w-4" />
+                                        Delete comment
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </section>
                 </div>
 
@@ -748,25 +1002,52 @@ function submitComment(): void {
 
                     <!-- Actions -->
                     <div class="space-y-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            class="w-full cursor-pointer justify-start gap-2"
-                            @click="isEditing = true"
-                        >
-                            <Check class="h-4 w-4" />
-                            Edit task
-                        </Button>
+                        <Dialog v-model:open="taskDeleteDialogOpen">
+                            <DialogTrigger as-child>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="w-full cursor-pointer justify-start gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                >
+                                    <Trash2 class="h-4 w-4" />
+                                    Delete task
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader class="space-y-3">
+                                    <DialogTitle>Delete task?</DialogTitle>
+                                    <DialogDescription>
+                                        This will permanently remove this task
+                                        and its comments.
+                                    </DialogDescription>
+                                </DialogHeader>
 
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            class="w-full cursor-pointer justify-start gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                            disabled
-                        >
-                            <Trash2 class="h-4 w-4" />
-                            Delete task
-                        </Button>
+                                <div
+                                    class="rounded-lg border bg-muted/40 p-3 text-sm leading-6 text-muted-foreground"
+                                >
+                                    {{ task.title }}
+                                </div>
+
+                                <DialogFooter class="gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        @click="taskDeleteDialogOpen = false"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        class="gap-2"
+                                        @click="deleteTask"
+                                    >
+                                        <Trash2 class="h-4 w-4" />
+                                        Delete task
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 </div>
             </div>

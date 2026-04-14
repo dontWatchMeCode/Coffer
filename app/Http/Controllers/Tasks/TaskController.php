@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tasks;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tasks\DeleteTaskRequest;
 use App\Http\Requests\Tasks\SaveTaskRequest;
 use App\Models\Task;
 use App\Models\Team;
@@ -43,5 +44,21 @@ class TaskController extends Controller
         }
 
         return to_route('team.tasks.edit', ['current_team' => $currentTeam, 'project' => $validated['project_id'] ?? $task->project_id, 'task' => $task]);
+    }
+
+    /**
+     * Remove the specified task.
+     */
+    public function destroy(DeleteTaskRequest $request, Team $currentTeam, int $task): RedirectResponse
+    {
+        $task = Task::query()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($task);
+
+        $projectId = $task->project_id;
+
+        $task->delete();
+
+        return to_route('team.tasks.show', ['current_team' => $currentTeam, 'project' => $projectId]);
     }
 }

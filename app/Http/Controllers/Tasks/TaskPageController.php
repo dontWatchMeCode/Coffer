@@ -63,7 +63,7 @@ class TaskPageController extends Controller
                 'commentsCount' => $task->comments_count ?? 0,
             ]),
             'comments' => array_map(
-                fn (TaskComment $comment): array => $this->commentPayload($comment),
+                $this->commentPayload(...),
                 $task->comments->all(),
             ),
             'members' => $this->memberPayload($members),

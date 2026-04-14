@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Tasks;
 
+use App\Models\TaskComment;
 use App\Models\Team;
 
 trait AuthorizesTeamResource
@@ -21,5 +22,18 @@ trait AuthorizesTeamResource
         $team = $this->route('current_team');
 
         return $team instanceof Team ? $team : null;
+    }
+
+    protected function isCommentOwner(int $commentId, int $taskId): bool
+    {
+        $team = $this->currentTeam();
+        $user = $this->user();
+
+        return $team instanceof Team && $user !== null && TaskComment::query()
+            ->whereBelongsTo($team)
+            ->where('task_id', $taskId)
+            ->whereKey($commentId)
+            ->whereBelongsTo($user)
+            ->exists();
     }
 }

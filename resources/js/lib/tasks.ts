@@ -90,3 +90,13 @@ export function formatRelativeTime(
 
     return date.toLocaleDateString();
 }
+
+export function formatExactDateTime(
+    dateString: string | null | undefined,
+): string {
+    if (!dateString) {
+        return '';
+    }
+
+    return new Date(dateString).toLocaleString();
+}
