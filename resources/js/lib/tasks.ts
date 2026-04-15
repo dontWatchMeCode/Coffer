@@ -60,14 +60,15 @@ export function getTaskStatusMeta(status: string): TaskStatusMeta {
 
 export function formatRelativeTime(
     dateString: string | null | undefined,
+    now?: Date,
 ): string {
     if (!dateString) {
         return '';
     }
 
     const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const _now = now ?? new Date();
+    const diffMs = _now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);

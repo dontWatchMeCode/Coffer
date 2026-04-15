@@ -48,7 +48,7 @@ class TaskPageController extends Controller
                 'creator:id,name',
                 'comments' => fn ($query) => $query
                     ->with('user:id,name')
-                    ->oldest(),
+                    ->latest(),
             ])
             ->withCount('comments')
             ->findOrFail($task);

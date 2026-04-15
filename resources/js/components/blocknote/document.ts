@@ -30,3 +30,33 @@ export function serializeBlockNoteDocument(
 ): string {
     return JSON.stringify(normalizeBlockNoteDocument(content));
 }
+
+export function parseBlockNoteBody(
+    body: string | null | undefined,
+): BlockNoteDocument | null {
+    if (!body) {
+        return null;
+    }
+
+    try {
+        const parsed = JSON.parse(body);
+
+        if (Array.isArray(parsed)) {
+            return normalizeBlockNoteDocument(parsed);
+        }
+    } catch {
+        return [{ type: 'paragraph', content: body }];
+    }
+
+    return null;
+}
+
+export function isSerializedBlockNoteBody(
+    body: string | null | undefined,
+): boolean {
+    if (!body) {
+        return false;
+    }
+
+    return body.trimStart().startsWith('[');
+}

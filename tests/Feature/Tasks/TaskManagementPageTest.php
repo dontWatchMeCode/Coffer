@@ -149,11 +149,19 @@ test('task edit page includes existing comments', function () {
         'project_id' => $project->id,
         'created_by' => $user->id,
     ]);
-    $comment = TaskComment::factory()->create([
+    $olderComment = TaskComment::factory()->create([
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
         'body' => 'First task note',
+        'created_at' => now()->subMinute(),
+    ]);
+    $newerComment = TaskComment::factory()->create([
+        'team_id' => $team->id,
+        'task_id' => $task->id,
+        'user_id' => $user->id,
+        'body' => 'Latest task note',
+        'created_at' => now(),
     ]);
 
     actingAs($user)
@@ -161,12 +169,14 @@ test('task edit page includes existing comments', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('tasks/Edit')
-            ->where('task.commentsCount', 1)
-            ->has('comments', 1)
-            ->where('comments.0.id', $comment->id)
-            ->where('comments.0.body', 'First task note')
+            ->where('task.commentsCount', 2)
+            ->has('comments', 2)
+            ->where('comments.0.id', $newerComment->id)
+            ->where('comments.0.body', 'Latest task note')
             ->where('comments.0.userId', $user->id)
-            ->where('comments.0.userName', $user->name),
+            ->where('comments.0.userName', $user->name)
+            ->where('comments.1.id', $olderComment->id)
+            ->where('comments.1.body', 'First task note'),
         );
 });
 
@@ -424,6 +434,46 @@ test('task comments can be created from the task page', function () {
     ]);
 });
 
+test('task comments accept serialized blocknote bodies', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+    $body = json_encode([
+        [
+            'type' => 'paragraph',
+            'content' => 'Need API contract before frontend handoff.',
+        ],
+    ]);
+
+    actingAs($user)
+        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
+        ->post(route('team.tasks.comments.store', ['current_team' => $team, 'task' => $task->id]), [
+            'body' => $body,
+        ])
+        ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]));
+
+    assertDatabaseHas('task_comments', [
+        'team_id' => $team->id,
+        'task_id' => $task->id,
+        'user_id' => $user->id,
+        'body' => $body,
+    ]);
+
+    actingAs($user)
+        ->get(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tasks/Edit')
+            ->where('task.commentsCount', 1)
+            ->where('comments.0.body', $body),
+        );
+});
+
 test('task comments cannot be created from another team route', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
@@ -453,17 +503,23 @@ test('task comments can be edited by their creator', function () {
         'user_id' => $user->id,
         'body' => 'Original task note',
     ]);
+    $body = json_encode([
+        [
+            'type' => 'paragraph',
+            'content' => 'Updated task note',
+        ],
+    ]);
 
     actingAs($user)
         ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->patch(route('team.tasks.comments.update', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]), [
-            'body' => 'Updated task note',
+            'body' => $body,
         ])
         ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]));
 
     assertDatabaseHas('task_comments', [
         'id' => $comment->id,
-        'body' => 'Updated task note',
+        'body' => $body,
     ]);
 });
 

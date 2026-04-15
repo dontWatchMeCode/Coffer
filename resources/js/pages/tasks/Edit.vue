@@ -17,6 +17,8 @@ import {
     update as updateTaskComment,
 } from '@/actions/App/Http/Controllers/Tasks/TaskCommentController';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
+import { serializeBlockNoteDocument } from '@/components/blocknote/document';
+import BlockNoteCommentEditor from '@/components/BlockNoteCommentEditor.vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -48,6 +50,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { getInitials } from '@/composables/useInitials';
+import { useRelativeTime } from '@/composables/useRelativeTime';
 import {
     formatExactDateTime,
     formatRelativeTime,
@@ -79,18 +82,20 @@ const isEditing = ref(false);
 const selectedStatus = ref(props.task.status);
 const selectedProgress = ref(props.task.progress);
 const unassignedAssigneeValue = 'unassigned';
+const emptyCommentBody = serializeBlockNoteDocument();
 const selectedAssignee = ref(
     props.task.assigneeId?.toString() ?? unassignedAssigneeValue,
 );
 const commentForm = useForm(`TaskComment:${props.task.id}`, {
-    body: '',
+    body: emptyCommentBody,
 });
 const isCreatingComment = ref(false);
+const { now } = useRelativeTime();
 const editingCommentId = ref<number | null>(null);
 const commentPendingDeletion = ref<TaskCommentItem | null>(null);
 const taskDeleteDialogOpen = ref(false);
 const editCommentForm = useForm(`EditTaskComment:${props.task.id}`, {
-    body: '',
+    body: emptyCommentBody,
 });
 
 watch(
@@ -249,6 +254,7 @@ function submitComment(): void {
 
 function startCreatingComment(): void {
     isCreatingComment.value = true;
+    commentForm.body = emptyCommentBody;
     commentForm.clearErrors();
 }
 
@@ -461,21 +467,11 @@ function deleteTask(): void {
                             class="space-y-3 rounded-xl border bg-background/70 p-4"
                             @submit.prevent="submitComment"
                         >
-                            <div class="grid gap-2">
-                                <Label for="task-comment-body"
-                                    >Add comment</Label
-                                >
-                                <textarea
-                                    id="task-comment-body"
-                                    v-model="commentForm.body"
-                                    :class="taskInputLikeClass"
-                                    rows="4"
-                                    placeholder="Add context, decisions, or blockers..."
-                                />
-                                <InputError
-                                    :message="commentForm.errors.body"
-                                />
-                            </div>
+                            <BlockNoteCommentEditor
+                                v-model="commentForm.body"
+                                placeholder="Add context, decisions, or blockers..."
+                            />
+                            <InputError :message="commentForm.errors.body" />
 
                             <div class="flex justify-end gap-2">
                                 <Button
@@ -512,14 +508,7 @@ function deleteTask(): void {
                                 :key="comment.id"
                                 class="rounded-xl border bg-background/70 p-4"
                             >
-                                <div
-                                    :class="[
-                                        'flex items-start gap-3',
-                                        editingCommentId === comment.id
-                                            ? ''
-                                            : 'mb-3',
-                                    ]"
-                                >
+                                <div class="flex items-start gap-3">
                                     <Avatar class="h-9 w-9 shrink-0">
                                         <AvatarFallback>
                                             {{
@@ -559,6 +548,7 @@ function deleteTask(): void {
                                                                 {{
                                                                     formatRelativeTime(
                                                                         comment.createdAt,
+                                                                        now,
                                                                     )
                                                                 }}
                                                             </span>
@@ -580,7 +570,7 @@ function deleteTask(): void {
                                                 :delay-duration="150"
                                             >
                                                 <div
-                                                    class="flex items-center gap-1"
+                                                    class="flex items-start gap-3"
                                                 >
                                                     <template
                                                         v-if="
@@ -718,10 +708,16 @@ function deleteTask(): void {
                                                 updateComment(comment)
                                             "
                                         >
-                                            <textarea
-                                                v-model="editCommentForm.body"
-                                                :class="taskInputLikeClass"
-                                                rows="4"
+                                            <BlockNoteCommentEditor
+                                                :model-value="
+                                                    editCommentForm.body
+                                                "
+                                                :editable="true"
+                                                @update:model-value="
+                                                    (v) =>
+                                                        (editCommentForm.body =
+                                                            v)
+                                                "
                                             />
                                             <InputError
                                                 v-if="
@@ -733,12 +729,24 @@ function deleteTask(): void {
                                                 "
                                             />
                                         </form>
-                                        <p
+                                        <div
                                             v-else
-                                            class="mt-2 text-sm leading-6 whitespace-pre-wrap text-foreground/90"
+                                            :class="[
+                                                'mt-3',
+                                                comment.userId === user.id
+                                                    ? 'cursor-pointer'
+                                                    : '',
+                                            ]"
+                                            @dblclick="
+                                                comment.userId === user.id &&
+                                                startEditingComment(comment)
+                                            "
                                         >
-                                            {{ comment.body }}
-                                        </p>
+                                            <BlockNoteCommentEditor
+                                                :model-value="comment.body"
+                                                :editable="false"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </article>
@@ -765,9 +773,14 @@ function deleteTask(): void {
 
                                 <div
                                     v-if="commentPendingDeletion"
-                                    class="rounded-lg border bg-muted/40 p-3 text-sm leading-6 text-muted-foreground"
+                                    class="rounded-lg border bg-muted/40 p-3"
                                 >
-                                    {{ commentPendingDeletion.body }}
+                                    <BlockNoteCommentEditor
+                                        :model-value="
+                                            commentPendingDeletion.body
+                                        "
+                                        :editable="false"
+                                    />
                                 </div>
 
                                 <DialogFooter class="gap-2">
