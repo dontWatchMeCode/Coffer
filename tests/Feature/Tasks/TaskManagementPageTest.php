@@ -419,10 +419,12 @@ test('task comments can be created from the task page', function () {
         'created_by' => $user->id,
     ]);
 
+    $body = "Need API contract before frontend handoff.\n\n- confirm payload shape\n- confirm deadlines";
+
     actingAs($user)
         ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->post(route('team.tasks.comments.store', ['current_team' => $team, 'task' => $task->id]), [
-            'body' => 'Need API contract before frontend handoff.',
+            'body' => $body,
         ])
         ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]));
 
@@ -430,11 +432,11 @@ test('task comments can be created from the task page', function () {
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
-        'body' => 'Need API contract before frontend handoff.',
+        'body' => $body,
     ]);
 });
 
-test('task comments accept serialized blocknote bodies', function () {
+test('legacy serialized blocknote comment bodies remain readable', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
     $project = Project::factory()->create(['team_id' => $team->id]);
@@ -503,12 +505,7 @@ test('task comments can be edited by their creator', function () {
         'user_id' => $user->id,
         'body' => 'Original task note',
     ]);
-    $body = json_encode([
-        [
-            'type' => 'paragraph',
-            'content' => 'Updated task note',
-        ],
-    ]);
+    $body = "## Updated task note\n\n- finish copy\n- ship review";
 
     actingAs($user)
         ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))

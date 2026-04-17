@@ -17,10 +17,10 @@ import {
     update as updateTaskComment,
 } from '@/actions/App/Http/Controllers/Tasks/TaskCommentController';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
-import { serializeBlockNoteDocument } from '@/components/blocknote/document';
-import BlockNoteCommentEditor from '@/components/BlockNoteCommentEditor.vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import { trimStoredRichText } from '@/components/richtext/storage';
+import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,6 @@ import {
     formatExactDateTime,
     formatRelativeTime,
     getTaskStatusMeta,
-    taskInputLikeClass,
 } from '@/lib/tasks';
 import { index, show } from '@/routes/team/tasks/index';
 import type {
@@ -79,10 +78,11 @@ const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const user = computed(() => page.props.auth.user);
 const isEditing = ref(false);
+const descriptionBody = ref(props.task.description ?? '');
 const selectedStatus = ref(props.task.status);
 const selectedProgress = ref(props.task.progress);
 const unassignedAssigneeValue = 'unassigned';
-const emptyCommentBody = serializeBlockNoteDocument();
+const emptyCommentBody = '';
 const selectedAssignee = ref(
     props.task.assigneeId?.toString() ?? unassignedAssigneeValue,
 );
@@ -97,6 +97,13 @@ const taskDeleteDialogOpen = ref(false);
 const editCommentForm = useForm(`EditTaskComment:${props.task.id}`, {
     body: emptyCommentBody,
 });
+
+watch(
+    () => props.task.description,
+    (description) => {
+        descriptionBody.value = description ?? '';
+    },
+);
 
 watch(
     () => props.task.status,
@@ -237,6 +244,8 @@ function updateProgress(progress: number): void {
 }
 
 function submitComment(): void {
+    commentForm.body = trimStoredRichText(commentForm.body);
+
     commentForm.submit(
         storeTaskComment({
             current_team: currentTeamSlug.value,
@@ -277,6 +286,8 @@ function cancelEditingComment(): void {
 }
 
 function updateComment(comment: TaskCommentItem): void {
+    editCommentForm.body = trimStoredRichText(editCommentForm.body);
+
     editCommentForm.submit(
         updateTaskComment({
             current_team: currentTeamSlug.value,
@@ -354,14 +365,12 @@ function deleteTask(): void {
                     <!-- Description -->
                     <div v-if="!isEditing" class="space-y-4">
                         <div class="rounded-lg border bg-card p-4 shadow-sm">
-                            <div
+                            <RichTextEditor
                                 v-if="task.description"
-                                class="prose prose-sm max-w-none"
-                            >
-                                <p class="whitespace-pre-wrap">
-                                    {{ task.description }}
-                                </p>
-                            </div>
+                                :model-value="task.description"
+                                :editable="false"
+                                :on-activate="() => (isEditing = true)"
+                            />
                             <div v-else class="text-muted-foreground italic">
                                 No description provided.
                             </div>
@@ -412,12 +421,20 @@ function deleteTask(): void {
 
                                 <div class="grid gap-2">
                                     <Label>Description</Label>
-                                    <textarea
+                                    <input
                                         name="description"
-                                        :class="taskInputLikeClass"
-                                        rows="6"
-                                        :value="task.description ?? ''"
+                                        type="hidden"
+                                        :value="
+                                            trimStoredRichText(descriptionBody)
+                                        "
+                                    />
+                                    <RichTextEditor
+                                        :model-value="descriptionBody"
+                                        :editable="true"
                                         placeholder="Add a description..."
+                                        @update:model-value="
+                                            (v) => (descriptionBody = v)
+                                        "
                                     />
                                     <InputError :message="errors.description" />
                                 </div>
@@ -467,7 +484,7 @@ function deleteTask(): void {
                             class="space-y-3 rounded-xl border bg-background/70 p-4"
                             @submit.prevent="submitComment"
                         >
-                            <BlockNoteCommentEditor
+                            <RichTextEditor
                                 v-model="commentForm.body"
                                 placeholder="Add context, decisions, or blockers..."
                             />
@@ -708,7 +725,7 @@ function deleteTask(): void {
                                                 updateComment(comment)
                                             "
                                         >
-                                            <BlockNoteCommentEditor
+                                            <RichTextEditor
                                                 :model-value="
                                                     editCommentForm.body
                                                 "
@@ -729,24 +746,20 @@ function deleteTask(): void {
                                                 "
                                             />
                                         </form>
-                                        <div
+                                        <RichTextEditor
                                             v-else
-                                            :class="[
-                                                'mt-3',
+                                            class="mt-3"
+                                            :model-value="comment.body"
+                                            :editable="false"
+                                            :on-activate="
                                                 comment.userId === user.id
-                                                    ? 'cursor-pointer'
-                                                    : '',
-                                            ]"
-                                            @dblclick="
-                                                comment.userId === user.id &&
-                                                startEditingComment(comment)
+                                                    ? () =>
+                                                          startEditingComment(
+                                                              comment,
+                                                          )
+                                                    : undefined
                                             "
-                                        >
-                                            <BlockNoteCommentEditor
-                                                :model-value="comment.body"
-                                                :editable="false"
-                                            />
-                                        </div>
+                                        />
                                     </div>
                                 </div>
                             </article>
@@ -775,7 +788,7 @@ function deleteTask(): void {
                                     v-if="commentPendingDeletion"
                                     class="rounded-lg border bg-muted/40 p-3"
                                 >
-                                    <BlockNoteCommentEditor
+                                    <RichTextEditor
                                         :model-value="
                                             commentPendingDeletion.body
                                         "

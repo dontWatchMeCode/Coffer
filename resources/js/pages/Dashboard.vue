@@ -1,36 +1,19 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { defineAsyncComponent, ref } from 'vue';
-import type { BlockNoteDocument } from '@/components/blocknote/document';
+import { ref } from 'vue';
 import EmailVerifiedDialog from '@/components/EmailVerifiedDialog.vue';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
+import RichTextEditor from '@/components/RichTextEditor.vue';
 import { dashboard } from '@/routes';
 import { dashboard as teamDashboard } from '@/routes/team';
 import type { Team } from '@/types';
 
-const BlockNoteEditor = defineAsyncComponent(
-    () => import('@/components/BlockNoteEditor.vue'),
-);
+const editorContent = ref(`# Task brief
 
-const editorContent = ref<BlockNoteDocument>([
-    {
-        type: 'heading',
-        content: 'BlockNote task brief',
-        props: { level: 2 },
-    },
-    {
-        type: 'paragraph',
-        content: 'This editor runs as a React island inside the Vue dashboard.',
-    },
-    {
-        type: 'bulletListItem',
-        content: 'Typing updates Vue state through v-model.',
-    },
-    {
-        type: 'bulletListItem',
-        content: 'The saved source of truth is BlockNote JSON.',
-    },
-]);
+This editor now runs natively in Vue with markdown as the source of truth.
+
+- Typing updates Vue state through v-model.
+- The saved format stays readable for humans and agents.`);
 
 defineOptions({
     layout: (props: { currentTeam?: Team | null }) => ({
@@ -79,14 +62,14 @@ defineOptions({
             >
                 <section class="flex min-h-[32rem] flex-col gap-4">
                     <div class="space-y-1">
-                        <h2 class="text-lg font-semibold">BlockNote Demo</h2>
+                        <h2 class="text-lg font-semibold">Tiptap Demo</h2>
                         <p class="text-sm text-muted-foreground">
-                            Vue owns the page state. React only renders the
-                            editor surface.
+                            The editor now runs natively in Vue and stores
+                            markdown directly.
                         </p>
                     </div>
 
-                    <BlockNoteEditor
+                    <RichTextEditor
                         v-model="editorContent"
                         class="flex-1"
                         placeholder="Write the task brief..."
@@ -95,15 +78,15 @@ defineOptions({
 
                 <section class="flex min-h-[32rem] flex-col gap-4">
                     <div class="space-y-1">
-                        <h2 class="text-lg font-semibold">Stored JSON</h2>
+                        <h2 class="text-lg font-semibold">Stored Markdown</h2>
                         <p class="text-sm text-muted-foreground">
-                            Persist this structure instead of HTML.
+                            Persist this source directly instead of JSON.
                         </p>
                     </div>
 
                     <pre
                         class="min-h-0 flex-1 overflow-auto rounded-xl border bg-muted/40 p-4 text-xs leading-6"
-                    ><code>{{ JSON.stringify(editorContent, null, 2) }}</code></pre>
+                    ><code>{{ editorContent }}</code></pre>
                 </section>
             </div>
         </div>
