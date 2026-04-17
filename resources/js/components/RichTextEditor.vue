@@ -284,7 +284,7 @@ watch(
     <div
         ref="rootEl"
         :class="[
-            'rich-text-editor w-full',
+            'rich-text-editor w-full min-w-0',
             isReady ? '' : 'opacity-0',
             canActivate
                 ? 'rich-text-editor--readonly cursor-pointer'
@@ -294,10 +294,11 @@ watch(
         ]"
         @dblclick="handleDblclick"
     >
-        <div v-if="editable" class="rounded-xl border bg-card border-dashed p-3 shadow-sm min-h-32">
-            <div
-                class="flex items-center gap-2 overflow-x-auto border-b px-1 pb-3 whitespace-nowrap"
-            >
+        <div
+            v-if="editable"
+            class="min-h-32 overflow-hidden rounded-xl border border-dashed bg-card p-3 shadow-sm"
+        >
+            <div class="flex flex-wrap items-center gap-2 border-b px-1 pb-3">
                 <Select
                     :model-value="currentBlockType()"
                     @update:model-value="updateBlockType"

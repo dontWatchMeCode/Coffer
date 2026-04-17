@@ -57,6 +57,11 @@ class TaskPageController extends Controller
             ->orderBy('name')
             ->get(['users.id', 'users.name', 'users.email']);
 
+        $projects = Project::query()
+            ->whereBelongsTo($currentTeam)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return Inertia::render('tasks/Edit', [
             'project' => $this->projectPayloadWithCounts($project),
             'task' => $this->taskPayload($task, [
@@ -68,6 +73,10 @@ class TaskPageController extends Controller
             ),
             'members' => $this->memberPayload($members),
             'statuses' => $this->statusPayload(),
+            'projects' => array_values(array_map(fn (Project $p): array => [
+                'id' => $p->id,
+                'name' => $p->name,
+            ], $projects->all())),
         ]);
     }
 
@@ -157,6 +166,7 @@ class TaskPageController extends Controller
             'completedAt' => $completedAt instanceof DateTimeInterface
                 ? $completedAt->format(DateTimeInterface::ATOM)
                 : null,
+            'dueAt' => $task->due_at?->format(DateTimeInterface::ATOM),
             ...$extra,
         ];
     }

@@ -66,6 +66,7 @@ class SaveTaskRequest extends FormRequest
             'status' => [...$this->requiredRule(), Rule::enum(TaskStatus::class)],
             'progress' => [...$this->optionalOnPatchRule(), 'sometimes', 'integer', 'between:0,100'],
             'position' => [...$this->optionalOnPatchRule(), 'nullable', 'integer', 'min:0'],
+            'due_at' => [...$this->optionalOnPatchRule(), 'nullable', 'date'],
         ];
     }
 
@@ -78,6 +79,10 @@ class SaveTaskRequest extends FormRequest
 
         if ($this->has('assigned_to')) {
             $data['assigned_to'] = blank($this->input('assigned_to')) ? null : $this->input('assigned_to');
+        }
+
+        if ($this->has('due_at')) {
+            $data['due_at'] = blank($this->input('due_at')) ? null : $this->input('due_at');
         }
 
         if ($this->isMethod('post') && ! $this->has('position')) {

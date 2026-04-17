@@ -41,6 +41,7 @@ class TaskFactory extends Factory
             'status' => TaskStatus::Planned,
             'progress' => 0,
             'position' => 0,
+            'due_at' => null,
             'completed_at' => null,
         ];
     }

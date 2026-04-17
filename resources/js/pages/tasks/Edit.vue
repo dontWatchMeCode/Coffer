@@ -71,6 +71,7 @@ type Props = {
     comments: TaskCommentItem[];
     members: TaskMember[];
     statuses: TaskStatusOption[];
+    projects: { id: number; name: string }[];
 };
 
 const props = defineProps<Props>();
@@ -94,6 +95,8 @@ const { now } = useRelativeTime();
 const editingCommentId = ref<number | null>(null);
 const commentPendingDeletion = ref<TaskCommentItem | null>(null);
 const taskDeleteDialogOpen = ref(false);
+const dueDate = ref(props.task.dueAt ? props.task.dueAt.slice(0, 10) : '');
+const selectedProjectId = ref(props.project.id.toString());
 const editCommentForm = useForm(`EditTaskComment:${props.task.id}`, {
     body: emptyCommentBody,
 });
@@ -124,6 +127,13 @@ watch(
     (assigneeId) => {
         selectedAssignee.value =
             assigneeId?.toString() ?? unassignedAssigneeValue;
+    },
+);
+
+watch(
+    () => props.task.dueAt,
+    (dueAt) => {
+        dueDate.value = dueAt ? dueAt.slice(0, 10) : '';
     },
 );
 
@@ -243,6 +253,27 @@ function updateProgress(progress: number): void {
     );
 }
 
+function updateDueDate(date: string): void {
+    router.patch(
+        TaskController.update.url({
+            current_team: currentTeamSlug.value,
+            task: props.task.id,
+        }),
+        {
+            due_at: date || null,
+            _return_to_edit: true,
+        },
+        {
+            preserveScroll: true,
+            onError: () => {
+                dueDate.value = props.task.dueAt
+                    ? props.task.dueAt.slice(0, 10)
+                    : '';
+            },
+        },
+    );
+}
+
 function submitComment(): void {
     commentForm.body = trimStoredRichText(commentForm.body);
 
@@ -256,6 +287,33 @@ function submitComment(): void {
             onSuccess: () => {
                 commentForm.reset();
                 isCreatingComment.value = false;
+            },
+        },
+    );
+}
+
+function updateProject(projectId: AcceptableValue): void {
+    if (typeof projectId !== 'string') {
+        return;
+    }
+
+    const previousProjectId = selectedProjectId.value;
+    selectedProjectId.value = projectId;
+
+    router.patch(
+        TaskController.update.url({
+            current_team: currentTeamSlug.value,
+            task: props.task.id,
+        }),
+        {
+            project_id: Number.parseInt(projectId, 10),
+            _return_to_edit: true,
+        },
+        {
+            preserveScroll: true,
+            preserveState: false,
+            onError: () => {
+                selectedProjectId.value = previousProjectId;
             },
         },
     );
@@ -339,6 +397,25 @@ function deleteTask(): void {
         }),
     );
 }
+
+function handleEditSuccess(): void {
+    const newProjectId = Number.parseInt(selectedProjectId.value, 10);
+
+    if (newProjectId !== props.project.id) {
+        router.visit(
+            edit({
+                current_team: currentTeamSlug.value,
+                project: newProjectId,
+                task: props.task.id,
+            }).url,
+            { preserveScroll: true, preserveState: false },
+        );
+
+        return;
+    }
+
+    isEditing.value = false;
+}
 </script>
 
 <template>
@@ -398,13 +475,8 @@ function deleteTask(): void {
                         "
                         class="space-y-4"
                         v-slot="{ errors, processing }"
-                        @success="isEditing = false"
+                        @success="handleEditSuccess"
                     >
-                        <input
-                            name="project_id"
-                            type="hidden"
-                            :value="project.id"
-                        />
                         <input name="_return_to_edit" type="hidden" value="1" />
 
                         <div class="rounded-lg border bg-card p-4">
@@ -1000,16 +1072,55 @@ function deleteTask(): void {
                     <Separator />
 
                     <!-- Metadata -->
-                    <div class="space-y-2">
+                    <div class="space-y-3">
                         <div class="flex justify-between text-sm">
                             <span class="text-muted-foreground"
                                 >Created by</span
                             >
                             <span>{{ task.creatorName ?? 'Unknown' }}</span>
                         </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-muted-foreground">Project</span>
-                            <span>{{ project.name }}</span>
+                        <div class="grid gap-1.5">
+                            <Label
+                                class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                                >Project</Label
+                            >
+                            <Select
+                                :model-value="selectedProjectId"
+                                @update:model-value="updateProject"
+                            >
+                                <SelectTrigger
+                                    size="sm"
+                                    class="h-8 !w-full text-sm"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="proj in projects"
+                                        :key="proj.id"
+                                        :value="proj.id.toString()"
+                                    >
+                                        {{ proj.name }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div class="grid gap-1.5">
+                            <Label
+                                class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                                >Due date</Label
+                            >
+                            <Input
+                                type="date"
+                                :value="dueDate"
+                                class="h-8 w-full text-sm"
+                                @change="
+                                    updateDueDate(
+                                        ($event.target as HTMLInputElement)
+                                            .value,
+                                    )
+                                "
+                            />
                         </div>
                     </div>
 

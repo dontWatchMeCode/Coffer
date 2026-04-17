@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
-#[Fillable(['team_id', 'project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'position'])]
+#[Fillable(['team_id', 'project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'position', 'due_at'])]
 class Task extends Model
 {
     use BelongsToTeam;
@@ -147,6 +147,7 @@ class Task extends Model
         return [
             'status' => TaskStatus::class,
             'completed_at' => 'datetime',
+            'due_at' => 'datetime',
         ];
     }
 }

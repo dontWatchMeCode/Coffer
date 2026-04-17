@@ -17,6 +17,8 @@ import ProjectController from '@/actions/App/Http/Controllers/Tasks/ProjectContr
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import { trimStoredRichText } from '@/components/richtext/storage';
+import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -91,6 +93,7 @@ defineOptions({
 const projectSettingsOpen = ref(false);
 const createTaskOpen = ref(false);
 const createTaskFormKey = ref(0);
+const createDescription = ref('');
 const projectSettingsFormKey = ref(0);
 const showCompletedAndDropped = ref(false);
 const selectedStatus = ref('planned');
@@ -245,6 +248,8 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                             createTaskOpen = false;
                             selectedStatus = 'planned';
                             selectedAssignee = unassignedAssigneeValue;
+                            createDescription = '';
+                            createTaskFormKey++;
                         "
                     >
                         <DialogHeader>
@@ -273,12 +278,16 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                         </div>
 
                         <div class="grid gap-2">
-                            <Label for="task-description">Description</Label>
-                            <textarea
-                                id="task-description"
+                            <Label class="mb-1">Description</Label>
+                            <input
                                 name="description"
-                                :class="taskInputLikeClass"
-                                rows="4"
+                                type="hidden"
+                                :value="trimStoredRichText(createDescription)"
+                            />
+                            <RichTextEditor
+                                :key="createTaskFormKey"
+                                v-model="createDescription"
+                                :editable="true"
                                 placeholder="Add enough detail for the next person to pick this up."
                             />
                             <InputError :message="errors.description" />
@@ -344,6 +353,18 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                                 </SelectContent>
                             </Select>
                             <InputError :message="errors.assigned_to" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="task-due-date">Due date</Label>
+                            <Input
+                                id="task-due-date"
+                                name="due_at"
+                                type="date"
+                                :class="taskInputLikeClass"
+                                class="w-fit"
+                            />
+                            <InputError :message="errors.due_at" />
                         </div>
 
                         <div class="flex justify-end">
