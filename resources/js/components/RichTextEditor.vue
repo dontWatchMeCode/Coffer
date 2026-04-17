@@ -294,9 +294,9 @@ watch(
         ]"
         @dblclick="handleDblclick"
     >
-        <div v-if="editable" class="rounded-xl border bg-card p-3 shadow-sm">
+        <div v-if="editable" class="rounded-xl border bg-card border-dashed p-3 shadow-sm min-h-32">
             <div
-                class="flex items-center justify-between gap-2 overflow-x-auto border-b px-1 pb-3 whitespace-nowrap"
+                class="flex items-center gap-2 overflow-x-auto border-b px-1 pb-3 whitespace-nowrap"
             >
                 <Select
                     :model-value="currentBlockType()"
@@ -409,7 +409,7 @@ watch(
 
         <div
             v-else-if="hasContent"
-            class="rich-text-editor__html prose prose-sm max-w-none rounded-lg bg-muted"
+            class="rich-text-editor__html prose prose-sm max-w-none rounded-lg"
             v-html="readonlyHtml"
         />
     </div>
@@ -422,8 +422,11 @@ watch(
 }
 
 .rich-text-editor .tiptap {
-    min-height: 88px;
     padding-top: calc(var(--spacing) * 3);
+}
+
+.rich-text-editor__html {
+    overflow-wrap: anywhere;
 }
 
 .rich-text-editor .tiptap h1,
@@ -492,10 +495,6 @@ watch(
 
 .rich-text-editor .tiptap :last-child {
     margin-bottom: 0;
-}
-
-.rich-text-editor--readonly .rich-text-editor__html {
-    padding: 0.75rem 1rem;
 }
 
 .rich-text-editor__html > :first-child {

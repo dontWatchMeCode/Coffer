@@ -420,7 +420,7 @@ function deleteTask(): void {
                                 </div>
 
                                 <div class="grid gap-2">
-                                    <Label>Description</Label>
+                                    <Label class="mb-1">Description</Label>
                                     <input
                                         name="description"
                                         type="hidden"
@@ -525,18 +525,7 @@ function deleteTask(): void {
                                 :key="comment.id"
                                 class="rounded-xl border bg-background/70 p-4"
                             >
-                                <div class="flex items-start gap-3">
-                                    <Avatar class="h-9 w-9 shrink-0">
-                                        <AvatarFallback>
-                                            {{
-                                                getInitials(
-                                                    comment.userName ??
-                                                        undefined,
-                                                ) || '?'
-                                            }}
-                                        </AvatarFallback>
-                                    </Avatar>
-
+                                <div class="flex items-start">
                                     <div class="min-w-0 flex-1">
                                         <div
                                             class="flex flex-wrap items-center justify-between gap-2"
