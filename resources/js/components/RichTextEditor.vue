@@ -423,7 +423,7 @@ watch(
 
 .rich-text-editor .tiptap {
     min-height: 88px;
-    padding-top: 28px;
+    padding-top: calc(var(--spacing) * 3);
 }
 
 .rich-text-editor .tiptap h1,
