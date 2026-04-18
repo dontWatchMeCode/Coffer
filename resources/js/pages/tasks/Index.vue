@@ -20,13 +20,12 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
 import { index, show } from '@/routes/team/tasks/index';
-import type { TaskProject, TaskStats } from '@/types';
+import type { TaskProject, TaskStats, Team } from '@/types';
 
 type Props = {
     projects: TaskProject[];
@@ -52,11 +51,11 @@ const visibleProjects = computed(() =>
 );
 
 defineOptions({
-    layout: (props: { currentTeam?: { slug: string } | null }) => ({
+    layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {
                 title: 'Tasks',
-                href: index(props.currentTeam?.slug),
+                href: index(pageProps.currentTeam?.slug).url,
             },
         ],
     }),
@@ -96,71 +95,14 @@ function handleCreateProjectModal(value: boolean): void {
                     <Archive class="h-4 w-4" />
                 </Button>
 
-                <Dialog
-                    :open="createProjectOpen"
-                    @update:open="handleCreateProjectModal"
+                <Button
+                    size="icon"
+                    title="New project"
+                    class="cursor-pointer"
+                    @click="createProjectOpen = true"
                 >
-                    <DialogTrigger as-child>
-                        <Button
-                            size="icon"
-                            title="New project"
-                            class="cursor-pointer"
-                        >
-                            <FolderPlus class="h-4 w-4" />
-                        </Button>
-                    </DialogTrigger>
-
-                    <DialogContent>
-                        <Form
-                            :key="createProjectFormKey"
-                            v-bind="
-                                ProjectController.store.form(currentTeamSlug)
-                            "
-                            reset-on-success
-                            class="space-y-4"
-                            v-slot="{ errors, processing }"
-                            @success="handleCreateProjectModal(false)"
-                        >
-                            <DialogHeader>
-                                <DialogTitle>Create a project</DialogTitle>
-                                <DialogDescription>
-                                    Add a new project to this team workspace.
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            <div class="grid gap-2">
-                                <Label for="project-name">Name</Label>
-                                <Input
-                                    id="project-name"
-                                    name="name"
-                                    placeholder="Client portal"
-                                    required
-                                />
-                                <InputError :message="errors.name" />
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="project-description"
-                                    >Description</Label
-                                >
-                                <textarea
-                                    id="project-description"
-                                    name="description"
-                                    :class="taskInputLikeClass"
-                                    rows="4"
-                                    placeholder="What is this project for?"
-                                />
-                                <InputError :message="errors.description" />
-                            </div>
-
-                            <div class="flex justify-end">
-                                <Button type="submit" :disabled="processing">
-                                    Create project
-                                </Button>
-                            </div>
-                        </Form>
-                    </DialogContent>
-                </Dialog>
+                    <FolderPlus class="h-4 w-4" />
+                </Button>
             </template>
         </PageHeader>
 
@@ -168,65 +110,160 @@ function handleCreateProjectModal(value: boolean): void {
             <div
                 class="mx-auto grid max-w-7xl gap-4 md:grid-cols-2 xl:grid-cols-3"
             >
-                <Link
-                    v-for="project in visibleProjects"
-                    :key="project.id"
-                    :href="
-                        show({
-                            current_team: currentTeamSlug,
-                            project: project.id,
-                        })
-                    "
-                    class="block"
-                >
-                    <Card
-                        class="h-full transition-colors hover:border-primary hover:bg-accent/20"
+                <template v-if="visibleProjects.length > 0">
+                    <Link
+                        v-for="project in visibleProjects"
+                        :key="project.id"
+                        :href="
+                            show({
+                                current_team: currentTeamSlug,
+                                project: project.id,
+                            }).url
+                        "
+                        class="block"
                     >
-                        <CardHeader>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <CardTitle>{{ project.name }}</CardTitle>
-                                <Badge
-                                    variant="secondary"
-                                    :class="
-                                        project.isArchived ? '' : 'invisible'
-                                    "
+                        <Card
+                            class="h-full transition-colors hover:border-primary hover:bg-accent/20"
+                        >
+                            <CardHeader>
+                                <div
+                                    class="flex items-center justify-between gap-3"
                                 >
-                                    Archived
-                                </Badge>
-                            </div>
-                            <CardDescription>
-                                {{
-                                    project.description || 'No description yet.'
-                                }}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent class="space-y-3">
-                            <div
-                                class="flex items-center justify-between text-sm"
-                            >
-                                <span class="text-muted-foreground"
-                                    >Open tasks</span
+                                    <CardTitle>{{ project.name }}</CardTitle>
+                                    <Badge
+                                        variant="secondary"
+                                        :class="
+                                            project.isArchived
+                                                ? ''
+                                                : 'invisible'
+                                        "
+                                    >
+                                        Archived
+                                    </Badge>
+                                </div>
+                                <CardDescription>
+                                    {{
+                                        project.description ||
+                                        'No description yet.'
+                                    }}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent class="space-y-3">
+                                <div
+                                    class="flex items-center justify-between text-sm"
                                 >
-                                <span class="font-medium">{{
-                                    project.openTasksCount
-                                }}</span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between text-sm"
-                            >
-                                <span class="text-muted-foreground"
-                                    >Total tasks</span
+                                    <span class="text-muted-foreground"
+                                        >Open tasks</span
+                                    >
+                                    <span class="font-medium">{{
+                                        project.openTasksCount
+                                    }}</span>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between text-sm"
                                 >
-                                <span class="font-medium">{{
-                                    project.tasksCount
-                                }}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </Link>
+                                    <span class="text-muted-foreground"
+                                        >Total tasks</span
+                                    >
+                                    <span class="font-medium">{{
+                                        project.tasksCount
+                                    }}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                </template>
+
+                <Card
+                    v-else-if="projects.length === 0"
+                    class="flex h-full min-h-[180px] cursor-pointer items-center justify-center border-dashed transition-colors hover:border-primary hover:bg-accent/20"
+                    @click="createProjectOpen = true"
+                >
+                    <div class="text-center">
+                        <FolderPlus
+                            class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
+                        />
+                        <CardTitle class="text-base"
+                            >Create your first project</CardTitle
+                        >
+                        <CardDescription
+                            >Get started by creating a new project for your
+                            team.</CardDescription
+                        >
+                    </div>
+                </Card>
+
+                <Card
+                    v-else
+                    class="flex h-full min-h-[180px] cursor-pointer items-center justify-center border-dashed transition-colors hover:border-primary hover:bg-accent/20"
+                    @click="showArchived = !showArchived"
+                >
+                    <div class="text-center">
+                        <Archive
+                            class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
+                        />
+                        <CardTitle class="text-base"
+                            >All projects are archived</CardTitle
+                        >
+                        <CardDescription
+                            >Toggle the archive filter to view your existing
+                            projects.</CardDescription
+                        >
+                    </div>
+                </Card>
             </div>
         </div>
+
+        <Dialog
+            :open="createProjectOpen"
+            @update:open="handleCreateProjectModal"
+        >
+            <DialogContent>
+                <Form
+                    :key="createProjectFormKey"
+                    v-bind="ProjectController.store.form(currentTeamSlug)"
+                    reset-on-success
+                    class="space-y-4"
+                    v-slot="{ errors, processing }"
+                    @success="handleCreateProjectModal(false)"
+                >
+                    <DialogHeader>
+                        <DialogTitle>Create a project</DialogTitle>
+                        <DialogDescription>
+                            Add a new project to this team workspace.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div class="grid gap-2">
+                        <Label for="project-name">Name</Label>
+                        <Input
+                            id="project-name"
+                            name="name"
+                            placeholder="Client portal"
+                            required
+                        />
+                        <InputError :message="errors.name" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="project-description">Description</Label>
+                        <textarea
+                            id="project-description"
+                            name="description"
+                            :class="taskInputLikeClass"
+                            rows="4"
+                            placeholder="What is this project for?"
+                        />
+                        <InputError :message="errors.description" />
+                    </div>
+
+                    <div class="flex justify-end">
+                        <Button type="submit" :disabled="processing">
+                            Create project
+                        </Button>
+                    </div>
+                </Form>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

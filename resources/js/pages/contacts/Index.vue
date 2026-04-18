@@ -7,14 +7,28 @@ import CreateContactDialog from '@/components/contacts/CreateContactDialog.vue';
 import DeleteContactDialog from '@/components/contacts/DeleteContactDialog.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
-import { show as showContact } from '@/routes/team/contacts';
-import type { ContactEntry, ContactItem } from '@/types';
+import {
+    index as contactsIndex,
+    show as showContact,
+} from '@/routes/team/contacts';
+import type { ContactEntry, ContactItem, Team } from '@/types';
 
 type Props = {
     contacts: ContactItem[];
 };
 
 const props = defineProps<Props>();
+
+defineOptions({
+    layout: (pageProps: { currentTeam?: Team | null }) => ({
+        breadcrumbs: [
+            {
+                title: 'Contacts',
+                href: contactsIndex(pageProps.currentTeam?.slug).url,
+            },
+        ],
+    }),
+});
 
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
@@ -57,7 +71,7 @@ function navigateToContact(contact: ContactItem): void {
         showContact({
             current_team: currentTeamSlug.value,
             contact: contact.id,
-        }),
+        }).url,
     );
 }
 

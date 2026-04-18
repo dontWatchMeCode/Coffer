@@ -13,13 +13,25 @@ import CalendarGrid from '@/components/calendar/CalendarGrid.vue';
 import CalendarList from '@/components/calendar/CalendarList.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
-import type { CalendarEventItem } from '@/types';
+import { index as calendarIndex } from '@/routes/team/calendar';
+import type { CalendarEventItem, Team } from '@/types';
 
 type Props = {
     events: CalendarEventItem[];
 };
 
 const props = defineProps<Props>();
+
+defineOptions({
+    layout: (pageProps: { currentTeam?: Team | null }) => ({
+        breadcrumbs: [
+            {
+                title: 'Calendar',
+                href: calendarIndex(pageProps.currentTeam?.slug).url,
+            },
+        ],
+    }),
+});
 
 const now = new Date();
 const currentYear = ref(now.getFullYear());
