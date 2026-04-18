@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Http\Controllers\Contacts;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Contacts\DeleteContactRequest;
+use App\Http\Requests\Contacts\SaveContactRequest;
+use App\Models\Contact;
+use App\Models\Team;
+use Illuminate\Http\RedirectResponse;
+
+class ContactController extends Controller
+{
+    public function store(SaveContactRequest $request, Team $currentTeam): RedirectResponse
+    {
+        Contact::create([
+            ...$request->validated(),
+            'team_id' => $currentTeam->id,
+        ]);
+
+        return back();
+    }
+
+    public function update(SaveContactRequest $request, Team $currentTeam, int $contact): RedirectResponse
+    {
+        $contact = Contact::query()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($contact);
+
+        $contact->update($request->validated());
+
+        return back();
+    }
+
+    public function destroy(DeleteContactRequest $request, Team $currentTeam, int $contact): RedirectResponse
+    {
+        $contact = Contact::query()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($contact);
+
+        $contact->delete();
+
+        return back();
+    }
+}

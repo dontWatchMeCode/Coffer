@@ -1,5 +1,6 @@
 export * from './auth';
 export * from './calendar';
+export * from './contacts';
 export * from './navigation';
 export * from './tasks';
 export * from './teams';

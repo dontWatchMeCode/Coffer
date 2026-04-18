@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Calendar\CalendarEventController;
 use App\Http\Controllers\Calendar\CalendarPageController;
+use App\Http\Controllers\Contacts\ContactController;
+use App\Http\Controllers\Contacts\ContactPageController;
 use App\Http\Controllers\Tasks\ProjectController;
 use App\Http\Controllers\Tasks\TaskCommentController;
 use App\Http\Controllers\Tasks\TaskController;
@@ -32,6 +34,15 @@ Route::prefix('{current_team}')
         Route::delete('calendar/events/{event}', [CalendarEventController::class, 'destroy'])
             ->whereNumber('event')
             ->name('team.calendar.events.destroy');
+
+        Route::get('contacts', [ContactPageController::class, 'index'])->name('team.contacts.index');
+        Route::post('contacts', [ContactController::class, 'store'])->name('team.contacts.store');
+        Route::patch('contacts/{contact}', [ContactController::class, 'update'])
+            ->whereNumber('contact')
+            ->name('team.contacts.update');
+        Route::delete('contacts/{contact}', [ContactController::class, 'destroy'])
+            ->whereNumber('contact')
+            ->name('team.contacts.destroy');
 
         Route::get('tasks', [TaskPageController::class, 'index'])->name('team.tasks.index');
         Route::get('tasks/{project}', [TaskPageController::class, 'show'])

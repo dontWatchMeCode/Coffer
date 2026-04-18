@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     BookOpen,
     CalendarDays,
+    Contact,
     FolderGit2,
     LayoutGrid,
     ListTodo,
@@ -25,6 +26,7 @@ import {
 import { dashboard } from '@/routes';
 import { dashboard as teamDashboard } from '@/routes/team';
 import { index as teamCalendar } from '@/routes/team/calendar/index';
+import { index as teamContacts } from '@/routes/team/contacts/index';
 import { index as teamTasks } from '@/routes/team/tasks/index';
 import type { NavItem } from '@/types';
 
@@ -53,6 +55,11 @@ const mainNavItems = computed<NavItem[]>(() => [
                   title: 'Calendar',
                   href: teamCalendar(page.props.currentTeam.slug).url,
                   icon: CalendarDays,
+              },
+              {
+                  title: 'Contacts',
+                  href: teamContacts(page.props.currentTeam.slug).url,
+                  icon: Contact,
               },
           ]
         : []),

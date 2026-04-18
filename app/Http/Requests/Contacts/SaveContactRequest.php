@@ -1,0 +1,61 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Contacts;
+
+use App\Http\Requests\Tasks\AuthorizesTeamResource;
+use App\Models\Contact;
+use App\Models\Team;
+use Illuminate\Foundation\Http\FormRequest;
+
+class SaveContactRequest extends FormRequest
+{
+    use AuthorizesTeamResource;
+
+    public function authorize(): bool
+    {
+        if (! $this->isTeamMember()) {
+            return false;
+        }
+
+        if (! $this->isMethod('patch')) {
+            return true;
+        }
+
+        $contactId = $this->route('contact');
+        $team = $this->currentTeam();
+
+        return filled($contactId) && $team instanceof Team && Contact::query()
+            ->whereBelongsTo($team)
+            ->whereKey($contactId)
+            ->exists();
+    }
+
+    public function rules(): array
+    {
+        $sometimes = $this->isMethod('patch');
+
+        return [
+            'name' => $sometimes
+                ? ['sometimes', 'required', 'string', 'max:255']
+                : ['required', 'string', 'max:255'],
+            'phone_numbers' => $sometimes
+                ? ['sometimes', 'nullable', 'array', 'max:20']
+                : ['nullable', 'array', 'max:20'],
+            'phone_numbers.*.label' => ['nullable', 'string', 'max:100'],
+            'phone_numbers.*.value' => ['nullable', 'string', 'max:255'],
+            'email_addresses' => $sometimes
+                ? ['sometimes', 'nullable', 'array', 'max:20']
+                : ['nullable', 'array', 'max:20'],
+            'email_addresses.*.label' => ['nullable', 'string', 'max:100'],
+            'email_addresses.*.value' => ['nullable', 'email', 'max:255'],
+            'address' => $sometimes
+                ? ['sometimes', 'nullable', 'string']
+                : ['nullable', 'string'],
+            'additional_info' => $sometimes
+                ? ['sometimes', 'nullable', 'string']
+                : ['nullable', 'string'],
+        ];
+    }
+}
