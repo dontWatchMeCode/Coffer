@@ -13,12 +13,15 @@ class ContactController extends Controller
 {
     public function store(SaveContactRequest $request, Team $currentTeam): RedirectResponse
     {
-        Contact::create([
+        $contact = Contact::create([
             ...$request->validated(),
             'team_id' => $currentTeam->id,
         ]);
 
-        return back();
+        return to_route('team.contacts.show', [
+            'current_team' => $currentTeam,
+            'contact' => $contact->id,
+        ]);
     }
 
     public function update(SaveContactRequest $request, Team $currentTeam, int $contact): RedirectResponse
@@ -29,7 +32,10 @@ class ContactController extends Controller
 
         $contact->update($request->validated());
 
-        return back();
+        return to_route('team.contacts.show', [
+            'current_team' => $currentTeam,
+            'contact' => $contact->id,
+        ]);
     }
 
     public function destroy(DeleteContactRequest $request, Team $currentTeam, int $contact): RedirectResponse
@@ -40,6 +46,8 @@ class ContactController extends Controller
 
         $contact->delete();
 
-        return back();
+        return to_route('team.contacts.index', [
+            'current_team' => $currentTeam,
+        ]);
     }
 }

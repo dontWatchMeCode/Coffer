@@ -88,7 +88,7 @@ test('a contact can be created with multiple phones and emails', function () {
             'address' => '123 Main St',
             'additional_info' => 'Software Engineer',
         ])
-        ->assertRedirect();
+        ->assertRedirect(route('team.contacts.show', ['current_team' => $team, 'contact' => 1]));
 
     $contact = Contact::where('team_id', $team->id)->first();
 
@@ -171,7 +171,7 @@ test('a contact can be updated with new phones and emails', function () {
                 'email_addresses' => $newEmails,
             ],
         )
-        ->assertRedirect();
+        ->assertRedirect(route('team.contacts.show', ['current_team' => $team, 'contact' => $contact->id]));
 
     $contact = $contact->fresh();
 
@@ -193,7 +193,7 @@ test('a contact can be deleted', function () {
         ->delete(
             route('team.contacts.destroy', ['current_team' => $team, 'contact' => $contact]),
         )
-        ->assertRedirect();
+        ->assertRedirect(route('team.contacts.index', ['current_team' => $team]));
 
     expect($contact->fresh())->toBeNull();
 });
@@ -302,4 +302,69 @@ test('all fields can be nullable except name', function () {
     expect($contact->email_addresses)->toBeNull();
     expect($contact->address)->toBeNull();
     expect($contact->additional_info)->toBeNull();
+});
+
+test('contact show page can be rendered', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $contact = Contact::factory()->create([
+        'team_id' => $team->id,
+        'name' => 'Jane Doe',
+    ]);
+
+    actingAs($user)
+        ->get(route('team.contacts.show', ['current_team' => $team, 'contact' => $contact]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('contacts/Show')
+            ->has('contact')
+            ->where('contact.id', $contact->id)
+            ->where('contact.name', 'Jane Doe'),
+        );
+});
+
+test('guests cannot access contact show page', function () {
+    $team = Team::factory()->create();
+
+    $this
+        ->get(route('team.contacts.show', ['current_team' => $team, 'contact' => 1]))
+        ->assertRedirect(route('login'));
+});
+
+test('non-members cannot access contact show page', function () {
+    $user = User::factory()->create();
+    $otherTeam = Team::factory()->create();
+
+    actingAs($user)
+        ->get(route('team.contacts.show', ['current_team' => $otherTeam, 'contact' => 1]))
+        ->assertForbidden();
+});
+
+test('creating a contact redirects to show page', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    actingAs($user)
+        ->post(route('team.contacts.store', ['current_team' => $team]), [
+            'name' => 'Redirect Test',
+        ])
+        ->assertRedirect(route('team.contacts.show', [
+            'current_team' => $team,
+            'contact' => Contact::whereName('Redirect Test')->first()->id,
+        ]));
+});
+
+test('deleting a contact redirects to index page', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $contact = Contact::factory()->create([
+        'team_id' => $team->id,
+        'name' => 'Will Be Deleted',
+    ]);
+
+    actingAs($user)
+        ->delete(route('team.contacts.destroy', ['current_team' => $team, 'contact' => $contact]))
+        ->assertRedirect(route('team.contacts.index', ['current_team' => $team]));
 });

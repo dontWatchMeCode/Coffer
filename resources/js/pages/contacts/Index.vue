@@ -33,9 +33,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
 import {
-    destroy as deleteContact,
     store as storeContact,
-    update as updateContact,
+    show as showContact,
+    destroy as deleteContact,
 } from '@/routes/team/contacts';
 import type { ContactEntry, ContactItem } from '@/types';
 
@@ -146,77 +146,12 @@ function removeCreateEmail(index: number): void {
     createEmails.value.splice(index, 1);
 }
 
-const editContact = ref<ContactItem | null>(null);
-const editName = ref('');
-const editPhones = ref<ContactEntry[]>([]);
-const editEmails = ref<ContactEntry[]>([]);
-const editAddress = ref('');
-const editAdditionalInfo = ref('');
-const editDialogOpen = computed({
-    get: () => editContact.value !== null,
-    set: (value: boolean) => {
-        if (!value) {
-            editContact.value = null;
-        }
-    },
-});
-
-function openEditDialog(contact: ContactItem): void {
-    editContact.value = contact;
-    editName.value = contact.name;
-    editPhones.value = contact.phoneNumbers?.length
-        ? [...contact.phoneNumbers.map((e) => ({ ...e }))]
-        : [emptyEntry()];
-    editEmails.value = contact.emailAddresses?.length
-        ? [...contact.emailAddresses.map((e) => ({ ...e }))]
-        : [emptyEntry()];
-    editAddress.value = contact.address ?? '';
-    editAdditionalInfo.value = contact.additionalInfo ?? '';
-}
-
-function addEditPhone(): void {
-    editPhones.value.push(emptyEntry());
-}
-
-function removeEditPhone(index: number): void {
-    editPhones.value.splice(index, 1);
-}
-
-function addEditEmail(): void {
-    editEmails.value.push(emptyEntry());
-}
-
-function removeEditEmail(index: number): void {
-    editEmails.value.splice(index, 1);
-}
-
-function submitEdit(): void {
-    if (!editContact.value) {
-        return;
-    }
-
-    router.patch(
-        updateContact({
+function navigateToContact(contact: ContactItem): void {
+    router.visit(
+        showContact({
             current_team: currentTeamSlug.value,
-            contact: editContact.value.id,
-        }).url,
-        {
-            name: editName.value,
-            phone_numbers: editPhones.value
-                .filter((e) => e.value.trim() !== '')
-                .map((e) => ({ label: e.label, value: e.value })),
-            email_addresses: editEmails.value
-                .filter((e) => e.value.trim() !== '')
-                .map((e) => ({ label: e.label, value: e.value })),
-            address: editAddress.value,
-            additional_info: editAdditionalInfo.value,
-        },
-        {
-            preserveScroll: true,
-            onSuccess: () => {
-                editContact.value = null;
-            },
-        },
+            contact: contact.id,
+        }),
     );
 }
 
@@ -225,7 +160,6 @@ const deletingContact = ref<ContactItem | null>(null);
 
 function openDeleteDialog(contact: ContactItem): void {
     deletingContact.value = contact;
-    editContact.value = null;
     deleteDialogOpen.value = true;
 }
 
@@ -437,9 +371,9 @@ function contactSecondaryInfo(contact: ContactItem): string[] {
                         </div>
 
                         <div class="grid gap-2">
-                            <Label for="create-contact-additional-info"
-                                >Additional Info</Label
-                            >
+                            <Label for="create-contact-additional-info">
+                                Additional Info
+                            </Label>
                             <textarea
                                 id="create-contact-additional-info"
                                 v-model="createAdditionalInfo"
@@ -480,7 +414,7 @@ function contactSecondaryInfo(contact: ContactItem): string[] {
                     v-for="contact in filteredContacts"
                     :key="contact.id"
                     class="flex cursor-pointer items-start gap-4 p-4 transition-colors hover:bg-accent/50"
-                    @click="openEditDialog(contact)"
+                    @click="navigateToContact(contact)"
                 >
                     <div
                         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
@@ -545,7 +479,9 @@ function contactSecondaryInfo(contact: ContactItem): string[] {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem @click="openEditDialog(contact)">
+                            <DropdownMenuItem
+                                @click="navigateToContact(contact)"
+                            >
                                 <Pencil class="mr-2 h-4 w-4" />
                                 Edit
                             </DropdownMenuItem>
@@ -618,141 +554,6 @@ function contactSecondaryInfo(contact: ContactItem): string[] {
                     Delete
                 </Button>
             </div>
-        </DialogContent>
-    </Dialog>
-
-    <Dialog v-model:open="editDialogOpen">
-        <DialogContent v-if="editContact" class="max-h-[85vh] overflow-y-auto">
-            <form class="space-y-4" @submit.prevent="submitEdit">
-                <DialogHeader>
-                    <DialogTitle>Edit Contact</DialogTitle>
-                    <DialogDescription>
-                        Update the contact details.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="grid gap-2">
-                    <Label for="edit-contact-name">Name</Label>
-                    <Input id="edit-contact-name" v-model="editName" required />
-                    <InputError :message="errors.name" />
-                </div>
-
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <Label>Phone Numbers</Label>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            class="h-6 cursor-pointer text-xs"
-                            @click="addEditPhone"
-                        >
-                            <Plus class="mr-1 h-3 w-3" />
-                            Add
-                        </Button>
-                    </div>
-                    <div class="space-y-2">
-                        <div
-                            v-for="(phone, idx) in editPhones"
-                            :key="idx"
-                            class="flex items-center gap-2"
-                        >
-                            <Input
-                                v-model="phone.label"
-                                placeholder="Label"
-                                class="w-28 shrink-0"
-                            />
-                            <Input v-model="phone.value" type="tel" />
-                            <Button
-                                v-if="editPhones.length > 1"
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                                @click="removeEditPhone(idx)"
-                            >
-                                <X class="h-3.5 w-3.5" />
-                            </Button>
-                        </div>
-                    </div>
-                    <InputError :message="errors['phone_numbers.0.value']" />
-                </div>
-
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <Label>Email Addresses</Label>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            class="h-6 cursor-pointer text-xs"
-                            @click="addEditEmail"
-                        >
-                            <Plus class="mr-1 h-3 w-3" />
-                            Add
-                        </Button>
-                    </div>
-                    <div class="space-y-2">
-                        <div
-                            v-for="(email, idx) in editEmails"
-                            :key="idx"
-                            class="flex items-center gap-2"
-                        >
-                            <Input
-                                v-model="email.label"
-                                placeholder="Label"
-                                class="w-28 shrink-0"
-                            />
-                            <Input v-model="email.value" type="email" />
-                            <Button
-                                v-if="editEmails.length > 1"
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                                @click="removeEditEmail(idx)"
-                            >
-                                <X class="h-3.5 w-3.5" />
-                            </Button>
-                        </div>
-                    </div>
-                    <InputError :message="errors['email_addresses.0.value']" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="edit-contact-address">Address</Label>
-                    <Input id="edit-contact-address" v-model="editAddress" />
-                    <InputError :message="errors.address" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="edit-contact-additional-info"
-                        >Additional Info</Label
-                    >
-                    <textarea
-                        id="edit-contact-additional-info"
-                        v-model="editAdditionalInfo"
-                        :class="taskInputLikeClass"
-                        rows="3"
-                    />
-                    <InputError :message="errors.additional_info" />
-                </div>
-
-                <div class="flex items-center justify-between">
-                    <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        class="cursor-pointer"
-                        @click="openDeleteDialog(editContact)"
-                    >
-                        <Trash2 class="mr-1.5 h-3.5 w-3.5" />
-                        Delete
-                    </Button>
-
-                    <Button type="submit"> Save changes </Button>
-                </div>
-            </form>
         </DialogContent>
     </Dialog>
 </template>

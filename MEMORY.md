@@ -137,3 +137,39 @@
 
 1. Added `hideIcon` to `reactiveOmit` in SelectTrigger.vue to prevent leaking non-standard HTML attribute to DOM.
 2. Added Space key support (`@keydown.enter.space.prevent`) to div[role="link"] in Show.vue task list for keyboard accessibility.
+
+### Session: Calendar & Contacts Features (Apr 2026)
+
+1. **Wayfinder `applyUrlDefaults` is dead code** — `setUrlDefaults()` is never called in this project, so `$currentTeam` placeholder in generated route functions does not auto-fill.
+    - Fix: always pass `currentTeamSlug` explicitly in every route call (e.g. `storeContact.form(currentTeamSlug)`).
+
+2. **shadcn Dialog uses portals** — DOM order doesn't control z-index between stacked dialogs.
+    - Fix: close the background dialog before opening the foreground one (e.g. close edit dialog before opening delete dialog).
+
+3. **SQLite doesn't auto-index FK columns** — `foreignId()->constrained()` creates an implicit index on MySQL/PostgreSQL but not SQLite.
+    - Fix: add explicit `$table->index('team_id')` for SQLite STRICT branch; Blueprint branch doesn't need it.
+
+4. **SQLite stores dates as datetime strings** (`"2026-04-20 00:00:00"`).
+    - Fix: `assertDatabaseHas` date comparisons need to account for this format.
+
+5. **Team model uses `SoftDeletes`** — cascade delete tests must use `forceDelete()` not `delete()`.
+
+6. **Laravel validation rules cannot be concatenated as strings** — `"sometimes|required"` is treated as a single rule name, not two rules.
+    - Fix: use array format: `['sometimes', 'required', 'string']`.
+
+7. **Vue `useForm` vs `<Form>` component for dynamic arrays** — `<Form>` with `name` attributes works for simple fields but not for dynamic array fields (phone_numbers, email_addresses) managed via `v-model`.
+    - Fix: use `router.post()`/`router.patch()` directly with reactive refs, display errors from `usePage().props.errors`.
+
+8. **Vue `v-for` keys with duplicate values** — using raw string values as `:key` breaks DOM reconciliation when values repeat across different arrays (emails + phones).
+    - Fix: use index as key when the source data may have duplicates: `:key="idx"`.
+
+9. **`php artisan route:list` fails with ReflectionException** if a controller referenced in routes can't be autoloaded.
+    - Fix: always verify `use` statements are present in `routes/web.php` before running route commands.
+
+10. **JSON columns for multi-value fields** — use `phone_numbers`/`email_addresses` as JSON arrays of `{label, value}` objects rather than separate tables.
+    - Pattern: validate with `array|max:20` on parent, per-entry `label` (max:100, nullable) and `value` (email/string, nullable).
+    - Pattern: use `protected function casts(): array` with `'phone_numbers' => 'array'`.
+    - Pattern: filter empty entries on the frontend before sending to backend.
+
+11. **Migration altering columns in SQLite** — SQLite doesn't support `MODIFY COLUMN` or `DROP COLUMN`.
+    - Fix: recreate the table under a new name, copy data with SQL expressions (e.g. `json_extract`), drop old table, rename new one.

@@ -36,6 +36,9 @@ Route::prefix('{current_team}')
             ->name('team.calendar.events.destroy');
 
         Route::get('contacts', [ContactPageController::class, 'index'])->name('team.contacts.index');
+        Route::get('contacts/{contact}', [ContactPageController::class, 'show'])
+            ->whereNumber('contact')
+            ->name('team.contacts.show');
         Route::post('contacts', [ContactController::class, 'store'])->name('team.contacts.store');
         Route::patch('contacts/{contact}', [ContactController::class, 'update'])
             ->whereNumber('contact')
