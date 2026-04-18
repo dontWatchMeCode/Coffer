@@ -3,21 +3,16 @@ import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { MapPin, MessageSquare, Phone, Plus, Trash2, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import ContactAvatar from '@/components/contacts/ContactAvatar.vue';
+import DeleteContactDialog from '@/components/contacts/DeleteContactDialog.vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { emptyEntry } from '@/lib/contacts';
 import { taskInputLikeClass } from '@/lib/tasks';
 import {
-    destroy as deleteContact,
     index as contactsIndex,
     update as updateContact,
 } from '@/routes/team/contacts';
@@ -32,8 +27,6 @@ const props = defineProps<Props>();
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
-
-const emptyEntry = (): ContactEntry => ({ label: '', value: '' });
 
 const editName = ref(props.contact.name);
 const editPhones = ref<ContactEntry[]>(
@@ -88,48 +81,9 @@ function submitEdit(): void {
     );
 }
 
-const deleteDialogOpen = ref(false);
-
-function confirmDelete(): void {
-    deleteDialogOpen.value = false;
-
-    router.delete(
-        deleteContact({
-            current_team: currentTeamSlug.value,
-            contact: props.contact.id,
-        }),
-    );
-}
-
-const contactInitials = (name: string): string => {
-    return name
-        .split(' ')
-        .map((w) => w[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase();
-};
-
-const avatarColors = [
-    'bg-blue-500',
-    'bg-green-500',
-    'bg-purple-500',
-    'bg-orange-500',
-    'bg-pink-500',
-    'bg-teal-500',
-    'bg-indigo-500',
-    'bg-rose-500',
-];
-
-function avatarColor(name: string): string {
-    let hash = 0;
-
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-
-    return avatarColors[Math.abs(hash) % avatarColors.length];
-}
+const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
+    null,
+);
 
 const allEntries = computed(() => {
     const entries: ContactEntry[] = [];
@@ -168,7 +122,7 @@ const allEntries = computed(() => {
                 variant="destructive"
                 size="sm"
                 class="cursor-pointer"
-                @click="deleteDialogOpen = true"
+                @click="deleteDialogRef?.openDeleteDialog(contact)"
             >
                 <Trash2 class="mr-1.5 h-4 w-4" />
                 Delete
@@ -179,12 +133,7 @@ const allEntries = computed(() => {
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-3xl space-y-8">
             <div class="flex items-start gap-4">
-                <div
-                    class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-xl font-bold text-white"
-                    :class="avatarColor(contact.name ?? '')"
-                >
-                    {{ contactInitials(contact.name ?? '?') }}
-                </div>
+                <ContactAvatar :name="contact.name ?? ''" size="lg" />
 
                 <div class="min-w-0 flex-1 space-y-1">
                     <h2 class="text-lg font-semibold">{{ contact.name }}</h2>
@@ -372,36 +321,5 @@ const allEntries = computed(() => {
         </div>
     </div>
 
-    <Dialog v-model:open="deleteDialogOpen">
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Delete Contact</DialogTitle>
-                <DialogDescription>
-                    Are you sure you want to delete
-                    <span class="font-semibold text-foreground">{{
-                        contact.name
-                    }}</span
-                    >? This action cannot be undone.
-                </DialogDescription>
-            </DialogHeader>
-
-            <div class="flex justify-end gap-2 pt-2">
-                <Button
-                    variant="outline"
-                    class="cursor-pointer"
-                    @click="deleteDialogOpen = false"
-                >
-                    Cancel
-                </Button>
-                <Button
-                    variant="destructive"
-                    class="cursor-pointer"
-                    @click="confirmDelete"
-                >
-                    <Trash2 class="mr-1.5 h-3.5 w-3.5" />
-                    Delete
-                </Button>
-            </div>
-        </DialogContent>
-    </Dialog>
+    <DeleteContactDialog ref="deleteDialogRef" />
 </template>

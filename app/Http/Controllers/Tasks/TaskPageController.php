@@ -149,6 +149,7 @@ class TaskPageController extends Controller
     protected function taskPayload(Task $task, array $extra = []): array
     {
         $completedAt = $task->getAttribute('completed_at');
+        $dueAt = $task->getAttribute('due_at');
 
         return [
             'id' => $task->id,
@@ -166,7 +167,9 @@ class TaskPageController extends Controller
             'completedAt' => $completedAt instanceof DateTimeInterface
                 ? $completedAt->format(DateTimeInterface::ATOM)
                 : null,
-            'dueAt' => $task->due_at?->format(DateTimeInterface::ATOM),
+            'dueAt' => $dueAt instanceof DateTimeInterface
+                ? $dueAt->format(DateTimeInterface::ATOM)
+                : null,
             ...$extra,
         ];
     }

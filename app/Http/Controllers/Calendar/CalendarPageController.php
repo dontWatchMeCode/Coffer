@@ -20,14 +20,26 @@ class CalendarPageController extends Controller
             ->get();
 
         return Inertia::render('calendar/Index', [
-            'events' => $events->map(fn (CalendarEvent $event): array => [
-                'id' => $event->id,
-                'title' => $event->title,
-                'description' => $event->description,
-                'date' => $event->date?->format('Y-m-d'),
-                'createdAt' => $event->created_at?->format(\DateTimeInterface::ATOM),
-                'updatedAt' => $event->updated_at?->format(\DateTimeInterface::ATOM),
-            ])->values()->all(),
+            'events' => $events->map(function (CalendarEvent $event): array {
+                $date = $event->getAttribute('date');
+                $createdAt = $event->getAttribute('created_at');
+                $updatedAt = $event->getAttribute('updated_at');
+
+                return [
+                    'id' => $event->id,
+                    'title' => $event->title,
+                    'description' => $event->description,
+                    'date' => $date instanceof \DateTimeInterface
+                        ? $date->format('Y-m-d')
+                        : null,
+                    'createdAt' => $createdAt instanceof \DateTimeInterface
+                        ? $createdAt->format(\DateTimeInterface::ATOM)
+                        : null,
+                    'updatedAt' => $updatedAt instanceof \DateTimeInterface
+                        ? $updatedAt->format(\DateTimeInterface::ATOM)
+                        : null,
+                ];
+            })->values()->all(),
         ]);
     }
 }
