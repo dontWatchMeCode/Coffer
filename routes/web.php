@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Calendar\CalendarEventController;
+use App\Http\Controllers\Calendar\CalendarPageController;
 use App\Http\Controllers\Tasks\ProjectController;
 use App\Http\Controllers\Tasks\TaskCommentController;
 use App\Http\Controllers\Tasks\TaskController;
@@ -21,6 +23,15 @@ Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
     ->group(function () {
         Route::inertia('dashboard', 'Dashboard')->name('team.dashboard');
+
+        Route::get('calendar', [CalendarPageController::class, 'index'])->name('team.calendar.index');
+        Route::post('calendar/events', [CalendarEventController::class, 'store'])->name('team.calendar.events.store');
+        Route::patch('calendar/events/{event}', [CalendarEventController::class, 'update'])
+            ->whereNumber('event')
+            ->name('team.calendar.events.update');
+        Route::delete('calendar/events/{event}', [CalendarEventController::class, 'destroy'])
+            ->whereNumber('event')
+            ->name('team.calendar.events.destroy');
 
         Route::get('tasks', [TaskPageController::class, 'index'])->name('team.tasks.index');
         Route::get('tasks/{project}', [TaskPageController::class, 'show'])

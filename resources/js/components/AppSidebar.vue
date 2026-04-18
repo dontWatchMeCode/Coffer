@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid, ListTodo } from 'lucide-vue-next';
+import {
+    BookOpen,
+    CalendarDays,
+    FolderGit2,
+    LayoutGrid,
+    ListTodo,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -18,6 +24,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { dashboard as teamDashboard } from '@/routes/team';
+import { index as teamCalendar } from '@/routes/team/calendar/index';
 import { index as teamTasks } from '@/routes/team/tasks/index';
 import type { NavItem } from '@/types';
 
@@ -39,8 +46,13 @@ const mainNavItems = computed<NavItem[]>(() => [
         ? [
               {
                   title: 'Tasks',
-                  href: teamTasks(page.props.currentTeam.slug),
+                  href: teamTasks(page.props.currentTeam.slug).url,
                   icon: ListTodo,
+              },
+              {
+                  title: 'Calendar',
+                  href: teamCalendar(page.props.currentTeam.slug).url,
+                  icon: CalendarDays,
               },
           ]
         : []),
