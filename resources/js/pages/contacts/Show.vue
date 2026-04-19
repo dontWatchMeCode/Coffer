@@ -76,7 +76,9 @@ function submitEdit(): void {
             additional_info: editAdditionalInfo.value,
         },
         {
-            preserveScroll: true,
+            onSuccess: () => {
+                router.visit(contactsIndex(currentTeamSlug.value).url);
+            },
         },
     );
 }

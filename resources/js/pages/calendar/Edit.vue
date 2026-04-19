@@ -78,7 +78,19 @@ function confirmDelete(): void {
             :title="event.title"
             :back-href="calendarIndex(currentTeamSlug).url"
             back-label="Back to calendar"
-        />
+        >
+            <template #actions>
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    class="cursor-pointer"
+                    @click="deleteDialogOpen = true"
+                >
+                    <Trash2 class="mr-1.5 h-4 w-4" />
+                    Delete
+                </Button>
+            </template>
+        </PageHeader>
 
         <div class="flex-1 px-4 py-6">
             <div class="mx-auto max-w-2xl">
@@ -128,17 +140,7 @@ function confirmDelete(): void {
                         <InputError :message="errors.date" />
                     </div>
 
-                    <div class="flex items-center justify-between pt-2">
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            class="cursor-pointer"
-                            @click="deleteDialogOpen = true"
-                        >
-                            <Trash2 class="mr-1.5 h-3.5 w-3.5" />
-                            Delete
-                        </Button>
-
+                    <div class="flex justify-end pt-2">
                         <Button type="submit" :disabled="processing">
                             Save changes
                         </Button>
