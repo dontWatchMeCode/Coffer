@@ -193,24 +193,43 @@ function handleCreateProjectModal(value: boolean): void {
                     </div>
                 </Card>
 
-                <Card
-                    v-else
-                    class="flex h-full min-h-[180px] cursor-pointer items-center justify-center border-dashed transition-colors hover:border-primary hover:bg-accent/20"
-                    @click="showArchived = !showArchived"
-                >
-                    <div class="text-center">
-                        <Archive
-                            class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
-                        />
-                        <CardTitle class="text-base"
-                            >All projects are archived</CardTitle
-                        >
-                        <CardDescription
-                            >Toggle the archive filter to view your existing
-                            projects.</CardDescription
-                        >
-                    </div>
-                </Card>
+                <template v-else>
+                    <Card
+                        class="flex h-full min-h-[180px] cursor-pointer items-center justify-center border-dashed transition-colors hover:border-primary hover:bg-accent/20"
+                        @click="showArchived = !showArchived"
+                    >
+                        <div class="text-center">
+                            <Archive
+                                class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
+                            />
+                            <CardTitle class="text-base"
+                                >All projects are archived</CardTitle
+                            >
+                            <CardDescription
+                                >Toggle the archive filter to view your existing
+                                projects.</CardDescription
+                            >
+                        </div>
+                    </Card>
+
+                    <Card
+                        class="flex h-full min-h-[180px] cursor-pointer items-center justify-center border-dashed transition-colors hover:border-primary hover:bg-accent/20"
+                        @click="createProjectOpen = true"
+                    >
+                        <div class="text-center">
+                            <FolderPlus
+                                class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
+                            />
+                            <CardTitle class="text-base"
+                                >Create a new project</CardTitle
+                            >
+                            <CardDescription
+                                >Add a new project to your team
+                                workspace.</CardDescription
+                            >
+                        </div>
+                    </Card>
+                </template>
             </div>
         </div>
 

@@ -42,4 +42,24 @@ class CalendarPageController extends Controller
             })->values()->all(),
         ]);
     }
+
+    public function edit(Request $request, Team $currentTeam, int $event): Response
+    {
+        $event = CalendarEvent::query()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($event);
+
+        $date = $event->getAttribute('date');
+
+        return Inertia::render('calendar/Edit', [
+            'event' => [
+                'id' => $event->id,
+                'title' => $event->title,
+                'description' => $event->description,
+                'date' => $date instanceof \DateTimeInterface
+                    ? $date->format('Y-m-d')
+                    : null,
+            ],
+        ]);
+    }
 }

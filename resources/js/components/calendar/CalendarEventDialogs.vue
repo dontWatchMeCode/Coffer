@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Form, router, usePage } from '@inertiajs/vue3';
-import { Trash2 } from 'lucide-vue-next';
+import { Form, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import CalendarEventController from '@/actions/App/Http/Controllers/Calendar/CalendarEventController';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,12 +14,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
-import {
-    destroy as deleteCalendarEvent,
-    store as storeCalendarEvent,
-    update as updateCalendarEvent,
-} from '@/routes/team/calendar/events';
-import type { CalendarEventItem } from '@/types';
 
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
@@ -42,55 +36,6 @@ function handleCreateClose(value: boolean): void {
     }
 }
 
-const editEvent = ref<CalendarEventItem | null>(null);
-const editFormKey = ref(0);
-const editDialogOpen = computed({
-    get: () => editEvent.value !== null,
-    set: (value: boolean) => {
-        if (!value) {
-            editEvent.value = null;
-            editFormKey.value++;
-        }
-    },
-});
-
-function openEditDialog(event: CalendarEventItem): void {
-    editEvent.value = event;
-    editFormKey.value++;
-}
-
-const deleteDialogOpen = ref(false);
-const deletingEvent = ref<CalendarEventItem | null>(null);
-
-function openDeleteDialog(event: CalendarEventItem): void {
-    deletingEvent.value = event;
-    editEvent.value = null;
-    deleteDialogOpen.value = true;
-}
-
-function confirmDelete(): void {
-    if (!deletingEvent.value) {
-        return;
-    }
-
-    const event = deletingEvent.value;
-    deleteDialogOpen.value = false;
-    deletingEvent.value = null;
-
-    router.delete(
-        deleteCalendarEvent({
-            current_team: currentTeamSlug.value,
-            event: event.id,
-        }),
-        {
-            preserveScroll: true,
-            onSuccess: () => {
-                editEvent.value = null;
-            },
-        },
-    );
-}
-
 function openCreateDialogNoDate(): void {
     createDate.value = '';
     createFormKey.value++;
@@ -100,8 +45,6 @@ function openCreateDialogNoDate(): void {
 defineExpose({
     openCreateDialog,
     openCreateDialogNoDate,
-    openEditDialog,
-    openDeleteDialog,
     createDialogOpen,
     handleCreateClose,
 });
@@ -112,7 +55,7 @@ defineExpose({
         <DialogContent>
             <Form
                 :key="createFormKey"
-                v-bind="storeCalendarEvent.form(currentTeamSlug)"
+                v-bind="CalendarEventController.store.form(currentTeamSlug)"
                 reset-on-success
                 class="space-y-4"
                 v-slot="{ errors, processing }"
@@ -163,115 +106,6 @@ defineExpose({
                 <div class="flex justify-end">
                     <Button type="submit" :disabled="processing">
                         Create event
-                    </Button>
-                </div>
-            </Form>
-        </DialogContent>
-    </Dialog>
-
-    <Dialog v-model:open="deleteDialogOpen">
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Delete event</DialogTitle>
-                <DialogDescription>
-                    Are you sure you want to delete
-                    <span class="font-semibold text-foreground">{{
-                        deletingEvent?.title
-                    }}</span
-                    >? This action cannot be undone.
-                </DialogDescription>
-            </DialogHeader>
-
-            <div class="flex justify-end gap-2 pt-2">
-                <Button
-                    variant="outline"
-                    class="cursor-pointer"
-                    @click="deleteDialogOpen = false"
-                >
-                    Cancel
-                </Button>
-                <Button
-                    variant="destructive"
-                    class="cursor-pointer"
-                    @click="confirmDelete"
-                >
-                    <Trash2 class="mr-1.5 h-3.5 w-3.5" />
-                    Delete
-                </Button>
-            </div>
-        </DialogContent>
-    </Dialog>
-
-    <Dialog v-model:open="editDialogOpen">
-        <DialogContent v-if="editEvent">
-            <Form
-                :key="editFormKey"
-                v-bind="
-                    updateCalendarEvent.form({
-                        current_team: currentTeamSlug,
-                        event: editEvent.id,
-                    })
-                "
-                class="space-y-4"
-                v-slot="{ errors, processing }"
-                @success="editEvent = null"
-            >
-                <DialogHeader>
-                    <DialogTitle>Edit event</DialogTitle>
-                    <DialogDescription>
-                        Update the event details.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="grid gap-2">
-                    <Label for="edit-event-title">Title</Label>
-                    <Input
-                        id="edit-event-title"
-                        name="title"
-                        :default-value="editEvent.title"
-                        required
-                    />
-                    <InputError :message="errors.title" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="edit-event-description">Description</Label>
-                    <textarea
-                        id="edit-event-description"
-                        name="description"
-                        :class="taskInputLikeClass"
-                        rows="3"
-                        :default-value="editEvent.description ?? ''"
-                    />
-                    <InputError :message="errors.description" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="edit-event-date">Date</Label>
-                    <Input
-                        id="edit-event-date"
-                        name="date"
-                        type="date"
-                        :default-value="editEvent.date ?? ''"
-                        required
-                    />
-                    <InputError :message="errors.date" />
-                </div>
-
-                <div class="flex items-center justify-between">
-                    <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        class="cursor-pointer"
-                        @click="openDeleteDialog(editEvent)"
-                    >
-                        <Trash2 class="mr-1.5 h-3.5 w-3.5" />
-                        Delete
-                    </Button>
-
-                    <Button type="submit" :disabled="processing">
-                        Save changes
                     </Button>
                 </div>
             </Form>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import {
     CalendarDays,
     ChevronLeft,
@@ -14,6 +14,7 @@ import CalendarList from '@/components/calendar/CalendarList.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 import { index as calendarIndex } from '@/routes/team/calendar';
+import { edit as editEventRoute } from '@/routes/team/calendar/events';
 import type { CalendarEventItem, Team } from '@/types';
 
 type Props = {
@@ -21,6 +22,9 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+
+const page = usePage();
+const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 
 defineOptions({
     layout: (pageProps: { currentTeam?: Team | null }) => ({
@@ -154,7 +158,12 @@ function openCreateDialog(day: number): void {
 }
 
 function openEditDialog(event: CalendarEventItem): void {
-    dialogsRef.value?.openEditDialog(event);
+    router.visit(
+        editEventRoute({
+            current_team: currentTeamSlug.value,
+            event: event.id,
+        }).url,
+    );
 }
 </script>
 

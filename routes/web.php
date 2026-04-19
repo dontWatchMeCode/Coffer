@@ -27,6 +27,9 @@ Route::prefix('{current_team}')
         Route::inertia('dashboard', 'Dashboard')->name('team.dashboard');
 
         Route::get('calendar', [CalendarPageController::class, 'index'])->name('team.calendar.index');
+        Route::get('calendar/events/{event}/edit', [CalendarPageController::class, 'edit'])
+            ->whereNumber('event')
+            ->name('team.calendar.events.edit');
         Route::post('calendar/events', [CalendarEventController::class, 'store'])->name('team.calendar.events.store');
         Route::patch('calendar/events/{event}', [CalendarEventController::class, 'update'])
             ->whereNumber('event')
