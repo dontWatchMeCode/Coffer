@@ -48,12 +48,12 @@ defineOptions({
 const editName = ref(props.contact.name);
 const editPhones = ref<ContactEntry[]>(
     props.contact.phoneNumbers?.length
-        ? [...props.contact.phoneNumbers.map((e) => ({ ...e }))]
+        ? props.contact.phoneNumbers.map((e) => ({ ...e }))
         : [emptyEntry()],
 );
 const editEmails = ref<ContactEntry[]>(
     props.contact.emailAddresses?.length
-        ? [...props.contact.emailAddresses.map((e) => ({ ...e }))]
+        ? props.contact.emailAddresses.map((e) => ({ ...e }))
         : [emptyEntry()],
 );
 const editAddress = ref(props.contact.address ?? '');
@@ -104,13 +104,15 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
     null,
 );
 
+type TypedEntry = ContactEntry & { type: 'phone' | 'email' };
+
 const allEntries = computed(() => {
-    const entries: ContactEntry[] = [];
+    const entries: TypedEntry[] = [];
 
     if (props.contact.phoneNumbers?.length) {
         for (const e of props.contact.phoneNumbers) {
             if (e.value.trim()) {
-                entries.push(e);
+                entries.push({ type: 'phone', ...e });
             }
         }
     }
@@ -118,7 +120,7 @@ const allEntries = computed(() => {
     if (props.contact.emailAddresses?.length) {
         for (const e of props.contact.emailAddresses) {
             if (e.value.trim()) {
-                entries.push(e);
+                entries.push({ type: 'email', ...e });
             }
         }
     }
@@ -165,16 +167,12 @@ const allEntries = computed(() => {
                             :key="entryIdx"
                             class="flex items-center gap-2"
                         >
-                            <component
-                                :is="
-                                    contact.phoneNumbers?.some(
-                                        (p) =>
-                                            p.value === entry.value &&
-                                            p.label === entry.label,
-                                    )
-                                        ? Phone
-                                        : MessageSquare
-                                "
+                            <Phone
+                                v-if="entry.type === 'phone'"
+                                class="h-3.5 w-3.5 shrink-0"
+                            />
+                            <MessageSquare
+                                v-else
                                 class="h-3.5 w-3.5 shrink-0"
                             />
                             <span
