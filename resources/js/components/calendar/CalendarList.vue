@@ -114,9 +114,7 @@ const groupedEvents = computed<GroupedEvents[]>(() => {
             class="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center"
         >
             <CalendarDays class="mb-2 h-8 w-8 text-muted-foreground/50" />
-            <p class="text-sm text-muted-foreground">
-                No upcoming events.
-            </p>
+            <p class="text-sm text-muted-foreground">No upcoming events.</p>
         </div>
     </div>
 </template>

@@ -83,7 +83,7 @@ const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 type ViewMode = 'calendar' | 'list';
 
-const viewMode = ref<ViewMode>('calendar');
+const viewMode = ref<ViewMode>('list');
 const isYearPickerOpen = ref(false);
 
 const minYear = 1900;
@@ -258,14 +258,17 @@ function openEditDialog(event: CalendarEventItem): void {
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
             <div class="mb-4 flex items-center justify-between">
-                <div v-if="viewMode === 'calendar'" class="flex items-center gap-2">
+                <div
+                    v-if="viewMode === 'calendar'"
+                    class="flex items-center gap-2"
+                >
                     <div
-                        class="flex items-center rounded-md border bg-muted px-0.5 py-px"
+                        class="flex items-center rounded-md border bg-muted p-0.5"
                     >
                         <Button
                             variant="ghost"
                             size="icon-sm"
-                            class="cursor-pointer"
+                            class="cursor-pointer hover:bg-background!"
                             @click="prevMonth"
                         >
                             <ChevronLeft class="h-3.5 w-3.5" />
@@ -273,7 +276,7 @@ function openEditDialog(event: CalendarEventItem): void {
                         <Button
                             variant="ghost"
                             size="sm"
-                            class="h-7 cursor-pointer px-1.5 text-sm"
+                            class="h-7 cursor-pointer hover:bg-background!"
                             @click="goToday"
                         >
                             Today
@@ -281,7 +284,7 @@ function openEditDialog(event: CalendarEventItem): void {
                         <Button
                             variant="ghost"
                             size="icon-sm"
-                            class="cursor-pointer"
+                            class="cursor-pointer hover:bg-background!"
                             @click="nextMonth"
                         >
                             <ChevronRight class="h-3.5 w-3.5" />
@@ -371,14 +374,16 @@ function openEditDialog(event: CalendarEventItem): void {
                     </ComboboxRoot>
                 </div>
 
-                <div class="ml-auto flex items-center rounded-lg border bg-muted p-0.5">
+                <div
+                    class="ml-auto flex items-center gap-1 rounded-lg border bg-muted p-0.5"
+                >
                     <Button
                         variant="ghost"
                         size="sm"
                         :class="{
-                            'bg-background shadow-sm': viewMode === 'calendar',
+                            'bg-background': viewMode === 'calendar',
                         }"
-                        class="cursor-pointer"
+                        class="cursor-pointer hover:bg-background!"
                         @click="viewMode = 'calendar'"
                     >
                         <CalendarDays class="mr-1.5 h-3.5 w-3.5" />
@@ -388,9 +393,9 @@ function openEditDialog(event: CalendarEventItem): void {
                         variant="ghost"
                         size="sm"
                         :class="{
-                            'bg-background shadow-sm': viewMode === 'list',
+                            'bg-background': viewMode === 'list',
                         }"
-                        class="cursor-pointer"
+                        class="cursor-pointer hover:bg-background!"
                         @click="viewMode = 'list'"
                     >
                         <List class="mr-1.5 h-3.5 w-3.5" />
