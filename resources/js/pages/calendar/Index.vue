@@ -185,17 +185,11 @@ function eventsForDay(day: number | null): CalendarEventItem[] {
     return props.events.filter((e) => e.date === dateStr);
 }
 
-const monthEvents = computed(() => {
-    const monthPrefix = formatDateStr(
-        currentYear.value,
-        currentMonth.value,
-        1,
-    ).slice(0, 7);
-
-    return props.events
-        .filter((e) => e.date?.startsWith(monthPrefix))
-        .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
-});
+const futureEvents = computed(() =>
+    props.events
+        .filter((e) => e.date && e.date >= today.value)
+        .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '')),
+);
 
 function prevMonth(): void {
     if (currentMonth.value === 0 && currentYear.value === minYear) {
@@ -264,7 +258,7 @@ function openEditDialog(event: CalendarEventItem): void {
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
             <div class="mb-4 flex items-center justify-between">
-                <div class="flex items-center gap-2">
+                <div v-if="viewMode === 'calendar'" class="flex items-center gap-2">
                     <div
                         class="flex items-center rounded-md border bg-muted px-0.5 py-px"
                     >
@@ -377,7 +371,7 @@ function openEditDialog(event: CalendarEventItem): void {
                     </ComboboxRoot>
                 </div>
 
-                <div class="flex items-center rounded-lg border bg-muted p-0.5">
+                <div class="ml-auto flex items-center rounded-lg border bg-muted p-0.5">
                     <Button
                         variant="ghost"
                         size="sm"
@@ -421,9 +415,8 @@ function openEditDialog(event: CalendarEventItem): void {
 
             <CalendarList
                 v-else
-                :month-events="monthEvents"
+                :events="futureEvents"
                 :today="today"
-                :current-month="currentMonth"
                 :months="months"
                 :open-edit-dialog="openEditDialog"
             />
