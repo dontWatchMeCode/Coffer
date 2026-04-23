@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Plus } from 'lucide-vue-next';
+import { Plus, Search } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ContactList from '@/components/contacts/ContactList.vue';
 import CreateContactDialog from '@/components/contacts/CreateContactDialog.vue';
 import DeleteContactDialog from '@/components/contacts/DeleteContactDialog.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     index as contactsIndex,
     show as showContact,
@@ -114,21 +115,33 @@ function openDeleteDialog(contact: ContactItem): void {
 <template>
     <Head title="Contacts" />
 
-    <PageHeader title="Contacts" description="Manage your team address book.">
-        <template #actions>
-            <CreateContactDialog ref="createDialogRef">
-                <template #trigger>
-                    <Button size="sm" class="cursor-pointer">
-                        <Plus class="mr-1.5 h-4 w-4" />
-                        Add Contact
-                    </Button>
-                </template>
-            </CreateContactDialog>
-        </template>
-    </PageHeader>
+    <PageHeader title="Contacts" description="Manage your team address book." />
 
     <div class="flex-1 px-4 py-6">
-        <div class="mx-auto max-w-4xl">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-4 flex items-center justify-between gap-3">
+                <div class="relative w-full max-w-sm">
+                    <Search
+                        class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                    />
+                    <Input
+                        :model-value="searchQuery"
+                        placeholder="Search contacts..."
+                        class="pl-9"
+                        @update:model-value="searchQuery = String($event)"
+                    />
+                </div>
+
+                <CreateContactDialog ref="createDialogRef">
+                    <template #trigger>
+                        <Button size="sm" class="cursor-pointer">
+                            <Plus class="mr-1.5 h-4 w-4" />
+                            Add Contact
+                        </Button>
+                    </template>
+                </CreateContactDialog>
+            </div>
+
             <ContactList
                 :filtered-contacts="filteredContacts"
                 :search-query="searchQuery"
@@ -138,7 +151,6 @@ function openDeleteDialog(contact: ContactItem): void {
                 :navigate-to-contact="navigateToContact"
                 :open-delete-dialog="openDeleteDialog"
                 :open-create-dialog="openCreateDialog"
-                @update:search-query="searchQuery = $event"
             />
         </div>
     </div>

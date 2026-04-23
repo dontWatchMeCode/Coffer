@@ -3,7 +3,6 @@ import {
     MoreHorizontal,
     Pencil,
     Plus,
-    Search,
     Trash2,
     UserCircle,
 } from 'lucide-vue-next';
@@ -16,7 +15,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import type { ContactItem } from '@/types';
 
 type Props = {
@@ -31,70 +29,40 @@ type Props = {
 };
 
 defineProps<Props>();
-
-const emit = defineEmits<{
-    'update:searchQuery': [value: string];
-}>();
 </script>
 
 <template>
-    <div class="relative mb-4">
-        <Search
-            class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-            :model-value="searchQuery"
-            placeholder="Search contacts..."
-            class="pl-9"
-            @update:model-value="emit('update:searchQuery', String($event))"
-        />
-    </div>
-
-    <div v-if="filteredContacts.length > 0" class="divide-y rounded-lg border">
+    <div v-if="filteredContacts.length > 0" class="space-y-3">
         <div
             v-for="contact in filteredContacts"
             :key="contact.id"
-            class="flex cursor-pointer items-start gap-4 p-4 transition-colors hover:bg-accent/50"
+            class="group flex cursor-pointer items-center gap-4 rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50 dark:bg-card/50"
             @click="navigateToContact(contact)"
         >
             <ContactAvatar :name="contact.name ?? ''" size="sm" />
 
             <div class="min-w-0 flex-1">
-                <p class="font-medium">{{ contact.name }}</p>
-                <div
+                <p class="truncate font-medium">{{ contact.name }}</p>
+                <p
                     v-if="
                         contactPrimaryEmail(contact) ||
                         contactPrimaryPhone(contact)
                     "
-                    class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground"
+                    class="truncate text-sm text-muted-foreground"
                 >
-                    <span v-if="contactPrimaryEmail(contact)" class="truncate">
-                        {{ contactPrimaryEmail(contact) }}
-                    </span>
-                    <span
-                        v-if="
-                            contactPrimaryEmail(contact) &&
-                            contactPrimaryPhone(contact)
-                        "
-                        class="hidden text-border sm:inline"
-                        >|</span
-                    >
-                    <span v-if="contactPrimaryPhone(contact)">
-                        {{ contactPrimaryPhone(contact) }}
-                    </span>
-                    <span
-                        v-for="(extra, extraIdx) in contactSecondaryInfo(
-                            contact,
-                        )"
-                        :key="extraIdx"
-                        class="truncate"
-                    >
-                        {{ extra }}
-                    </span>
-                </div>
+                    {{
+                        [
+                            contactPrimaryEmail(contact),
+                            contactPrimaryPhone(contact),
+                            ...contactSecondaryInfo(contact),
+                        ]
+                            .filter(Boolean)
+                            .join(' • ')
+                    }}
+                </p>
                 <p
-                    v-if="contact.address"
-                    class="mt-0.5 truncate text-sm text-muted-foreground"
+                    v-else-if="contact.address"
+                    class="truncate text-sm text-muted-foreground"
                 >
                     {{ contact.address }}
                 </p>
@@ -105,7 +73,7 @@ const emit = defineEmits<{
                     <Button
                         variant="ghost"
                         size="icon"
-                        class="h-8 w-8 cursor-pointer"
+                        class="h-8 w-8 cursor-pointer opacity-70 transition-opacity group-hover:opacity-100"
                         @click.stop
                     >
                         <MoreHorizontal class="h-4 w-4" />
@@ -131,21 +99,28 @@ const emit = defineEmits<{
 
     <div
         v-else
-        class="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center"
+        class="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center"
     >
         <UserCircle class="mb-3 h-12 w-12 text-muted-foreground/50" />
-        <p class="text-sm text-muted-foreground">
+        <p class="font-medium">
             {{
                 searchQuery
                     ? 'No contacts match your search.'
                     : 'No contacts yet.'
             }}
         </p>
+        <p class="mt-1 max-w-sm text-sm text-muted-foreground">
+            {{
+                searchQuery
+                    ? 'Try a different name, email, phone number, or address.'
+                    : 'Create your first team contact to start building a shared address book.'
+            }}
+        </p>
         <Button
             v-if="!searchQuery"
             variant="outline"
             size="sm"
-            class="mt-3 cursor-pointer"
+            class="mt-4 cursor-pointer"
             @click="openCreateDialog"
         >
             <Plus class="mr-1.5 h-3.5 w-3.5" />

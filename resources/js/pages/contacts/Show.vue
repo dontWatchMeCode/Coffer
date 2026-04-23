@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { MapPin, MessageSquare, Phone, Plus, Trash2, X } from 'lucide-vue-next';
+import { Plus, Trash2, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import ContactAvatar from '@/components/contacts/ContactAvatar.vue';
 import DeleteContactDialog from '@/components/contacts/DeleteContactDialog.vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -58,6 +57,7 @@ const editEmails = ref<ContactEntry[]>(
 );
 const editAddress = ref(props.contact.address ?? '');
 const editAdditionalInfo = ref(props.contact.additionalInfo ?? '');
+const isSubmitting = ref(false);
 
 function addEditPhone(): void {
     editPhones.value.push(emptyEntry());
@@ -76,6 +76,8 @@ function removeEditEmail(index: number): void {
 }
 
 function submitEdit(): void {
+    isSubmitting.value = true;
+
     router.patch(
         updateContact({
             current_team: currentTeamSlug.value,
@@ -96,6 +98,9 @@ function submitEdit(): void {
             onSuccess: () => {
                 router.visit(contactsIndex(currentTeamSlug.value).url);
             },
+            onFinish: () => {
+                isSubmitting.value = false;
+            },
         },
     );
 }
@@ -103,30 +108,6 @@ function submitEdit(): void {
 const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
     null,
 );
-
-type TypedEntry = ContactEntry & { type: 'phone' | 'email' };
-
-const allEntries = computed(() => {
-    const entries: TypedEntry[] = [];
-
-    if (props.contact.phoneNumbers?.length) {
-        for (const e of props.contact.phoneNumbers) {
-            if (e.value.trim()) {
-                entries.push({ type: 'phone', ...e });
-            }
-        }
-    }
-
-    if (props.contact.emailAddresses?.length) {
-        for (const e of props.contact.emailAddresses) {
-            if (e.value.trim()) {
-                entries.push({ type: 'email', ...e });
-            }
-        }
-    }
-
-    return entries;
-});
 </script>
 
 <template>
@@ -134,7 +115,7 @@ const allEntries = computed(() => {
 
     <PageHeader
         :title="contact.name"
-        description="View and edit contact details."
+        description="Edit contact details."
         :back-href="contactsIndex(currentTeamSlug).url"
         back-label="Back to contacts"
     >
@@ -152,189 +133,134 @@ const allEntries = computed(() => {
     </PageHeader>
 
     <div class="flex-1 px-4 py-6">
-        <div class="mx-auto max-w-3xl space-y-8">
-            <div class="flex items-start gap-4">
-                <ContactAvatar :name="contact.name ?? ''" size="lg" />
+        <div class="mx-auto max-w-2xl">
+            <form class="space-y-4" @submit.prevent="submitEdit">
+                <div class="grid gap-2">
+                    <Label for="edit-contact-name">Name</Label>
+                    <Input id="edit-contact-name" v-model="editName" required />
+                    <InputError :message="errors.name" />
+                </div>
 
-                <div class="min-w-0 flex-1 space-y-1">
-                    <h2 class="text-lg font-semibold">{{ contact.name }}</h2>
-                    <div
-                        v-if="allEntries.length > 0"
-                        class="flex flex-col gap-1 text-sm text-muted-foreground"
-                    >
+                <div class="grid gap-2">
+                    <div class="flex items-center justify-between">
+                        <Label>Phone Numbers</Label>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            class="cursor-pointer"
+                            @click="addEditPhone"
+                        >
+                            <Plus class="mr-1 h-3 w-3" />
+                            Add
+                        </Button>
+                    </div>
+                    <div class="space-y-2">
                         <div
-                            v-for="(entry, entryIdx) in allEntries"
-                            :key="entryIdx"
+                            v-for="(phone, idx) in editPhones"
+                            :key="idx"
                             class="flex items-center gap-2"
                         >
-                            <Phone
-                                v-if="entry.type === 'phone'"
-                                class="h-3.5 w-3.5 shrink-0"
+                            <Input
+                                v-model="phone.label"
+                                placeholder="Label"
+                                class="w-28 shrink-0"
                             />
-                            <MessageSquare
-                                v-else
-                                class="h-3.5 w-3.5 shrink-0"
+                            <Input
+                                v-model="phone.value"
+                                type="tel"
+                                placeholder="Phone number"
                             />
-                            <span
-                                v-if="entry.label"
-                                class="text-muted-foreground/70"
-                                >{{ entry.label }}:</span
+                            <Button
+                                v-if="editPhones.length > 1"
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
+                                @click="removeEditPhone(idx)"
                             >
-                            <span>{{ entry.value }}</span>
+                                <X class="h-3.5 w-3.5" />
+                            </Button>
                         </div>
                     </div>
-                    <div
-                        v-if="contact.address"
-                        class="flex items-center gap-2 text-sm text-muted-foreground"
-                    >
-                        <MapPin class="h-3.5 w-3.5 shrink-0" />
-                        <span>{{ contact.address }}</span>
-                    </div>
-                    <p
-                        v-if="contact.additionalInfo"
-                        class="mt-2 text-sm text-muted-foreground"
-                    >
-                        {{ contact.additionalInfo }}
-                    </p>
-                    <p
-                        v-if="contact.updatedAt"
-                        class="text-xs text-muted-foreground/60"
-                    >
-                        Last updated
-                        {{ new Date(contact.updatedAt).toLocaleDateString() }}
-                    </p>
+                    <InputError :message="errors['phone_numbers.0.value']" />
                 </div>
-            </div>
 
-            <div class="border-t pt-6">
-                <h3 class="mb-4 text-sm font-medium text-muted-foreground">
-                    Edit Contact
-                </h3>
-
-                <form class="space-y-4" @submit.prevent="submitEdit">
-                    <div class="grid gap-2">
-                        <Label for="edit-contact-name">Name</Label>
-                        <Input
-                            id="edit-contact-name"
-                            v-model="editName"
-                            required
-                        />
-                        <InputError :message="errors.name" />
+                <div class="grid gap-2">
+                    <div class="flex items-center justify-between">
+                        <Label>Email Addresses</Label>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            class="cursor-pointer"
+                            @click="addEditEmail"
+                        >
+                            <Plus class="mr-1 h-3 w-3" />
+                            Add
+                        </Button>
                     </div>
-
                     <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <Label>Phone Numbers</Label>
+                        <div
+                            v-for="(email, idx) in editEmails"
+                            :key="idx"
+                            class="flex items-center gap-2"
+                        >
+                            <Input
+                                v-model="email.label"
+                                placeholder="Label"
+                                class="w-28 shrink-0"
+                            />
+                            <Input
+                                v-model="email.value"
+                                type="email"
+                                placeholder="Email address"
+                            />
                             <Button
+                                v-if="editEmails.length > 1"
                                 type="button"
                                 variant="ghost"
-                                size="sm"
-                                class="h-6 cursor-pointer text-xs"
-                                @click="addEditPhone"
+                                size="icon"
+                                class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
+                                @click="removeEditEmail(idx)"
                             >
-                                <Plus class="mr-1 h-3 w-3" />
-                                Add
+                                <X class="h-3.5 w-3.5" />
                             </Button>
                         </div>
-                        <div class="space-y-2">
-                            <div
-                                v-for="(phone, idx) in editPhones"
-                                :key="idx"
-                                class="flex items-center gap-2"
-                            >
-                                <Input
-                                    v-model="phone.label"
-                                    placeholder="Label"
-                                    class="w-28 shrink-0"
-                                />
-                                <Input v-model="phone.value" type="tel" />
-                                <Button
-                                    v-if="editPhones.length > 1"
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                                    @click="removeEditPhone(idx)"
-                                >
-                                    <X class="h-3.5 w-3.5" />
-                                </Button>
-                            </div>
-                        </div>
-                        <InputError
-                            :message="errors['phone_numbers.0.value']"
-                        />
                     </div>
+                    <InputError :message="errors['email_addresses.0.value']" />
+                </div>
 
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <Label>Email Addresses</Label>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                class="h-6 cursor-pointer text-xs"
-                                @click="addEditEmail"
-                            >
-                                <Plus class="mr-1 h-3 w-3" />
-                                Add
-                            </Button>
-                        </div>
-                        <div class="space-y-2">
-                            <div
-                                v-for="(email, idx) in editEmails"
-                                :key="idx"
-                                class="flex items-center gap-2"
-                            >
-                                <Input
-                                    v-model="email.label"
-                                    placeholder="Label"
-                                    class="w-28 shrink-0"
-                                />
-                                <Input v-model="email.value" type="email" />
-                                <Button
-                                    v-if="editEmails.length > 1"
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                                    @click="removeEditEmail(idx)"
-                                >
-                                    <X class="h-3.5 w-3.5" />
-                                </Button>
-                            </div>
-                        </div>
-                        <InputError
-                            :message="errors['email_addresses.0.value']"
-                        />
-                    </div>
+                <div class="grid gap-2">
+                    <Label for="edit-contact-address">Address</Label>
+                    <Input
+                        id="edit-contact-address"
+                        v-model="editAddress"
+                        placeholder="Office, city, or mailing address"
+                    />
+                    <InputError :message="errors.address" />
+                </div>
 
-                    <div class="grid gap-2">
-                        <Label for="edit-contact-address">Address</Label>
-                        <Input
-                            id="edit-contact-address"
-                            v-model="editAddress"
-                        />
-                        <InputError :message="errors.address" />
-                    </div>
+                <div class="grid gap-2">
+                    <Label for="edit-contact-additional-info">
+                        Additional Info
+                    </Label>
+                    <textarea
+                        id="edit-contact-additional-info"
+                        v-model="editAdditionalInfo"
+                        :class="taskInputLikeClass"
+                        rows="4"
+                        placeholder="Notes, context, or anything helpful for the team"
+                    />
+                    <InputError :message="errors.additional_info" />
+                </div>
 
-                    <div class="grid gap-2">
-                        <Label for="edit-contact-additional-info">
-                            Additional Info
-                        </Label>
-                        <textarea
-                            id="edit-contact-additional-info"
-                            v-model="editAdditionalInfo"
-                            :class="taskInputLikeClass"
-                            rows="3"
-                        />
-                        <InputError :message="errors.additional_info" />
-                    </div>
-
-                    <div class="flex justify-end">
-                        <Button type="submit"> Save changes </Button>
-                    </div>
-                </form>
-            </div>
+                <div class="flex justify-end pt-2">
+                    <Button type="submit" :disabled="isSubmitting">
+                        {{ isSubmitting ? 'Saving...' : 'Save changes' }}
+                    </Button>
+                </div>
+            </form>
         </div>
     </div>
 

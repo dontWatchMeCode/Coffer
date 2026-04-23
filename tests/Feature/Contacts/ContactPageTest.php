@@ -311,6 +311,14 @@ test('contact show page can be rendered', function () {
     $contact = Contact::factory()->create([
         'team_id' => $team->id,
         'name' => 'Jane Doe',
+        'phone_numbers' => [
+            ['label' => 'Work', 'value' => '+1 555-0111'],
+        ],
+        'email_addresses' => [
+            ['label' => 'Primary', 'value' => 'jane@example.com'],
+        ],
+        'address' => '123 Main St',
+        'additional_info' => 'Key stakeholder',
     ]);
 
     actingAs($user)
@@ -320,7 +328,11 @@ test('contact show page can be rendered', function () {
             ->component('contacts/Show')
             ->has('contact')
             ->where('contact.id', $contact->id)
-            ->where('contact.name', 'Jane Doe'),
+            ->where('contact.name', 'Jane Doe')
+            ->where('contact.phoneNumbers.0.value', '+1 555-0111')
+            ->where('contact.emailAddresses.0.value', 'jane@example.com')
+            ->where('contact.address', '123 Main St')
+            ->where('contact.additionalInfo', 'Key stakeholder'),
         );
 });
 
