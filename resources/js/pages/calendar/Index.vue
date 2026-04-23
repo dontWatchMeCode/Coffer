@@ -2,17 +2,40 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import {
     CalendarDays,
+    Check,
     ChevronLeft,
     ChevronRight,
+    ChevronsUpDown,
     List,
     ListPlus,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import {
+    ComboboxAnchor,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxItemIndicator,
+    ComboboxPortal,
+    ComboboxRoot,
+    ComboboxTrigger,
+    ComboboxViewport,
+    ComboboxVirtualizer,
+    useFilter,
+} from 'reka-ui';
+import { computed, ref, watch } from 'vue';
 import CalendarEventDialogs from '@/components/calendar/CalendarEventDialogs.vue';
 import CalendarGrid from '@/components/calendar/CalendarGrid.vue';
 import CalendarList from '@/components/calendar/CalendarList.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { index as calendarIndex } from '@/routes/team/calendar';
 import { edit as editEventRoute } from '@/routes/team/calendar/events';
 import type { CalendarEventItem, Team } from '@/types';
@@ -61,10 +84,40 @@ const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 type ViewMode = 'calendar' | 'list';
 
 const viewMode = ref<ViewMode>('calendar');
+const isYearPickerOpen = ref(false);
 
-const currentMonthLabel = computed(
-    () => `${months[currentMonth.value]} ${currentYear.value}`,
+const minYear = 1900;
+const maxYear = 2999;
+
+const yearRange = Array.from({ length: maxYear - minYear + 1 }, (_, index) => minYear + index);
+
+const yearSearch = ref('');
+const { contains } = useFilter({ sensitivity: 'base' });
+
+const filteredYears = computed(() =>
+    yearRange.filter((year) => contains(String(year), yearSearch.value)),
 );
+
+function displayYearValue(value: number | undefined): string {
+    return String(value ?? currentYear.value);
+}
+
+function updateCurrentYear(value: unknown): void {
+    if (
+        typeof value === 'number'
+        && Number.isInteger(value)
+        && value >= minYear
+        && value <= maxYear
+    ) {
+        currentYear.value = value;
+    }
+}
+
+watch(isYearPickerOpen, (isOpen) => {
+    if (!isOpen) {
+        yearSearch.value = '';
+    }
+});
 
 function daysInMonth(year: number, month: number): number {
     return new Date(year, month + 1, 0).getDate();
@@ -128,6 +181,10 @@ const monthEvents = computed(() => {
 });
 
 function prevMonth(): void {
+    if (currentMonth.value === 0 && currentYear.value === minYear) {
+        return;
+    }
+
     if (currentMonth.value === 0) {
         currentMonth.value = 11;
         currentYear.value--;
@@ -137,6 +194,10 @@ function prevMonth(): void {
 }
 
 function nextMonth(): void {
+    if (currentMonth.value === 11 && currentYear.value === maxYear) {
+        return;
+    }
+
     if (currentMonth.value === 11) {
         currentMonth.value = 0;
         currentYear.value++;
@@ -187,33 +248,107 @@ function openEditDialog(event: CalendarEventItem): void {
         <div class="mx-auto max-w-7xl">
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        class="cursor-pointer"
-                        @click="prevMonth"
+                    <div class="flex items-center rounded-md border bg-muted p-0.5">
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            class="cursor-pointer"
+                            @click="prevMonth"
+                        >
+                            <ChevronLeft class="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="h-7 cursor-pointer px-2 text-xs"
+                            @click="goToday"
+                        >
+                            Today
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            class="cursor-pointer"
+                            @click="nextMonth"
+                        >
+                            <ChevronRight class="h-3.5 w-3.5" />
+                        </Button>
+                    </div>
+                    <Select
+                        :model-value="String(currentMonth)"
+                        @update:model-value="currentMonth = Number($event)"
                     >
-                        <ChevronLeft class="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class="cursor-pointer"
-                        @click="goToday"
+                        <SelectTrigger
+                            class="ml-1 h-7 w-auto gap-1 border-none bg-transparent px-1 text-sm font-semibold shadow-none focus:ring-0"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="(month, idx) in months"
+                                :key="idx"
+                                :value="String(idx)"
+                            >
+                                {{ month }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <ComboboxRoot
+                        :model-value="currentYear"
+                        @update:model-value="updateCurrentYear"
+                        v-model:open="isYearPickerOpen"
+                        :ignore-filter="true"
+                        open-on-focus
+                        class="min-w-0"
                     >
-                        Today
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        class="cursor-pointer"
-                        @click="nextMonth"
-                    >
-                        <ChevronRight class="h-4 w-4" />
-                    </Button>
-                    <h2 class="ml-2 text-lg font-semibold">
-                        {{ currentMonthLabel }}
-                    </h2>
+                        <ComboboxAnchor
+                            class="flex h-7 items-center gap-1 rounded-md border-none bg-transparent px-1 text-sm font-semibold shadow-none"
+                        >
+                            <ComboboxInput
+                                v-model="yearSearch"
+                                :display-value="displayYearValue"
+                                placeholder="Year"
+                                class="h-full w-14 bg-transparent outline-none placeholder:text-foreground text-center"
+                            />
+                            <ComboboxTrigger class="cursor-pointer">
+                                <ChevronsUpDown class="size-3.5 shrink-0 opacity-50" />
+                            </ComboboxTrigger>
+                        </ComboboxAnchor>
+
+                        <ComboboxPortal>
+                            <ComboboxContent
+                                position="popper"
+                                class="bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-64 min-w-[var(--reka-combobox-trigger-width)] overflow-hidden rounded-md border shadow-md"
+                                :side-offset="4"
+                            >
+                                <ComboboxViewport class="h-56 p-1">
+                                    <ComboboxEmpty class="px-2 py-3 text-sm text-muted-foreground">
+                                        No years found.
+                                    </ComboboxEmpty>
+
+                                    <ComboboxVirtualizer
+                                        v-slot="{ option }"
+                                        :options="filteredYears"
+                                        :text-content="(value) => String(value)"
+                                        :estimate-size="30"
+                                    >
+                                        <ComboboxItem
+                                            :value="option"
+                                            class="focus:bg-accent focus:text-accent-foreground relative flex w-full items-center rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                                        >
+                                            {{ option }}
+
+                                            <span class="absolute right-2 flex size-3.5 items-center justify-center">
+                                                <ComboboxItemIndicator>
+                                                    <Check class="size-4" />
+                                                </ComboboxItemIndicator>
+                                            </span>
+                                        </ComboboxItem>
+                                    </ComboboxVirtualizer>
+                                </ComboboxViewport>
+                            </ComboboxContent>
+                        </ComboboxPortal>
+                    </ComboboxRoot>
                 </div>
 
                 <div class="flex items-center rounded-lg border bg-muted p-0.5">
