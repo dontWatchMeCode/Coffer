@@ -16,7 +16,7 @@ import {
     index as contactsIndex,
     update as updateContact,
 } from '@/routes/team/contacts';
-import type { ContactEntry, ContactItem } from '@/types';
+import type { ContactEntry, ContactItem, Team } from '@/types';
 
 type Props = {
     contact: ContactItem;
@@ -27,6 +27,23 @@ const props = defineProps<Props>();
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
+
+defineOptions({
+    layout: (layoutProps: {
+        currentTeam?: Team | null;
+        contact?: { id: number; name: string };
+    }) => ({
+        breadcrumbs: [
+            {
+                title: 'Contacts',
+                href: contactsIndex(layoutProps.currentTeam?.slug).url,
+            },
+            {
+                title: layoutProps.contact?.name ?? 'Contact',
+            },
+        ],
+    }),
+});
 
 const editName = ref(props.contact.name);
 const editPhones = ref<ContactEntry[]>(

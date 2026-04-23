@@ -42,9 +42,6 @@ defineOptions({
             {
                 title: layoutProps.event?.title ?? 'Event',
             },
-            {
-                title: 'Edit',
-            },
         ],
     }),
 });
