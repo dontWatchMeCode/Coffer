@@ -23,7 +23,7 @@ import {
     ComboboxVirtualizer,
     useFilter,
 } from 'reka-ui';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import CalendarEventDialogs from '@/components/calendar/CalendarEventDialogs.vue';
 import CalendarGrid from '@/components/calendar/CalendarGrid.vue';
 import CalendarList from '@/components/calendar/CalendarList.vue';
@@ -89,13 +89,28 @@ const isYearPickerOpen = ref(false);
 const minYear = 1900;
 const maxYear = 2999;
 
-const yearRange = Array.from({ length: maxYear - minYear + 1 }, (_, index) => minYear + index);
+const yearRange = Array.from(
+    { length: maxYear - minYear + 1 },
+    (_, index) => minYear + index,
+);
 
 const yearSearch = ref('');
 const { contains } = useFilter({ sensitivity: 'base' });
 
+const effectiveYearSearch = computed(() => {
+    const value = yearSearch.value.trim();
+
+    if (value === String(currentYear.value) && value.length > 1) {
+        return value.slice(0, -1);
+    }
+
+    return value;
+});
+
 const filteredYears = computed(() =>
-    yearRange.filter((year) => contains(String(year), yearSearch.value)),
+    yearRange.filter((year) =>
+        contains(String(year), effectiveYearSearch.value),
+    ),
 );
 
 function displayYearValue(value: number | undefined): string {
@@ -104,20 +119,22 @@ function displayYearValue(value: number | undefined): string {
 
 function updateCurrentYear(value: unknown): void {
     if (
-        typeof value === 'number'
-        && Number.isInteger(value)
-        && value >= minYear
-        && value <= maxYear
+        typeof value === 'number' &&
+        Number.isInteger(value) &&
+        value >= minYear &&
+        value <= maxYear
     ) {
         currentYear.value = value;
     }
 }
 
-watch(isYearPickerOpen, (isOpen) => {
+function updateYearPickerOpen(isOpen: boolean): void {
+    isYearPickerOpen.value = isOpen;
+
     if (!isOpen) {
         yearSearch.value = '';
     }
-});
+}
 
 function daysInMonth(year: number, month: number): number {
     return new Date(year, month + 1, 0).getDate();
@@ -248,7 +265,9 @@ function openEditDialog(event: CalendarEventItem): void {
         <div class="mx-auto max-w-7xl">
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="flex items-center rounded-md border bg-muted p-0.5">
+                    <div
+                        class="flex items-center rounded-md border bg-muted px-0.5 py-px"
+                    >
                         <Button
                             variant="ghost"
                             size="icon-sm"
@@ -260,7 +279,7 @@ function openEditDialog(event: CalendarEventItem): void {
                         <Button
                             variant="ghost"
                             size="sm"
-                            class="h-7 cursor-pointer px-2 text-xs"
+                            class="h-7 cursor-pointer px-1.5 text-sm"
                             @click="goToday"
                         >
                             Today
@@ -279,7 +298,7 @@ function openEditDialog(event: CalendarEventItem): void {
                         @update:model-value="currentMonth = Number($event)"
                     >
                         <SelectTrigger
-                            class="ml-1 h-7 w-auto gap-1 border-none bg-transparent px-1 text-sm font-semibold shadow-none focus:ring-0"
+                            class="ml-1 h-7 w-auto gap-4 border-none bg-transparent px-1 text-sm font-semibold shadow-none hover:bg-transparent focus:ring-0 dark:bg-transparent dark:hover:bg-transparent"
                         >
                             <SelectValue />
                         </SelectTrigger>
@@ -296,7 +315,8 @@ function openEditDialog(event: CalendarEventItem): void {
                     <ComboboxRoot
                         :model-value="currentYear"
                         @update:model-value="updateCurrentYear"
-                        v-model:open="isYearPickerOpen"
+                        :open="isYearPickerOpen"
+                        @update:open="updateYearPickerOpen"
                         :ignore-filter="true"
                         open-on-focus
                         class="min-w-0"
@@ -308,21 +328,25 @@ function openEditDialog(event: CalendarEventItem): void {
                                 v-model="yearSearch"
                                 :display-value="displayYearValue"
                                 placeholder="Year"
-                                class="h-full w-14 bg-transparent outline-none placeholder:text-foreground text-center"
+                                class="h-full w-14 bg-transparent text-center outline-none placeholder:text-foreground"
                             />
                             <ComboboxTrigger class="cursor-pointer">
-                                <ChevronsUpDown class="size-3.5 shrink-0 opacity-50" />
+                                <ChevronsUpDown
+                                    class="size-3.5 shrink-0 opacity-50"
+                                />
                             </ComboboxTrigger>
                         </ComboboxAnchor>
 
                         <ComboboxPortal>
                             <ComboboxContent
                                 position="popper"
-                                class="bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-64 min-w-[var(--reka-combobox-trigger-width)] overflow-hidden rounded-md border shadow-md"
+                                class="z-50 max-h-64 min-w-[var(--reka-combobox-trigger-width)] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
                                 :side-offset="4"
                             >
                                 <ComboboxViewport class="h-56 p-1">
-                                    <ComboboxEmpty class="px-2 py-3 text-sm text-muted-foreground">
+                                    <ComboboxEmpty
+                                        class="px-2 py-3 text-sm text-muted-foreground"
+                                    >
                                         No years found.
                                     </ComboboxEmpty>
 
@@ -334,11 +358,13 @@ function openEditDialog(event: CalendarEventItem): void {
                                     >
                                         <ComboboxItem
                                             :value="option"
-                                            class="focus:bg-accent focus:text-accent-foreground relative flex w-full items-center rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                                            class="relative flex w-full items-center rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
                                         >
                                             {{ option }}
 
-                                            <span class="absolute right-2 flex size-3.5 items-center justify-center">
+                                            <span
+                                                class="absolute right-2 flex size-3.5 items-center justify-center"
+                                            >
                                                 <ComboboxItemIndicator>
                                                     <Check class="size-4" />
                                                 </ComboboxItemIndicator>
