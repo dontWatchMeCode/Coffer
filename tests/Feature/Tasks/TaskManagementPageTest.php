@@ -6,6 +6,7 @@ use App\Models\Task;
 use App\Models\TaskComment;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 
 use function Pest\Laravel\actingAs;
@@ -124,6 +125,7 @@ test('task edit page can be rendered', function () {
         'team_id' => $team->id,
         'project_id' => $project->id,
         'created_by' => $user->id,
+        'due_at' => '2026-05-21',
     ]);
 
     actingAs($user)
@@ -133,6 +135,11 @@ test('task edit page can be rendered', function () {
             ->component('tasks/Edit')
             ->where('project.id', $project->id)
             ->where('task.id', $task->id)
+            ->where('task.creatorName', $user->name)
+            ->where('task.dueAt', fn (?string $dueAt): bool => is_string($dueAt)
+                && str_starts_with($dueAt, '2026-05-21'))
+            ->where('task.updatedAt', fn (?string $updatedAt): bool => is_string($updatedAt)
+                && str_contains($updatedAt, 'T'))
             ->where('task.commentsCount', 0)
             ->has('comments', 0)
             ->has('members')
@@ -755,6 +762,36 @@ test('task partial patch validates submitted fields', function () {
         'id' => $task->id,
         'progress' => 20,
     ]);
+});
+
+test('task due date patch persists due date and refreshes updated timestamp', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'due_at' => null,
+    ]);
+
+    $originalUpdatedAt = $task->updated_at;
+
+    Carbon::setTestNow(now()->addMinute());
+
+    actingAs($user)
+        ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            '_return_to_edit' => true,
+            'due_at' => '2026-05-21',
+        ])
+        ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task]));
+
+    Carbon::setTestNow();
+
+    $task->refresh();
+
+    expect($task->due_at?->format('Y-m-d'))->toBe('2026-05-21');
+    expect($task->updated_at?->gt($originalUpdatedAt))->toBeTrue();
 });
 
 test('task update from list view redirects back to project page', function () {

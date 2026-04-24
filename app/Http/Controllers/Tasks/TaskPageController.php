@@ -150,6 +150,7 @@ class TaskPageController extends Controller
     {
         $completedAt = $task->getAttribute('completed_at');
         $dueAt = $task->getAttribute('due_at');
+        $updatedAt = $task->getAttribute('updated_at');
 
         return [
             'id' => $task->id,
@@ -164,6 +165,9 @@ class TaskPageController extends Controller
             'assigneeName' => $task->assignee?->name,
             'creatorId' => $task->created_by,
             'creatorName' => $task->creator?->name,
+            'updatedAt' => $updatedAt instanceof DateTimeInterface
+                ? $updatedAt->format(DateTimeInterface::ATOM)
+                : null,
             'completedAt' => $completedAt instanceof DateTimeInterface
                 ? $completedAt->format(DateTimeInterface::ATOM)
                 : null,

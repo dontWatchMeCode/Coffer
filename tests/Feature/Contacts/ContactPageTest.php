@@ -332,7 +332,9 @@ test('contact show page can be rendered', function () {
             ->where('contact.phoneNumbers.0.value', '+1 555-0111')
             ->where('contact.emailAddresses.0.value', 'jane@example.com')
             ->where('contact.address', '123 Main St')
-            ->where('contact.additionalInfo', 'Key stakeholder'),
+            ->where('contact.additionalInfo', 'Key stakeholder')
+            ->where('contact.updatedAt', fn (?string $updatedAt): bool => is_string($updatedAt)
+                && str_contains($updatedAt, 'T')),
         );
 });
 

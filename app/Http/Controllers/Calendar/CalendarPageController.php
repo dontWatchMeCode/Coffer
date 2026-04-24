@@ -31,7 +31,7 @@ class CalendarPageController extends Controller
             ->findOrFail($event);
 
         return Inertia::render('calendar/Edit', [
-            'event' => $this->formatEvent($event),
+            'event' => $this->formatEvent($event, includeTimestamps: true),
         ]);
     }
 

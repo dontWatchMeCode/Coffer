@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { Form, Head, router, usePage } from '@inertiajs/vue3';
+import type { PageProps } from '@inertiajs/core';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import CalendarEventController from '@/actions/App/Http/Controllers/Calendar/CalendarEventController';
 import InputError from '@/components/InputError.vue';
+import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,9 +27,15 @@ type Props = {
 
 const props = defineProps<Props>();
 
-const page = usePage();
+const page = usePage<PageProps>();
+const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const deleteDialogOpen = ref(false);
+const isSubmitting = ref(false);
+const formRef = ref<HTMLFormElement | null>(null);
+const editTitle = ref(props.event.title);
+const editDescription = ref(props.event.description ?? '');
+const editDate = ref(props.event.date ?? '');
 
 defineOptions({
     layout: (layoutProps: {
@@ -54,13 +62,37 @@ function confirmDelete(): void {
     deleteDialogOpen.value = false;
 
     router.delete(
-        CalendarEventController.destroy({
+        CalendarEventController.destroy.url({
             current_team: currentTeamSlug.value,
             event: props.event.id,
-        }).url,
+        }),
         {
             onSuccess: () => {
                 router.visit(calendarIndex(currentTeamSlug.value).url);
+            },
+        },
+    );
+}
+
+function submitEdit(): void {
+    isSubmitting.value = true;
+
+    router.patch(
+        CalendarEventController.update.url({
+            current_team: currentTeamSlug.value,
+            event: props.event.id,
+        }),
+        {
+            title: editTitle.value,
+            description: editDescription.value,
+            date: editDate.value,
+        },
+        {
+            onSuccess: () => {
+                router.visit(calendarIndex(currentTeamSlug.value).url);
+            },
+            onFinish: () => {
+                isSubmitting.value = false;
             },
         },
     );
@@ -75,75 +107,61 @@ function confirmDelete(): void {
             :title="event.title"
             :back-href="calendarIndex(currentTeamSlug).url"
             back-label="Back to calendar"
-        >
-            <template #actions>
-                <Button
-                    variant="destructive"
-                    size="sm"
-                    class="cursor-pointer"
-                    @click="deleteDialogOpen = true"
-                >
-                    <Trash2 class="mr-1.5 h-4 w-4" />
-                    Delete
-                </Button>
-            </template>
-        </PageHeader>
+        />
 
         <div class="flex-1 px-4 py-6">
-            <div class="mx-auto max-w-2xl">
-                <Form
-                    v-bind="
-                        CalendarEventController.update.form({
-                            current_team: currentTeamSlug,
-                            event: event.id,
-                        })
-                    "
-                    class="space-y-4"
-                    v-slot="{ errors, processing }"
-                    @success="router.visit(calendarIndex(currentTeamSlug).url)"
-                >
-                    <div class="grid gap-2">
-                        <Label for="edit-event-title">Title</Label>
-                        <Input
-                            id="edit-event-title"
-                            name="title"
-                            :default-value="event.title"
-                            required
-                        />
-                        <InputError :message="errors.title" />
-                    </div>
+            <EditorSidebarLayout
+                variant="compact"
+                :updated-at="event.updatedAt"
+                :on-save="() => formRef?.requestSubmit()"
+                :on-delete="() => (deleteDialogOpen = true)"
+                save-label="Save changes"
+                delete-label="Delete event"
+                :save-disabled="isSubmitting"
+                :delete-disabled="isSubmitting"
+            >
+                <template #main>
+                    <form
+                        ref="formRef"
+                        class="space-y-4"
+                        @submit.prevent="submitEdit"
+                    >
+                        <div class="grid gap-2">
+                            <Label for="edit-event-title">Title</Label>
+                            <Input
+                                id="edit-event-title"
+                                v-model="editTitle"
+                                required
+                            />
+                            <InputError :message="errors.title" />
+                        </div>
 
-                    <div class="grid gap-2">
-                        <Label for="edit-event-description">Description</Label>
-                        <textarea
-                            id="edit-event-description"
-                            name="description"
-                            :class="taskInputLikeClass"
-                            rows="4"
-                            :default-value="event.description ?? ''"
-                        />
-                        <InputError :message="errors.description" />
-                    </div>
+                        <div class="grid gap-2">
+                            <Label for="edit-event-description"
+                                >Description</Label
+                            >
+                            <textarea
+                                id="edit-event-description"
+                                v-model="editDescription"
+                                :class="taskInputLikeClass"
+                                rows="4"
+                            />
+                            <InputError :message="errors.description" />
+                        </div>
 
-                    <div class="grid gap-2">
-                        <Label for="edit-event-date">Date</Label>
-                        <Input
-                            id="edit-event-date"
-                            name="date"
-                            type="date"
-                            :default-value="event.date ?? ''"
-                            required
-                        />
-                        <InputError :message="errors.date" />
-                    </div>
-
-                    <div class="flex justify-end pt-2">
-                        <Button type="submit" :disabled="processing">
-                            Save changes
-                        </Button>
-                    </div>
-                </Form>
-            </div>
+                        <div class="grid gap-2">
+                            <Label for="edit-event-date">Date</Label>
+                            <Input
+                                id="edit-event-date"
+                                v-model="editDate"
+                                type="date"
+                                required
+                            />
+                            <InputError :message="errors.date" />
+                        </div>
+                    </form>
+                </template>
+            </EditorSidebarLayout>
         </div>
 
         <Dialog v-model:open="deleteDialogOpen">

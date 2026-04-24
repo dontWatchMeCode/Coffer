@@ -131,6 +131,27 @@ test('a calendar event can be updated', function () {
     expect($event->fresh()->title)->toBe('New title');
 });
 
+test('calendar edit page includes timestamps for editor metadata', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $event = CalendarEvent::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Planning session',
+        'date' => '2026-04-20',
+    ]);
+
+    actingAs($user)
+        ->get(route('team.calendar.events.edit', ['current_team' => $team, 'event' => $event]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('calendar/Edit')
+            ->where('event.id', $event->id)
+            ->where('event.updatedAt', fn (?string $updatedAt): bool => is_string($updatedAt)
+                && str_contains($updatedAt, 'T')),
+        );
+});
+
 test('a calendar event can be deleted', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
@@ -145,7 +166,7 @@ test('a calendar event can be deleted', function () {
         ->delete(
             route('team.calendar.events.destroy', ['current_team' => $team, 'event' => $event]),
         )
-        ->assertRedirect();
+        ->assertRedirect(route('team.calendar.index', ['current_team' => $team]));
 
     expect($event->fresh())->toBeNull();
 });

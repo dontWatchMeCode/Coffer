@@ -2,8 +2,10 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
+import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import CommentsSection from '@/components/tasks/CommentsSection.vue';
+import DeleteTaskDialog from '@/components/tasks/DeleteTaskDialog.vue';
 import TaskEditForm from '@/components/tasks/TaskEditForm.vue';
 import TaskSidebar from '@/components/tasks/TaskSidebar.vue';
 import { index, show, edit } from '@/routes/team/tasks/index';
@@ -30,6 +32,7 @@ const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const user = computed(() => page.props.auth.user);
 const isEditing = ref(false);
 const selectedProjectId = ref(props.project.id.toString());
+const deleteDialogOpen = ref(false);
 
 defineOptions({
     layout: (layoutProps: {
@@ -73,6 +76,17 @@ function handleEditSuccess(): void {
 
     isEditing.value = false;
 }
+
+function confirmDelete(): void {
+    deleteDialogOpen.value = false;
+
+    router.delete(
+        TaskController.destroy.url({
+            current_team: currentTeamSlug.value,
+            task: props.task.id,
+        }),
+    );
+}
 </script>
 
 <template>
@@ -93,9 +107,13 @@ function handleEditSuccess(): void {
 
         <!-- Content -->
         <div class="flex-1 px-4 py-6">
-            <div class="mx-auto flex max-w-7xl flex-col gap-8 xl:flex-row">
-                <!-- Main content -->
-                <div class="order-2 min-w-0 flex-1 space-y-6 xl:order-1">
+            <EditorSidebarLayout
+                :created-by="task.creatorName"
+                :updated-at="task.updatedAt"
+                :on-delete="() => (deleteDialogOpen = true)"
+                delete-label="Delete task"
+            >
+                <template #main>
                     <TaskEditForm
                         :task="task"
                         :is-editing="isEditing"
@@ -115,20 +133,29 @@ function handleEditSuccess(): void {
                         :current-team-slug="currentTeamSlug"
                         :user-id="user.id"
                     />
-                </div>
+                </template>
 
-                <!-- Sidebar -->
-                <TaskSidebar
-                    :task="task"
-                    :project="project"
-                    :members="members"
-                    :statuses="statuses"
-                    :projects="projects"
-                    :current-team-slug="currentTeamSlug"
-                    :selected-project-id="selectedProjectId"
-                    @update:selected-project-id="selectedProjectId = $event"
-                />
-            </div>
+                <template #sidebar-top>
+                    <TaskSidebar
+                        :task="task"
+                        :project="project"
+                        :members="members"
+                        :statuses="statuses"
+                        :projects="projects"
+                        :current-team-slug="currentTeamSlug"
+                        :selected-project-id="selectedProjectId"
+                        :show-creator-meta="false"
+                        :show-actions="false"
+                        @update:selected-project-id="selectedProjectId = $event"
+                    />
+                </template>
+            </EditorSidebarLayout>
         </div>
+
+        <DeleteTaskDialog
+            v-model:open="deleteDialogOpen"
+            :task-title="task.title"
+            @confirm="confirmDelete"
+        />
     </div>
 </template>

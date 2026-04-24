@@ -40,6 +40,6 @@ class CalendarEventController extends Controller
 
         $event->delete();
 
-        return back();
+        return to_route('team.calendar.index', ['current_team' => $currentTeam]);
     }
 }

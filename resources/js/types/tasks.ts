@@ -49,6 +49,7 @@ export type TaskItem = {
     assigneeName?: string | null;
     creatorId?: number | null;
     creatorName?: string | null;
+    updatedAt?: string | null;
     completedAt?: string | null;
     dueAt?: string | null;
     commentsCount?: number;

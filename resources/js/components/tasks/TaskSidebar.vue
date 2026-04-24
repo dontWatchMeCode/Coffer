@@ -1,20 +1,11 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { Trash2 } from 'lucide-vue-next';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, ref, watch } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
+import DeleteTaskDialog from '@/components/tasks/DeleteTaskDialog.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -48,9 +39,14 @@ type Props = {
     projects: { id: number; name: string }[];
     currentTeamSlug: string;
     selectedProjectId?: string;
+    showCreatorMeta?: boolean;
+    showActions?: boolean;
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    showCreatorMeta: true,
+    showActions: true,
+});
 
 const emit = defineEmits<{
     'update:selectedProjectId': [value: string];
@@ -111,6 +107,8 @@ const statusMeta = computed(() => {
     return getTaskStatusMeta(selectedStatus.value);
 });
 
+const taskReloadOnly = ['task'];
+
 const assignee = computed(() => {
     if (selectedAssignee.value === unassignedAssigneeValue) {
         return null;
@@ -139,6 +137,7 @@ function updateStatus(status: AcceptableValue): void {
         },
         {
             preserveScroll: true,
+            only: taskReloadOnly,
             onError: () => {
                 selectedStatus.value = props.task.status;
             },
@@ -167,6 +166,7 @@ function updateAssignee(assigneeId: AcceptableValue): void {
         },
         {
             preserveScroll: true,
+            only: taskReloadOnly,
             onError: () => {
                 selectedAssignee.value =
                     props.task.assigneeId?.toString() ??
@@ -192,6 +192,7 @@ function updateProgress(progress: number): void {
         },
         {
             preserveScroll: true,
+            only: taskReloadOnly,
             onError: () => {
                 selectedProgress.value = props.task.progress;
             },
@@ -200,6 +201,8 @@ function updateProgress(progress: number): void {
 }
 
 function updateDueDate(date: string): void {
+    dueDate.value = date;
+
     router.patch(
         TaskController.update.url({
             current_team: props.currentTeamSlug,
@@ -211,6 +214,7 @@ function updateDueDate(date: string): void {
         },
         {
             preserveScroll: true,
+            only: taskReloadOnly,
             onError: () => {
                 dueDate.value = props.task.dueAt
                     ? props.task.dueAt.slice(0, 10)
@@ -260,9 +264,7 @@ function deleteTask(): void {
 </script>
 
 <template>
-    <div
-        class="order-1 h-fit w-full shrink-0 space-y-4 select-none xl:order-2 xl:w-[280px]"
-    >
+    <div class="space-y-4 select-none">
         <!-- Assignees -->
         <div>
             <h3
@@ -324,7 +326,7 @@ function deleteTask(): void {
             </Select>
         </div>
 
-        <Separator />
+        <Separator v-if="showCreatorMeta" />
 
         <!-- Status -->
         <div>
@@ -372,7 +374,7 @@ function deleteTask(): void {
             </Select>
         </div>
 
-        <Separator />
+        <Separator v-if="showCreatorMeta" />
 
         <!-- Progress -->
         <div>
@@ -427,14 +429,20 @@ function deleteTask(): void {
             </div>
         </div>
 
-        <Separator />
+        <Separator v-if="showCreatorMeta || showActions" />
 
-        <!-- Metadata -->
-        <div class="space-y-3">
+        <!-- Creator -->
+        <div v-if="showCreatorMeta" class="space-y-3">
             <div class="flex justify-between text-sm">
                 <span class="text-muted-foreground">Created by</span>
                 <span>{{ task.creatorName ?? 'Unknown' }}</span>
             </div>
+        </div>
+
+        <Separator v-if="showCreatorMeta" />
+
+        <!-- Project + schedule -->
+        <div class="space-y-3">
             <div class="grid gap-1.5">
                 <Label
                     class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
@@ -465,65 +473,31 @@ function deleteTask(): void {
                 >
                 <Input
                     type="date"
-                    :value="dueDate"
+                    :model-value="dueDate"
                     class="h-8 w-full text-sm"
-                    @change="
-                        updateDueDate(($event.target as HTMLInputElement).value)
-                    "
+                    @update:model-value="updateDueDate(String($event))"
                 />
             </div>
         </div>
 
-        <Separator />
+        <Separator v-if="showActions" />
 
         <!-- Actions -->
-        <div class="space-y-2">
-            <Dialog v-model:open="taskDeleteDialogOpen">
-                <DialogTrigger as-child>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class="w-full cursor-pointer justify-start gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                    >
-                        <Trash2 class="h-4 w-4" />
-                        Delete task
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader class="space-y-3">
-                        <DialogTitle>Delete task?</DialogTitle>
-                        <DialogDescription>
-                            This will permanently remove this task and its
-                            comments.
-                        </DialogDescription>
-                    </DialogHeader>
+        <div v-if="showActions" class="space-y-2">
+            <Button
+                variant="outline"
+                size="sm"
+                class="w-full cursor-pointer justify-start gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                @click="taskDeleteDialogOpen = true"
+            >
+                Delete task
+            </Button>
 
-                    <div
-                        class="rounded-lg border bg-muted/40 p-3 text-sm leading-6 text-muted-foreground"
-                    >
-                        {{ task.title }}
-                    </div>
-
-                    <DialogFooter class="gap-2">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            @click="taskDeleteDialogOpen = false"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            class="gap-2"
-                            @click="deleteTask"
-                        >
-                            <Trash2 class="h-4 w-4" />
-                            Delete task
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <DeleteTaskDialog
+                v-model:open="taskDeleteDialogOpen"
+                :task-title="task.title"
+                @confirm="deleteTask"
+            />
         </div>
     </div>
 </template>
