@@ -50,7 +50,7 @@ class TeamInvitation extends Notification implements ShouldQueue
                 'inviterName' => $inviter->name,
                 'teamName' => $team->name,
             ]))
-            ->action(__('Accept invitation'), url(sprintf('/invitations/%s/accept', $this->invitation->code)));
+            ->action(__('Accept invitation'), route('invitations.show', $this->invitation));
     }
 
     /**

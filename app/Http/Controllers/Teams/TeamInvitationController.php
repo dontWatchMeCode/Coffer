@@ -9,13 +9,52 @@ use App\Http\Requests\Teams\CreateTeamInvitationRequest;
 use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Notifications\Teams\TeamInvitation as TeamInvitationNotification;
+use App\Rules\ValidTeamInvitation;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Validator;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class TeamInvitationController extends Controller
 {
+    /**
+     * Show the invitation acceptance page.
+     */
+    public function show(Request $request, TeamInvitation $invitation): SymfonyResponse
+    {
+        $user = $request->user();
+
+        $validator = Validator::make(
+            ['invitation' => $invitation],
+            ['invitation' => ['required', new ValidTeamInvitation($user)]],
+        );
+
+        if ($validator->fails()) {
+            return redirect()->route('dashboard')->withErrors($validator);
+        }
+
+        $team = $invitation->team;
+        $inviter = $invitation->inviter;
+
+        if ($team === null || $inviter === null) {
+            abort(500);
+        }
+
+        return Inertia::render('invitations/Accept', [
+            'invitation' => [
+                'code' => $invitation->code,
+                'teamName' => $team->name,
+                'inviterName' => $inviter->name,
+                'role' => $invitation->role->value,
+                'roleLabel' => $invitation->role->label(),
+            ],
+        ])->toResponse($request);
+    }
+
     /**
      * Store a newly created invitation.
      */
@@ -74,12 +113,10 @@ class TeamInvitationController extends Controller
                 abort(500);
             }
 
-            $membership = $team->memberships()->firstOrCreate(
+            $team->memberships()->firstOrCreate(
                 ['user_id' => $user->id],
                 ['role' => $invitation->role],
             );
-
-            $wasRecentlyCreated = $membership->wasRecentlyCreated;
 
             $invitation->update(['accepted_at' => now()]);
 

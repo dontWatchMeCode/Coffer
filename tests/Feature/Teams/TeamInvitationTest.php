@@ -149,7 +149,7 @@ test('team invitations can be accepted', function () {
 
     $response = $this
         ->actingAs($invitedUser)
-        ->get(route('invitations.accept', $invitation));
+        ->post(route('invitations.accept', $invitation));
 
     $response->assertRedirect(route('dashboard'));
 
@@ -172,11 +172,108 @@ test('team invitations cannot be accepted by uninvited user', function () {
 
     $response = $this
         ->actingAs($uninvitedUser)
-        ->get(route('invitations.accept', $invitation));
+        ->post(route('invitations.accept', $invitation));
 
     $response->assertSessionHasErrors('invitation');
 
     expect($uninvitedUser->fresh()->belongsToTeam($team))->toBeFalse();
+});
+
+test('team invitation acceptance page can be viewed', function () {
+    $owner = User::factory()->create();
+    $invitedUser = User::factory()->create(['email' => 'invited@example.com']);
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+
+    $invitation = TeamInvitation::factory()->create([
+        'team_id' => $team->id,
+        'email' => 'invited@example.com',
+        'role' => TeamRole::Member,
+        'invited_by' => $owner->id,
+    ]);
+
+    $response = $this
+        ->actingAs($invitedUser)
+        ->get(route('invitations.show', $invitation));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('invitations/Accept')
+        ->has('invitation')
+    );
+});
+
+test('team invitation show page requires authentication', function () {
+    $invitation = TeamInvitation::factory()->create();
+
+    $response = $this->get(route('invitations.show', $invitation));
+
+    $response->assertRedirect(route('login'));
+});
+
+test('team invitation show page rejects wrong email', function () {
+    $owner = User::factory()->create();
+    $uninvitedUser = User::factory()->create(['email' => 'uninvited@example.com']);
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+
+    $invitation = TeamInvitation::factory()->create([
+        'team_id' => $team->id,
+        'email' => 'invited@example.com',
+        'invited_by' => $owner->id,
+    ]);
+
+    $response = $this
+        ->actingAs($uninvitedUser)
+        ->get(route('invitations.show', $invitation));
+
+    $response->assertRedirect(route('dashboard'));
+    $response->assertSessionHasErrors('invitation');
+});
+
+test('team invitation show page rejects expired invitation', function () {
+    $owner = User::factory()->create();
+    $invitedUser = User::factory()->create(['email' => 'invited@example.com']);
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+
+    $invitation = TeamInvitation::factory()->expired()->create([
+        'team_id' => $team->id,
+        'email' => 'invited@example.com',
+        'invited_by' => $owner->id,
+    ]);
+
+    $response = $this
+        ->actingAs($invitedUser)
+        ->get(route('invitations.show', $invitation));
+
+    $response->assertRedirect(route('dashboard'));
+    $response->assertSessionHasErrors('invitation');
+});
+
+test('team invitation show page rejects already accepted invitation', function () {
+    $owner = User::factory()->create();
+    $invitedUser = User::factory()->create(['email' => 'invited@example.com']);
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+
+    $invitation = TeamInvitation::factory()->create([
+        'team_id' => $team->id,
+        'email' => 'invited@example.com',
+        'invited_by' => $owner->id,
+        'accepted_at' => now(),
+    ]);
+
+    $response = $this
+        ->actingAs($invitedUser)
+        ->get(route('invitations.show', $invitation));
+
+    $response->assertRedirect(route('dashboard'));
+    $response->assertSessionHasErrors('invitation');
 });
 
 test('expired invitations cannot be accepted', function () {
@@ -194,7 +291,7 @@ test('expired invitations cannot be accepted', function () {
 
     $response = $this
         ->actingAs($invitedUser)
-        ->get(route('invitations.accept', $invitation));
+        ->post(route('invitations.accept', $invitation));
 
     $response->assertSessionHasErrors('invitation');
 

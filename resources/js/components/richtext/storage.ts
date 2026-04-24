@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import MarkdownIt from 'markdown-it';
 
 type LegacyInlineContent =
@@ -208,7 +209,9 @@ export function renderStoredRichTextAsHtml(
         return '';
     }
 
-    return markdown
+    const html = markdown
         .render(normalized)
         .replaceAll(`<p>${EMPTY_PARAGRAPH_MARKER}</p>`, '<br>');
+
+    return DOMPurify.sanitize(html);
 }
