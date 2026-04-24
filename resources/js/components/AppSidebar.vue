@@ -2,6 +2,7 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     BookOpen,
+    Bookmark,
     CalendarDays,
     Contact,
     FolderGit2,
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { dashboard as teamDashboard } from '@/routes/team';
+import { index as teamBookmarks } from '@/routes/team/bookmarks/index';
 import { index as teamCalendar } from '@/routes/team/calendar/index';
 import { index as teamContacts } from '@/routes/team/contacts/index';
 import { index as teamTasks } from '@/routes/team/tasks/index';
@@ -62,6 +64,11 @@ const mainNavItems = computed<NavItem[]>(() => [
                   title: 'Contacts',
                   href: teamContacts(page.props.currentTeam.slug).url,
                   icon: Contact,
+              },
+              {
+                  title: 'Bookmarks',
+                  href: teamBookmarks(page.props.currentTeam.slug).url,
+                  icon: Bookmark,
               },
           ]
         : []),

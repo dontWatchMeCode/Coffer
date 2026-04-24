@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
 use App\Models\Project;
@@ -28,6 +29,7 @@ class SearchController extends Controller
                 'contacts' => [],
                 'events' => [],
                 'projects' => [],
+                'bookmarks' => [],
             ]);
         }
 
@@ -111,11 +113,27 @@ class SearchController extends Controller
             ->values()
             ->all();
 
+        $bookmarks = Bookmark::query()
+            ->whereBelongsTo($currentTeam)
+            ->where(fn ($q) => $q->where('title', 'like', $like)->orWhere('description', 'like', $like)->orWhere('url', 'like', $like))
+            ->orderBy('title')
+            ->limit(10)
+            ->get(['id', 'title', 'url', 'description'])
+            ->map(fn (Bookmark $bookmark): array => [
+                'id' => $bookmark->id,
+                'title' => $bookmark->title,
+                'subtitle' => $bookmark->description,
+                'url' => route('team.bookmarks.show', ['current_team' => $currentTeam, 'bookmark' => $bookmark->id]),
+            ])
+            ->values()
+            ->all();
+
         return response()->json([
             'tasks' => $tasks,
             'contacts' => $contacts,
             'events' => $events,
             'projects' => $projects,
+            'bookmarks' => $bookmarks,
         ]);
     }
 }

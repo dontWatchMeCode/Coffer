@@ -37,7 +37,8 @@ function handleOpenChange(value: boolean) {
         <DialogContent>
             <Form
                 :key="formKey"
-                v-bind="store.form()"
+                :action="store().url"
+                :method="store().method"
                 class="space-y-6"
                 v-slot="{ errors, processing }"
                 @success="open = false"

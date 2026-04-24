@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import TeamInvitationController from '@/actions/App/Http/Controllers/Teams/TeamInvitationController';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import TeamInvitationController from '@/actions/App/Http/Controllers/Teams/TeamInvitationController';
 
 type Props = {
     invitation: {
@@ -29,15 +29,22 @@ defineOptions({
 
     <div class="space-y-6">
         <p class="text-sm text-muted-foreground">
-            <strong class="text-foreground">{{ invitation.inviterName }}</strong>
+            <strong class="text-foreground">{{
+                invitation.inviterName
+            }}</strong>
             has invited you to join
             <strong class="text-foreground">{{ invitation.teamName }}</strong>
             as a
-            <strong class="text-foreground">{{ invitation.roleLabel }}</strong>.
+            <strong class="text-foreground">{{ invitation.roleLabel }}</strong
+            >.
         </p>
 
         <Form
-            v-bind="TeamInvitationController.accept.form({ invitation: invitation.code })"
+            v-bind="
+                TeamInvitationController.accept.form({
+                    invitation: invitation.code,
+                })
+            "
             class="w-full"
             v-slot="{ errors, processing }"
         >

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
 import {
+    Bookmark,
     CalendarDays,
     Contact,
     FolderGit2,
@@ -29,6 +30,7 @@ type SearchResponse = {
     contacts: SearchResultItem[];
     events: SearchResultItem[];
     projects: SearchResultItem[];
+    bookmarks: SearchResultItem[];
 };
 
 const open = defineModel<boolean>('open', { default: false });
@@ -41,6 +43,7 @@ const emptyResults: SearchResponse = {
     contacts: [],
     events: [],
     projects: [],
+    bookmarks: [],
 };
 const results = ref<SearchResponse>({ ...emptyResults });
 const selectedIndex = ref(0);
@@ -64,6 +67,10 @@ const allResults = computed(() => [
         ...item,
         type: 'project' as const,
     })),
+    ...results.value.bookmarks.map((item) => ({
+        ...item,
+        type: 'bookmark' as const,
+    })),
 ]);
 
 const hasResults = computed(() => allResults.value.length > 0);
@@ -77,6 +84,7 @@ const categories: {
     { key: 'contacts', label: 'Contacts', icon: Contact },
     { key: 'events', label: 'Events', icon: CalendarDays },
     { key: 'projects', label: 'Projects', icon: FolderGit2 },
+    { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
 ];
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -209,8 +217,8 @@ function getResultIndex(
         >
             <DialogTitle class="sr-only">Search</DialogTitle>
             <DialogDescription class="sr-only">
-                Search across tasks, contacts, events, and projects in your
-                team.
+                Search across tasks, contacts, events, projects, and bookmarks
+                in your team.
             </DialogDescription>
 
             <div class="flex items-center border-b px-4">
@@ -218,7 +226,7 @@ function getResultIndex(
                 <Input
                     ref="inputRef"
                     v-model="query"
-                    placeholder="Search tasks, contacts, events, projects..."
+                    placeholder="Search tasks, contacts, events, projects, bookmarks..."
                     class="h-12 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
                 />
                 <div

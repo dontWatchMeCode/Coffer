@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Bookmarks\BookmarkController;
+use App\Http\Controllers\Bookmarks\BookmarkPageController;
 use App\Http\Controllers\Calendar\CalendarEventController;
 use App\Http\Controllers\Calendar\CalendarPageController;
 use App\Http\Controllers\Contacts\ContactController;
@@ -51,6 +53,18 @@ Route::prefix('{current_team}')
         Route::delete('contacts/{contact}', [ContactController::class, 'destroy'])
             ->whereNumber('contact')
             ->name('team.contacts.destroy');
+
+        Route::get('bookmarks', [BookmarkPageController::class, 'index'])->name('team.bookmarks.index');
+        Route::get('bookmarks/{bookmark}', [BookmarkPageController::class, 'show'])
+            ->whereNumber('bookmark')
+            ->name('team.bookmarks.show');
+        Route::post('bookmarks', [BookmarkController::class, 'store'])->name('team.bookmarks.store');
+        Route::patch('bookmarks/{bookmark}', [BookmarkController::class, 'update'])
+            ->whereNumber('bookmark')
+            ->name('team.bookmarks.update');
+        Route::delete('bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])
+            ->whereNumber('bookmark')
+            ->name('team.bookmarks.destroy');
 
         Route::get('tasks', [TaskPageController::class, 'index'])->name('team.tasks.index');
         Route::get('tasks/{project}', [TaskPageController::class, 'show'])
