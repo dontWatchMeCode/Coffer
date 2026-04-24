@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Plus, Trash2, X } from 'lucide-vue-next';
+import { Plus, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import DeleteContactDialog from '@/components/contacts/DeleteContactDialog.vue';
-import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import InputError from '@/components/InputError.vue';
+import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
