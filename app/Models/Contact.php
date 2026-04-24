@@ -10,6 +10,10 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property list<array{label: string|null, value: string}>|null $phone_numbers
+ * @property list<array{label: string|null, value: string}>|null $email_addresses
+ */
 #[Fillable(['team_id', 'name', 'phone_numbers', 'email_addresses', 'address', 'additional_info'])]
 class Contact extends Model
 {

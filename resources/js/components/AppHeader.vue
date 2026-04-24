@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import SearchOverlay from '@/components/SearchOverlay.vue';
 import TeamSwitcher from '@/components/TeamSwitcher.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -81,6 +82,8 @@ const rightNavItems: NavItem[] = [
         icon: BookOpen,
     },
 ];
+
+const searchOpen = ref(false);
 </script>
 
 <template>
@@ -202,6 +205,7 @@ const rightNavItems: NavItem[] = [
                             variant="ghost"
                             size="icon"
                             class="group h-9 w-9 cursor-pointer"
+                            @click="searchOpen = true"
                         >
                             <Search
                                 class="size-5 opacity-80 group-hover:opacity-100"
@@ -290,4 +294,5 @@ const rightNavItems: NavItem[] = [
             </div>
         </div>
     </div>
+    <SearchOverlay v-model:open="searchOpen" />
 </template>

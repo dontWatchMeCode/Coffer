@@ -4,6 +4,7 @@ use App\Http\Controllers\Calendar\CalendarEventController;
 use App\Http\Controllers\Calendar\CalendarPageController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Contacts\ContactPageController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Tasks\ProjectController;
 use App\Http\Controllers\Tasks\TaskCommentController;
 use App\Http\Controllers\Tasks\TaskController;
@@ -25,6 +26,7 @@ Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
     ->group(function () {
         Route::inertia('dashboard', 'Dashboard')->name('team.dashboard');
+        Route::get('search', SearchController::class)->middleware('throttle:30,1')->name('team.search');
 
         Route::get('calendar', [CalendarPageController::class, 'index'])->name('team.calendar.index');
         Route::get('calendar/events/{event}/edit', [CalendarPageController::class, 'edit'])

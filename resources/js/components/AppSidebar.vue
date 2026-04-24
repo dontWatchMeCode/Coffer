@@ -7,12 +7,14 @@ import {
     FolderGit2,
     LayoutGrid,
     ListTodo,
+    Search,
 } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import SearchOverlay from '@/components/SearchOverlay.vue';
 import TeamSwitcher from '@/components/TeamSwitcher.vue';
 import {
     Sidebar,
@@ -77,6 +79,8 @@ const footerNavItems: NavItem[] = [
         icon: BookOpen,
     },
 ];
+
+const searchOpen = ref(false);
 </script>
 
 <template>
@@ -99,6 +103,25 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
+            <div class="px-2 py-1.5" v-if="page.props.currentTeam">
+                <button
+                    @click="searchOpen = true"
+                    class="flex h-8 w-full items-center gap-2 rounded-md bg-sidebar-accent/50 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                    <Search class="h-3.5 w-3.5 shrink-0 opacity-70" />
+                    <span class="flex-1 text-left">Search</span>
+                    <span
+                        class="hidden items-center gap-0.5 text-[10px] opacity-60 lg:flex"
+                    >
+                        <kbd class="rounded bg-sidebar px-1 py-0.5 font-sans"
+                            >Ctrl</kbd
+                        >
+                        <kbd class="rounded bg-sidebar px-1 py-0.5 font-sans"
+                            >K</kbd
+                        >
+                    </span>
+                </button>
+            </div>
             <NavMain :items="mainNavItems" />
         </SidebarContent>
 
@@ -108,4 +131,5 @@ const footerNavItems: NavItem[] = [
         </SidebarFooter>
     </Sidebar>
     <slot />
+    <SearchOverlay v-model:open="searchOpen" />
 </template>
