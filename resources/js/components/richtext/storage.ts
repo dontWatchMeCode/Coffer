@@ -32,6 +32,8 @@ const markdown = new MarkdownIt({
     linkify: true,
 });
 
+const EMPTY_PARAGRAPH_MARKER = '\uE000';
+
 function isLegacySerializedBlockNoteBody(body: string): boolean {
     return body.trimStart().startsWith('[');
 }
@@ -137,6 +139,39 @@ function convertLegacyBlockNoteJsonToMarkdown(body: string): string {
     }
 }
 
+function preserveEmptyParagraphsInMarkdown(body: string): string {
+    const lines = body.replace(/\r\n?/g, '\n').trim().split('\n');
+    const normalizedLines: string[] = [];
+    let blankLineCount = 0;
+
+    for (const line of lines) {
+        if (line.trim() === '') {
+            blankLineCount += 1;
+
+            continue;
+        }
+
+        if (blankLineCount > 0) {
+            normalizedLines.push('');
+
+            const emptyParagraphCount = Math.max(
+                0,
+                Math.floor((blankLineCount - 1) / 2),
+            );
+
+            for (let index = 0; index < emptyParagraphCount; index += 1) {
+                normalizedLines.push(EMPTY_PARAGRAPH_MARKER, '');
+            }
+
+            blankLineCount = 0;
+        }
+
+        normalizedLines.push(line);
+    }
+
+    return normalizedLines.join('\n');
+}
+
 export function normalizeStoredRichText(
     body: string | null | undefined,
 ): string {
@@ -165,11 +200,15 @@ export function trimStoredRichText(body: string | null | undefined): string {
 export function renderStoredRichTextAsHtml(
     body: string | null | undefined,
 ): string {
-    const normalized = normalizeStoredRichText(body);
+    const normalized = preserveEmptyParagraphsInMarkdown(
+        normalizeStoredRichText(body),
+    );
 
     if (!normalized.trim()) {
         return '';
     }
 
-    return markdown.render(normalized);
+    return markdown
+        .render(normalized)
+        .replaceAll(`<p>${EMPTY_PARAGRAPH_MARKER}</p>`, '<br>');
 }
