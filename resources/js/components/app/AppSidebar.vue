@@ -11,12 +11,12 @@ import {
     Search,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
-import NavMain from '@/components/NavMain.vue';
-import NavUser from '@/components/NavUser.vue';
-import SearchOverlay from '@/components/SearchOverlay.vue';
-import TeamSwitcher from '@/components/TeamSwitcher.vue';
+import AppLogo from '@/components/app/AppLogo.vue';
+import NavFooter from '@/components/nav/NavFooter.vue';
+import NavMain from '@/components/nav/NavMain.vue';
+import NavUser from '@/components/nav/NavUser.vue';
+import SearchOverlay from '@/components/nav/SearchOverlay.vue';
+import TeamSwitcher from '@/components/nav/TeamSwitcher.vue';
 import {
     Sidebar,
     SidebarContent,

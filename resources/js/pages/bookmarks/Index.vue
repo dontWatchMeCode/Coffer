@@ -2,10 +2,10 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, Search } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import BookmarkList from '@/components/bookmarks/BookmarkList.vue';
-import CreateBookmarkDialog from '@/components/bookmarks/CreateBookmarkDialog.vue';
-import DeleteBookmarkDialog from '@/components/bookmarks/DeleteBookmarkDialog.vue';
-import PageHeader from '@/components/PageHeader.vue';
+import PageHeader from '@/components/page/PageHeader.vue';
+import BookmarkList from '@/components/pages/bookmarks/BookmarkList.vue';
+import CreateBookmarkDialog from '@/components/pages/bookmarks/CreateBookmarkDialog.vue';
+import DeleteBookmarkDialog from '@/components/pages/bookmarks/DeleteBookmarkDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {

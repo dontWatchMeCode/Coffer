@@ -2,7 +2,7 @@
 import { Form, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CalendarEventController from '@/actions/App/Http/Controllers/Calendar/CalendarEventController';
-import InputError from '@/components/InputError.vue';
+import InputError from '@/components/form/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,

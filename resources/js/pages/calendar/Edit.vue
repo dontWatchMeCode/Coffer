@@ -4,9 +4,9 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import CalendarEventController from '@/actions/App/Http/Controllers/Calendar/CalendarEventController';
-import InputError from '@/components/InputError.vue';
+import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
-import PageHeader from '@/components/PageHeader.vue';
+import PageHeader from '@/components/page/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,

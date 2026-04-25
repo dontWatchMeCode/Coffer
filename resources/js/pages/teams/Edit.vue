@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import CancelInvitationModal from '@/components/CancelInvitationModal.vue';
-import DeleteTeamModal from '@/components/DeleteTeamModal.vue';
-import Heading from '@/components/Heading.vue';
-import InviteMemberModal from '@/components/InviteMemberModal.vue';
-import RemoveMemberModal from '@/components/RemoveMemberModal.vue';
+import CancelInvitationModal from '@/components/modals/CancelInvitationModal.vue';
+import DeleteTeamModal from '@/components/modals/DeleteTeamModal.vue';
+import InviteMemberModal from '@/components/modals/InviteMemberModal.vue';
+import RemoveMemberModal from '@/components/modals/RemoveMemberModal.vue';
+import Heading from '@/components/page/Heading.vue';
 import DangerZone from '@/components/teams/DangerZone.vue';
 import InvitationsList from '@/components/teams/InvitationsList.vue';
 import MembersList from '@/components/teams/MembersList.vue';

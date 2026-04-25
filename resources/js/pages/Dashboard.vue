@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import EmailVerifiedDialog from '@/components/EmailVerifiedDialog.vue';
-import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
-import RichTextEditor from '@/components/RichTextEditor.vue';
+import EmailVerifiedDialog from '@/components/auth/EmailVerifiedDialog.vue';
+import PlaceholderPattern from '@/components/page/PlaceholderPattern.vue';
+import RichTextEditor from '@/components/richtext/RichTextEditor.vue';
 import { dashboard } from '@/routes';
 import { dashboard as teamDashboard } from '@/routes/team';
 import type { Team } from '@/types';

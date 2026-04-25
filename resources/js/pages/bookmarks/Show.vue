@@ -2,10 +2,10 @@
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import DeleteBookmarkDialog from '@/components/bookmarks/DeleteBookmarkDialog.vue';
-import InputError from '@/components/InputError.vue';
+import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
-import PageHeader from '@/components/PageHeader.vue';
+import PageHeader from '@/components/page/PageHeader.vue';
+import DeleteBookmarkDialog from '@/components/pages/bookmarks/DeleteBookmarkDialog.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

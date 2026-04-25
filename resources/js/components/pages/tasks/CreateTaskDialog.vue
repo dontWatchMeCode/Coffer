@@ -2,9 +2,9 @@
 import { Form, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
-import InputError from '@/components/InputError.vue';
+import InputError from '@/components/form/InputError.vue';
+import RichTextEditor from '@/components/richtext/RichTextEditor.vue';
 import { trimStoredRichText } from '@/components/richtext/storage';
-import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,

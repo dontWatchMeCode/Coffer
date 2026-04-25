@@ -3,7 +3,7 @@ import { router } from '@inertiajs/vue3';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, ref, watch } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
-import DeleteTaskDialog from '@/components/tasks/DeleteTaskDialog.vue';
+import DeleteTaskDialog from '@/components/pages/tasks/DeleteTaskDialog.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

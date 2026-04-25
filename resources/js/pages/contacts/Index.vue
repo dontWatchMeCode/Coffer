@@ -2,10 +2,10 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, Search } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import ContactList from '@/components/contacts/ContactList.vue';
-import CreateContactDialog from '@/components/contacts/CreateContactDialog.vue';
-import DeleteContactDialog from '@/components/contacts/DeleteContactDialog.vue';
-import PageHeader from '@/components/PageHeader.vue';
+import PageHeader from '@/components/page/PageHeader.vue';
+import ContactList from '@/components/pages/contacts/ContactList.vue';
+import CreateContactDialog from '@/components/pages/contacts/CreateContactDialog.vue';
+import DeleteContactDialog from '@/components/pages/contacts/DeleteContactDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {

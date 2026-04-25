@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
-import InputError from '@/components/InputError.vue';
+import InputError from '@/components/form/InputError.vue';
+import RichTextEditor from '@/components/richtext/RichTextEditor.vue';
 import { trimStoredRichText } from '@/components/richtext/storage';
-import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

@@ -2,11 +2,12 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import AppLogo from '@/components/AppLogo.vue';
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import Breadcrumbs from '@/components/Breadcrumbs.vue';
-import SearchOverlay from '@/components/SearchOverlay.vue';
-import TeamSwitcher from '@/components/TeamSwitcher.vue';
+import AppLogo from '@/components/app/AppLogo.vue';
+import AppLogoIcon from '@/components/app/AppLogoIcon.vue';
+import Breadcrumbs from '@/components/nav/Breadcrumbs.vue';
+import SearchOverlay from '@/components/nav/SearchOverlay.vue';
+import TeamSwitcher from '@/components/nav/TeamSwitcher.vue';
+import UserMenuContent from '@/components/nav/UserMenuContent.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,7 +34,6 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
 import { toUrl } from '@/lib/utils';

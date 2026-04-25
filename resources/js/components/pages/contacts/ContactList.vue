@@ -6,7 +6,7 @@ import {
     Trash2,
     UserCircle,
 } from 'lucide-vue-next';
-import ContactAvatar from '@/components/contacts/ContactAvatar.vue';
+import ContactAvatar from '@/components/pages/contacts/ContactAvatar.vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,

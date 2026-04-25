@@ -2,7 +2,7 @@
 import { Form, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import ProjectController from '@/actions/App/Http/Controllers/Tasks/ProjectController';
-import InputError from '@/components/InputError.vue';
+import InputError from '@/components/form/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {

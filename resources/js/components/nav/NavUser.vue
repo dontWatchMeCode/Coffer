@@ -2,6 +2,7 @@
 import { usePage } from '@inertiajs/vue3';
 import { ChevronsUpDown } from 'lucide-vue-next';
 import { computed } from 'vue';
+import UserMenuContent from '@/components/nav/UserMenuContent.vue';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,8 +14,7 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
-import UserInfo from '@/components/UserInfo.vue';
-import UserMenuContent from '@/components/UserMenuContent.vue';
+import UserInfo from '@/components/user/UserInfo.vue';
 import type { Team } from '@/types';
 
 const page = usePage();

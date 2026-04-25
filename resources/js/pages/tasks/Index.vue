@@ -3,8 +3,8 @@ import { Form, Head, usePage, Link } from '@inertiajs/vue3';
 import { Archive, FolderPlus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ProjectController from '@/actions/App/Http/Controllers/Tasks/ProjectController';
-import InputError from '@/components/InputError.vue';
-import PageHeader from '@/components/PageHeader.vue';
+import InputError from '@/components/form/InputError.vue';
+import PageHeader from '@/components/page/PageHeader.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

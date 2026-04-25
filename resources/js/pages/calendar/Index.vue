@@ -24,10 +24,10 @@ import {
     useFilter,
 } from 'reka-ui';
 import { computed, ref } from 'vue';
-import CalendarEventDialogs from '@/components/calendar/CalendarEventDialogs.vue';
-import CalendarGrid from '@/components/calendar/CalendarGrid.vue';
-import CalendarList from '@/components/calendar/CalendarList.vue';
-import PageHeader from '@/components/PageHeader.vue';
+import PageHeader from '@/components/page/PageHeader.vue';
+import CalendarEventDialogs from '@/components/pages/calendar/CalendarEventDialogs.vue';
+import CalendarGrid from '@/components/pages/calendar/CalendarGrid.vue';
+import CalendarList from '@/components/pages/calendar/CalendarList.vue';
 import { Button } from '@/components/ui/button';
 import {
     Select,

@@ -3,11 +3,11 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
-import PageHeader from '@/components/PageHeader.vue';
-import CommentsSection from '@/components/tasks/CommentsSection.vue';
-import DeleteTaskDialog from '@/components/tasks/DeleteTaskDialog.vue';
-import TaskEditForm from '@/components/tasks/TaskEditForm.vue';
-import TaskSidebar from '@/components/tasks/TaskSidebar.vue';
+import PageHeader from '@/components/page/PageHeader.vue';
+import CommentsSection from '@/components/pages/tasks/CommentsSection.vue';
+import DeleteTaskDialog from '@/components/pages/tasks/DeleteTaskDialog.vue';
+import TaskEditForm from '@/components/pages/tasks/TaskEditForm.vue';
+import TaskSidebar from '@/components/pages/tasks/TaskSidebar.vue';
 import { index, show, edit } from '@/routes/team/tasks/index';
 import type {
     TaskCommentItem,

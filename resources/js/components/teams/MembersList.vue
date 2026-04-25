@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { ChevronDown, UserPlus, X } from 'lucide-vue-next';
-import Heading from '@/components/Heading.vue';
+import Heading from '@/components/page/Heading.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
