@@ -14,9 +14,13 @@ use Tests\TestCase;
 |
 */
 
-pest()->extend(TestCase::class)
+pest()->extends(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->in('Feature');
+    ->in('Feature', 'Browser');
+
+pest()->beforeEach(function () {
+    $this->withoutVite();
+})->in('Feature');
 
 /*
 |--------------------------------------------------------------------------

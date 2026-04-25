@@ -36,6 +36,7 @@
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.9",
         "pestphp/pest": "^4.4",
+        "pestphp/pest-plugin-browser": "^4.3",
         "pestphp/pest-plugin-laravel": "^4.1",
         "rector/rector": "^2.4"
     },
@@ -92,6 +93,7 @@
             "@rector",
             "@lint",
             "@php artisan wayfinder:generate --ansi --with-form",
+            "npm run build",
             "npm run format",
             "npm run lint",
             "npm run types:check",
