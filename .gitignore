@@ -34,3 +34,4 @@ yarn-error.log
 testing
 testing-shm
 testing-wal
+testing_test_*
