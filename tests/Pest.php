@@ -22,6 +22,27 @@ pest()->beforeEach(function () {
     $this->withoutVite();
 })->in('Feature');
 
+pest()->beforeEach(function () {
+    $hot = __DIR__.'/../public/hot';
+    $backup = $hot.'.backup';
+
+    // Self-healing: restore orphaned backup from a previous crashed run
+    if (file_exists($backup)) {
+        rename($backup, $hot);
+    }
+
+    if (file_exists($hot)) {
+        rename($hot, $backup);
+    }
+})->afterEach(function () {
+    $hot = __DIR__.'/../public/hot';
+    $backup = $hot.'.backup';
+
+    if (file_exists($backup)) {
+        rename($backup, $hot);
+    }
+})->in('Browser');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations
