@@ -38,7 +38,8 @@ createInertiaApp({
                 if (window.__pestBrowser?.jsErrors) {
                     // @ts-expect-error Pest browser plugin injects __pestBrowser at runtime.
                     window.__pestBrowser.jsErrors.push({
-                        message: err instanceof Error ? err.message : String(err),
+                        message:
+                            err instanceof Error ? err.message : String(err),
                         filename: 'vue-error-handler',
                         lineno: 0,
                         colno: 0,
