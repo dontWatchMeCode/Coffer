@@ -38,6 +38,7 @@ export default defineConfigWithVueTs(
             },
         },
         rules: {
+            'max-lines': ['error', { max: 475, skipBlankLines: true, skipComments: true }],
             'vue/multi-word-component-names': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/consistent-type-imports': [
