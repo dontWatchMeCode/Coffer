@@ -20,9 +20,19 @@ import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
 import { index as calendarIndex } from '@/routes/team/calendar';
 import type { CalendarEventItem, Team } from '@/types';
+import type {
+    LinkContext,
+    LinkEndpoints,
+    LinkRecord,
+} from '@/types/record-links';
 
 type Props = {
     event: CalendarEventItem;
+    recordLinks?: {
+        links: LinkRecord[];
+        context: LinkContext;
+        endpoints: LinkEndpoints;
+    } | null;
 };
 
 const props = defineProps<Props>();
@@ -119,6 +129,7 @@ function submitEdit(): void {
                 delete-label="Delete event"
                 :save-disabled="isSubmitting"
                 :delete-disabled="isSubmitting"
+                :record-links="recordLinks"
             >
                 <template #main>
                     <form

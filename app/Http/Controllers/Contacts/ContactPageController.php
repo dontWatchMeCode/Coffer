@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Contacts;
 
+use App\Concerns\ProvidesRecordLinks;
 use App\Http\Controllers\Controller;
 use App\Models\Contact;
 use App\Models\Team;
@@ -11,6 +12,8 @@ use Inertia\Response;
 
 class ContactPageController extends Controller
 {
+    use ProvidesRecordLinks;
+
     public function index(Request $request, Team $currentTeam): Response
     {
         $contacts = Contact::query()
@@ -49,6 +52,7 @@ class ContactPageController extends Controller
                 'createdAt' => $contact->created_at?->format(\DateTimeInterface::ATOM),
                 'updatedAt' => $contact->updated_at?->format(\DateTimeInterface::ATOM),
             ],
+            'recordLinks' => $this->recordLinksPayload($contact, $currentTeam),
         ]);
     }
 }

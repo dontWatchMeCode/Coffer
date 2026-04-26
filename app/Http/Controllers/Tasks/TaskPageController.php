@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tasks;
 
+use App\Concerns\ProvidesRecordLinks;
 use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
@@ -18,6 +19,8 @@ use Inertia\Response;
 
 class TaskPageController extends Controller
 {
+    use ProvidesRecordLinks;
+
     /**
      * Display the task management page for the current team.
      */
@@ -77,6 +80,7 @@ class TaskPageController extends Controller
                 'id' => $p->id,
                 'name' => $p->name,
             ], $projects->all())),
+            'recordLinks' => $this->recordLinksPayload($task, $currentTeam),
         ]);
     }
 
@@ -108,6 +112,7 @@ class TaskPageController extends Controller
             ]), $tasks->all()),
             'members' => $this->memberPayload($members),
             'statuses' => $this->statusPayload(),
+            'recordLinks' => $this->recordLinksPayload($project, $currentTeam),
         ]);
     }
 

@@ -173,3 +173,18 @@
 
 11. **Migration altering columns in SQLite** — SQLite doesn't support `MODIFY COLUMN` or `DROP COLUMN`.
     - Fix: recreate the table under a new name, copy data with SQL expressions (e.g. `json_extract`), drop old table, rename new one.
+
+### Session: Record Links Feature (Apr 2026)
+
+1. **Normalized pair storage prevents duplicates** — `record_links` table stores `(left_type, left_id, right_type, right_id)` with `left <= right` ordering (by FQCN then ID), plus a unique index on the 5-tuple with `team_id`.
+2. **Race condition on concurrent link creation** — `exists()` check + `create()` is not atomic. Wrap `create()` in `try/catch` for `QueryException` with SQLSTATE `23000` to return 422 instead of 500.
+3. **Type alias mismatch between frontend and backend** — controller expected `'Contact'` but `recordLinkContext()` returned `'contact'`. Added `typeAliasFor()` centralizing lowercase aliases.
+4. **Project candidate search SQL error** — `Project` uses `name` not `title`. Added explicit `Project::class` cases to search fields and `orderBy` in `candidates()`.
+5. **Cross-type ID collision on disabled states** — Vue `addingId`/`removingId` used raw integer IDs, so a Task with ID 5 and a Contact with ID 5 would share state. Changed to composite key `${type}-${id}`.
+6. **Stale CSRF token on `router.reload()`** — `<meta name="csrf-token">` is not updated by Inertia `router.reload()`. Read `XSRF-TOKEN` cookie instead, with meta tag fallback.
+7. **DELETE with JSON body fails on some proxies/WAFs** — switched to query params for `destroy()` endpoint; updated frontend to append `?from_type=...` to URL.
+8. **Orphan `RecordLink` rows on model deletion** — added `bootHasRecordLinks()` with `static::deleting` event that calls `RecordLink::queryForModel(...)->delete()`.
+9. **PHPStan level 8 trait method generics** — `array<int, T>` PHPDoc on trait methods analyzed in model context triggers `missingType.iterableValue`. Use `array<T>` (list shorthand) instead.
+10. **Shared TypeScript types across 7 Vue files** — extracted `LinkRecord`, `LinkContext`, `LinkEndpoints` to `resources/js/types/record-links.ts` to prevent drift.
+11. **`formattedLinkedRecords()` requires `Team` param** — made `$currentTeam` required to avoid N+1 `Team::find()` fallback and null-team crashes.
+12. **Task URL breaks when `project_id` is null** — guard `routeName` to `null` when `project_id` is missing so `route()` is never called with null params.

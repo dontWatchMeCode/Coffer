@@ -15,9 +15,19 @@ import {
     update as updateBookmark,
 } from '@/routes/team/bookmarks';
 import type { BookmarkItem, Team } from '@/types';
+import type {
+    LinkContext,
+    LinkEndpoints,
+    LinkRecord,
+} from '@/types/record-links';
 
 type Props = {
     bookmark: BookmarkItem;
+    recordLinks?: {
+        links: LinkRecord[];
+        context: LinkContext;
+        endpoints: LinkEndpoints;
+    } | null;
 };
 
 const props = defineProps<Props>();
@@ -110,6 +120,7 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
                 delete-label="Delete bookmark"
                 :save-disabled="isSubmitting"
                 :delete-disabled="isSubmitting"
+                :record-links="recordLinks"
             >
                 <template #main>
                     <form

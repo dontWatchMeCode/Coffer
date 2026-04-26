@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
+use App\Concerns\HasRecordLinks;
+use App\Contracts\LinkableRecord;
 use App\Enums\TaskStatus;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,12 +15,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
 #[Fillable(['team_id', 'project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'position', 'due_at'])]
-class Task extends Model
+class Task extends Model implements LinkableRecord
 {
     use BelongsToTeam;
 
     /** @use HasFactory<TaskFactory> */
     use HasFactory;
+
+    use HasRecordLinks;
 
     /**
      * Bootstrap the model and its traits.

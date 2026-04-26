@@ -17,9 +17,19 @@ import {
     update as updateContact,
 } from '@/routes/team/contacts';
 import type { ContactEntry, ContactItem, Team } from '@/types';
+import type {
+    LinkContext,
+    LinkEndpoints,
+    LinkRecord,
+} from '@/types/record-links';
 
 type Props = {
     contact: ContactItem;
+    recordLinks?: {
+        links: LinkRecord[];
+        context: LinkContext;
+        endpoints: LinkEndpoints;
+    } | null;
 };
 
 const props = defineProps<Props>();
@@ -133,6 +143,7 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
                 delete-label="Delete contact"
                 :save-disabled="isSubmitting"
                 :delete-disabled="isSubmitting"
+                :record-links="recordLinks"
             >
                 <template #main>
                     <form

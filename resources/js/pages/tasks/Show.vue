@@ -8,6 +8,7 @@ import PageHeader from '@/components/page/PageHeader.vue';
 import CreateTaskDialog from '@/components/pages/tasks/CreateTaskDialog.vue';
 import ProjectSettingsDialog from '@/components/pages/tasks/ProjectSettingsDialog.vue';
 import TaskList from '@/components/pages/tasks/TaskList.vue';
+import RecordLinksPanel from '@/components/record-links/RecordLinksPanel.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,12 +19,22 @@ import type {
     TaskProject,
     TaskStatusOption,
 } from '@/types';
+import type {
+    LinkContext,
+    LinkEndpoints,
+    LinkRecord,
+} from '@/types/record-links';
 
 type Props = {
     project: Pick<TaskProject, 'id' | 'name' | 'description' | 'isArchived'>;
     tasks: TaskItem[];
     members: TaskMember[];
     statuses: TaskStatusOption[];
+    recordLinks?: {
+        links: LinkRecord[];
+        context: LinkContext;
+        endpoints: LinkEndpoints;
+    } | null;
 };
 
 const props = defineProps<Props>();
@@ -148,6 +159,13 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                 <div
                     class="order-1 h-fit w-full shrink-0 space-y-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
                 >
+                    <RecordLinksPanel
+                        v-if="recordLinks"
+                        :links="recordLinks.links"
+                        :context="recordLinks.context"
+                        :endpoints="recordLinks.endpoints"
+                    />
+
                     <div>
                         <h3
                             class="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"

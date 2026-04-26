@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bookmarks;
 
+use App\Concerns\ProvidesRecordLinks;
 use App\Http\Controllers\Controller;
 use App\Models\Bookmark;
 use App\Models\Team;
@@ -11,6 +12,8 @@ use Inertia\Response;
 
 class BookmarkPageController extends Controller
 {
+    use ProvidesRecordLinks;
+
     public function index(Request $request, Team $currentTeam): Response
     {
         $bookmarks = Bookmark::query()
@@ -52,6 +55,7 @@ class BookmarkPageController extends Controller
                 'createdAt' => $bookmark->created_at?->format(\DateTimeInterface::ATOM),
                 'updatedAt' => $bookmark->updated_at?->format(\DateTimeInterface::ATOM),
             ],
+            'recordLinks' => $this->recordLinksPayload($bookmark, $currentTeam),
         ]);
     }
 }

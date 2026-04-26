@@ -6,6 +6,7 @@ use App\Http\Controllers\Calendar\CalendarEventController;
 use App\Http\Controllers\Calendar\CalendarPageController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Contacts\ContactPageController;
+use App\Http\Controllers\RecordLinkController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Tasks\ProjectController;
 use App\Http\Controllers\Tasks\TaskCommentController;
@@ -29,6 +30,10 @@ Route::prefix('{current_team}')
     ->group(function () {
         Route::inertia('dashboard', 'Dashboard')->name('team.dashboard');
         Route::get('search', SearchController::class)->middleware('throttle:30,1')->name('team.search');
+
+        Route::get('links/candidates', [RecordLinkController::class, 'candidates'])->middleware('throttle:30,1')->name('team.links.candidates');
+        Route::post('links', [RecordLinkController::class, 'store'])->middleware('throttle:60,1')->name('team.links.store');
+        Route::delete('links', [RecordLinkController::class, 'destroy'])->middleware('throttle:60,1')->name('team.links.destroy');
 
         Route::get('calendar', [CalendarPageController::class, 'index'])->name('team.calendar.index');
         Route::get('calendar/events/{event}/edit', [CalendarPageController::class, 'edit'])

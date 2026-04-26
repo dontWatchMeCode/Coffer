@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Calendar;
 
+use App\Concerns\ProvidesRecordLinks;
 use App\Http\Controllers\Controller;
 use App\Models\CalendarEvent;
 use App\Models\Team;
@@ -11,6 +12,8 @@ use Inertia\Response;
 
 class CalendarPageController extends Controller
 {
+    use ProvidesRecordLinks;
+
     public function index(Request $request, Team $currentTeam): Response
     {
         $events = CalendarEvent::query()
@@ -32,6 +35,7 @@ class CalendarPageController extends Controller
 
         return Inertia::render('calendar/Edit', [
             'event' => $this->formatEvent($event, includeTimestamps: true),
+            'recordLinks' => $this->recordLinksPayload($event, $currentTeam),
         ]);
     }
 

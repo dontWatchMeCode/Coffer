@@ -16,6 +16,11 @@ import type {
     TaskProject,
     TaskStatusOption,
 } from '@/types';
+import type {
+    LinkContext,
+    LinkEndpoints,
+    LinkRecord,
+} from '@/types/record-links';
 
 type Props = {
     project: Pick<TaskProject, 'id' | 'name' | 'description' | 'isArchived'>;
@@ -24,6 +29,11 @@ type Props = {
     members: TaskMember[];
     statuses: TaskStatusOption[];
     projects: { id: number; name: string }[];
+    recordLinks?: {
+        links: LinkRecord[];
+        context: LinkContext;
+        endpoints: LinkEndpoints;
+    } | null;
 };
 
 const props = defineProps<Props>();
@@ -112,6 +122,7 @@ function confirmDelete(): void {
                 :updated-at="task.updatedAt"
                 :on-delete="() => (deleteDialogOpen = true)"
                 delete-label="Delete task"
+                :record-links="recordLinks"
             >
                 <template #main>
                     <TaskEditForm

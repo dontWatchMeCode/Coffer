@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { Save, Trash2 } from 'lucide-vue-next';
 import { computed, useSlots } from 'vue';
+import RecordLinksPanel from '@/components/record-links/RecordLinksPanel.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import type {
+    LinkContext,
+    LinkEndpoints,
+    LinkRecord,
+} from '@/types/record-links';
 
 type Props = {
     variant?: 'default' | 'compact';
@@ -14,6 +20,11 @@ type Props = {
     saveLabel?: string;
     deleteDisabled?: boolean;
     saveDisabled?: boolean;
+    recordLinks?: {
+        links: LinkRecord[];
+        context: LinkContext;
+        endpoints: LinkEndpoints;
+    } | null;
 };
 
 const props = withDefaults(defineProps<Props>(), {
@@ -26,6 +37,7 @@ const props = withDefaults(defineProps<Props>(), {
     saveLabel: 'Save',
     deleteDisabled: false,
     saveDisabled: false,
+    recordLinks: null,
 });
 
 const slots = useSlots();
@@ -33,6 +45,7 @@ const slots = useSlots();
 const hasSidebarTop = computed(() => Boolean(slots['sidebar-top']));
 const hasMeta = computed(() => Boolean(props.createdBy || props.updatedAt));
 const hasActions = computed(() => Boolean(props.onDelete || props.onSave));
+const hasRecordLinks = computed(() => props.recordLinks !== null);
 
 function formatDateTime(value: string | null | undefined): string {
     if (!value) {
@@ -55,9 +68,22 @@ function formatDateTime(value: string | null | undefined): string {
         </div>
 
         <div
-            v-if="hasSidebarTop || hasMeta || hasActions"
+            v-if="hasSidebarTop || hasMeta || hasActions || hasRecordLinks"
             class="order-1 h-fit w-full shrink-0 space-y-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
         >
+            <RecordLinksPanel
+                v-if="hasRecordLinks && recordLinks"
+                :links="recordLinks.links"
+                :context="recordLinks.context"
+                :endpoints="recordLinks.endpoints"
+            />
+
+            <Separator
+                v-if="
+                    hasRecordLinks && (hasSidebarTop || hasMeta || hasActions)
+                "
+            />
+
             <slot name="sidebar-top" />
 
             <Separator v-if="hasSidebarTop && (hasMeta || hasActions)" />
