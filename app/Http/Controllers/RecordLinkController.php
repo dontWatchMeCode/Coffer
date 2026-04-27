@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Concerns\EscapesLikeWildcards;
 use App\Concerns\HasRecordLinks;
 use App\Contracts\LinkableRecord;
 use App\Models\Bookmark;
-use App\Models\CalendarEvent;
 use App\Models\Contact;
 use App\Models\Project;
 use App\Models\RecordLink;
-use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -22,6 +21,8 @@ use Illuminate\Validation\Rule;
 
 class RecordLinkController extends Controller
 {
+    use EscapesLikeWildcards;
+
     /**
      * Resolve a model instance from its type and id within the current team.
      */
@@ -183,8 +184,7 @@ class RecordLinkController extends Controller
             }
 
             if ($query !== '') {
-                $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $query);
-                $like = sprintf('%%%s%%', $escaped);
+                $like = $this->likePattern($query);
                 $q->where(function ($builder) use ($like, $class): void {
                     if ($class === Bookmark::class) {
                         $builder->where('title', 'like', $like)
@@ -196,12 +196,6 @@ class RecordLinkController extends Controller
                             ->orWhere('additional_info', 'like', $like);
                     } elseif ($class === Project::class) {
                         $builder->where('name', 'like', $like)
-                            ->orWhere('description', 'like', $like);
-                    } elseif ($class === Task::class) {
-                        $builder->where('title', 'like', $like)
-                            ->orWhere('description', 'like', $like);
-                    } elseif ($class === CalendarEvent::class) {
-                        $builder->where('title', 'like', $like)
                             ->orWhere('description', 'like', $like);
                     } else {
                         $builder->where('title', 'like', $like)

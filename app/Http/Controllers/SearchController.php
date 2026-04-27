@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Concerns\EscapesLikeWildcards;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
@@ -16,6 +17,8 @@ use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
+    use EscapesLikeWildcards;
+
     /**
      * Search across team records.
      */
@@ -33,7 +36,7 @@ class SearchController extends Controller
             ]);
         }
 
-        $like = sprintf('%%%s%%', $query);
+        $like = $this->likePattern($query);
 
         $tasks = Task::query()
             ->whereBelongsTo($currentTeam)

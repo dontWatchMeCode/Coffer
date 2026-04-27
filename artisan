@@ -6,6 +6,19 @@ use Symfony\Component\Console\Input\ArgvInput;
 
 define('LARAVEL_START', microtime(true));
 
+if (($_SERVER['OPENCODE'] ?? false) && ($argv[1] ?? null) === 'test') {
+    $arguments = array_values(array_filter(
+        array_slice($argv, 2),
+        fn (string $argument): bool => $argument !== '--without-tty',
+    ));
+
+    pcntl_exec(PHP_BINARY, array_merge([__DIR__.'/vendor/bin/pest'], $arguments));
+
+    fwrite(STDERR, "Unable to start Pest.\n");
+
+    exit(1);
+}
+
 // Register the Composer autoloader...
 require __DIR__.'/vendor/autoload.php';
 
