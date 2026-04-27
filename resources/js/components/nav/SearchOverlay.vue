@@ -9,6 +9,7 @@ import {
     Search,
 } from 'lucide-vue-next';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import SearchPrefixTooltip from '@/components/search/SearchPrefixTooltip.vue';
 import {
     Dialog,
     DialogContent,
@@ -229,6 +230,7 @@ function getResultIndex(
                     placeholder="Search tasks, contacts, events, projects, bookmarks..."
                     class="h-12 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
                 />
+                <SearchPrefixTooltip class="ml-2 shrink-0" />
                 <div
                     class="ml-2 flex shrink-0 items-center gap-1 text-xs text-muted-foreground"
                 >

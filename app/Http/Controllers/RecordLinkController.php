@@ -5,23 +5,25 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Concerns\EscapesLikeWildcards;
-use App\Concerns\HasRecordLinks;
+use App\Concerns\ParsesSearchPrefixes;
+use App\Concerns\SearchPrefixes;
 use App\Contracts\LinkableRecord;
+use App\Http\Requests\RecordLinks\RecordLinkCandidatesRequest;
+use App\Http\Requests\RecordLinks\StoreRecordLinkRequest;
 use App\Models\Bookmark;
 use App\Models\Contact;
 use App\Models\Project;
 use App\Models\RecordLink;
 use App\Models\Team;
+use App\Services\RecordLinkHelper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 class RecordLinkController extends Controller
 {
     use EscapesLikeWildcards;
+    use ParsesSearchPrefixes;
 
     /**
      * Resolve a model instance from its type and id within the current team.
@@ -36,21 +38,6 @@ class RecordLinkController extends Controller
         }
 
         return $class::query()->whereBelongsTo($currentTeam)->find((int) $id);
-    }
-
-    /**
-     * Validation rules for link store/destroy requests.
-     *
-     * @return array<string, mixed>
-     */
-    protected function linkValidationRules(): array
-    {
-        return [
-            'from_type' => ['required', 'string', Rule::in(array_keys(RecordLink::linkableMap()))],
-            'from_id' => ['required', 'integer', 'min:1'],
-            'to_type' => ['required', 'string', Rule::in(array_keys(RecordLink::linkableMap()))],
-            'to_id' => ['required', 'integer', 'min:1'],
-        ];
     }
 
     /**
@@ -70,9 +57,9 @@ class RecordLinkController extends Controller
     /**
      * Store a new record link.
      */
-    public function store(Request $request, Team $currentTeam): JsonResponse
+    public function store(StoreRecordLinkRequest $request, Team $currentTeam): JsonResponse
     {
-        $validated = Validator::make($request->all(), $this->linkValidationRules())->validate();
+        $validated = $request->validated();
 
         $from = $this->resolveModel($currentTeam, $validated['from_type'], $validated['from_id']);
         $to = $this->resolveModel($currentTeam, $validated['to_type'], $validated['to_id']);
@@ -118,9 +105,9 @@ class RecordLinkController extends Controller
     /**
      * Remove a record link.
      */
-    public function destroy(Request $request, Team $currentTeam): JsonResponse
+    public function destroy(StoreRecordLinkRequest $request, Team $currentTeam): JsonResponse
     {
-        $validated = Validator::make($request->query(), $this->linkValidationRules())->validate();
+        $validated = $request->validated();
 
         $from = $this->resolveModel($currentTeam, $validated['from_type'], $validated['from_id']);
         $to = $this->resolveModel($currentTeam, $validated['to_type'], $validated['to_id']);
@@ -150,13 +137,9 @@ class RecordLinkController extends Controller
     /**
      * Search for linkable records excluding the current record and already linked records.
      */
-    public function candidates(Request $request, Team $currentTeam): JsonResponse
+    public function candidates(RecordLinkCandidatesRequest $request, Team $currentTeam): JsonResponse
     {
-        $validated = Validator::make($request->all(), [
-            'q' => ['nullable', 'string', 'max:255'],
-            'from_type' => ['required', 'string', Rule::in(array_keys(RecordLink::linkableMap()))],
-            'from_id' => ['required', 'integer', 'min:1'],
-        ])->validate();
+        $validated = $request->validated();
 
         $from = $this->resolveModel($currentTeam, $validated['from_type'], $validated['from_id']);
 
@@ -164,12 +147,21 @@ class RecordLinkController extends Controller
             return response()->json(['records' => []]);
         }
 
-        $query = $request->string('q')->trim()->toString();
+        [$query, $scopes] = $this->parseSearchPrefix($request->string('q')->trim()->toString(), SearchPrefixes::linkableMap());
+
+        if ($query === '') {
+            return response()->json(['records' => []]);
+        }
+
         $linkedIds = $this->linkedIds($from, $currentTeam->id);
 
         $records = [];
 
         foreach (RecordLink::linkableMap() as $type => $class) {
+            if (! in_array($type, $scopes, true)) {
+                continue;
+            }
+
             if ($class === $from->linkableType()) {
                 // Exclude self
                 $excludeIds = array_merge($linkedIds[$type] ?? [], [$from->getKey()]);
@@ -183,26 +175,24 @@ class RecordLinkController extends Controller
                 $q->whereNotIn('id', $excludeIds);
             }
 
-            if ($query !== '') {
-                $like = $this->likePattern($query);
-                $q->where(function ($builder) use ($like, $class): void {
-                    if ($class === Bookmark::class) {
-                        $builder->where('title', 'like', $like)
-                            ->orWhere('description', 'like', $like)
-                            ->orWhere('url', 'like', $like);
-                    } elseif ($class === Contact::class) {
-                        $builder->where('name', 'like', $like)
-                            ->orWhere('address', 'like', $like)
-                            ->orWhere('additional_info', 'like', $like);
-                    } elseif ($class === Project::class) {
-                        $builder->where('name', 'like', $like)
-                            ->orWhere('description', 'like', $like);
-                    } else {
-                        $builder->where('title', 'like', $like)
-                            ->orWhere('description', 'like', $like);
-                    }
-                });
-            }
+            $like = $this->likePattern($query);
+            $q->where(function ($builder) use ($like, $class): void {
+                if ($class === Bookmark::class) {
+                    $builder->where('title', 'like', $like)
+                        ->orWhere('description', 'like', $like)
+                        ->orWhere('url', 'like', $like);
+                } elseif ($class === Contact::class) {
+                    $builder->where('name', 'like', $like)
+                        ->orWhere('address', 'like', $like)
+                        ->orWhere('additional_info', 'like', $like);
+                } elseif ($class === Project::class) {
+                    $builder->where('name', 'like', $like)
+                        ->orWhere('description', 'like', $like);
+                } else {
+                    $builder->where('title', 'like', $like)
+                        ->orWhere('description', 'like', $like);
+                }
+            });
 
             $models = $q->orderBy(
                 match ($class) {
@@ -220,7 +210,8 @@ class RecordLinkController extends Controller
                 $records[] = [
                     'id' => $model->getKey(),
                     'type' => $type,
-                    'title' => HasRecordLinks::titleForModel($model),
+                    'title' => RecordLinkHelper::titleForModel($model),
+                    'url' => RecordLinkHelper::urlForModel($model, $currentTeam),
                 ];
             }
         }

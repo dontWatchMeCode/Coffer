@@ -5,21 +5,17 @@ declare(strict_types=1);
 namespace App\Concerns;
 
 use App\Contracts\LinkableRecord;
-use App\Models\Bookmark;
-use App\Models\CalendarEvent;
-use App\Models\Contact;
-use App\Models\Project;
 use App\Models\RecordLink;
-use App\Models\Task;
 use App\Models\Team;
+use App\Services\RecordLinkHelper;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * When adding a new linkable type, update:
  * 1. RecordLink::linkableMap() — alias → class mapping
- * 2. HasRecordLinks::titleForModel() — title attribute per class
- * 3. HasRecordLinks::formattedLinkedRecords() — route name and params per class
+ * 2. RecordLinkHelper — title, URL generation, and routability rules
+ * 3. SearchPrefixes — prefix mappings for global and record-link search
  * 4. RecordLinkController::candidates() — searchable columns and order column per class
  */
 trait HasRecordLinks
@@ -123,17 +119,22 @@ trait HasRecordLinks
 
     /**
      * Get the title for a linkable model instance.
+     *
+     * @deprecated Use RecordLinkHelper::titleForModel() instead.
      */
     public static function titleForModel(Model $model): string
     {
-        return match ($model::class) {
-            Task::class => $model->getAttribute('title') ?? (string) $model->getKey(),
-            Project::class => $model->getAttribute('name') ?? (string) $model->getKey(),
-            CalendarEvent::class => $model->getAttribute('title') ?? (string) $model->getKey(),
-            Contact::class => $model->getAttribute('name') ?? (string) $model->getKey(),
-            Bookmark::class => $model->getAttribute('title') ?? (string) $model->getKey(),
-            default => (string) $model->getKey(),
-        };
+        return RecordLinkHelper::titleForModel($model);
+    }
+
+    /**
+     * Generate a URL for a linkable model instance.
+     *
+     * @deprecated Use RecordLinkHelper::urlForModel() instead.
+     */
+    public static function urlForModel(Model $model, Team $currentTeam): string
+    {
+        return RecordLinkHelper::urlForModel($model, $currentTeam);
     }
 
     /**
@@ -143,45 +144,11 @@ trait HasRecordLinks
      */
     public function formattedLinkedRecords(Team $currentTeam): array
     {
-        return $this->linkedRecords()->map(function (Model $model) use ($currentTeam): array {
-            $title = static::titleForModel($model);
-
-            $routeName = match ($model::class) {
-                Task::class => $model->getAttribute('project_id') !== null ? 'team.tasks.edit' : null,
-                Project::class => 'team.tasks.show',
-                CalendarEvent::class => 'team.calendar.events.edit',
-                Contact::class => 'team.contacts.show',
-                Bookmark::class => 'team.bookmarks.show',
-                default => null,
-            };
-
-            $routeParams = match ($model::class) {
-                Task::class => [
-                    'current_team' => $currentTeam,
-                    'project' => $model->getAttribute('project_id'),
-                    'task' => $model->getKey(),
-                ],
-                Project::class => [
-                    'current_team' => $currentTeam,
-                    'project' => $model->getKey(),
-                ],
-                default => [
-                    'current_team' => $currentTeam,
-                    match ($model::class) {
-                        CalendarEvent::class => 'event',
-                        Contact::class => 'contact',
-                        Bookmark::class => 'bookmark',
-                        default => $model->getTable(),
-                    } => $model->getKey(),
-                ],
-            };
-
-            return [
-                'id' => (int) $model->getKey(),
-                'type' => static::typeAliasFor($model::class),
-                'title' => $title,
-                'url' => $routeName !== null ? route($routeName, $routeParams) : '',
-            ];
-        })->values()->all();
+        return $this->linkedRecords()->map(fn (Model $model): array => [
+            'id' => (int) $model->getKey(),
+            'type' => static::typeAliasFor($model::class),
+            'title' => static::titleForModel($model),
+            'url' => static::urlForModel($model, $currentTeam),
+        ])->values()->all();
     }
 }

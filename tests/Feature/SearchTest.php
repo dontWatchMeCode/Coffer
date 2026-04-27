@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
 use App\Models\Project;
@@ -109,4 +110,188 @@ test('search requires team membership', function () {
     actingAs($user)
         ->getJson(route('team.search', ['current_team' => $otherTeam, 'q' => 'test']))
         ->assertForbidden();
+});
+
+test('prefix t: filters to tasks only', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'My task',
+    ]);
+
+    Contact::factory()->create([
+        'team_id' => $team->id,
+        'name' => 'My contact',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 't: My']))
+        ->assertOk()
+        ->assertJsonCount(1, 'tasks')
+        ->assertJsonCount(0, 'contacts')
+        ->assertJsonCount(0, 'events')
+        ->assertJsonCount(0, 'projects')
+        ->assertJsonCount(0, 'bookmarks');
+});
+
+test('prefix c: filters to contacts only', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'My task',
+    ]);
+
+    Contact::factory()->create([
+        'team_id' => $team->id,
+        'name' => 'My contact',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'c: My']))
+        ->assertOk()
+        ->assertJsonCount(0, 'tasks')
+        ->assertJsonCount(1, 'contacts')
+        ->assertJsonCount(0, 'events')
+        ->assertJsonCount(0, 'projects')
+        ->assertJsonCount(0, 'bookmarks');
+});
+
+test('prefix e: filters to events only', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'My task',
+    ]);
+
+    CalendarEvent::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'My event',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'e: My']))
+        ->assertOk()
+        ->assertJsonCount(0, 'tasks')
+        ->assertJsonCount(0, 'contacts')
+        ->assertJsonCount(1, 'events')
+        ->assertJsonCount(0, 'projects')
+        ->assertJsonCount(0, 'bookmarks');
+});
+
+test('prefix p: filters to projects only', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'My task',
+    ]);
+
+    Project::factory()->create([
+        'team_id' => $team->id,
+        'name' => 'My project',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'p: My']))
+        ->assertOk()
+        ->assertJsonCount(0, 'tasks')
+        ->assertJsonCount(0, 'contacts')
+        ->assertJsonCount(0, 'events')
+        ->assertJsonCount(1, 'projects')
+        ->assertJsonCount(0, 'bookmarks');
+});
+
+test('prefix b: filters to bookmarks only', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'My task',
+    ]);
+
+    Bookmark::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'My bookmark',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'b: My']))
+        ->assertOk()
+        ->assertJsonCount(0, 'tasks')
+        ->assertJsonCount(0, 'contacts')
+        ->assertJsonCount(0, 'events')
+        ->assertJsonCount(0, 'projects')
+        ->assertJsonCount(1, 'bookmarks');
+});
+
+test('prefix is case-insensitive', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'My task',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'T: My']))
+        ->assertOk()
+        ->assertJsonCount(1, 'tasks')
+        ->assertJsonCount(0, 'contacts');
+});
+
+test('unknown prefix is treated as literal query', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'My task',
+    ]);
+
+    Contact::factory()->create([
+        'team_id' => $team->id,
+        'name' => 'My contact',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'x: My']))
+        ->assertOk()
+        ->assertJsonCount(0, 'tasks')
+        ->assertJsonCount(0, 'contacts');
+});
+
+test('prefix-only empty query returns empty results', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'My task',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 't:']))
+        ->assertOk()
+        ->assertJsonCount(0, 'tasks')
+        ->assertJsonCount(0, 'contacts')
+        ->assertJsonCount(0, 'events')
+        ->assertJsonCount(0, 'projects')
+        ->assertJsonCount(0, 'bookmarks');
 });

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
-import { Link2, Plus, Search, X } from 'lucide-vue-next';
+import { Link, router } from '@inertiajs/vue3';
+import { ExternalLink, Link2, Plus, Search, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import SearchPrefixTooltip from '@/components/search/SearchPrefixTooltip.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -66,9 +67,14 @@ watch(query, (newQuery) => {
             if (response.ok) {
                 const data = await response.json();
                 candidates.value = (data.records ?? []).map(
-                    (r: { id: number; type: string; title: string }) => ({
+                    (r: {
+                        id: number;
+                        type: string;
+                        title: string;
+                        url?: string;
+                    }) => ({
                         ...r,
-                        url: '',
+                        url: r.url ?? '',
                     }),
                 );
             }
@@ -181,7 +187,8 @@ function getCsrfToken(): string {
                 :key="`${link.type}-${link.id}`"
                 class="group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
             >
-                <a
+                <Link
+                    v-if="link.url"
                     :href="link.url"
                     class="flex min-w-0 flex-1 items-center gap-2 text-sm"
                 >
@@ -191,8 +198,28 @@ function getCsrfToken(): string {
                     >
                         {{ link.type }}
                     </span>
-                </a>
+                </Link>
+                <span
+                    v-else
+                    class="flex min-w-0 flex-1 items-center gap-2 text-sm"
+                >
+                    <span class="truncate font-medium">{{ link.title }}</span>
+                    <span
+                        class="shrink-0 rounded bg-muted px-1 py-0.5 text-[10px] font-medium text-muted-foreground uppercase"
+                    >
+                        {{ link.type }}
+                    </span>
+                </span>
 
+                <a
+                    v-if="link.url"
+                    :href="link.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                    <ExternalLink class="h-3.5 w-3.5" />
+                </a>
                 <Button
                     variant="ghost"
                     size="icon"
@@ -212,14 +239,18 @@ function getCsrfToken(): string {
         <Separator />
 
         <div class="space-y-2">
-            <div class="relative">
+            <div class="relative flex items-center">
                 <Search
                     class="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
                     v-model="query"
                     placeholder="Search to link..."
-                    class="h-8 pl-8 text-sm"
+                    class="h-8 pr-8 pl-8 text-sm"
+                />
+                <SearchPrefixTooltip
+                    side="top"
+                    class="absolute top-1/2 right-2 -translate-y-1/2"
                 />
             </div>
 
@@ -248,6 +279,15 @@ function getCsrfToken(): string {
                     >
                         {{ candidate.type }}
                     </span>
+                    <a
+                        v-if="candidate.url"
+                        :href="candidate.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                        <ExternalLink class="h-3.5 w-3.5" />
+                    </a>
                     <Button
                         variant="ghost"
                         size="icon"

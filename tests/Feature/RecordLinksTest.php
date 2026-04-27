@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Bookmark;
+use App\Models\CalendarEvent;
 use App\Models\Contact;
 use App\Models\Project;
 use App\Models\RecordLink;
@@ -177,6 +179,89 @@ test('candidates search excludes current and already linked records', function (
     expect($ids)->not->toContain($task->id);
     expect($ids)->not->toContain($linkedContact->id);
     expect($ids)->toContain($unlinkedContact->id);
+});
+
+test('candidates search supports record type prefixes', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $project = Project::factory()->create(['team_id' => $team->id, 'name' => 'Shared project']);
+    $task = Task::factory()->create(['team_id' => $team->id, 'project_id' => $project->id, 'title' => 'Current task']);
+
+    Contact::factory()->create(['team_id' => $team->id, 'name' => 'Shared contact']);
+    CalendarEvent::factory()->create(['team_id' => $team->id, 'title' => 'Shared event']);
+    Bookmark::factory()->create(['team_id' => $team->id, 'title' => 'Shared bookmark']);
+
+    actingAs($user)
+        ->getJson(route('team.links.candidates', [
+            'current_team' => $team,
+            'q' => 'c: Shared',
+            'from_type' => 'task',
+            'from_id' => $task->id,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'records')
+        ->assertJsonPath('records.0.type', 'contact');
+
+    actingAs($user)
+        ->getJson(route('team.links.candidates', [
+            'current_team' => $team,
+            'q' => 'e: Shared',
+            'from_type' => 'task',
+            'from_id' => $task->id,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'records')
+        ->assertJsonPath('records.0.type', 'calendar_event');
+
+    actingAs($user)
+        ->getJson(route('team.links.candidates', [
+            'current_team' => $team,
+            'q' => 'b: Shared',
+            'from_type' => 'task',
+            'from_id' => $task->id,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'records')
+        ->assertJsonPath('records.0.type', 'bookmark');
+});
+
+test('unknown candidate search prefix is treated as literal query', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create(['team_id' => $team->id, 'project_id' => $project->id, 'title' => 'Current task']);
+    Contact::factory()->create(['team_id' => $team->id, 'name' => 'Shared contact']);
+
+    actingAs($user)
+        ->getJson(route('team.links.candidates', [
+            'current_team' => $team,
+            'q' => 'x: Shared',
+            'from_type' => 'task',
+            'from_id' => $task->id,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(0, 'records');
+});
+
+test('prefix-only empty candidate query returns empty results', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create(['team_id' => $team->id, 'project_id' => $project->id, 'title' => 'Current task']);
+    Contact::factory()->create(['team_id' => $team->id, 'name' => 'Shared contact']);
+
+    actingAs($user)
+        ->getJson(route('team.links.candidates', [
+            'current_team' => $team,
+            'q' => 'c:',
+            'from_type' => 'task',
+            'from_id' => $task->id,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(0, 'records');
 });
 
 test('guests cannot access link endpoints', function () {
