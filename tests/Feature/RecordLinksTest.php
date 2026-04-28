@@ -3,6 +3,7 @@
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordLink;
 use App\Models\Task;
@@ -191,6 +192,7 @@ test('candidates search supports record type prefixes', function () {
     Contact::factory()->create(['team_id' => $team->id, 'name' => 'Shared contact']);
     CalendarEvent::factory()->create(['team_id' => $team->id, 'title' => 'Shared event']);
     Bookmark::factory()->create(['team_id' => $team->id, 'title' => 'Shared bookmark']);
+    Note::factory()->create(['team_id' => $team->id, 'title' => 'Shared note']);
 
     actingAs($user)
         ->getJson(route('team.links.candidates', [
@@ -224,6 +226,17 @@ test('candidates search supports record type prefixes', function () {
         ->assertOk()
         ->assertJsonCount(1, 'records')
         ->assertJsonPath('records.0.type', 'bookmark');
+
+    actingAs($user)
+        ->getJson(route('team.links.candidates', [
+            'current_team' => $team,
+            'q' => 'n: Shared',
+            'from_type' => 'task',
+            'from_id' => $task->id,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'records')
+        ->assertJsonPath('records.0.type', 'note');
 });
 
 test('unknown candidate search prefix is treated as literal query', function () {

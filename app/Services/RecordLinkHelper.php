@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\Note;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Team;
@@ -25,6 +26,7 @@ class RecordLinkHelper
             CalendarEvent::class => 'team.calendar.events.edit',
             Contact::class => 'team.contacts.show',
             Bookmark::class => 'team.bookmarks.show',
+            Note::class => 'team.notes.show',
             default => null,
         };
 
@@ -48,6 +50,7 @@ class RecordLinkHelper
                     CalendarEvent::class => 'event',
                     Contact::class => 'contact',
                     Bookmark::class => 'bookmark',
+                    Note::class => 'note',
                     default => $model->getTable(),
                 } => $model->getKey(),
             ],
@@ -67,6 +70,7 @@ class RecordLinkHelper
             CalendarEvent::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             Contact::class => $model->getAttribute('name') ?? (string) $model->getKey(),
             Bookmark::class => $model->getAttribute('title') ?? (string) $model->getKey(),
+            Note::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             default => (string) $model->getKey(),
         };
     }

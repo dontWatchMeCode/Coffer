@@ -38,4 +38,12 @@ class Tag extends Model
     {
         return $this->morphedByMany(Bookmark::class, 'taggable')->withTimestamps();
     }
+
+    /**
+     * @return MorphToMany<Note, $this>
+     */
+    public function notes(): MorphToMany
+    {
+        return $this->morphedByMany(Note::class, 'taggable')->withTimestamps();
+    }
 }

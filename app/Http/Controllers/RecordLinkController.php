@@ -12,6 +12,7 @@ use App\Http\Requests\RecordLinks\RecordLinkCandidatesRequest;
 use App\Http\Requests\RecordLinks\StoreRecordLinkRequest;
 use App\Models\Bookmark;
 use App\Models\Contact;
+use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordLink;
 use App\Models\Team;
@@ -181,6 +182,9 @@ class RecordLinkController extends Controller
                     $builder->where('title', 'like', $like)
                         ->orWhere('description', 'like', $like)
                         ->orWhere('url', 'like', $like);
+                } elseif ($class === Note::class) {
+                    $builder->where('title', 'like', $like)
+                        ->orWhere('body', 'like', $like);
                 } elseif ($class === Contact::class) {
                     $builder->where('name', 'like', $like)
                         ->orWhere('address', 'like', $like)

@@ -3,6 +3,7 @@ export * from './bookmarks';
 export * from './calendar';
 export * from './contacts';
 export * from './navigation';
+export * from './notes';
 export * from './tasks';
 export * from './teams';
 export * from './ui';

@@ -3,6 +3,7 @@
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\Note;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Team;
@@ -46,13 +47,19 @@ test('search returns matching team records', function () {
         'name' => 'Special project name',
     ]);
 
+    $note = Note::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Special note title',
+    ]);
+
     actingAs($user)
         ->getJson(route('team.search', ['current_team' => $team, 'q' => 'Special']))
         ->assertOk()
         ->assertJsonPath('tasks.0.title', 'Special task title')
         ->assertJsonPath('contacts.0.title', 'Special contact name')
         ->assertJsonPath('events.0.title', 'Special event title')
-        ->assertJsonPath('projects.0.title', 'Special project name');
+        ->assertJsonPath('projects.0.title', 'Special project name')
+        ->assertJsonPath('notes.0.title', 'Special note title');
 });
 
 test('search does not return records from other teams', function () {
@@ -81,13 +88,19 @@ test('search does not return records from other teams', function () {
         'name' => 'Secret project',
     ]);
 
+    Note::factory()->create([
+        'team_id' => $otherTeam->id,
+        'title' => 'Secret note',
+    ]);
+
     actingAs($user)
         ->getJson(route('team.search', ['current_team' => $team, 'q' => 'Secret']))
         ->assertOk()
         ->assertJsonCount(0, 'tasks')
         ->assertJsonCount(0, 'contacts')
         ->assertJsonCount(0, 'events')
-        ->assertJsonCount(0, 'projects');
+        ->assertJsonCount(0, 'projects')
+        ->assertJsonCount(0, 'notes');
 });
 
 test('search returns empty results for blank query', function () {
@@ -100,7 +113,8 @@ test('search returns empty results for blank query', function () {
         ->assertJsonCount(0, 'tasks')
         ->assertJsonCount(0, 'contacts')
         ->assertJsonCount(0, 'events')
-        ->assertJsonCount(0, 'projects');
+        ->assertJsonCount(0, 'projects')
+        ->assertJsonCount(0, 'notes');
 });
 
 test('search requires team membership', function () {
@@ -235,6 +249,32 @@ test('prefix b: filters to bookmarks only', function () {
         ->assertJsonCount(0, 'events')
         ->assertJsonCount(0, 'projects')
         ->assertJsonCount(1, 'bookmarks');
+});
+
+test('prefix n: filters to notes only', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'My task',
+    ]);
+
+    Note::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'My note',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'n: My']))
+        ->assertOk()
+        ->assertJsonCount(0, 'tasks')
+        ->assertJsonCount(0, 'contacts')
+        ->assertJsonCount(0, 'events')
+        ->assertJsonCount(0, 'projects')
+        ->assertJsonCount(0, 'bookmarks')
+        ->assertJsonCount(1, 'notes');
 });
 
 test('prefix is case-insensitive', function () {

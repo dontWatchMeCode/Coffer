@@ -25,6 +25,7 @@ class RecordLink extends Model
             'calendar_event' => CalendarEvent::class,
             'contact' => Contact::class,
             'bookmark' => Bookmark::class,
+            'note' => Note::class,
         ];
     }
 

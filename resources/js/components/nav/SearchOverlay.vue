@@ -4,6 +4,7 @@ import {
     Bookmark,
     CalendarDays,
     Contact,
+    FileText,
     FolderGit2,
     ListTodo,
     Search,
@@ -32,6 +33,7 @@ type SearchResponse = {
     events: SearchResultItem[];
     projects: SearchResultItem[];
     bookmarks: SearchResultItem[];
+    notes: SearchResultItem[];
 };
 
 const open = defineModel<boolean>('open', { default: false });
@@ -45,6 +47,7 @@ const emptyResults: SearchResponse = {
     events: [],
     projects: [],
     bookmarks: [],
+    notes: [],
 };
 const results = ref<SearchResponse>({ ...emptyResults });
 const selectedIndex = ref(0);
@@ -72,6 +75,10 @@ const allResults = computed(() => [
         ...item,
         type: 'bookmark' as const,
     })),
+    ...results.value.notes.map((item) => ({
+        ...item,
+        type: 'note' as const,
+    })),
 ]);
 
 const hasResults = computed(() => allResults.value.length > 0);
@@ -86,6 +93,7 @@ const categories: {
     { key: 'events', label: 'Events', icon: CalendarDays },
     { key: 'projects', label: 'Projects', icon: FolderGit2 },
     { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
+    { key: 'notes', label: 'Notes', icon: FileText },
 ];
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -218,8 +226,8 @@ function getResultIndex(
         >
             <DialogTitle class="sr-only">Search</DialogTitle>
             <DialogDescription class="sr-only">
-                Search across tasks, contacts, events, projects, and bookmarks
-                in your team.
+                Search across tasks, contacts, events, projects, bookmarks, and
+                notes in your team.
             </DialogDescription>
 
             <div class="flex items-center border-b px-4">
@@ -227,7 +235,7 @@ function getResultIndex(
                 <Input
                     ref="inputRef"
                     v-model="query"
-                    placeholder="Search tasks, contacts, events, projects, bookmarks..."
+                    placeholder="Search tasks, contacts, events, projects, bookmarks, notes..."
                     class="h-12 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
                 />
                 <SearchPrefixTooltip class="ml-2 shrink-0" />

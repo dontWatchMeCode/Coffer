@@ -6,6 +6,8 @@ use App\Http\Controllers\Calendar\CalendarEventController;
 use App\Http\Controllers\Calendar\CalendarPageController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Contacts\ContactPageController;
+use App\Http\Controllers\Notes\NoteController;
+use App\Http\Controllers\Notes\NotePageController;
 use App\Http\Controllers\RecordLinkController;
 use App\Http\Controllers\RecordTagController;
 use App\Http\Controllers\SearchController;
@@ -75,6 +77,18 @@ Route::prefix('{current_team}')
         Route::delete('bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])
             ->whereNumber('bookmark')
             ->name('team.bookmarks.destroy');
+
+        Route::get('notes', [NotePageController::class, 'index'])->name('team.notes.index');
+        Route::get('notes/{note}', [NotePageController::class, 'show'])
+            ->whereNumber('note')
+            ->name('team.notes.show');
+        Route::post('notes', [NoteController::class, 'store'])->name('team.notes.store');
+        Route::patch('notes/{note}', [NoteController::class, 'update'])
+            ->whereNumber('note')
+            ->name('team.notes.update');
+        Route::delete('notes/{note}', [NoteController::class, 'destroy'])
+            ->whereNumber('note')
+            ->name('team.notes.destroy');
 
         Route::get('tasks', [TaskPageController::class, 'index'])->name('team.tasks.index');
         Route::get('tasks/{project}', [TaskPageController::class, 'show'])

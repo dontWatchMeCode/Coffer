@@ -2,6 +2,7 @@
 
 use App\Models\Bookmark;
 use App\Models\Contact;
+use App\Models\Note;
 use App\Models\Project;
 use App\Models\Tag;
 use App\Models\Task;
@@ -175,4 +176,20 @@ test('a bookmark can be tagged through the shared tag endpoint', function () {
         ->assertCreated();
 
     expect($bookmark->fresh()->recordTags()->pluck('name')->all())->toBe(['docs']);
+});
+
+test('a note can be tagged through the shared tag endpoint', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $note = Note::factory()->create(['team_id' => $team->id]);
+
+    actingAs($user)
+        ->postJson(route('team.tags.store', ['current_team' => $team]), [
+            'from_type' => 'note',
+            'from_id' => $note->id,
+            'name' => 'research',
+        ])
+        ->assertCreated();
+
+    expect($note->fresh()->recordTags()->pluck('name')->all())->toBe(['research']);
 });

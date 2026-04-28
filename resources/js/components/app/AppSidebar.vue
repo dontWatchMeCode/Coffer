@@ -5,6 +5,7 @@ import {
     Bookmark,
     CalendarDays,
     Contact,
+    FileText,
     FolderGit2,
     LayoutGrid,
     ListTodo,
@@ -31,6 +32,7 @@ import { dashboard as teamDashboard } from '@/routes/team';
 import { index as teamBookmarks } from '@/routes/team/bookmarks/index';
 import { index as teamCalendar } from '@/routes/team/calendar/index';
 import { index as teamContacts } from '@/routes/team/contacts/index';
+import { index as teamNotes } from '@/routes/team/notes/index';
 import { index as teamTasks } from '@/routes/team/tasks/index';
 import type { NavItem } from '@/types';
 
@@ -69,6 +71,11 @@ const mainNavItems = computed<NavItem[]>(() => [
                   title: 'Bookmarks',
                   href: teamBookmarks(page.props.currentTeam.slug).url,
                   icon: Bookmark,
+              },
+              {
+                  title: 'Notes',
+                  href: teamNotes(page.props.currentTeam.slug).url,
+                  icon: FileText,
               },
           ]
         : []),

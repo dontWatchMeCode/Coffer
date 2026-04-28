@@ -21,6 +21,7 @@ class SearchPrefixes
             'e' => 'events',
             'p' => 'projects',
             'b' => 'bookmarks',
+            'n' => 'notes',
         ];
     }
 
@@ -39,6 +40,7 @@ class SearchPrefixes
             'e' => 'calendar_event',
             'p' => 'project',
             'b' => 'bookmark',
+            'n' => 'note',
         ];
     }
 }

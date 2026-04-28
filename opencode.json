@@ -4,12 +4,20 @@
         "laravel-boost": {
             "type": "local",
             "enabled": true,
-            "command": ["php", "artisan", "boost:mcp"]
+            "command": [
+                "php",
+                "artisan",
+                "boost:mcp"
+            ]
         },
         "laravel-telescope": {
             "type": "local",
             "enabled": true,
-            "command": ["php", "artisan", "telescope-mcp:server"],
+            "command": [
+                "php",
+                "artisan",
+                "telescope-mcp:server"
+            ],
             "environment": {
                 "APP_ENV": "local"
             }
