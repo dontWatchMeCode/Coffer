@@ -2,6 +2,7 @@
 import { Save, Trash2 } from 'lucide-vue-next';
 import { computed, useSlots } from 'vue';
 import RecordLinksPanel from '@/components/record-links/RecordLinksPanel.vue';
+import RecordTagsPanel from '@/components/record-tags/RecordTagsPanel.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type {
@@ -9,6 +10,7 @@ import type {
     LinkEndpoints,
     LinkRecord,
 } from '@/types/record-links';
+import type { RecordTag, TagContext, TagEndpoints } from '@/types/record-tags';
 
 type Props = {
     variant?: 'default' | 'compact';
@@ -25,6 +27,11 @@ type Props = {
         context: LinkContext;
         endpoints: LinkEndpoints;
     } | null;
+    recordTags?: {
+        tags: RecordTag[];
+        context: TagContext;
+        endpoints: TagEndpoints;
+    } | null;
 };
 
 const props = withDefaults(defineProps<Props>(), {
@@ -38,6 +45,7 @@ const props = withDefaults(defineProps<Props>(), {
     deleteDisabled: false,
     saveDisabled: false,
     recordLinks: null,
+    recordTags: null,
 });
 
 const slots = useSlots();
@@ -46,6 +54,7 @@ const hasSidebarTop = computed(() => Boolean(slots['sidebar-top']));
 const hasMeta = computed(() => Boolean(props.createdBy || props.updatedAt));
 const hasActions = computed(() => Boolean(props.onDelete || props.onSave));
 const hasRecordLinks = computed(() => props.recordLinks !== null);
+const hasRecordTags = computed(() => props.recordTags !== null);
 
 function formatDateTime(value: string | null | undefined): string {
     if (!value) {
@@ -68,9 +77,22 @@ function formatDateTime(value: string | null | undefined): string {
         </div>
 
         <div
-            v-if="hasSidebarTop || hasMeta || hasActions || hasRecordLinks"
+            v-if="
+                hasSidebarTop ||
+                hasMeta ||
+                hasActions ||
+                hasRecordLinks ||
+                hasRecordTags
+            "
             class="order-1 h-fit w-full shrink-0 space-y-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
         >
+            <RecordTagsPanel
+                v-if="hasRecordTags && recordTags"
+                :tags="recordTags.tags"
+                :context="recordTags.context"
+                :endpoints="recordTags.endpoints"
+            />
+
             <RecordLinksPanel
                 v-if="hasRecordLinks && recordLinks"
                 :links="recordLinks.links"

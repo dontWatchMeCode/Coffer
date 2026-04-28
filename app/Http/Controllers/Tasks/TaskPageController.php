@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tasks;
 
 use App\Concerns\ProvidesRecordLinks;
+use App\Concerns\ProvidesRecordTags;
 use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
@@ -20,6 +21,7 @@ use Inertia\Response;
 class TaskPageController extends Controller
 {
     use ProvidesRecordLinks;
+    use ProvidesRecordTags;
 
     /**
      * Display the task management page for the current team.
@@ -49,6 +51,7 @@ class TaskPageController extends Controller
                 'project:id,name',
                 'assignee:id,name',
                 'creator:id,name',
+                'recordTags' => fn ($query) => $query->orderBy('name'),
                 'comments' => fn ($query) => $query
                     ->with('user:id,name')
                     ->latest(),
@@ -81,6 +84,7 @@ class TaskPageController extends Controller
                 'name' => $p->name,
             ], $projects->all())),
             'recordLinks' => $this->recordLinksPayload($task, $currentTeam),
+            'recordTags' => $this->recordTagsPayload($task, $currentTeam),
         ]);
     }
 
@@ -90,6 +94,7 @@ class TaskPageController extends Controller
     public function show(Request $request, Team $currentTeam, int $project): Response
     {
         $project = $this->findTeamProject($currentTeam, $project);
+        $project->load(['recordTags' => fn ($query) => $query->orderBy('name')]);
 
         $tasks = Task::query()
             ->whereBelongsTo($currentTeam)
@@ -113,6 +118,7 @@ class TaskPageController extends Controller
             'members' => $this->memberPayload($members),
             'statuses' => $this->statusPayload(),
             'recordLinks' => $this->recordLinksPayload($project, $currentTeam),
+            'recordTags' => $this->recordTagsPayload($project, $currentTeam),
         ]);
     }
 

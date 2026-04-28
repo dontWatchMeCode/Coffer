@@ -9,6 +9,7 @@ import CreateTaskDialog from '@/components/pages/tasks/CreateTaskDialog.vue';
 import ProjectSettingsDialog from '@/components/pages/tasks/ProjectSettingsDialog.vue';
 import TaskList from '@/components/pages/tasks/TaskList.vue';
 import RecordLinksPanel from '@/components/record-links/RecordLinksPanel.vue';
+import RecordTagsPanel from '@/components/record-tags/RecordTagsPanel.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,6 +25,7 @@ import type {
     LinkEndpoints,
     LinkRecord,
 } from '@/types/record-links';
+import type { RecordTag, TagContext, TagEndpoints } from '@/types/record-tags';
 
 type Props = {
     project: Pick<TaskProject, 'id' | 'name' | 'description' | 'isArchived'>;
@@ -34,6 +36,11 @@ type Props = {
         links: LinkRecord[];
         context: LinkContext;
         endpoints: LinkEndpoints;
+    } | null;
+    recordTags?: {
+        tags: RecordTag[];
+        context: TagContext;
+        endpoints: TagEndpoints;
     } | null;
 };
 
@@ -159,6 +166,13 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                 <div
                     class="order-1 h-fit w-full shrink-0 space-y-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
                 >
+                    <RecordTagsPanel
+                        v-if="recordTags"
+                        :tags="recordTags.tags"
+                        :context="recordTags.context"
+                        :endpoints="recordTags.endpoints"
+                    />
+
                     <RecordLinksPanel
                         v-if="recordLinks"
                         :links="recordLinks.links"

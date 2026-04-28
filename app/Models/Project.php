@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\HasRecordLinks;
+use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -20,6 +21,7 @@ class Project extends Model implements LinkableRecord
     use HasFactory;
 
     use HasRecordLinks;
+    use HasRecordTags;
 
     /**
      * Get the tasks for the project.

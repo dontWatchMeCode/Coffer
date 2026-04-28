@@ -21,6 +21,7 @@ import type {
     LinkEndpoints,
     LinkRecord,
 } from '@/types/record-links';
+import type { RecordTag, TagContext, TagEndpoints } from '@/types/record-tags';
 
 type Props = {
     project: Pick<TaskProject, 'id' | 'name' | 'description' | 'isArchived'>;
@@ -33,6 +34,11 @@ type Props = {
         links: LinkRecord[];
         context: LinkContext;
         endpoints: LinkEndpoints;
+    } | null;
+    recordTags?: {
+        tags: RecordTag[];
+        context: TagContext;
+        endpoints: TagEndpoints;
     } | null;
 };
 
@@ -123,6 +129,7 @@ function confirmDelete(): void {
                 :on-delete="() => (deleteDialogOpen = true)"
                 delete-label="Delete task"
                 :record-links="recordLinks"
+                :record-tags="recordTags"
             >
                 <template #main>
                     <TaskEditForm

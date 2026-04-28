@@ -25,6 +25,7 @@ import type {
     LinkEndpoints,
     LinkRecord,
 } from '@/types/record-links';
+import type { RecordTag, TagContext, TagEndpoints } from '@/types/record-tags';
 
 type Props = {
     event: CalendarEventItem;
@@ -32,6 +33,11 @@ type Props = {
         links: LinkRecord[];
         context: LinkContext;
         endpoints: LinkEndpoints;
+    } | null;
+    recordTags?: {
+        tags: RecordTag[];
+        context: TagContext;
+        endpoints: TagEndpoints;
     } | null;
 };
 
@@ -130,6 +136,7 @@ function submitEdit(): void {
                 :save-disabled="isSubmitting"
                 :delete-disabled="isSubmitting"
                 :record-links="recordLinks"
+                :record-tags="recordTags"
             >
                 <template #main>
                     <form

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Calendar;
 
 use App\Concerns\ProvidesRecordLinks;
+use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\CalendarEvent;
 use App\Models\Team;
@@ -13,6 +14,7 @@ use Inertia\Response;
 class CalendarPageController extends Controller
 {
     use ProvidesRecordLinks;
+    use ProvidesRecordTags;
 
     public function index(Request $request, Team $currentTeam): Response
     {
@@ -31,11 +33,13 @@ class CalendarPageController extends Controller
     {
         $event = CalendarEvent::query()
             ->whereBelongsTo($currentTeam)
+            ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
             ->findOrFail($event);
 
         return Inertia::render('calendar/Edit', [
             'event' => $this->formatEvent($event, includeTimestamps: true),
             'recordLinks' => $this->recordLinksPayload($event, $currentTeam),
+            'recordTags' => $this->recordTagsPayload($event, $currentTeam),
         ]);
     }
 

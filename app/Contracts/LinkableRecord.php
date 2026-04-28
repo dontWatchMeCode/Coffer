@@ -24,4 +24,9 @@ interface LinkableRecord
      * @return array<int, array{id: int, type: string, title: string, url: string}>
      */
     public function formattedLinkedRecords(Team $currentTeam): array;
+
+    /**
+     * @return array<int, array{id: int, name: string, slug: string}>
+     */
+    public function formattedRecordTags(): array;
 }

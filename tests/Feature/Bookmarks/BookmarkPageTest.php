@@ -83,7 +83,7 @@ test('a bookmark can be created', function () {
     expect($bookmark->title)->toBe('Vue Docs');
     expect($bookmark->url)->toBe('https://vuejs.org');
     expect($bookmark->description)->toBe('Vue.js documentation');
-    expect($bookmark->tags)->toBe(['docs', 'frontend']);
+    expect($bookmark->recordTags()->orderBy('name')->pluck('name')->all())->toBe(['docs', 'frontend']);
     expect($bookmark->notes)->toBe('Great framework');
     expect($bookmark->is_archived)->toBeFalse();
 });
@@ -140,7 +140,7 @@ test('a bookmark can be updated', function () {
     expect($bookmark->title)->toBe('New Title');
     expect($bookmark->url)->toBe('https://new.com');
     expect($bookmark->description)->toBe('Updated description');
-    expect($bookmark->tags)->toBe(['updated']);
+    expect($bookmark->recordTags()->pluck('name')->all())->toBe(['updated']);
     expect($bookmark->notes)->toBe('Updated notes');
     expect($bookmark->is_archived)->toBeTrue();
 });

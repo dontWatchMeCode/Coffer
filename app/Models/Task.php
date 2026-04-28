@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\HasRecordLinks;
+use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
 use App\Enums\TaskStatus;
 use Database\Factories\TaskFactory;
@@ -23,6 +24,7 @@ class Task extends Model implements LinkableRecord
     use HasFactory;
 
     use HasRecordLinks;
+    use HasRecordTags;
 
     /**
      * Bootstrap the model and its traits.

@@ -7,6 +7,7 @@ use App\Http\Controllers\Calendar\CalendarPageController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Contacts\ContactPageController;
 use App\Http\Controllers\RecordLinkController;
+use App\Http\Controllers\RecordTagController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Tasks\ProjectController;
 use App\Http\Controllers\Tasks\TaskCommentController;
@@ -34,6 +35,10 @@ Route::prefix('{current_team}')
         Route::get('links/candidates', [RecordLinkController::class, 'candidates'])->middleware('throttle:30,1')->name('team.links.candidates');
         Route::post('links', [RecordLinkController::class, 'store'])->middleware('throttle:60,1')->name('team.links.store');
         Route::delete('links', [RecordLinkController::class, 'destroy'])->middleware('throttle:60,1')->name('team.links.destroy');
+
+        Route::get('tags/candidates', [RecordTagController::class, 'candidates'])->middleware('throttle:30,1')->name('team.tags.candidates');
+        Route::post('tags', [RecordTagController::class, 'store'])->middleware('throttle:60,1')->name('team.tags.store');
+        Route::delete('tags', [RecordTagController::class, 'destroy'])->middleware('throttle:60,1')->name('team.tags.destroy');
 
         Route::get('calendar', [CalendarPageController::class, 'index'])->name('team.calendar.index');
         Route::get('calendar/events/{event}/edit', [CalendarPageController::class, 'edit'])

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Contacts;
 
 use App\Concerns\ProvidesRecordLinks;
+use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\Contact;
 use App\Models\Team;
@@ -13,6 +14,7 @@ use Inertia\Response;
 class ContactPageController extends Controller
 {
     use ProvidesRecordLinks;
+    use ProvidesRecordTags;
 
     public function index(Request $request, Team $currentTeam): Response
     {
@@ -39,6 +41,7 @@ class ContactPageController extends Controller
     {
         $contact = Contact::query()
             ->whereBelongsTo($currentTeam)
+            ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
             ->findOrFail($contact);
 
         return Inertia::render('contacts/Show', [
@@ -53,6 +56,7 @@ class ContactPageController extends Controller
                 'updatedAt' => $contact->updated_at?->format(\DateTimeInterface::ATOM),
             ],
             'recordLinks' => $this->recordLinksPayload($contact, $currentTeam),
+            'recordTags' => $this->recordTagsPayload($contact, $currentTeam),
         ]);
     }
 }

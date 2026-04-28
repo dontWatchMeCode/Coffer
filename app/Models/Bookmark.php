@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\HasRecordLinks;
+use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
 use Database\Factories\BookmarkFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -21,6 +22,7 @@ class Bookmark extends Model implements LinkableRecord
     use HasFactory;
 
     use HasRecordLinks;
+    use HasRecordTags;
 
     protected function casts(): array
     {
