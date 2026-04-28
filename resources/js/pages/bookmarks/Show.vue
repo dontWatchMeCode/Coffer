@@ -62,7 +62,6 @@ defineOptions({
 const editTitle = ref(props.bookmark.title);
 const editUrl = ref(props.bookmark.url);
 const editDescription = ref(props.bookmark.description ?? '');
-const editTags = ref(props.bookmark.tags?.join(', ') ?? '');
 const editNotes = ref(props.bookmark.notes ?? '');
 const editIsArchived = ref(props.bookmark.isArchived);
 const isSubmitting = ref(false);
@@ -80,12 +79,6 @@ function submitEdit(): void {
             title: editTitle.value,
             url: editUrl.value,
             description: editDescription.value || null,
-            tags: editTags.value
-                ? editTags.value
-                      .split(',')
-                      .map((t) => t.trim())
-                      .filter(Boolean)
-                : null,
             notes: editNotes.value || null,
             is_archived: editIsArchived.value,
         },
@@ -166,16 +159,6 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
                                 placeholder="Short description"
                             />
                             <InputError :message="errors.description" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="edit-bookmark-tags">Tags</Label>
-                            <Input
-                                id="edit-bookmark-tags"
-                                v-model="editTags"
-                                placeholder="docs, reference, tools (comma separated)"
-                            />
-                            <InputError :message="errors.tags" />
                         </div>
 
                         <div class="grid gap-2">

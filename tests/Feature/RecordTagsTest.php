@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Bookmark;
 use App\Models\Contact;
 use App\Models\Project;
 use App\Models\Tag;
@@ -160,21 +161,18 @@ test('record tags appear on task edit page', function () {
             ->where('recordTags.tags.0.name', 'Planning'));
 });
 
-test('bookmark save syncs typed tags into shared record tags', function () {
+test('a bookmark can be tagged through the shared tag endpoint', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
+    $bookmark = Bookmark::factory()->create(['team_id' => $team->id]);
 
     actingAs($user)
-        ->post(route('team.bookmarks.store', ['current_team' => $team]), [
-            'title' => 'Laravel',
-            'url' => 'https://laravel.com',
-            'description' => null,
-            'tags' => ['docs', 'php'],
-            'notes' => null,
+        ->postJson(route('team.tags.store', ['current_team' => $team]), [
+            'from_type' => 'bookmark',
+            'from_id' => $bookmark->id,
+            'name' => 'docs',
         ])
-        ->assertRedirect();
+        ->assertCreated();
 
-    $tags = Tag::query()->whereBelongsTo($team)->orderBy('name')->pluck('name')->all();
-
-    expect($tags)->toBe(['docs', 'php']);
+    expect($bookmark->fresh()->recordTags()->pluck('name')->all())->toBe(['docs']);
 });

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['team_id', 'title', 'url', 'description', 'tags', 'notes', 'is_archived'])]
+#[Fillable(['team_id', 'title', 'url', 'description', 'notes', 'is_archived'])]
 class Bookmark extends Model implements LinkableRecord
 {
     use BelongsToTeam;
@@ -27,7 +27,6 @@ class Bookmark extends Model implements LinkableRecord
     protected function casts(): array
     {
         return [
-            'tags' => 'array',
             'is_archived' => 'boolean',
         ];
     }

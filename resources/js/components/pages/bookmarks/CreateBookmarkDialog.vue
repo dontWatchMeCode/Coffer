@@ -24,14 +24,12 @@ const createDialogOpen = ref(false);
 const createTitle = ref('');
 const createUrl = ref('');
 const createDescription = ref('');
-const createTags = ref('');
 const createNotes = ref('');
 
 function resetCreateForm(): void {
     createTitle.value = '';
     createUrl.value = '';
     createDescription.value = '';
-    createTags.value = '';
     createNotes.value = '';
 }
 
@@ -50,12 +48,6 @@ function submitCreate(): void {
             title: createTitle.value,
             url: createUrl.value,
             description: createDescription.value || null,
-            tags: createTags.value
-                ? createTags.value
-                      .split(',')
-                      .map((t) => t.trim())
-                      .filter(Boolean)
-                : null,
             notes: createNotes.value || null,
         },
         {
@@ -122,15 +114,6 @@ defineExpose({
                         id="create-bookmark-description"
                         v-model="createDescription"
                         placeholder="Short description of the link"
-                    />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="create-bookmark-tags">Tags</Label>
-                    <Input
-                        id="create-bookmark-tags"
-                        v-model="createTags"
-                        placeholder="docs, reference, tools (comma separated)"
                     />
                 </div>
 

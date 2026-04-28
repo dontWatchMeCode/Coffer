@@ -31,7 +31,6 @@ test('bookmarks page shows bookmarks for current team', function () {
         'title' => 'Laravel Docs',
         'url' => 'https://laravel.com',
         'description' => 'Official documentation',
-        'tags' => ['docs', 'php'],
     ]);
 
     actingAs($user)
@@ -42,8 +41,7 @@ test('bookmarks page shows bookmarks for current team', function () {
             ->has('bookmarks', 1)
             ->where('bookmarks.0.title', 'Laravel Docs')
             ->where('bookmarks.0.url', 'https://laravel.com')
-            ->where('bookmarks.0.description', 'Official documentation')
-            ->where('bookmarks.0.tags', ['docs', 'php']),
+            ->where('bookmarks.0.description', 'Official documentation'),
         );
 });
 
@@ -73,7 +71,6 @@ test('a bookmark can be created', function () {
             'title' => 'Vue Docs',
             'url' => 'https://vuejs.org',
             'description' => 'Vue.js documentation',
-            'tags' => ['docs', 'frontend'],
             'notes' => 'Great framework',
         ])
         ->assertRedirect(route('team.bookmarks.show', ['current_team' => $team, 'bookmark' => 1]));
@@ -83,7 +80,6 @@ test('a bookmark can be created', function () {
     expect($bookmark->title)->toBe('Vue Docs');
     expect($bookmark->url)->toBe('https://vuejs.org');
     expect($bookmark->description)->toBe('Vue.js documentation');
-    expect($bookmark->recordTags()->orderBy('name')->pluck('name')->all())->toBe(['docs', 'frontend']);
     expect($bookmark->notes)->toBe('Great framework');
     expect($bookmark->is_archived)->toBeFalse();
 });
@@ -128,7 +124,6 @@ test('a bookmark can be updated', function () {
                 'title' => 'New Title',
                 'url' => 'https://new.com',
                 'description' => 'Updated description',
-                'tags' => ['updated'],
                 'notes' => 'Updated notes',
                 'is_archived' => true,
             ],
@@ -140,7 +135,6 @@ test('a bookmark can be updated', function () {
     expect($bookmark->title)->toBe('New Title');
     expect($bookmark->url)->toBe('https://new.com');
     expect($bookmark->description)->toBe('Updated description');
-    expect($bookmark->recordTags()->pluck('name')->all())->toBe(['updated']);
     expect($bookmark->notes)->toBe('Updated notes');
     expect($bookmark->is_archived)->toBeTrue();
 });
@@ -261,7 +255,6 @@ test('bookmark show page can be rendered', function () {
         'title' => 'Vue Docs',
         'url' => 'https://vuejs.org',
         'description' => 'Vue.js documentation',
-        'tags' => ['docs', 'frontend'],
         'notes' => 'Great framework',
         'is_archived' => false,
     ]);
@@ -276,7 +269,6 @@ test('bookmark show page can be rendered', function () {
             ->where('bookmark.title', 'Vue Docs')
             ->where('bookmark.url', 'https://vuejs.org')
             ->where('bookmark.description', 'Vue.js documentation')
-            ->where('bookmark.tags', ['docs', 'frontend'])
             ->where('bookmark.notes', 'Great framework')
             ->where('bookmark.isArchived', false)
             ->where('bookmark.updatedAt', fn (?string $updatedAt): bool => is_string($updatedAt)
@@ -344,7 +336,6 @@ test('bookmarks can be created with nullable fields', function () {
     $bookmark = Bookmark::where('team_id', $team->id)->first();
 
     expect($bookmark->description)->toBeNull();
-    expect($bookmark->tags)->toBeNull();
     expect($bookmark->notes)->toBeNull();
     expect($bookmark->is_archived)->toBeFalse();
 });

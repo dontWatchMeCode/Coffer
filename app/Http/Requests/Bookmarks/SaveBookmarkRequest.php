@@ -49,10 +49,6 @@ class SaveBookmarkRequest extends FormRequest
             'description' => $sometimes
                 ? ['sometimes', 'nullable', 'string', 'max:500']
                 : ['nullable', 'string', 'max:500'],
-            'tags' => $sometimes
-                ? ['sometimes', 'nullable', 'array', 'max:20']
-                : ['nullable', 'array', 'max:20'],
-            'tags.*' => ['string', 'max:50'],
             'notes' => $sometimes
                 ? ['sometimes', 'nullable', 'string']
                 : ['nullable', 'string'],
