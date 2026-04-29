@@ -105,7 +105,7 @@ trait HasRecordLinks
         return [
             'type' => static::typeAliasFor(static::class),
             'id' => (int) $this->getKey(),
-            'title' => static::titleForModel($this),
+            'title' => RecordLinkHelper::titleForModel($this),
         ];
     }
 
@@ -118,26 +118,6 @@ trait HasRecordLinks
     }
 
     /**
-     * Get the title for a linkable model instance.
-     *
-     * @deprecated Use RecordLinkHelper::titleForModel() instead.
-     */
-    public static function titleForModel(Model $model): string
-    {
-        return RecordLinkHelper::titleForModel($model);
-    }
-
-    /**
-     * Generate a URL for a linkable model instance.
-     *
-     * @deprecated Use RecordLinkHelper::urlForModel() instead.
-     */
-    public static function urlForModel(Model $model, Team $currentTeam): string
-    {
-        return RecordLinkHelper::urlForModel($model, $currentTeam);
-    }
-
-    /**
      * Format linked records for the frontend.
      *
      * @return array<int, array{id: int, type: string, title: string, url: string, preview: string|null}>
@@ -147,8 +127,8 @@ trait HasRecordLinks
         return $this->linkedRecords()->map(fn (Model $model): array => [
             'id' => (int) $model->getKey(),
             'type' => static::typeAliasFor($model::class),
-            'title' => static::titleForModel($model),
-            'url' => static::urlForModel($model, $currentTeam),
+            'title' => RecordLinkHelper::titleForModel($model),
+            'url' => RecordLinkHelper::urlForModel($model, $currentTeam),
             'preview' => RecordLinkHelper::previewForModel($model),
         ])->values()->all();
     }
