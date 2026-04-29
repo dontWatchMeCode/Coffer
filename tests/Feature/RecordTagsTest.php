@@ -115,6 +115,46 @@ test('a tag can be detached from a record', function () {
         ->assertJson(['message' => 'Tag removed.']);
 
     expect($task->fresh()->recordTags()->count())->toBe(0);
+    expect(Tag::query()->whereKey($tag->id)->exists())->toBeFalse();
+});
+
+test('a detached tag is kept when another record still uses it', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $firstTask = Task::factory()->create(['team_id' => $team->id, 'project_id' => $project->id]);
+    $secondTask = Task::factory()->create(['team_id' => $team->id, 'project_id' => $project->id]);
+    $tag = Tag::factory()->create(['team_id' => $team->id]);
+
+    $firstTask->recordTags()->attach($tag->id);
+    $secondTask->recordTags()->attach($tag->id);
+
+    actingAs($user)
+        ->deleteJson(route('team.tags.destroy', ['current_team' => $team]).'?'.http_build_query([
+            'from_type' => 'task',
+            'from_id' => $firstTask->id,
+            'tag_id' => $tag->id,
+        ]))
+        ->assertOk();
+
+    expect($firstTask->fresh()->recordTags()->count())->toBe(0);
+    expect($secondTask->fresh()->recordTags()->whereKey($tag->id)->exists())->toBeTrue();
+    expect(Tag::query()->whereKey($tag->id)->exists())->toBeTrue();
+});
+
+test('unused tags are cleaned up when a tagged record is deleted', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create(['team_id' => $team->id, 'project_id' => $project->id]);
+    $tag = Tag::factory()->create(['team_id' => $team->id]);
+
+    actingAs($user);
+    $task->recordTags()->attach($tag->id);
+
+    $task->delete();
+
+    expect(Tag::query()->whereKey($tag->id)->exists())->toBeFalse();
 });
 
 test('cross-team tags cannot be attached', function () {

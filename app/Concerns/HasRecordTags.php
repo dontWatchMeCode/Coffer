@@ -15,7 +15,11 @@ trait HasRecordTags
     {
         static::deleting(function (Model $model): void {
             if (method_exists($model, 'recordTags')) {
+                $tagIds = $model->recordTags()->pluck('tags.id')->all();
+
                 $model->recordTags()->detach();
+
+                Tag::deleteUnused($tagIds);
             }
         });
     }
@@ -69,6 +73,8 @@ trait HasRecordTags
             })
             ->all();
 
-        $this->recordTags()->sync($tagIds);
+        $changes = $this->recordTags()->sync($tagIds);
+
+        Tag::deleteUnused($changes['detached']);
     }
 }

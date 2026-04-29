@@ -24,6 +24,26 @@ class Tag extends Model
     }
 
     /**
+     * @param  array<int, int|string>  $ids
+     */
+    public static function deleteUnused(array $ids): void
+    {
+        $ids = collect($ids)->map(fn (int|string $id): int => (int) $id)->unique()->values()->all();
+
+        if ($ids === []) {
+            return;
+        }
+
+        static::query()
+            ->whereIn('id', $ids)
+            ->whereNotExists(fn ($query) => $query
+                ->selectRaw('1')
+                ->from('taggables')
+                ->whereColumn('taggables.tag_id', 'tags.id'))
+            ->delete();
+    }
+
+    /**
      * @return BelongsTo<Team, $this>
      */
     public function team(): BelongsTo

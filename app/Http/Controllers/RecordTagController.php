@@ -102,6 +102,7 @@ class RecordTagController extends Controller
         }
 
         $from->recordTags()->detach($tag->id);
+        Tag::deleteUnused([$tag->id]);
 
         return response()->json(['message' => 'Tag removed.']);
     }
