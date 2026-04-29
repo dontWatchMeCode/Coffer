@@ -89,7 +89,10 @@ trait HasRecordLinks
                 ->whereIn('id', array_unique($ids))
                 ->limit(100)
                 ->get();
-            $results = $results->merge($models);
+
+            foreach ($models as $model) {
+                $results->push($model);
+            }
         }
 
         return $results;

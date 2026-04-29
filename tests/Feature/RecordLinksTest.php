@@ -62,6 +62,38 @@ test('backlinks are visible from both sides', function () {
     expect($contactLinks[0]['url'])->toBe(route('team.tasks.edit', ['current_team' => $team, 'project' => $task->project_id, 'task' => $task]));
 });
 
+test('linked records with the same id across different types are all visible', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $contact = Contact::factory()->create(['team_id' => $team->id]);
+    $bookmark = Bookmark::factory()->create(['team_id' => $team->id]);
+    $note = Note::factory()->create(['team_id' => $team->id]);
+
+    actingAs($user);
+
+    RecordLink::create([
+        'team_id' => $team->id,
+        'left_type' => $bookmark->linkableType(),
+        'left_id' => $bookmark->id,
+        'right_type' => $contact->linkableType(),
+        'right_id' => $contact->id,
+    ]);
+
+    RecordLink::create([
+        'team_id' => $team->id,
+        'left_type' => $contact->linkableType(),
+        'left_id' => $contact->id,
+        'right_type' => $note->linkableType(),
+        'right_id' => $note->id,
+    ]);
+
+    $links = $contact->formattedLinkedRecords($team);
+
+    expect($links)->toHaveCount(2);
+    expect(array_column($links, 'type'))->toContain('bookmark', 'note');
+});
+
 test('duplicate links are prevented', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
