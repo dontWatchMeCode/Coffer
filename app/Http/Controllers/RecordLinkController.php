@@ -216,6 +216,7 @@ class RecordLinkController extends Controller
                     'type' => $type,
                     'title' => RecordLinkHelper::titleForModel($model),
                     'url' => RecordLinkHelper::urlForModel($model, $currentTeam),
+                    'preview' => RecordLinkHelper::previewForModel($model),
                 ];
             }
         }

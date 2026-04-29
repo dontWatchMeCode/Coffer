@@ -12,6 +12,7 @@ use App\Models\CalendarEvent;
 use App\Models\Contact;
 use App\Models\Note;
 use App\Models\Project;
+use App\Models\RecordCollection;
 use App\Models\Task;
 use App\Models\Team;
 use App\Services\RecordLinkHelper;
@@ -57,6 +58,9 @@ class SearchController extends Controller
                 : [],
             'notes' => in_array('notes', $scopes, true)
                 ? $this->filterRoutable($this->searchNotes($currentTeam, $like))
+                : [],
+            'collections' => in_array('collections', $scopes, true)
+                ? $this->filterRoutable($this->searchCollections($currentTeam, $like))
                 : [],
         ]);
     }
@@ -206,6 +210,27 @@ class SearchController extends Controller
     }
 
     /**
+     * @return array<int, array{id: int, title: string, subtitle: string|null, url: string}>
+     */
+    protected function searchCollections(Team $currentTeam, string $like): array
+    {
+        return RecordCollection::query()
+            ->whereBelongsTo($currentTeam)
+            ->where(fn ($q) => $q->where('title', 'like', $like)->orWhere('description', 'like', $like))
+            ->orderBy('title')
+            ->limit(10)
+            ->get()
+            ->map(fn (RecordCollection $collection): array => [
+                'id' => $collection->id,
+                'title' => $collection->title,
+                'subtitle' => $collection->description,
+                'url' => RecordLinkHelper::urlForModel($collection, $currentTeam),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
      * Remove results that have no navigable URL.
      *
      * @param  array<int, array{id: int, title: string, subtitle: string|null, url: string}>  $results
@@ -225,6 +250,7 @@ class SearchController extends Controller
             'projects' => [],
             'bookmarks' => [],
             'notes' => [],
+            'collections' => [],
         ]);
     }
 }

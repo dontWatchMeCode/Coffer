@@ -188,3 +188,16 @@
 10. **Shared TypeScript types across 7 Vue files** — extracted `LinkRecord`, `LinkContext`, `LinkEndpoints` to `resources/js/types/record-links.ts` to prevent drift.
 11. **`formattedLinkedRecords()` requires `Team` param** — made `$currentTeam` required to avoid N+1 `Team::find()` fallback and null-team crashes.
 12. **Task URL breaks when `project_id` is null** — guard `routeName` to `null` when `project_id` is missing so `route()` is never called with null params.
+
+### Session: Collections Feature (Apr 2026)
+
+1. **Avoid `Collection` as an Eloquent model name** — Laravel's collection class makes that name confusing.
+    - Fix: use `RecordCollection` as the model and `record_collections` as the table while keeping routes/UI named `Collections`.
+
+2. **New linkable record types require multi-surface registration** — adding Collections required updates to `RecordLink::linkableMap()`, `RecordLinkHelper`, `SearchPrefixes`, global search, sidebar nav, and Wayfinder-generated routes.
+    - Pattern: add focused tests for CRUD, search prefix, tagging, linking, and backlinks when introducing a new record type.
+
+3. **Linked-record previews are payload-level behavior** — adding `preview` to `formattedLinkedRecords()` keeps existing sidebar lists compatible while allowing richer collection pages.
+    - Fix: assert preview fields in record-link tests so future link payload changes do not silently drop collection previews.
+
+4. **Collection show page should reuse the shared edit layout** — keeping tags and link management in `EditorSidebarLayout` matches the other record pages and avoids a separate interaction model.

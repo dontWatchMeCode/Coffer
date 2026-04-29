@@ -3,6 +3,7 @@ export type LinkRecord = {
     type: string;
     title: string;
     url: string;
+    preview?: string | null;
 };
 
 export type LinkContext = {

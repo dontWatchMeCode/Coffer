@@ -140,7 +140,7 @@ trait HasRecordLinks
     /**
      * Format linked records for the frontend.
      *
-     * @return array<int, array{id: int, type: string, title: string, url: string}>
+     * @return array<int, array{id: int, type: string, title: string, url: string, preview: string|null}>
      */
     public function formattedLinkedRecords(Team $currentTeam): array
     {
@@ -149,6 +149,7 @@ trait HasRecordLinks
             'type' => static::typeAliasFor($model::class),
             'title' => static::titleForModel($model),
             'url' => static::urlForModel($model, $currentTeam),
+            'preview' => RecordLinkHelper::previewForModel($model),
         ])->values()->all();
     }
 }

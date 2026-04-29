@@ -26,6 +26,7 @@ class RecordLink extends Model
             'contact' => Contact::class,
             'bookmark' => Bookmark::class,
             'note' => Note::class,
+            'collection' => RecordCollection::class,
         ];
     }
 

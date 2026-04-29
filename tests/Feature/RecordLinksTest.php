@@ -5,6 +5,7 @@ use App\Models\CalendarEvent;
 use App\Models\Contact;
 use App\Models\Note;
 use App\Models\Project;
+use App\Models\RecordCollection;
 use App\Models\RecordLink;
 use App\Models\Task;
 use App\Models\Team;
@@ -193,6 +194,7 @@ test('candidates search supports record type prefixes', function () {
     CalendarEvent::factory()->create(['team_id' => $team->id, 'title' => 'Shared event']);
     Bookmark::factory()->create(['team_id' => $team->id, 'title' => 'Shared bookmark']);
     Note::factory()->create(['team_id' => $team->id, 'title' => 'Shared note']);
+    RecordCollection::factory()->create(['team_id' => $team->id, 'title' => 'Shared collection']);
 
     actingAs($user)
         ->getJson(route('team.links.candidates', [
@@ -237,6 +239,51 @@ test('candidates search supports record type prefixes', function () {
         ->assertOk()
         ->assertJsonCount(1, 'records')
         ->assertJsonPath('records.0.type', 'note');
+
+    actingAs($user)
+        ->getJson(route('team.links.candidates', [
+            'current_team' => $team,
+            'q' => 'l: Shared',
+            'from_type' => 'task',
+            'from_id' => $task->id,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'records')
+        ->assertJsonPath('records.0.type', 'collection');
+});
+
+test('collections can be linked to other records', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $collection = RecordCollection::factory()->create([
+        'team_id' => $team->id,
+        'description' => 'Collection preview',
+    ]);
+    $note = Note::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Linked note',
+        'body' => 'Note preview',
+    ]);
+
+    actingAs($user)
+        ->postJson(route('team.links.store', ['current_team' => $team]), [
+            'from_type' => 'collection',
+            'from_id' => $collection->id,
+            'to_type' => 'note',
+            'to_id' => $note->id,
+        ])
+        ->assertCreated();
+
+    $collectionLinks = $collection->formattedLinkedRecords($team);
+    $noteLinks = $note->formattedLinkedRecords($team);
+
+    expect($collectionLinks[0]['type'])->toBe('note');
+    expect($collectionLinks[0]['title'])->toBe('Linked note');
+    expect($collectionLinks[0]['preview'])->toBe('Note preview');
+    expect($noteLinks[0]['type'])->toBe('collection');
+    expect($noteLinks[0]['url'])->toBe(route('team.collections.show', ['current_team' => $team, 'collection' => $collection]));
+    expect($noteLinks[0]['preview'])->toBe('Collection preview');
 });
 
 test('unknown candidate search prefix is treated as literal query', function () {

@@ -1,6 +1,7 @@
 export * from './auth';
 export * from './bookmarks';
 export * from './calendar';
+export * from './collections';
 export * from './contacts';
 export * from './navigation';
 export * from './notes';

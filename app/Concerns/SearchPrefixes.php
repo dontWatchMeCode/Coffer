@@ -22,6 +22,7 @@ class SearchPrefixes
             'p' => 'projects',
             'b' => 'bookmarks',
             'n' => 'notes',
+            'l' => 'collections',
         ];
     }
 
@@ -41,6 +42,7 @@ class SearchPrefixes
             'p' => 'project',
             'b' => 'bookmark',
             'n' => 'note',
+            'l' => 'collection',
         ];
     }
 }

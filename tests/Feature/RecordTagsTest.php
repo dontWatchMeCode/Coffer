@@ -4,6 +4,7 @@ use App\Models\Bookmark;
 use App\Models\Contact;
 use App\Models\Note;
 use App\Models\Project;
+use App\Models\RecordCollection;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\Team;
@@ -192,4 +193,20 @@ test('a note can be tagged through the shared tag endpoint', function () {
         ->assertCreated();
 
     expect($note->fresh()->recordTags()->pluck('name')->all())->toBe(['research']);
+});
+
+test('a collection can be tagged through the shared tag endpoint', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $collection = RecordCollection::factory()->create(['team_id' => $team->id]);
+
+    actingAs($user)
+        ->postJson(route('team.tags.store', ['current_team' => $team]), [
+            'from_type' => 'collection',
+            'from_id' => $collection->id,
+            'name' => 'planning',
+        ])
+        ->assertCreated();
+
+    expect($collection->fresh()->recordTags()->pluck('name')->all())->toBe(['planning']);
 });
