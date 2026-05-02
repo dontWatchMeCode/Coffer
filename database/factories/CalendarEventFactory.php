@@ -22,7 +22,7 @@ class CalendarEventFactory extends Factory
             'team_id' => Team::factory(),
             'title' => fake()->sentence(4),
             'description' => fake()->optional()->sentence(),
-            'date' => fake()->date(),
+            'date' => fake()->dateTimeBetween('-6 months', '+6 months')->format('Y-m-d'),
         ];
     }
 }
