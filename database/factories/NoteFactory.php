@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class NoteFactory extends Factory
 {
+    #[\Override]
     protected $model = Note::class;
 
     public function definition(): array

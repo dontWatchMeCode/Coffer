@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
@@ -95,7 +97,7 @@ class Task extends Model implements LinkableRecord
         $status = is_string($newStatus) ? TaskStatus::tryFrom($newStatus) : null;
 
         if ($status === TaskStatus::Completed) {
-            $task->completed_at ??= now();
+            $task->completed_at ??= now()->toDateTimeString();
 
             return;
         }

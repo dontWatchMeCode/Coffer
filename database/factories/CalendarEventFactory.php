@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class CalendarEventFactory extends Factory
 {
+    #[\Override]
     protected $model = CalendarEvent::class;
 
     public function definition(): array

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\TeamRole;
@@ -19,6 +21,7 @@ class Membership extends Pivot
      *
      * @var string
      */
+    #[\Override]
     protected $table = 'team_members';
 
     /**
@@ -26,6 +29,7 @@ class Membership extends Pivot
      *
      * @var bool
      */
+    #[\Override]
     public $incrementing = true;
 
     /**

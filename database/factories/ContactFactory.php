@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ContactFactory extends Factory
 {
+    #[\Override]
     protected $model = Contact::class;
 
     public function definition(): array

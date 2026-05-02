@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class BookmarkFactory extends Factory
 {
+    #[\Override]
     protected $model = Bookmark::class;
 
     public function definition(): array
