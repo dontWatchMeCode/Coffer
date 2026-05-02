@@ -15,7 +15,6 @@ use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Pulse\Facades\Pulse;
 
@@ -77,22 +76,7 @@ class GenerateTestRecords extends Command
             }
         }
 
-        $this->generateTasks($projects, $users);
-        $this->generate('Calendar Events', CalendarEvent::factory()->recycle($teams));
-        $this->generate('Contacts', Contact::factory()->recycle($teams));
-        $this->generate('Bookmarks', Bookmark::factory()->recycle($teams));
-        $this->generate('Notes', Note::factory()->recycle($teams));
-        $this->generate('Collections', RecordCollection::factory()->recycle($teams));
-
-        $this->info('Done! Generated 6,000 test records.');
-
-        return null;
-    }
-
-    protected function generateTasks($projects, $users): void
-    {
         $this->info('Generating 1,000 Tasks...');
-
         for ($i = 0; $i < 10; $i++) {
             Task::factory()
                 ->count(100)
@@ -100,14 +84,34 @@ class GenerateTestRecords extends Command
                 ->state(fn (): array => ['created_by' => $users->random()->id])
                 ->create();
         }
-    }
 
-    protected function generate(string $label, Factory $factory): void
-    {
-        $this->info("Generating 1,000 {$label}...");
-
+        $this->info('Generating 1,000 Calendar Events...');
         for ($i = 0; $i < 10; $i++) {
-            $factory->count(100)->create();
+            CalendarEvent::factory()->count(100)->recycle($teams)->create();
         }
+
+        $this->info('Generating 1,000 Contacts...');
+        for ($i = 0; $i < 10; $i++) {
+            Contact::factory()->count(100)->recycle($teams)->create();
+        }
+
+        $this->info('Generating 1,000 Bookmarks...');
+        for ($i = 0; $i < 10; $i++) {
+            Bookmark::factory()->count(100)->recycle($teams)->create();
+        }
+
+        $this->info('Generating 1,000 Notes...');
+        for ($i = 0; $i < 10; $i++) {
+            Note::factory()->count(100)->recycle($teams)->create();
+        }
+
+        $this->info('Generating 1,000 Collections...');
+        for ($i = 0; $i < 10; $i++) {
+            RecordCollection::factory()->count(100)->recycle($teams)->create();
+        }
+
+        $this->info('Done! Generated 6,000 test records.');
+
+        return null;
     }
 }

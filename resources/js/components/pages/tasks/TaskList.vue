@@ -85,7 +85,9 @@ const statusIcons = {
                             <DropdownMenuItem
                                 v-for="statusOption in statuses"
                                 :key="statusOption.value"
-                                @click="updateTaskStatus(task, statusOption.value)"
+                                @click="
+                                    updateTaskStatus(task, statusOption.value)
+                                "
                             >
                                 <span class="flex items-center gap-2">
                                     <component

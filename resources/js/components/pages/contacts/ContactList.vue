@@ -30,8 +30,10 @@ const props = defineProps<Props>();
 
 const contactsWithDisplay = computed(() =>
     props.filteredContacts.map((contact) => {
-        const emails = contact.emailAddresses?.filter((e) => e.value.trim()) ?? [];
-        const phones = contact.phoneNumbers?.filter((e) => e.value.trim()) ?? [];
+        const emails =
+            contact.emailAddresses?.filter((e) => e.value.trim()) ?? [];
+        const phones =
+            contact.phoneNumbers?.filter((e) => e.value.trim()) ?? [];
 
         return {
             contact,
