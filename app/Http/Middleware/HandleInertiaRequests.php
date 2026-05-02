@@ -40,6 +40,8 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
+        $user?->loadTeamContext();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),

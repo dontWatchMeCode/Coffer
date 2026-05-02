@@ -55,9 +55,9 @@ class TaskComment extends Model
      */
     protected static function ensureUserBelongsToTeam(TaskComment $comment): void
     {
-        $user = User::withoutGlobalScopes()->find($comment->user_id);
+        $belongsToTeam = Membership::userBelongsToTeam((int) $comment->user_id, (int) $comment->team_id);
 
-        if ($user === null || ! $user->belongsToTeamId((int) $comment->team_id)) {
+        if (! $belongsToTeam) {
             throw new LogicException('The comment author must belong to the comment team.');
         }
     }

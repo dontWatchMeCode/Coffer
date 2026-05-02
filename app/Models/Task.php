@@ -60,9 +60,7 @@ class Task extends Model implements LinkableRecord
                 return;
             }
 
-            $assignee = User::withoutGlobalScopes()->find($task->assigned_to);
-
-            if ($assignee === null || ! $assignee->belongsToTeamId((int) $task->team_id)) {
+            if (! Membership::userBelongsToTeam((int) $task->assigned_to, (int) $task->team_id)) {
                 throw new LogicException('The assignee must belong to the task team.');
             }
         });
@@ -77,9 +75,7 @@ class Task extends Model implements LinkableRecord
             return;
         }
 
-        $creator = User::withoutGlobalScopes()->find($task->created_by);
-
-        if ($creator === null || ! $creator->belongsToTeamId((int) $task->team_id)) {
+        if (! Membership::userBelongsToTeam((int) $task->created_by, (int) $task->team_id)) {
             throw new LogicException('The task creator must belong to the task team.');
         }
     }

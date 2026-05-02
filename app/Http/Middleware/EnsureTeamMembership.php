@@ -20,7 +20,11 @@ class EnsureTeamMembership
      */
     public function handle(Request $request, Closure $next, ?string $minimumRole = null): Response
     {
-        [$user, $team] = [$request->user(), $this->team($request)];
+        $user = $request->user();
+
+        $user?->loadTeamContext();
+
+        $team = $this->team($request, $user);
 
         abort_if(! $user || ! $team || ! $user->belongsToTeam($team), 403);
 
@@ -57,11 +61,15 @@ class EnsureTeamMembership
     /**
      * Get the team associated with the request.
      */
-    protected function team(Request $request): ?Team
+    protected function team(Request $request, ?User $user): ?Team
     {
         $team = $request->route('current_team') ?? $request->route('team');
 
         if (is_string($team)) {
+            if ($user?->relationLoaded('teams')) {
+                return $user->teams->firstWhere('slug', $team);
+            }
+
             return Team::where('slug', $team)->first();
         }
 

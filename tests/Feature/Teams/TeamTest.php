@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\TeamRole;
+use App\Models\Membership;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 test('the teams index page can be rendered', function () {
     $user = User::factory()->create();
@@ -12,6 +14,87 @@ test('the teams index page can be rendered', function () {
         ->get(route('teams.index'));
 
     $response->assertOk();
+});
+
+test('loaded teams are converted without membership queries', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($user, ['role' => TeamRole::Admin->value]);
+
+    $user = $user->fresh();
+    $user->load('teams');
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $teams = $user->toUserTeams(includeCurrent: true);
+
+    $queries = DB::getQueryLog();
+    DB::disableQueryLog();
+
+    expect($queries)
+        ->toBeEmpty()
+        ->and($teams->firstWhere('id', $team->id)?->role)
+        ->toBe(TeamRole::Admin->value);
+});
+
+test('loaded team context hydrates current team and roles from memory', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($user, ['role' => TeamRole::Admin->value]);
+    $user->update(['current_team_id' => $team->id]);
+
+    $user = $user->fresh();
+    $user->loadTeamContext();
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $role = $user->teamRole($team);
+    $currentTeam = $user->currentTeam;
+
+    $queries = DB::getQueryLog();
+    DB::disableQueryLog();
+
+    expect($queries)
+        ->toBeEmpty()
+        ->and($currentTeam?->is($team))->toBeTrue()
+        ->and($role)->toBe(TeamRole::Admin);
+});
+
+test('membership checks ignore soft deleted teams', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+
+    expect(Membership::userBelongsToTeam((int) $user->id, (int) $team->id))->toBeTrue();
+
+    $team->delete();
+
+    expect(Membership::userBelongsToTeam((int) $user->id, (int) $team->id))->toBeFalse();
+});
+
+test('fallback team ignores soft deleted teams from memory and database', function () {
+    $user = User::factory()->create(['name' => 'Zulu']);
+    $personalTeam = $user->personalTeam();
+    $deletedTeam = Team::factory()->create(['name' => 'Alpha Deleted']);
+    $activeTeam = Team::factory()->create(['name' => 'Bravo Active']);
+
+    $deletedTeam->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $activeTeam->members()->attach($user, ['role' => TeamRole::Owner->value]);
+
+    $deletedTeam->delete();
+
+    $user->load('teams');
+
+    expect($user->fallbackTeam($personalTeam)?->is($activeTeam))->toBeTrue();
+
+    $user->unsetRelation('teams');
+
+    expect($user->fallbackTeam($personalTeam)?->is($activeTeam))->toBeTrue();
 });
 
 test('teams can be created', function () {

@@ -17,6 +17,18 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 class Membership extends Pivot
 {
     /**
+     * Determine if a user belongs to the given team.
+     */
+    public static function userBelongsToTeam(int $userId, int $teamId): bool
+    {
+        return static::query()
+            ->where('user_id', $userId)
+            ->where('team_id', $teamId)
+            ->whereHas('team')
+            ->exists();
+    }
+
+    /**
      * The table associated with the model.
      *
      * @var string

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\URL;
 
@@ -69,10 +70,33 @@ trait HasTeams
     }
 
     /**
+     * Load team context needed throughout a request.
+     */
+    public function loadTeamContext(): void
+    {
+        if ($this->relationLoaded('teams') && $this->relationLoaded('currentTeam')) {
+            return;
+        }
+
+        $this->loadMissing('teams');
+
+        if (! $this->relationLoaded('currentTeam')) {
+            $this->setRelation(
+                'currentTeam',
+                $this->teams->firstWhere('id', $this->current_team_id),
+            );
+        }
+    }
+
+    /**
      * Get the user's personal team.
      */
     public function personalTeam(): ?Team
     {
+        if ($this->relationLoaded('teams')) {
+            return $this->teams->firstWhere('is_personal', true);
+        }
+
         return $this->teams()
             ->where('is_personal', true)
             ->first();
@@ -100,6 +124,10 @@ trait HasTeams
      */
     public function belongsToTeam(Team $team): bool
     {
+        if ($this->relationLoaded('teams')) {
+            return $this->teams->contains('id', $team->id);
+        }
+
         return $this->teams()->where('teams.id', $team->id)->exists();
     }
 
@@ -108,6 +136,10 @@ trait HasTeams
      */
     public function belongsToTeamId(int $teamId): bool
     {
+        if ($this->relationLoaded('teams')) {
+            return $this->teams->contains('id', $teamId);
+        }
+
         return $this->teams()->where('teams.id', $teamId)->exists();
     }
 
@@ -132,6 +164,26 @@ trait HasTeams
      */
     public function teamRole(Team $team): ?TeamRole
     {
+        if ($this->relationLoaded('teamMemberships')) {
+            return $this->teamMemberships
+                ->firstWhere('team_id', $team->id)
+                ?->role;
+        }
+
+        if ($this->relationLoaded('teams')) {
+            $pivot = $this->teams
+                ->firstWhere('id', $team->id)
+                ?->getRelationValue('pivot');
+
+            $role = match (true) {
+                $pivot instanceof Membership => $pivot->role,
+                $pivot instanceof Pivot => $pivot->getAttribute('role'),
+                default => null,
+            };
+
+            return $role instanceof TeamRole ? $role : TeamRole::tryFrom((string) $role);
+        }
+
         return $this->teamMemberships()
             ->where('team_id', $team->id)
             ->first()
@@ -145,8 +197,9 @@ trait HasTeams
      */
     public function toUserTeams(bool $includeCurrent = false): Collection
     {
-        return $this->teams()
-            ->get()
+        $teams = $this->relationLoaded('teams') ? $this->teams : $this->teams()->get();
+
+        return $teams
             ->map(fn (Team $team) => ! $includeCurrent && $this->isCurrentTeam($team) ? null : $this->toUserTeam($team))
             ->filter()
             ->values();
@@ -190,13 +243,27 @@ trait HasTeams
 
     public function fallbackTeam(?Team $excluding = null): ?Team
     {
+        if ($this->relationLoaded('teams')) {
+            return $this->teams
+                ->filter(fn (Team $team): bool => ! $team->trashed())
+                ->when(
+                    $excluding instanceof Team,
+                    fn (Collection $teams): Collection => $teams->reject(fn (Team $team): bool => $team->is($excluding)),
+                )
+                ->sortBy(fn (Team $team): string => mb_strtolower($team->name))
+                ->first();
+        }
+
         $query = $this->teams();
 
         if ($excluding instanceof Team) {
             $query->where('teams.id', '!=', $excluding->id);
         }
 
-        return $query->orderByRaw('LOWER(teams.name)')->first();
+        return $query
+            ->whereNull('teams.deleted_at')
+            ->orderByRaw('LOWER(teams.name)')
+            ->first();
     }
 
     /**
