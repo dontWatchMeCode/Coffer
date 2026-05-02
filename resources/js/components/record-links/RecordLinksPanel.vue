@@ -215,14 +215,14 @@ function getCsrfToken(): string {
                     :href="link.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100 hover:bg-accent hover:text-foreground focus-visible:opacity-100 sm:opacity-0"
+                    class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
                 >
                     <ExternalLink class="h-3.5 w-3.5" />
                 </a>
                 <Button
                     variant="ghost"
                     size="icon"
-                    class="h-6 w-6 shrink-0 opacity-60 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 sm:opacity-0"
+                    class="h-6 w-6 shrink-0"
                     :disabled="removingKey === linkKey(link)"
                     @click="removeLink(link)"
                 >
@@ -285,14 +285,14 @@ function getCsrfToken(): string {
                         :href="candidate.url"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100 hover:bg-accent hover:text-foreground focus-visible:opacity-100 sm:opacity-0"
+                        class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
                         <ExternalLink class="h-3.5 w-3.5" />
                     </a>
                     <Button
                         variant="ghost"
                         size="icon"
-                        class="h-6 w-6 shrink-0 opacity-60 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 sm:opacity-0"
+                        class="h-6 w-6 shrink-0"
                         :disabled="addingKey === linkKey(candidate)"
                         @click="addLink(candidate)"
                     >

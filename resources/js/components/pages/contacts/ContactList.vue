@@ -1,21 +1,8 @@
 <script setup lang="ts">
-import {
-    MoreHorizontal,
-    Pencil,
-    Plus,
-    Trash2,
-    UserCircle,
-} from 'lucide-vue-next';
+import { Pencil, Plus, Trash2, UserCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 import ContactAvatar from '@/components/pages/contacts/ContactAvatar.vue';
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import type { ContactItem } from '@/types';
 
 type Props = {
@@ -82,32 +69,27 @@ const contactsWithDisplay = computed(() =>
                 </p>
             </div>
 
-            <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        class="h-8 w-8 cursor-pointer opacity-70 transition-opacity group-hover:opacity-100"
-                        @click.stop
-                    >
-                        <MoreHorizontal class="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click="navigateToContact(item.contact)">
-                        <Pencil class="mr-2 h-4 w-4" />
-                        Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        class="text-destructive focus:text-destructive"
-                        @click="openDeleteDialog(item.contact)"
-                    >
-                        <Trash2 class="mr-2 h-4 w-4" />
-                        Delete
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <div class="flex shrink-0 items-center gap-1">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8"
+                    aria-label="Edit contact"
+                    @click.stop="navigateToContact(item.contact)"
+                >
+                    <Pencil class="h-4 w-4" />
+                </Button>
+
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    aria-label="Delete contact"
+                    @click.stop="openDeleteDialog(item.contact)"
+                >
+                    <Trash2 class="h-4 w-4" />
+                </Button>
+            </div>
         </div>
     </div>
 
