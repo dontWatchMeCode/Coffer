@@ -3,7 +3,12 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Pest\Browser\Api\AwaitableWebpage;
 use Pest\Browser\Api\Webpage;
+use Pest\Browser\Playwright\Playwright;
 use Tests\TestCase;
+
+pest()->beforeEach(function () {
+    Playwright::setTimeout(3_000);
+})->in('Browser');
 
 /*
 |--------------------------------------------------------------------------
