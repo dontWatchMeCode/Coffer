@@ -126,6 +126,7 @@ const searchOpen = ref(false);
         <SidebarContent>
             <div class="px-2 py-1.5" v-if="page.props.currentTeam">
                 <button
+                    data-testid="global-search-trigger"
                     @click="searchOpen = true"
                     class="flex h-8 w-full items-center gap-2 rounded-md bg-sidebar-accent/50 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >

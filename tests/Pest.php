@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Pest\Browser\Api\AwaitableWebpage;
+use Pest\Browser\Api\Webpage;
 use Tests\TestCase;
 
 /*
@@ -69,7 +71,37 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function waitForBrowserText(Webpage|AwaitableWebpage $page, string $text, int|float $seconds = 5): Webpage|AwaitableWebpage
 {
-    // ..
+    $deadline = microtime(true) + $seconds;
+    $encodedText = json_encode($text, JSON_THROW_ON_ERROR);
+
+    while (microtime(true) < $deadline) {
+        if ($page->script("document.body.innerText.includes({$encodedText})") === true) {
+            return $page;
+        }
+
+        usleep(100_000);
+    }
+
+    expect(false)->toBeTrue("Expected to see text [{$text}] within {$seconds} seconds.");
+
+    return $page;
+}
+
+function waitForBrowserPath(Webpage|AwaitableWebpage $page, string $path, int|float $seconds = 5): Webpage|AwaitableWebpage
+{
+    $deadline = microtime(true) + $seconds;
+
+    while (microtime(true) < $deadline) {
+        if (parse_url($page->url(), PHP_URL_PATH) === $path) {
+            return $page;
+        }
+
+        usleep(100_000);
+    }
+
+    expect(parse_url($page->url(), PHP_URL_PATH))->toBe($path);
+
+    return $page;
 }

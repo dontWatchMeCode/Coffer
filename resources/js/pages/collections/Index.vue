@@ -109,6 +109,7 @@ defineOptions({
                         class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                     />
                     <Input
+                        data-testid="collections-search-input"
                         :model-value="searchQuery"
                         placeholder="Search collections..."
                         class="pl-9"

@@ -234,6 +234,7 @@ function getResultIndex(
                 <Search class="mr-2 h-4 w-4 shrink-0 opacity-50" />
                 <Input
                     ref="inputRef"
+                    data-testid="global-search-input"
                     v-model="query"
                     placeholder="Search tasks, contacts, events, projects, bookmarks, notes..."
                     class="h-12 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
@@ -292,6 +293,7 @@ function getResultIndex(
                                 <button
                                     v-for="(item, idx) in results[category.key]"
                                     :key="item.id"
+                                    data-testid="global-search-result"
                                     :data-selected="
                                         getResultIndex(category.key, idx) ===
                                         selectedIndex

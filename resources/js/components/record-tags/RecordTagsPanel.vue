@@ -258,6 +258,7 @@ function getCsrfToken(): string {
                     </TagsInputItem>
                     <ListboxFilter v-model="searchTerm" as-child>
                         <TagsInputInput
+                            data-testid="record-tag-search-input"
                             placeholder="Search tags..."
                             @focus="open = trimmedSearch !== ''"
                             @keydown.enter.prevent="handleCreate"

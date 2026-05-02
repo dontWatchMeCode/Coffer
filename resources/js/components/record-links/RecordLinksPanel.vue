@@ -244,6 +244,7 @@ function getCsrfToken(): string {
                     class="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
+                    data-testid="record-link-search-input"
                     v-model="query"
                     placeholder="Search to link..."
                     class="h-8 pr-8 pl-8 text-sm"
