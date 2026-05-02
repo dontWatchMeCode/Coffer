@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\RecordSearchRegistry;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -19,15 +20,7 @@ class RecordLink extends Model
      */
     public static function linkableMap(): array
     {
-        return [
-            'task' => Task::class,
-            'project' => Project::class,
-            'calendar_event' => CalendarEvent::class,
-            'contact' => Contact::class,
-            'bookmark' => Bookmark::class,
-            'note' => Note::class,
-            'collection' => RecordCollection::class,
-        ];
+        return RecordSearchRegistry::linkableMap();
     }
 
     /**

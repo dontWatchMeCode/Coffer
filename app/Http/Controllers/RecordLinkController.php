@@ -4,27 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Concerns\EscapesLikeWildcards;
-use App\Concerns\ParsesSearchPrefixes;
-use App\Concerns\SearchPrefixes;
 use App\Contracts\LinkableRecord;
 use App\Http\Requests\RecordLinks\RecordLinkCandidatesRequest;
 use App\Http\Requests\RecordLinks\StoreRecordLinkRequest;
-use App\Models\Bookmark;
-use App\Models\Contact;
-use App\Models\Note;
-use App\Models\Project;
 use App\Models\RecordLink;
 use App\Models\Team;
-use App\Services\RecordLinkHelper;
+use App\Services\RecordSearchService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 
 class RecordLinkController extends Controller
 {
-    use EscapesLikeWildcards;
-    use ParsesSearchPrefixes;
+    public function __construct(private readonly RecordSearchService $recordSearch) {}
 
     /**
      * Resolve a model instance from its type and id within the current team.
@@ -148,101 +140,13 @@ class RecordLinkController extends Controller
             return response()->json(['records' => []]);
         }
 
-        [$query, $scopes] = $this->parseSearchPrefix($request->string('q')->trim()->toString(), SearchPrefixes::linkableMap());
-
-        if ($query === '') {
-            return response()->json(['records' => []]);
-        }
-
-        $linkedIds = $this->linkedIds($from, $currentTeam->id);
-
-        $records = [];
-
-        foreach (RecordLink::linkableMap() as $type => $class) {
-            if (! in_array($type, $scopes, true)) {
-                continue;
-            }
-
-            if ($class === $from->linkableType()) {
-                // Exclude self
-                $excludeIds = array_merge($linkedIds[$type] ?? [], [$from->getKey()]);
-            } else {
-                $excludeIds = $linkedIds[$type] ?? [];
-            }
-
-            $q = $class::query()->whereBelongsTo($currentTeam);
-
-            if ($excludeIds !== []) {
-                $q->whereNotIn('id', $excludeIds);
-            }
-
-            $like = $this->likePattern($query);
-            $q->where(function ($builder) use ($like, $class): void {
-                if ($class === Bookmark::class) {
-                    $builder->where('title', 'like', $like)
-                        ->orWhere('description', 'like', $like)
-                        ->orWhere('url', 'like', $like);
-                } elseif ($class === Note::class) {
-                    $builder->where('title', 'like', $like)
-                        ->orWhere('body', 'like', $like);
-                } elseif ($class === Contact::class) {
-                    $builder->where('name', 'like', $like)
-                        ->orWhere('address', 'like', $like)
-                        ->orWhere('additional_info', 'like', $like);
-                } elseif ($class === Project::class) {
-                    $builder->where('name', 'like', $like)
-                        ->orWhere('description', 'like', $like);
-                } else {
-                    $builder->where('title', 'like', $like)
-                        ->orWhere('description', 'like', $like);
-                }
-            });
-
-            $models = $q->orderBy(
-                match ($class) {
-                    Contact::class => 'name',
-                    Project::class => 'name',
-                    default => 'title',
-                }
-            )->limit(20)->get();
-
-            foreach ($models as $model) {
-                if (count($records) >= 50) {
-                    break 2;
-                }
-
-                $records[] = [
-                    'id' => $model->getKey(),
-                    'type' => $type,
-                    'title' => RecordLinkHelper::titleForModel($model),
-                    'url' => RecordLinkHelper::urlForModel($model, $currentTeam),
-                    'preview' => RecordLinkHelper::previewForModel($model),
-                ];
-            }
-        }
-
-        return response()->json(['records' => $records]);
-    }
-
-    /**
-     * Get IDs already linked to the given model, grouped by type alias.
-     *
-     * @return array<string, list<int>>
-     */
-    protected function linkedIds(LinkableRecord $model, int $teamId): array
-    {
-        $grouped = RecordLink::linkedIdsGroupedByClass($model->linkableType(), $model->getKey(), $teamId);
-        $map = array_flip(RecordLink::linkableMap());
-        $result = [];
-
-        foreach ($grouped as $modelClass => $ids) {
-            $alias = $map[$modelClass] ?? null;
-            if ($alias !== null) {
-                $result[$alias] = $ids;
-            }
-        }
-
-        return $result;
+        return response()->json([
+            'records' => $this->recordSearch->linkableCandidates(
+                $currentTeam,
+                $from,
+                $request->string('q')->trim()->toString(),
+            ),
+        ]);
     }
 
     /**

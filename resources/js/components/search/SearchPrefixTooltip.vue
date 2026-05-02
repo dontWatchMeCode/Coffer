@@ -13,7 +13,7 @@ type PrefixItem = {
     label: string;
 };
 
-// Keep in sync with SearchPrefixes.php.
+// Keep in sync with RecordSearchRegistry.php.
 const prefixes: PrefixItem[] = [
     { prefix: 't:', label: 'Tasks' },
     { prefix: 'c:', label: 'Contacts' },
