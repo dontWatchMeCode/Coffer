@@ -76,24 +76,6 @@ function navigateToContact(contact: ContactItem): void {
     );
 }
 
-function contactPrimaryEmail(contact: ContactItem): string | undefined {
-    return contact.emailAddresses?.find((e) => e.value.trim())?.value;
-}
-
-function contactPrimaryPhone(contact: ContactItem): string | undefined {
-    return contact.phoneNumbers?.find((e) => e.value.trim())?.value;
-}
-
-function contactSecondaryInfo(contact: ContactItem): string[] {
-    const emails = contact.emailAddresses?.filter((e) => e.value.trim()) ?? [];
-    const phones = contact.phoneNumbers?.filter((e) => e.value.trim()) ?? [];
-
-    return [
-        ...emails.slice(1).map((e) => e.value),
-        ...phones.slice(1).map((e) => e.value),
-    ];
-}
-
 const createDialogRef = ref<InstanceType<typeof CreateContactDialog> | null>(
     null,
 );
@@ -150,9 +132,6 @@ function openDeleteDialog(contact: ContactItem): void {
             <ContactList
                 :filtered-contacts="filteredContacts"
                 :search-query="searchQuery"
-                :contact-primary-email="contactPrimaryEmail"
-                :contact-primary-phone="contactPrimaryPhone"
-                :contact-secondary-info="contactSecondaryInfo"
                 :navigate-to-contact="navigateToContact"
                 :open-delete-dialog="openDeleteDialog"
                 :open-create-dialog="openCreateDialog"

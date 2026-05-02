@@ -6,6 +6,7 @@ import {
     Trash2,
     UserCircle,
 } from 'lucide-vue-next';
+import { computed } from 'vue';
 import ContactAvatar from '@/components/pages/contacts/ContactAvatar.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,51 +21,62 @@ import type { ContactItem } from '@/types';
 type Props = {
     filteredContacts: ContactItem[];
     searchQuery: string;
-    contactPrimaryEmail: (contact: ContactItem) => string | undefined;
-    contactPrimaryPhone: (contact: ContactItem) => string | undefined;
-    contactSecondaryInfo: (contact: ContactItem) => string[];
     navigateToContact: (contact: ContactItem) => void;
     openDeleteDialog: (contact: ContactItem) => void;
     openCreateDialog: () => void;
 };
 
-defineProps<Props>();
+const props = defineProps<Props>();
+
+const contactsWithDisplay = computed(() =>
+    props.filteredContacts.map((contact) => {
+        const emails = contact.emailAddresses?.filter((e) => e.value.trim()) ?? [];
+        const phones = contact.phoneNumbers?.filter((e) => e.value.trim()) ?? [];
+
+        return {
+            contact,
+            primaryEmail: emails[0]?.value,
+            primaryPhone: phones[0]?.value,
+            secondaryInfo: [
+                ...emails.slice(1).map((e) => e.value),
+                ...phones.slice(1).map((e) => e.value),
+            ],
+        };
+    }),
+);
 </script>
 
 <template>
-    <div v-if="filteredContacts.length > 0" class="space-y-3">
+    <div v-if="contactsWithDisplay.length > 0" class="space-y-3">
         <div
-            v-for="contact in filteredContacts"
-            :key="contact.id"
+            v-for="item in contactsWithDisplay"
+            :key="item.contact.id"
             class="group flex cursor-pointer items-center gap-4 rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50 dark:bg-card/50"
-            @click="navigateToContact(contact)"
+            @click="navigateToContact(item.contact)"
         >
-            <ContactAvatar :name="contact.name ?? ''" size="sm" />
+            <ContactAvatar :name="item.contact.name ?? ''" size="sm" />
 
             <div class="min-w-0 flex-1">
-                <p class="truncate font-medium">{{ contact.name }}</p>
+                <p class="truncate font-medium">{{ item.contact.name }}</p>
                 <p
-                    v-if="
-                        contactPrimaryEmail(contact) ||
-                        contactPrimaryPhone(contact)
-                    "
+                    v-if="item.primaryEmail || item.primaryPhone"
                     class="truncate text-sm text-muted-foreground"
                 >
                     {{
                         [
-                            contactPrimaryEmail(contact),
-                            contactPrimaryPhone(contact),
-                            ...contactSecondaryInfo(contact),
+                            item.primaryEmail,
+                            item.primaryPhone,
+                            ...item.secondaryInfo,
                         ]
                             .filter(Boolean)
                             .join(' • ')
                     }}
                 </p>
                 <p
-                    v-else-if="contact.address"
+                    v-else-if="item.contact.address"
                     class="truncate text-sm text-muted-foreground"
                 >
-                    {{ contact.address }}
+                    {{ item.contact.address }}
                 </p>
             </div>
 
@@ -80,14 +92,14 @@ defineProps<Props>();
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click="navigateToContact(contact)">
+                    <DropdownMenuItem @click="navigateToContact(item.contact)">
                         <Pencil class="mr-2 h-4 w-4" />
                         Edit
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                         class="text-destructive focus:text-destructive"
-                        @click="openDeleteDialog(contact)"
+                        @click="openDeleteDialog(item.contact)"
                     >
                         <Trash2 class="mr-2 h-4 w-4" />
                         Delete

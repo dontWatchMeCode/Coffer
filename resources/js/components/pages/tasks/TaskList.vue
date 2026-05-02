@@ -8,13 +8,12 @@ import {
     MessageCircle,
     Trash2,
 } from 'lucide-vue-next';
-import type { AcceptableValue } from 'reka-ui';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-} from '@/components/ui/select';
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Tooltip,
     TooltipContent,
@@ -29,7 +28,7 @@ type Props = {
     project: Pick<TaskProject, 'id' | 'name'>;
     statuses: TaskStatusOption[];
     openTask: (task: TaskItem) => void;
-    updateTaskStatus: (task: TaskItem, status: AcceptableValue) => void;
+    updateTaskStatus: (task: TaskItem, status: string) => void;
 };
 
 defineProps<Props>();
@@ -64,16 +63,9 @@ const statusIcons = {
         >
             <Tooltip>
                 <TooltipTrigger as-child>
-                    <Select
-                        :model-value="task.status"
-                        @update:model-value="
-                            (value) => updateTaskStatus(task, value)
-                        "
-                    >
-                        <SelectTrigger
-                            class="cursor-pointer border-0"
-                            hide-icon
-                            variant="pill"
+                    <DropdownMenu>
+                        <DropdownMenuTrigger
+                            class="cursor-pointer border-0 bg-transparent p-0"
                             @click.stop
                         >
                             <component
@@ -88,12 +80,12 @@ const statusIcons = {
                                     getTaskStatusMeta(task.status).badgeColor
                                 "
                             />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem
                                 v-for="statusOption in statuses"
                                 :key="statusOption.value"
-                                :value="statusOption.value"
+                                @click="updateTaskStatus(task, statusOption.value)"
                             >
                                 <span class="flex items-center gap-2">
                                     <component
@@ -114,9 +106,9 @@ const statusIcons = {
                                     />
                                     {{ statusOption.label }}
                                 </span>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>
