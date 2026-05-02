@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,16 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (DB::getDriverName() === 'sqlite') {
-            DB::unprepared(<<<'SQL'
-                ALTER TABLE "users" ADD COLUMN "two_factor_secret" text;
-                ALTER TABLE "users" ADD COLUMN "two_factor_recovery_codes" text;
-                ALTER TABLE "users" ADD COLUMN "two_factor_confirmed_at" text;
-            SQL);
-
-            return;
-        }
-
         Schema::table('users', function (Blueprint $table): void {
             $table->text('two_factor_secret')->after('password')->nullable();
             $table->text('two_factor_recovery_codes')->after('two_factor_secret')->nullable();

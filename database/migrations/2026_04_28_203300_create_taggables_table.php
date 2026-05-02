@@ -11,26 +11,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (DB::getDriverName() === 'sqlite') {
-            DB::unprepared(<<<'SQL'
-                CREATE TABLE "taggables" (
-                    "id" integer primary key autoincrement not null,
-                    "tag_id" integer not null,
-                    "taggable_type" text not null,
-                    "taggable_id" integer not null,
-                    "created_at" text,
-                    "updated_at" text,
-                    foreign key("tag_id") references "tags"("id") on delete cascade,
-                    unique("tag_id", "taggable_type", "taggable_id")
-                ) STRICT;
-                CREATE INDEX "taggables_taggable_type_taggable_id_index" ON "taggables" ("taggable_type", "taggable_id");
-            SQL);
-
-            $this->backfillBookmarkTags();
-
-            return;
-        }
-
         Schema::create('taggables', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('tag_id')->constrained()->cascadeOnDelete();

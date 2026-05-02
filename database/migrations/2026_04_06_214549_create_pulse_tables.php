@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Pulse\Support\PulseMigration;
 
@@ -13,51 +12,6 @@ return new class extends PulseMigration
     public function up(): void
     {
         if (! $this->shouldRun()) {
-            return;
-        }
-
-        if ($this->driver() === 'sqlite') {
-            DB::unprepared(<<<'SQL'
-                CREATE TABLE "pulse_values" (
-                    "id" integer primary key autoincrement not null,
-                    "timestamp" integer not null,
-                    "type" text not null,
-                    "key" text not null,
-                    "key_hash" text not null,
-                    "value" text not null
-                ) STRICT;
-                CREATE INDEX "pulse_values_timestamp_index" ON "pulse_values" ("timestamp");
-                CREATE INDEX "pulse_values_type_index" ON "pulse_values" ("type");
-                CREATE UNIQUE INDEX "pulse_values_type_key_hash_unique" ON "pulse_values" ("type", "key_hash");
-                CREATE TABLE "pulse_entries" (
-                    "id" integer primary key autoincrement not null,
-                    "timestamp" integer not null,
-                    "type" text not null,
-                    "key" text not null,
-                    "key_hash" text not null,
-                    "value" integer
-                ) STRICT;
-                CREATE INDEX "pulse_entries_timestamp_index" ON "pulse_entries" ("timestamp");
-                CREATE INDEX "pulse_entries_type_index" ON "pulse_entries" ("type");
-                CREATE INDEX "pulse_entries_key_hash_index" ON "pulse_entries" ("key_hash");
-                CREATE INDEX "pulse_entries_timestamp_type_key_hash_value_index" ON "pulse_entries" ("timestamp", "type", "key_hash", "value");
-                CREATE TABLE "pulse_aggregates" (
-                    "id" integer primary key autoincrement not null,
-                    "bucket" integer not null,
-                    "period" integer not null,
-                    "type" text not null,
-                    "key" text not null,
-                    "key_hash" text not null,
-                    "aggregate" text not null,
-                    "value" real not null,
-                    "count" integer
-                ) STRICT;
-                CREATE UNIQUE INDEX "pulse_aggregates_bucket_period_type_aggregate_key_hash_unique" ON "pulse_aggregates" ("bucket", "period", "type", "aggregate", "key_hash");
-                CREATE INDEX "pulse_aggregates_period_bucket_index" ON "pulse_aggregates" ("period", "bucket");
-                CREATE INDEX "pulse_aggregates_type_index" ON "pulse_aggregates" ("type");
-                CREATE INDEX "pulse_aggregates_period_type_aggregate_bucket_index" ON "pulse_aggregates" ("period", "type", "aggregate", "bucket");
-            SQL);
-
             return;
         }
 

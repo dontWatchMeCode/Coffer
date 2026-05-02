@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,41 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (DB::getDriverName() === 'sqlite') {
-            DB::unprepared(<<<'SQL'
-                CREATE TABLE "users" (
-                    "id" integer primary key autoincrement not null,
-                    "name" text not null,
-                    "email" text not null,
-                    "email_verified_at" text,
-                    "password" text not null,
-                    "remember_token" text,
-                    "created_at" text,
-                    "updated_at" text
-                ) STRICT;
-                CREATE UNIQUE INDEX "users_email_unique" ON "users" ("email");
-                CREATE TABLE "password_reset_tokens" (
-                    "email" text not null,
-                    "token" text not null,
-                    "created_at" text,
-                    primary key ("email")
-                ) STRICT;
-                CREATE TABLE "sessions" (
-                    "id" text not null,
-                    "user_id" integer,
-                    "ip_address" text,
-                    "user_agent" text,
-                    "payload" text not null,
-                    "last_activity" integer not null,
-                    primary key ("id")
-                ) STRICT;
-                CREATE INDEX "sessions_user_id_index" ON "sessions" ("user_id");
-                CREATE INDEX "sessions_last_activity_index" ON "sessions" ("last_activity");
-            SQL);
-
-            return;
-        }
-
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
             $table->string('name');

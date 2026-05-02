@@ -9,43 +9,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (DB::getDriverName() === 'sqlite') {
-            DB::unprepared(<<<'SQL'
-                CREATE TABLE "contacts_new" (
-                    "id" integer primary key autoincrement not null,
-                    "team_id" integer not null,
-                    "name" text not null,
-                    "phone_numbers" text,
-                    "email_addresses" text,
-                    "address" text,
-                    "additional_info" text,
-                    "created_at" text,
-                    "updated_at" text,
-                    foreign key("team_id") references "teams"("id") on delete cascade
-                ) STRICT;
-                CREATE INDEX "contacts_new_team_id_index" ON "contacts_new" ("team_id");
-                CREATE INDEX "contacts_new_name_index" ON "contacts_new" ("name");
-            SQL);
-
-            DB::unprepared(<<<'SQL'
-                INSERT INTO "contacts_new" ("id", "team_id", "name", "phone_numbers", "email_addresses", "address", "additional_info", "created_at", "updated_at")
-                SELECT "id", "team_id", "name",
-                    CASE WHEN "phone" IS NOT NULL THEN json_array(json_object('label', '', 'value', "phone")) ELSE NULL END,
-                    CASE WHEN "email" IS NOT NULL THEN json_array(json_object('label', '', 'value', "email")) ELSE NULL END,
-                    "address", "additional_info", "created_at", "updated_at"
-                FROM "contacts";
-            SQL);
-
-            DB::unprepared('DROP TABLE "contacts";');
-            DB::unprepared('ALTER TABLE "contacts_new" RENAME TO "contacts";');
-
-            return;
+        if (! Schema::hasColumn('contacts', 'phone_numbers')) {
+            Schema::table('contacts', function (Blueprint $table): void {
+                $table->json('phone_numbers')->nullable()->after('name');
+            });
         }
 
-        Schema::table('contacts', function (Blueprint $table): void {
-            $table->json('phone_numbers')->nullable()->after('name');
-            $table->json('email_addresses')->nullable()->after('phone_numbers');
-        });
+        if (! Schema::hasColumn('contacts', 'email_addresses')) {
+            Schema::table('contacts', function (Blueprint $table): void {
+                $table->json('email_addresses')->nullable()->after('phone_numbers');
+            });
+        }
+
+        if (! Schema::hasColumn('contacts', 'email') && ! Schema::hasColumn('contacts', 'phone')) {
+            return;
+        }
 
         $contacts = DB::table('contacts')->whereNotNull('email')->orWhereNotNull('phone')->get();
 
@@ -69,51 +47,30 @@ return new class extends Migration
                 ]);
         }
 
-        Schema::table('contacts', function (Blueprint $table): void {
-            $table->dropColumn('email');
-            $table->dropColumn('phone');
-        });
+        $columns = collect(['email', 'phone'])
+            ->filter(fn (string $column): bool => Schema::hasColumn('contacts', $column))
+            ->all();
+
+        if ($columns !== []) {
+            Schema::table('contacts', function (Blueprint $table) use ($columns): void {
+                $table->dropColumn($columns);
+            });
+        }
     }
 
     public function down(): void
     {
-        if (DB::getDriverName() === 'sqlite') {
-            DB::unprepared(<<<'SQL'
-                CREATE TABLE "contacts_new" (
-                    "id" integer primary key autoincrement not null,
-                    "team_id" integer not null,
-                    "name" text not null,
-                    "email" text,
-                    "phone" text,
-                    "address" text,
-                    "additional_info" text,
-                    "created_at" text,
-                    "updated_at" text,
-                    foreign key("team_id") references "teams"("id") on delete cascade
-                ) STRICT;
-                CREATE INDEX "contacts_new_team_id_index" ON "contacts_new" ("team_id");
-                CREATE INDEX "contacts_new_name_index" ON "contacts_new" ("name");
-            SQL);
-
-            DB::unprepared(<<<'SQL'
-                INSERT INTO "contacts_new" ("id", "team_id", "name", "email", "phone", "address", "additional_info", "created_at", "updated_at")
-                SELECT "id", "team_id", "name",
-                    CASE WHEN "email_addresses" IS NOT NULL THEN json_extract("email_addresses", '$[0].value') ELSE NULL END,
-                    CASE WHEN "phone_numbers" IS NOT NULL THEN json_extract("phone_numbers", '$[0].value') ELSE NULL END,
-                    "address", "additional_info", "created_at", "updated_at"
-                FROM "contacts";
-            SQL);
-
-            DB::unprepared('DROP TABLE "contacts";');
-            DB::unprepared('ALTER TABLE "contacts_new" RENAME TO "contacts";');
-
-            return;
+        if (! Schema::hasColumn('contacts', 'email')) {
+            Schema::table('contacts', function (Blueprint $table): void {
+                $table->string('email')->nullable()->after('name');
+            });
         }
 
-        Schema::table('contacts', function (Blueprint $table): void {
-            $table->string('email')->nullable()->after('name');
-            $table->string('phone')->nullable()->after('email');
-        });
+        if (! Schema::hasColumn('contacts', 'phone')) {
+            Schema::table('contacts', function (Blueprint $table): void {
+                $table->string('phone')->nullable()->after('email');
+            });
+        }
 
         $contacts = DB::table('contacts')->whereNotNull('phone_numbers')->orWhereNotNull('email_addresses')->get();
 
@@ -143,9 +100,14 @@ return new class extends Migration
                 ]);
         }
 
-        Schema::table('contacts', function (Blueprint $table): void {
-            $table->dropColumn('phone_numbers');
-            $table->dropColumn('email_addresses');
-        });
+        $columns = collect(['phone_numbers', 'email_addresses'])
+            ->filter(fn (string $column): bool => Schema::hasColumn('contacts', $column))
+            ->all();
+
+        if ($columns !== []) {
+            Schema::table('contacts', function (Blueprint $table) use ($columns): void {
+                $table->dropColumn($columns);
+            });
+        }
     }
 };

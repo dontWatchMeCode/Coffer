@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -21,39 +20,6 @@ return new class extends Migration
     public function up(): void
     {
         $schema = Schema::connection($this->getConnection());
-
-        if (DB::connection($this->getConnection())->getDriverName() === 'sqlite') {
-            DB::connection($this->getConnection())->unprepared(<<<'SQL'
-                CREATE TABLE "telescope_entries" (
-                    "sequence" integer primary key autoincrement not null,
-                    "uuid" text not null,
-                    "batch_id" text not null,
-                    "family_hash" text,
-                    "should_display_on_index" integer not null default '1',
-                    "type" text not null,
-                    "content" text not null,
-                    "created_at" text
-                ) STRICT;
-                CREATE UNIQUE INDEX "telescope_entries_uuid_unique" ON "telescope_entries" ("uuid");
-                CREATE INDEX "telescope_entries_batch_id_index" ON "telescope_entries" ("batch_id");
-                CREATE INDEX "telescope_entries_family_hash_index" ON "telescope_entries" ("family_hash");
-                CREATE INDEX "telescope_entries_created_at_index" ON "telescope_entries" ("created_at");
-                CREATE INDEX "telescope_entries_type_should_display_on_index_index" ON "telescope_entries" ("type", "should_display_on_index");
-                CREATE TABLE "telescope_entries_tags" (
-                    "entry_uuid" text not null,
-                    "tag" text not null,
-                    foreign key("entry_uuid") references "telescope_entries"("uuid") on delete cascade,
-                    primary key ("entry_uuid", "tag")
-                ) STRICT;
-                CREATE INDEX "telescope_entries_tags_tag_index" ON "telescope_entries_tags" ("tag");
-                CREATE TABLE "telescope_monitoring" (
-                    "tag" text not null,
-                    primary key ("tag")
-                ) STRICT;
-            SQL);
-
-            return;
-        }
 
         $schema->create('telescope_entries', function (Blueprint $table): void {
             $table->bigIncrements('sequence');
