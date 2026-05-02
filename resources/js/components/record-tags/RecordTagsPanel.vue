@@ -10,7 +10,6 @@ import {
 } from 'reka-ui';
 import type { AcceptableInputValue, AcceptableValue } from 'reka-ui';
 import { computed, ref, watch } from 'vue';
-import { Separator } from '@/components/ui/separator';
 import {
     TagsInput,
     TagsInputInput,
@@ -37,7 +36,6 @@ const removingId = ref<number | null>(null);
 const error = ref<string | null>(null);
 
 const tagNames = computed(() => props.tags.map((tag) => tag.name));
-const hasTags = computed(() => props.tags.length > 0);
 const trimmedSearch = computed(() => searchTerm.value.trim());
 const exactCandidate = computed(() =>
     candidates.value.some(
@@ -226,8 +224,8 @@ function getCsrfToken(): string {
 
 <template>
     <div class="space-y-3">
-        <div class="flex items-center gap-2">
-            <Tag class="h-4 w-4 text-muted-foreground" />
+        <div class="flex items-center gap-2.5">
+            <Tag class="h-3.5 w-3.5 text-muted-foreground" />
             <h3
                 class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
             >
@@ -244,7 +242,7 @@ function getCsrfToken(): string {
             <div class="relative">
                 <TagsInput
                     :model-value="tagNames"
-                    class="min-h-8 w-full"
+                    class="min-h-8 w-full border-muted bg-background/60 shadow-none"
                     @update:model-value="handleModelValueUpdate"
                 >
                     <TagsInputItem
@@ -269,7 +267,7 @@ function getCsrfToken(): string {
 
                 <div
                     v-if="open"
-                    class="absolute z-50 mt-1 w-full rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+                    class="absolute z-50 mt-1 w-full rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
                 >
                     <div
                         v-if="loading"
@@ -286,7 +284,7 @@ function getCsrfToken(): string {
                         <ListboxItem
                             v-for="tag in candidates"
                             :key="tag.id"
-                            class="relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                            class="relative flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
                             :value="tag.name"
                         >
                             <span class="truncate">{{ tag.name }}</span>
@@ -300,7 +298,7 @@ function getCsrfToken(): string {
                         <button
                             v-if="canCreate"
                             type="button"
-                            class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                            class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                             :disabled="addingValue === trimmedSearch"
                             @click="handleCreate"
                         >
@@ -319,14 +317,8 @@ function getCsrfToken(): string {
             </div>
         </ListboxRoot>
 
-        <div v-if="!hasTags" class="text-sm text-muted-foreground">
-            No tags yet.
-        </div>
-
         <div v-if="error" class="text-xs text-destructive">
             {{ error }}
         </div>
-
-        <Separator />
     </div>
 </template>

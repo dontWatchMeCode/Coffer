@@ -5,7 +5,6 @@ import { computed, ref, watch } from 'vue';
 import SearchPrefixTooltip from '@/components/search/SearchPrefixTooltip.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -172,8 +171,8 @@ function getCsrfToken(): string {
 
 <template>
     <div class="space-y-3">
-        <div class="flex items-center gap-2">
-            <Link2 class="h-4 w-4 text-muted-foreground" />
+        <div class="flex items-center gap-2.5">
+            <Link2 class="h-3.5 w-3.5 text-muted-foreground" />
             <h3
                 class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
             >
@@ -185,27 +184,27 @@ function getCsrfToken(): string {
             <div
                 v-for="link in links"
                 :key="`${link.type}-${link.id}`"
-                class="group flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
+                class="group flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted/70"
             >
                 <Link
                     v-if="link.url"
                     :href="link.url"
-                    class="flex min-w-0 flex-1 items-center gap-2 text-sm"
+                    class="grid min-w-0 flex-1 grid-cols-[1fr_auto] items-center gap-2 text-sm"
                 >
                     <span class="truncate font-medium">{{ link.title }}</span>
                     <span
-                        class="shrink-0 rounded bg-muted px-1 py-0.5 text-[10px] font-medium text-muted-foreground uppercase"
+                        class="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase"
                     >
                         {{ link.type }}
                     </span>
                 </Link>
                 <span
                     v-else
-                    class="flex min-w-0 flex-1 items-center gap-2 text-sm"
+                    class="grid min-w-0 flex-1 grid-cols-[1fr_auto] items-center gap-2 text-sm"
                 >
                     <span class="truncate font-medium">{{ link.title }}</span>
                     <span
-                        class="shrink-0 rounded bg-muted px-1 py-0.5 text-[10px] font-medium text-muted-foreground uppercase"
+                        class="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase"
                     >
                         {{ link.type }}
                     </span>
@@ -216,14 +215,14 @@ function getCsrfToken(): string {
                     :href="link.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                    class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100 hover:bg-accent hover:text-foreground focus-visible:opacity-100 sm:opacity-0"
                 >
                     <ExternalLink class="h-3.5 w-3.5" />
                 </a>
                 <Button
                     variant="ghost"
                     size="icon"
-                    class="h-6 w-6 shrink-0"
+                    class="h-6 w-6 shrink-0 opacity-60 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 sm:opacity-0"
                     :disabled="removingKey === linkKey(link)"
                     @click="removeLink(link)"
                 >
@@ -232,13 +231,14 @@ function getCsrfToken(): string {
             </div>
         </div>
 
-        <div v-else class="text-sm text-muted-foreground">
+        <div
+            v-else
+            class="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground"
+        >
             No linked records yet.
         </div>
 
-        <Separator />
-
-        <div class="space-y-2">
+        <div class="space-y-2 pt-1">
             <div class="relative flex items-center">
                 <Search
                     class="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
@@ -247,7 +247,7 @@ function getCsrfToken(): string {
                     data-testid="record-link-search-input"
                     v-model="query"
                     placeholder="Search to link..."
-                    class="h-8 pr-8 pl-8 text-sm"
+                    class="h-8 border-muted bg-background/60 pr-8 pl-8 text-sm shadow-none"
                 />
                 <SearchPrefixTooltip
                     side="top"
@@ -270,13 +270,13 @@ function getCsrfToken(): string {
                 <div
                     v-for="candidate in candidates"
                     :key="`${candidate.type}-${candidate.id}`"
-                    class="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
+                    class="group flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted/70"
                 >
                     <span class="min-w-0 flex-1 truncate text-sm">
                         {{ candidate.title }}
                     </span>
                     <span
-                        class="shrink-0 rounded bg-muted px-1 py-0.5 text-[10px] font-medium text-muted-foreground uppercase"
+                        class="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase"
                     >
                         {{ candidate.type }}
                     </span>
@@ -285,14 +285,14 @@ function getCsrfToken(): string {
                         :href="candidate.url"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                        class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100 hover:bg-accent hover:text-foreground focus-visible:opacity-100 sm:opacity-0"
                     >
                         <ExternalLink class="h-3.5 w-3.5" />
                     </a>
                     <Button
                         variant="ghost"
                         size="icon"
-                        class="h-6 w-6 shrink-0"
+                        class="h-6 w-6 shrink-0 opacity-60 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 sm:opacity-0"
                         :disabled="addingKey === linkKey(candidate)"
                         @click="addLink(candidate)"
                     >

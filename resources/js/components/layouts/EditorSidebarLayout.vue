@@ -4,7 +4,6 @@ import { computed, useSlots } from 'vue';
 import RecordLinksPanel from '@/components/record-links/RecordLinksPanel.vue';
 import RecordTagsPanel from '@/components/record-tags/RecordTagsPanel.vue';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -84,59 +83,68 @@ function formatDateTime(value: string | null | undefined): string {
                 hasRecordLinks ||
                 hasRecordTags
             "
-            class="order-1 h-fit w-full shrink-0 space-y-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
+            class="order-1 h-fit w-full shrink-0 overflow-hidden border-l bg-background/60 pl-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
         >
-            <RecordTagsPanel
+            <div
                 v-if="hasRecordTags && recordTags"
-                :tags="recordTags.tags"
-                :context="recordTags.context"
-                :endpoints="recordTags.endpoints"
-            />
+                class="border-t py-6 first:border-t-0 first:pt-1"
+            >
+                <RecordTagsPanel
+                    :tags="recordTags.tags"
+                    :context="recordTags.context"
+                    :endpoints="recordTags.endpoints"
+                />
+            </div>
 
-            <RecordLinksPanel
+            <div
                 v-if="hasRecordLinks && recordLinks"
-                :links="recordLinks.links"
-                :context="recordLinks.context"
-                :endpoints="recordLinks.endpoints"
-            />
+                class="border-t py-6 first:border-t-0 first:pt-1"
+            >
+                <RecordLinksPanel
+                    :links="recordLinks.links"
+                    :context="recordLinks.context"
+                    :endpoints="recordLinks.endpoints"
+                />
+            </div>
 
-            <Separator
-                v-if="
-                    hasRecordLinks && (hasSidebarTop || hasMeta || hasActions)
-                "
-            />
+            <div
+                v-if="hasSidebarTop"
+                class="border-t py-6 first:border-t-0 first:pt-1"
+            >
+                <slot name="sidebar-top" />
+            </div>
 
-            <slot name="sidebar-top" />
-
-            <Separator v-if="hasSidebarTop && (hasMeta || hasActions)" />
-
-            <div v-if="hasMeta" class="space-y-3">
+            <div
+                v-if="hasMeta"
+                class="space-y-2 border-t py-6 first:border-t-0 first:pt-1"
+            >
                 <div
                     v-if="createdBy"
-                    class="flex justify-between gap-4 text-sm"
+                    class="grid grid-cols-[auto_1fr] gap-4 text-xs"
                 >
                     <span class="text-muted-foreground">Created by</span>
-                    <span class="text-right">{{ createdBy }}</span>
+                    <span class="truncate text-right">{{ createdBy }}</span>
                 </div>
 
                 <div
                     v-if="updatedAt"
-                    class="flex justify-between gap-4 text-sm"
+                    class="grid grid-cols-[auto_1fr] gap-4 text-xs"
                 >
                     <span class="text-muted-foreground">Updated at</span>
-                    <span class="text-right">{{
+                    <span class="truncate text-right">{{
                         formatDateTime(updatedAt)
                     }}</span>
                 </div>
             </div>
 
-            <Separator v-if="hasMeta && hasActions" />
-
-            <div v-if="hasActions" class="space-y-2">
+            <div
+                v-if="hasActions"
+                class="space-y-2 border-t py-6 first:border-t-0 first:pt-1"
+            >
                 <Button
                     v-if="onSave"
                     size="sm"
-                    class="w-full cursor-pointer justify-start gap-2"
+                    class="w-full justify-start gap-2"
                     :disabled="saveDisabled"
                     @click="onSave()"
                 >
@@ -146,9 +154,9 @@ function formatDateTime(value: string | null | undefined): string {
 
                 <Button
                     v-if="onDelete"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    class="w-full cursor-pointer justify-start gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    class="w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                     :disabled="deleteDisabled"
                     @click="onDelete()"
                 >
