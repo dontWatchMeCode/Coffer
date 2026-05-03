@@ -47,12 +47,17 @@ class SaveContactRequest extends FormRequest
                 ? ['sometimes', 'nullable', 'array', 'max:20']
                 : ['nullable', 'array', 'max:20'],
             'phone_numbers.*.label' => ['nullable', 'string', 'max:100'],
-            'phone_numbers.*.value' => ['nullable', 'string', 'max:255'],
+            'phone_numbers.*.value' => ['required', 'string', 'max:255'],
             'email_addresses' => $sometimes
                 ? ['sometimes', 'nullable', 'array', 'max:20']
                 : ['nullable', 'array', 'max:20'],
             'email_addresses.*.label' => ['nullable', 'string', 'max:100'],
-            'email_addresses.*.value' => ['nullable', 'email', 'max:255'],
+            'email_addresses.*.value' => ['required', 'email', 'max:255'],
+            'links' => $sometimes
+                ? ['sometimes', 'nullable', 'array', 'max:20']
+                : ['nullable', 'array', 'max:20'],
+            'links.*.label' => ['nullable', 'string', 'max:100'],
+            'links.*.value' => ['required', 'url', 'max:2048'],
             'address' => $sometimes
                 ? ['sometimes', 'nullable', 'string']
                 : ['nullable', 'string'],

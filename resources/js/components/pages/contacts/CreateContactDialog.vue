@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { emptyEntry } from '@/lib/contacts';
+import { emptyEntry, firstEntryValueError } from '@/lib/contacts';
 import { taskInputLikeClass } from '@/lib/tasks';
 import { store as storeContact } from '@/routes/team/contacts';
 import type { ContactEntry } from '@/types';
@@ -28,6 +28,7 @@ const createDialogOpen = ref(false);
 const createName = ref('');
 const createPhones = ref<ContactEntry[]>([emptyEntry()]);
 const createEmails = ref<ContactEntry[]>([emptyEntry()]);
+const createLinks = ref<ContactEntry[]>([emptyEntry()]);
 const createAddress = ref('');
 const createAdditionalInfo = ref('');
 
@@ -35,6 +36,7 @@ function resetCreateForm(): void {
     createName.value = '';
     createPhones.value = [emptyEntry()];
     createEmails.value = [emptyEntry()];
+    createLinks.value = [emptyEntry()];
     createAddress.value = '';
     createAdditionalInfo.value = '';
 }
@@ -56,6 +58,9 @@ function submitCreate(): void {
                 .filter((e) => e.value.trim() !== '')
                 .map((e) => ({ label: e.label, value: e.value })),
             email_addresses: createEmails.value
+                .filter((e) => e.value.trim() !== '')
+                .map((e) => ({ label: e.label, value: e.value })),
+            links: createLinks.value
                 .filter((e) => e.value.trim() !== '')
                 .map((e) => ({ label: e.label, value: e.value })),
             address: createAddress.value,
@@ -84,6 +89,14 @@ function addCreateEmail(): void {
 
 function removeCreateEmail(index: number): void {
     createEmails.value.splice(index, 1);
+}
+
+function addCreateLink(): void {
+    createLinks.value.push(emptyEntry());
+}
+
+function removeCreateLink(index: number): void {
+    createLinks.value.splice(index, 1);
 }
 
 defineExpose({
@@ -161,7 +174,9 @@ defineExpose({
                             </Button>
                         </div>
                     </div>
-                    <InputError :message="errors['phone_numbers.0.value']" />
+                    <InputError
+                        :message="firstEntryValueError(errors, 'phone_numbers')"
+                    />
                 </div>
 
                 <div class="space-y-2">
@@ -206,7 +221,58 @@ defineExpose({
                             </Button>
                         </div>
                     </div>
-                    <InputError :message="errors['email_addresses.0.value']" />
+                    <InputError
+                        :message="
+                            firstEntryValueError(errors, 'email_addresses')
+                        "
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <Label>Links</Label>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            class="h-6 cursor-pointer text-xs"
+                            @click="addCreateLink"
+                        >
+                            <Plus class="mr-1 h-3 w-3" />
+                            Add
+                        </Button>
+                    </div>
+                    <div class="space-y-2">
+                        <div
+                            v-for="(link, idx) in createLinks"
+                            :key="idx"
+                            class="flex items-center gap-2"
+                        >
+                            <Input
+                                v-model="link.label"
+                                placeholder="Label"
+                                class="w-28 shrink-0"
+                            />
+                            <Input
+                                v-model="link.value"
+                                type="url"
+                                placeholder="https://example.com"
+                            />
+                            <Button
+                                v-if="createLinks.length > 1"
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
+                                @click="removeCreateLink(idx)"
+                            >
+                                <X class="h-3.5 w-3.5" />
+                            </Button>
+                        </div>
+                    </div>
+                    <InputError
+                        :message="firstEntryValueError(errors, 'links')"
+                    />
                 </div>
 
                 <div class="grid gap-2">

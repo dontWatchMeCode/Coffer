@@ -63,6 +63,7 @@ const filteredContacts = computed(() => {
             c.name?.toLowerCase().includes(q) ||
             searchEntries(c.emailAddresses, q) ||
             searchEntries(c.phoneNumbers, q) ||
+            searchEntries(c.links, q) ||
             c.address?.toLowerCase().includes(q),
     );
 });

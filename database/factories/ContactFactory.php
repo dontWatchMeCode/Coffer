@@ -31,6 +31,11 @@ class ContactFactory extends Factory
                 [['label' => 'Personal', 'value' => fake()->email()]],
                 [['label' => 'Work', 'value' => fake()->companyEmail()], ['label' => 'Personal', 'value' => fake()->email()]],
             ]),
+            'links' => fake()->optional(0.7)->randomElement([
+                [['label' => 'Website', 'value' => fake()->url()]],
+                [['label' => 'LinkedIn', 'value' => 'https://linkedin.com/in/'.fake()->userName()]],
+                [],
+            ]),
             'address' => fake()->optional()->address(),
             'additional_info' => fake()->optional()->sentence(),
         ];

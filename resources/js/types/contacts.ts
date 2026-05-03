@@ -8,6 +8,7 @@ export type ContactItem = {
     name: string;
     phoneNumbers?: ContactEntry[] | null;
     emailAddresses?: ContactEntry[] | null;
+    links?: ContactEntry[] | null;
     address?: string | null;
     additionalInfo?: string | null;
     createdAt?: string | null;

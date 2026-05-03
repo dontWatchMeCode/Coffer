@@ -16,8 +16,9 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property list<array{label: string|null, value: string}>|null $phone_numbers
  * @property list<array{label: string|null, value: string}>|null $email_addresses
+ * @property list<array{label: string|null, value: string}>|null $links
  */
-#[Fillable(['team_id', 'name', 'phone_numbers', 'email_addresses', 'address', 'additional_info'])]
+#[Fillable(['team_id', 'name', 'phone_numbers', 'email_addresses', 'links', 'address', 'additional_info'])]
 class Contact extends Model implements LinkableRecord
 {
     use BelongsToTeam;
@@ -33,6 +34,7 @@ class Contact extends Model implements LinkableRecord
         return [
             'phone_numbers' => 'array',
             'email_addresses' => 'array',
+            'links' => 'array',
         ];
     }
 }

@@ -85,6 +85,17 @@ test('email_addresses can be stored as JSON array', function () {
     expect($contact->email_addresses)->toBe($emails);
 });
 
+test('links can be stored as JSON array', function () {
+    $links = [
+        ['label' => 'Website', 'value' => 'https://example.com'],
+        ['label' => 'LinkedIn', 'value' => 'https://linkedin.com/in/john'],
+    ];
+
+    $contact = Contact::factory()->create(['links' => $links]);
+
+    expect($contact->links)->toBe($links);
+});
+
 test('phone_numbers is nullable', function () {
     $contact = Contact::factory()->create(['phone_numbers' => null]);
 
@@ -95,6 +106,12 @@ test('email_addresses is nullable', function () {
     $contact = Contact::factory()->create(['email_addresses' => null]);
 
     expect($contact->email_addresses)->toBeNull();
+});
+
+test('links is nullable', function () {
+    $contact = Contact::factory()->create(['links' => null]);
+
+    expect($contact->links)->toBeNull();
 });
 
 test('address is nullable', function () {

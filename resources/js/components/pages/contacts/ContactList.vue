@@ -21,14 +21,17 @@ const contactsWithDisplay = computed(() =>
             contact.emailAddresses?.filter((e) => e.value.trim()) ?? [];
         const phones =
             contact.phoneNumbers?.filter((e) => e.value.trim()) ?? [];
+        const links = contact.links?.filter((e) => e.value.trim()) ?? [];
 
         return {
             contact,
             primaryEmail: emails[0]?.value,
             primaryPhone: phones[0]?.value,
+            primaryLink: links[0]?.value,
             secondaryInfo: [
                 ...emails.slice(1).map((e) => e.value),
                 ...phones.slice(1).map((e) => e.value),
+                ...links.slice(1).map((e) => e.value),
             ],
         };
     }),
@@ -48,13 +51,18 @@ const contactsWithDisplay = computed(() =>
             <div class="min-w-0 flex-1">
                 <p class="truncate font-medium">{{ item.contact.name }}</p>
                 <p
-                    v-if="item.primaryEmail || item.primaryPhone"
+                    v-if="
+                        item.primaryEmail ||
+                        item.primaryPhone ||
+                        item.primaryLink
+                    "
                     class="truncate text-sm text-muted-foreground"
                 >
                     {{
                         [
                             item.primaryEmail,
                             item.primaryPhone,
+                            item.primaryLink,
                             ...item.secondaryInfo,
                         ]
                             .filter(Boolean)
@@ -108,7 +116,7 @@ const contactsWithDisplay = computed(() =>
         <p class="mt-1 max-w-sm text-sm text-muted-foreground">
             {{
                 searchQuery
-                    ? 'Try a different name, email, phone number, or address.'
+                    ? 'Try a different name, email, phone number, link, or address.'
                     : 'Create your first team contact to start building a shared address book.'
             }}
         </p>

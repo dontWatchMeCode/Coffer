@@ -32,6 +32,9 @@ test('contacts page shows contacts for current team', function () {
         'email_addresses' => [
             ['label' => 'Work', 'value' => 'john@example.com'],
         ],
+        'links' => [
+            ['label' => 'Website', 'value' => 'https://example.com'],
+        ],
         'phone_numbers' => [
             ['label' => 'Mobile', 'value' => '+1 555-0123'],
         ],
@@ -45,6 +48,7 @@ test('contacts page shows contacts for current team', function () {
             ->has('contacts', 1)
             ->where('contacts.0.name', 'John Doe')
             ->where('contacts.0.emailAddresses.0.value', 'john@example.com')
+            ->where('contacts.0.links.0.value', 'https://example.com')
             ->where('contacts.0.phoneNumbers.0.value', '+1 555-0123'),
         );
 });
@@ -66,7 +70,7 @@ test('non-members cannot access contacts page', function () {
         ->assertForbidden();
 });
 
-test('a contact can be created with multiple phones and emails', function () {
+test('a contact can be created with multiple phones emails and links', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -80,11 +84,17 @@ test('a contact can be created with multiple phones and emails', function () {
         ['label' => 'Personal', 'value' => 'jane@home.com'],
     ];
 
+    $links = [
+        ['label' => 'Website', 'value' => 'https://example.com'],
+        ['label' => 'LinkedIn', 'value' => 'https://linkedin.com/in/jane'],
+    ];
+
     actingAs($user)
         ->post(route('team.contacts.store', ['current_team' => $team]), [
             'name' => 'Jane Doe',
             'phone_numbers' => $phones,
             'email_addresses' => $emails,
+            'links' => $links,
             'address' => '123 Main St',
             'additional_info' => 'Software Engineer',
         ])
@@ -95,6 +105,7 @@ test('a contact can be created with multiple phones and emails', function () {
     expect($contact->name)->toBe('Jane Doe');
     expect($contact->phone_numbers)->toBe($phones);
     expect($contact->email_addresses)->toBe($emails);
+    expect($contact->links)->toBe($links);
     expect($contact->address)->toBe('123 Main St');
     expect($contact->additional_info)->toBe('Software Engineer');
 });
@@ -108,6 +119,7 @@ test('a contact can be created with no phones or emails', function () {
             'name' => 'Minimal Contact',
             'phone_numbers' => [],
             'email_addresses' => [],
+            'links' => [],
         ])
         ->assertRedirect();
 
@@ -115,6 +127,7 @@ test('a contact can be created with no phones or emails', function () {
 
     expect($contact->phone_numbers)->toBe([]);
     expect($contact->email_addresses)->toBe([]);
+    expect($contact->links)->toBe([]);
 });
 
 test('a contact requires a name', function () {
@@ -128,6 +141,34 @@ test('a contact requires a name', function () {
             ],
         ])
         ->assertSessionHasErrors(['name']);
+});
+
+test('a contact phone value is required when a phone row is submitted', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    actingAs($user)
+        ->post(route('team.contacts.store', ['current_team' => $team]), [
+            'name' => 'Jane Doe',
+            'phone_numbers' => [
+                ['label' => 'Mobile'],
+            ],
+        ])
+        ->assertSessionHasErrors(['phone_numbers.0.value']);
+});
+
+test('a contact email value is required when an email row is submitted', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    actingAs($user)
+        ->post(route('team.contacts.store', ['current_team' => $team]), [
+            'name' => 'Jane Doe',
+            'email_addresses' => [
+                ['label' => 'Work'],
+            ],
+        ])
+        ->assertSessionHasErrors(['email_addresses.0.value']);
 });
 
 test('a contact email value must be valid', function () {
@@ -144,7 +185,35 @@ test('a contact email value must be valid', function () {
         ->assertSessionHasErrors(['email_addresses.0.value']);
 });
 
-test('a contact can be updated with new phones and emails', function () {
+test('a contact link value must be a valid URL', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    actingAs($user)
+        ->post(route('team.contacts.store', ['current_team' => $team]), [
+            'name' => 'Jane Doe',
+            'links' => [
+                ['label' => 'Website', 'value' => 'not-a-url'],
+            ],
+        ])
+        ->assertSessionHasErrors(['links.0.value']);
+});
+
+test('a contact link value is required when a link row is submitted', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    actingAs($user)
+        ->post(route('team.contacts.store', ['current_team' => $team]), [
+            'name' => 'Jane Doe',
+            'links' => [
+                ['label' => 'Website'],
+            ],
+        ])
+        ->assertSessionHasErrors(['links.0.value']);
+});
+
+test('a contact can be updated with new phones emails and links', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -162,6 +231,10 @@ test('a contact can be updated with new phones and emails', function () {
         ['label' => 'Work', 'value' => 'new@work.com'],
     ];
 
+    $newLinks = [
+        ['label' => 'Website', 'value' => 'https://new.example.com'],
+    ];
+
     actingAs($user)
         ->patch(
             route('team.contacts.update', ['current_team' => $team, 'contact' => $contact]),
@@ -169,6 +242,7 @@ test('a contact can be updated with new phones and emails', function () {
                 'name' => 'New Name',
                 'phone_numbers' => $newPhones,
                 'email_addresses' => $newEmails,
+                'links' => $newLinks,
             ],
         )
         ->assertRedirect(route('team.contacts.show', ['current_team' => $team, 'contact' => $contact->id]));
@@ -178,6 +252,7 @@ test('a contact can be updated with new phones and emails', function () {
     expect($contact->name)->toBe('New Name');
     expect($contact->phone_numbers)->toBe($newPhones);
     expect($contact->email_addresses)->toBe($newEmails);
+    expect($contact->links)->toBe($newLinks);
 });
 
 test('a contact can be deleted', function () {
@@ -300,6 +375,7 @@ test('all fields can be nullable except name', function () {
 
     expect($contact->phone_numbers)->toBeNull();
     expect($contact->email_addresses)->toBeNull();
+    expect($contact->links)->toBeNull();
     expect($contact->address)->toBeNull();
     expect($contact->additional_info)->toBeNull();
 });
@@ -317,6 +393,9 @@ test('contact show page can be rendered', function () {
         'email_addresses' => [
             ['label' => 'Primary', 'value' => 'jane@example.com'],
         ],
+        'links' => [
+            ['label' => 'Website', 'value' => 'https://example.com'],
+        ],
         'address' => '123 Main St',
         'additional_info' => 'Key stakeholder',
     ]);
@@ -331,6 +410,7 @@ test('contact show page can be rendered', function () {
             ->where('contact.name', 'Jane Doe')
             ->where('contact.phoneNumbers.0.value', '+1 555-0111')
             ->where('contact.emailAddresses.0.value', 'jane@example.com')
+            ->where('contact.links.0.value', 'https://example.com')
             ->where('contact.address', '123 Main St')
             ->where('contact.additionalInfo', 'Key stakeholder')
             ->where('contact.updatedAt', fn (?string $updatedAt): bool => is_string($updatedAt)

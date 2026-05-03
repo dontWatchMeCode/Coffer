@@ -10,7 +10,7 @@ import DeleteContactDialog from '@/components/pages/contacts/DeleteContactDialog
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { emptyEntry } from '@/lib/contacts';
+import { emptyEntry, firstEntryValueError } from '@/lib/contacts';
 import { taskInputLikeClass } from '@/lib/tasks';
 import {
     index as contactsIndex,
@@ -72,6 +72,11 @@ const editEmails = ref<ContactEntry[]>(
         ? props.contact.emailAddresses.map((e) => ({ ...e }))
         : [emptyEntry()],
 );
+const editLinks = ref<ContactEntry[]>(
+    props.contact.links?.length
+        ? props.contact.links.map((e) => ({ ...e }))
+        : [emptyEntry()],
+);
 const editAddress = ref(props.contact.address ?? '');
 const editAdditionalInfo = ref(props.contact.additionalInfo ?? '');
 const isSubmitting = ref(false);
@@ -93,6 +98,14 @@ function removeEditEmail(index: number): void {
     editEmails.value.splice(index, 1);
 }
 
+function addEditLink(): void {
+    editLinks.value.push(emptyEntry());
+}
+
+function removeEditLink(index: number): void {
+    editLinks.value.splice(index, 1);
+}
+
 function submitEdit(): void {
     isSubmitting.value = true;
 
@@ -107,6 +120,9 @@ function submitEdit(): void {
                 .filter((e) => e.value.trim() !== '')
                 .map((e) => ({ label: e.label, value: e.value })),
             email_addresses: editEmails.value
+                .filter((e) => e.value.trim() !== '')
+                .map((e) => ({ label: e.label, value: e.value })),
+            links: editLinks.value
                 .filter((e) => e.value.trim() !== '')
                 .map((e) => ({ label: e.label, value: e.value })),
             address: editAddress.value,
@@ -211,7 +227,12 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
                                 </div>
                             </div>
                             <InputError
-                                :message="errors['phone_numbers.0.value']"
+                                :message="
+                                    firstEntryValueError(
+                                        errors,
+                                        'phone_numbers',
+                                    )
+                                "
                             />
                         </div>
 
@@ -258,7 +279,59 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
                                 </div>
                             </div>
                             <InputError
-                                :message="errors['email_addresses.0.value']"
+                                :message="
+                                    firstEntryValueError(
+                                        errors,
+                                        'email_addresses',
+                                    )
+                                "
+                            />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <div class="flex items-center justify-between">
+                                <Label>Links</Label>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="cursor-pointer"
+                                    @click="addEditLink"
+                                >
+                                    <Plus class="mr-1 h-3 w-3" />
+                                    Add
+                                </Button>
+                            </div>
+                            <div class="space-y-2">
+                                <div
+                                    v-for="(link, idx) in editLinks"
+                                    :key="idx"
+                                    class="flex items-center gap-2"
+                                >
+                                    <Input
+                                        v-model="link.label"
+                                        placeholder="Label"
+                                        class="w-28 shrink-0"
+                                    />
+                                    <Input
+                                        v-model="link.value"
+                                        type="url"
+                                        placeholder="https://example.com"
+                                    />
+                                    <Button
+                                        v-if="editLinks.length > 1"
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
+                                        @click="removeEditLink(idx)"
+                                    >
+                                        <X class="h-3.5 w-3.5" />
+                                    </Button>
+                                </div>
+                            </div>
+                            <InputError
+                                :message="firstEntryValueError(errors, 'links')"
                             />
                         </div>
 
