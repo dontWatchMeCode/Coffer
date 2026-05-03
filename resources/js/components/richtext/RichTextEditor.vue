@@ -28,10 +28,10 @@ import {
 import './rich-text-editor.css';
 
 const editorShellClass =
-    'min-h-32 overflow-hidden rounded-2xl border bg-card shadow-sm';
+    'min-h-32 overflow-hidden rounded-lg border bg-card shadow-sm';
 
 const toolbarClass =
-    'flex flex-wrap items-center gap-1 rounded-t-2xl border-b bg-muted/80 px-2 py-1';
+    'flex flex-wrap items-center gap-1 rounded-t-lg border-b bg-muted/80 px-2 py-1';
 
 const props = withDefaults(
     defineProps<{
@@ -438,7 +438,7 @@ watch(
 
         <div
             v-else-if="hasContent"
-            class="rich-text-editor__html prose prose-sm max-w-none rounded-lg"
+            class="rich-text-editor__html prose prose-sm max-w-none rounded-md"
             v-html="readonlyHtml"
         />
     </div>
