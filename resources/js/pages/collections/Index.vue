@@ -10,10 +10,8 @@ import ListItemIcon from '@/components/list/ListItemIcon.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import CreateCollectionDialog from '@/components/pages/collections/CreateCollectionDialog.vue';
 import DeleteCollectionDialog from '@/components/pages/collections/DeleteCollectionDialog.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatDate } from '@/lib/utils';
 import {
     index as collectionsIndex,
     show as showCollection,
@@ -111,11 +109,10 @@ defineOptions({
                         class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                     />
                     <Input
+                        v-model="searchQuery"
                         data-testid="collections-search-input"
-                        :model-value="searchQuery"
                         placeholder="Search collections..."
                         class="pl-9"
-                        @update:model-value="searchQuery = String($event)"
                     />
                 </div>
             </div>
@@ -124,73 +121,47 @@ defineOptions({
                 <ListItem
                     v-for="collection in filteredCollections"
                     :key="collection.id"
+                    :aria-label="`Open collection: ${collection.title}`"
                     @click="navigateToCollection(collection)"
                 >
-                    <div class="flex items-start gap-4">
+                    <div class="flex items-center gap-4">
                         <ListItemIcon size="sm" rounded="lg">
                             <Layers3 class="h-4 w-4 text-muted-foreground" />
                         </ListItemIcon>
 
-                        <div class="min-w-0 flex-1 space-y-2">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <h2 class="truncate font-medium">
-                                        {{ collection.title }}
-                                    </h2>
-                                    <p
-                                        v-if="collection.description"
-                                        class="line-clamp-2 text-sm text-muted-foreground"
-                                    >
-                                        {{ collection.description }}
-                                    </p>
-                                    <p
-                                        v-else
-                                        class="text-sm text-muted-foreground italic"
-                                    >
-                                        No description yet.
-                                    </p>
-                                </div>
-
-                                <ListItemActions>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        class="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                        aria-label="Delete collection"
-                                        @click.stop="
-                                            deleteDialogRef?.openDeleteDialog(
-                                                collection,
-                                            )
-                                        "
-                                    >
-                                        <Trash2 class="h-4 w-4" />
-                                    </Button>
-                                </ListItemActions>
-                            </div>
-
-                            <div
-                                class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-medium">
+                                {{ collection.title }}
+                            </p>
+                            <p
+                                v-if="collection.description"
+                                class="truncate text-sm text-muted-foreground"
                             >
-                                <span
-                                    >Updated
-                                    {{ formatDate(collection.updatedAt) }}</span
-                                >
-                                <template v-if="collection.tags.length">
-                                    <span>·</span>
-                                    <Badge
-                                        v-for="tag in collection.tags.slice(
-                                            0,
-                                            4,
-                                        )"
-                                        :key="tag.id"
-                                        variant="secondary"
-                                        class="text-[11px]"
-                                    >
-                                        {{ tag.name }}
-                                    </Badge>
-                                </template>
-                            </div>
+                                {{ collection.description }}
+                            </p>
+                            <p
+                                v-else
+                                class="truncate text-sm text-muted-foreground italic"
+                            >
+                                No description yet.
+                            </p>
                         </div>
+
+                        <ListItemActions>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                aria-label="Delete collection"
+                                @click.stop="
+                                    deleteDialogRef?.openDeleteDialog(
+                                        collection,
+                                    )
+                                "
+                            >
+                                <Trash2 class="h-4 w-4" />
+                            </Button>
+                        </ListItemActions>
                     </div>
                 </ListItem>
             </ListContainer>

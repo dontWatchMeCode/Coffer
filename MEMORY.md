@@ -218,12 +218,21 @@
     - Collections (`pages/collections/Index.vue`)
     - Calendar list view (`CalendarList.vue`)
 
-3. **Extracted `formatDate`** to `resources/js/lib/utils.ts` for reuse across components.
+3. **Extracted `formatDate` and `formatDateTime`** to `resources/js/lib/utils.ts` for reuse across components.
 
 4. **Bug fixes during QA**:
     - `CalendarList` — unsafe date parsing fixed
     - `EmptyState` — `actionLabel` default value added
     - `ListItem` — click guard for disabled state
     - `ListItem` — keyboard accessibility (Enter/Space on div[role="link"])
+    - `ListItem` — `clickable` guard added when `link.url` is falsy (prevents click on disabled items)
+    - `ListItem` — `aria-label` binding fixed to avoid "undefined" string in DOM
     - Collections delete button — added `destructive` styling
     - `EmptyState` — `description` prop made optional
+
+5. **Collections page style alignment**:
+    - Index page refactored to match Contacts style (entire card clickable, horizontal list layout)
+    - Show page refactored to match Contacts show page style
+    - Edit form added cancel button with proper state reset
+
+6. **Linked records section** — `border-t` restored on the linked records section for visual separation.

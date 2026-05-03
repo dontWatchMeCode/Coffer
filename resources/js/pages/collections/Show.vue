@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { ExternalLink, Layers3, Pencil, Save, X } from 'lucide-vue-next';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { ExternalLink, Layers3, Pencil } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
+import EmptyState from '@/components/list/EmptyState.vue';
+import ListContainer from '@/components/list/ListContainer.vue';
+import ListItem from '@/components/list/ListItem.vue';
+import ListItemActions from '@/components/list/ListItemActions.vue';
+import ListItemIcon from '@/components/list/ListItemIcon.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import DeleteCollectionDialog from '@/components/pages/collections/DeleteCollectionDialog.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
+import { formatDateTime } from '@/lib/utils';
 import {
     index as collectionsIndex,
     update as updateCollection,
@@ -96,10 +101,6 @@ function formatType(type: string): string {
     return type.replaceAll('_', ' ');
 }
 
-function formatDateTime(value?: string | null): string {
-    return value ? new Date(value).toLocaleString() : '';
-}
-
 defineOptions({
     layout: (layoutProps: {
         currentTeam?: Team | null;
@@ -144,54 +145,8 @@ defineOptions({
             >
                 <template #main>
                     <div class="space-y-6">
-                        <div class="space-y-4">
-                            <div class="flex items-start justify-between gap-4">
-                                <div class="flex items-center gap-2">
-                                    <div
-                                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground"
-                                    >
-                                        <Layers3 class="h-5 w-5" />
-                                    </div>
-                                    <Badge variant="secondary">
-                                        Collection
-                                    </Badge>
-                                </div>
-
-                                <div class="flex shrink-0 flex-wrap gap-2">
-                                    <template v-if="isEditing">
-                                        <Button
-                                            variant="outline"
-                                            :disabled="isSubmitting"
-                                            @click="cancelEdit"
-                                        >
-                                            <X class="mr-1.5 h-4 w-4" />
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            :disabled="isSubmitting"
-                                            @click="submitEdit"
-                                        >
-                                            <Save class="mr-1.5 h-4 w-4" />
-                                            Save
-                                        </Button>
-                                    </template>
-                                    <Button
-                                        v-else
-                                        variant="outline"
-                                        @click="isEditing = true"
-                                    >
-                                        <Pencil class="mr-1.5 h-4 w-4" />
-                                        Edit
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div v-if="!isEditing" class="space-y-2">
-                                <h1
-                                    class="text-2xl font-semibold tracking-tight"
-                                >
-                                    {{ collection.title }}
-                                </h1>
+                        <div v-if="!isEditing" class="space-y-4">
+                            <div class="space-y-2">
                                 <p
                                     v-if="collection.description"
                                     class="max-w-3xl text-muted-foreground"
@@ -206,34 +161,58 @@ defineOptions({
                                 </p>
                             </div>
 
-                            <form
-                                v-else
-                                class="w-full space-y-4"
-                                @submit.prevent="submitEdit"
-                            >
-                                <div class="grid gap-2">
-                                    <Label for="collection-title">Title</Label>
-                                    <Input
-                                        id="collection-title"
-                                        v-model="editTitle"
-                                        required
-                                    />
-                                    <InputError :message="errors.title" />
-                                </div>
-                                <div class="grid gap-2">
-                                    <Label for="collection-description">
-                                        Description
-                                    </Label>
-                                    <textarea
-                                        id="collection-description"
-                                        v-model="editDescription"
-                                        :class="taskInputLikeClass"
-                                        rows="5"
-                                    />
-                                    <InputError :message="errors.description" />
-                                </div>
-                            </form>
+                            <div class="flex justify-end gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    @click="isEditing = true"
+                                >
+                                    <Pencil class="mr-1.5 h-4 w-4" />
+                                    Edit
+                                </Button>
+                            </div>
                         </div>
+
+                        <form
+                            v-else
+                            class="w-full space-y-4"
+                            @submit.prevent="submitEdit"
+                        >
+                            <div class="grid gap-2">
+                                <Label for="collection-title">Title</Label>
+                                <Input
+                                    id="collection-title"
+                                    v-model="editTitle"
+                                    required
+                                />
+                                <InputError :message="errors.title" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="collection-description">
+                                    Description
+                                </Label>
+                                <textarea
+                                    id="collection-description"
+                                    v-model="editDescription"
+                                    :class="taskInputLikeClass"
+                                    rows="5"
+                                />
+                                <InputError :message="errors.description" />
+                            </div>
+                            <div class="flex justify-end gap-2">
+                                <Button
+                                    variant="outline"
+                                    type="button"
+                                    :disabled="isSubmitting"
+                                    @click="cancelEdit"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button type="submit" :disabled="isSubmitting">
+                                    Save changes
+                                </Button>
+                            </div>
+                        </form>
 
                         <section class="space-y-4 border-t pt-6">
                             <div class="flex items-end justify-between gap-3">
@@ -251,74 +230,77 @@ defineOptions({
                                 </div>
                             </div>
 
-                            <div
-                                v-if="recordLinks?.links.length"
-                                class="divide-y rounded-lg border"
-                            >
-                                <div
+                            <ListContainer v-if="recordLinks?.links.length">
+                                <ListItem
                                     v-for="link in recordLinks.links"
                                     :key="`${link.type}-${link.id}`"
-                                    class="group flex gap-4 p-4 transition-colors hover:bg-muted/50"
+                                    :clickable="!!link.url"
+                                    :aria-label="
+                                        link.url
+                                            ? `Open ${formatType(link.type)}: ${link.title}`
+                                            : undefined
+                                    "
+                                    @click="link.url && router.visit(link.url)"
                                 >
-                                    <Badge
-                                        variant="secondary"
-                                        class="mt-0.5 h-fit shrink-0 capitalize"
-                                    >
-                                        {{ formatType(link.type) }}
-                                    </Badge>
+                                    <div class="flex items-center gap-4">
+                                        <ListItemIcon size="sm" rounded="lg">
+                                            <span
+                                                class="text-[10px] font-medium text-muted-foreground uppercase"
+                                            >
+                                                {{ formatType(link.type) }}
+                                            </span>
+                                        </ListItemIcon>
 
-                                    <div class="min-w-0 flex-1 space-y-1">
-                                        <h3 class="truncate font-medium">
-                                            <Link
+                                        <div class="min-w-0 flex-1">
+                                            <p class="truncate font-medium">
+                                                {{ link.title }}
+                                            </p>
+                                            <p
+                                                v-if="link.preview"
+                                                class="line-clamp-2 text-sm text-muted-foreground"
+                                            >
+                                                {{ link.preview }}
+                                            </p>
+                                            <p
+                                                v-else
+                                                class="text-sm text-muted-foreground italic"
+                                            >
+                                                No preview available.
+                                            </p>
+                                        </div>
+
+                                        <ListItemActions>
+                                            <a
                                                 v-if="link.url"
                                                 :href="link.url"
-                                                class="hover:underline"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                @click.stop
                                             >
-                                                {{ link.title }}
-                                            </Link>
-                                            <span v-else>{{ link.title }}</span>
-                                        </h3>
-                                        <p
-                                            v-if="link.preview"
-                                            class="line-clamp-2 text-sm text-muted-foreground"
-                                        >
-                                            {{ link.preview }}
-                                        </p>
-                                        <p
-                                            v-else
-                                            class="text-sm text-muted-foreground italic"
-                                        >
-                                            No preview available.
-                                        </p>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    class="h-8 w-8"
+                                                >
+                                                    <ExternalLink
+                                                        class="h-4 w-4"
+                                                    />
+                                                </Button>
+                                            </a>
+                                        </ListItemActions>
                                     </div>
+                                </ListItem>
+                            </ListContainer>
 
-                                    <a
-                                        v-if="link.url"
-                                        :href="link.url"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-70 group-hover:opacity-100 hover:bg-accent hover:text-foreground"
-                                    >
-                                        <ExternalLink class="h-4 w-4" />
-                                    </a>
-                                </div>
-                            </div>
-
-                            <div
+                            <EmptyState
                                 v-else
-                                class="rounded-xl border border-dashed py-12 text-center"
+                                title="No linked records yet."
+                                description="Use the link search panel to add records to this collection."
                             >
-                                <Layers3
-                                    class="mx-auto mb-3 h-12 w-12 text-muted-foreground/50"
-                                />
-                                <p class="font-medium">
-                                    No linked records yet.
-                                </p>
-                                <p class="mt-1 text-sm text-muted-foreground">
-                                    Use the link search panel to add records to
-                                    this collection.
-                                </p>
-                            </div>
+                                <template #icon>
+                                    <Layers3 class="h-12 w-12" />
+                                </template>
+                            </EmptyState>
                         </section>
                     </div>
                 </template>

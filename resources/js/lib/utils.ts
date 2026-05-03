@@ -14,3 +14,7 @@ export function toUrl(href: NonNullable<InertiaLinkProps['href']>) {
 export function formatDate(value?: string | null): string {
     return value ? new Date(value).toLocaleDateString() : '';
 }
+
+export function formatDateTime(value?: string | null): string {
+    return value ? new Date(value).toLocaleString() : '';
+}

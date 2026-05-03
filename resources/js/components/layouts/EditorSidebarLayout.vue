@@ -4,6 +4,7 @@ import { computed, useSlots } from 'vue';
 import RecordLinksPanel from '@/components/record-links/RecordLinksPanel.vue';
 import RecordTagsPanel from '@/components/record-tags/RecordTagsPanel.vue';
 import { Button } from '@/components/ui/button';
+import { formatDateTime } from '@/lib/utils';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -54,14 +55,6 @@ const hasMeta = computed(() => Boolean(props.createdBy || props.updatedAt));
 const hasActions = computed(() => Boolean(props.onDelete || props.onSave));
 const hasRecordLinks = computed(() => props.recordLinks !== null);
 const hasRecordTags = computed(() => props.recordTags !== null);
-
-function formatDateTime(value: string | null | undefined): string {
-    if (!value) {
-        return '';
-    }
-
-    return new Date(value).toLocaleString();
-}
 </script>
 
 <template>

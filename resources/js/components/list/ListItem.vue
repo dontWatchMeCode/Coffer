@@ -1,6 +1,7 @@
 <script setup lang="ts">
 type Props = {
     clickable?: boolean;
+    ariaLabel?: string;
 };
 
 const props = withDefaults(defineProps<Props>(), {
@@ -25,6 +26,7 @@ function handleKeydown(event: KeyboardEvent): void {
         :class="{ 'cursor-pointer': props.clickable }"
         :role="props.clickable ? 'button' : undefined"
         :tabindex="props.clickable ? 0 : undefined"
+        :aria-label="props.ariaLabel || undefined"
         @click="props.clickable && emit('click')"
         @keydown="props.clickable && handleKeydown"
     >
