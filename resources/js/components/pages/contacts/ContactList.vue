@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Pencil, Plus, Trash2, UserCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
+import EmptyState from '@/components/list/EmptyState.vue';
+import ListContainer from '@/components/list/ListContainer.vue';
+import ListItem from '@/components/list/ListItem.vue';
+import ListItemActions from '@/components/list/ListItemActions.vue';
 import ContactAvatar from '@/components/pages/contacts/ContactAvatar.vue';
 import { Button } from '@/components/ui/button';
 import type { ContactItem } from '@/types';
@@ -39,96 +43,88 @@ const contactsWithDisplay = computed(() =>
 </script>
 
 <template>
-    <div v-if="contactsWithDisplay.length > 0" class="space-y-3">
-        <div
+    <ListContainer v-if="contactsWithDisplay.length > 0">
+        <ListItem
             v-for="item in contactsWithDisplay"
             :key="item.contact.id"
-            class="group flex cursor-pointer items-center gap-4 rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50 dark:bg-card/50"
             @click="navigateToContact(item.contact)"
         >
-            <ContactAvatar :name="item.contact.name ?? ''" size="sm" />
+            <div class="flex items-center gap-4">
+                <ContactAvatar :name="item.contact.name ?? ''" size="sm" />
 
-            <div class="min-w-0 flex-1">
-                <p class="truncate font-medium">{{ item.contact.name }}</p>
-                <p
-                    v-if="
-                        item.primaryEmail ||
-                        item.primaryPhone ||
-                        item.primaryLink
-                    "
-                    class="truncate text-sm text-muted-foreground"
-                >
-                    {{
-                        [
-                            item.primaryEmail,
-                            item.primaryPhone,
-                            item.primaryLink,
-                            ...item.secondaryInfo,
-                        ]
-                            .filter(Boolean)
-                            .join(' • ')
-                    }}
-                </p>
-                <p
-                    v-else-if="item.contact.address"
-                    class="truncate text-sm text-muted-foreground"
-                >
-                    {{ item.contact.address }}
-                </p>
+                <div class="min-w-0 flex-1">
+                    <p class="truncate font-medium">{{ item.contact.name }}</p>
+                    <p
+                        v-if="
+                            item.primaryEmail ||
+                            item.primaryPhone ||
+                            item.primaryLink
+                        "
+                        class="truncate text-sm text-muted-foreground"
+                    >
+                        {{
+                            [
+                                item.primaryEmail,
+                                item.primaryPhone,
+                                item.primaryLink,
+                                ...item.secondaryInfo,
+                            ]
+                                .filter(Boolean)
+                                .join(' • ')
+                        }}
+                    </p>
+                    <p
+                        v-else-if="item.contact.address"
+                        class="truncate text-sm text-muted-foreground"
+                    >
+                        {{ item.contact.address }}
+                    </p>
+                </div>
+
+                <ListItemActions>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-8 w-8"
+                        aria-label="Edit contact"
+                        @click.stop="navigateToContact(item.contact)"
+                    >
+                        <Pencil class="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        aria-label="Delete contact"
+                        @click.stop="openDeleteDialog(item.contact)"
+                    >
+                        <Trash2 class="h-4 w-4" />
+                    </Button>
+                </ListItemActions>
             </div>
+        </ListItem>
+    </ListContainer>
 
-            <div class="flex shrink-0 items-center gap-1">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-8 w-8"
-                    aria-label="Edit contact"
-                    @click.stop="navigateToContact(item.contact)"
-                >
-                    <Pencil class="h-4 w-4" />
-                </Button>
-
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    aria-label="Delete contact"
-                    @click.stop="openDeleteDialog(item.contact)"
-                >
-                    <Trash2 class="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
-    </div>
-
-    <div
+    <EmptyState
         v-else
-        class="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center"
+        :title="
+            searchQuery ? 'No contacts match your search.' : 'No contacts yet.'
+        "
+        :description="
+            searchQuery
+                ? 'Try a different name, email, phone number, link, or address.'
+                : 'Create your first team contact to start building a shared address book.'
+        "
+        :show-action="!searchQuery"
+        action-label="Add your first contact"
+        @action="openCreateDialog"
     >
-        <UserCircle class="mb-3 h-12 w-12 text-muted-foreground/50" />
-        <p class="font-medium">
-            {{
-                searchQuery
-                    ? 'No contacts match your search.'
-                    : 'No contacts yet.'
-            }}
-        </p>
-        <p class="mt-1 max-w-sm text-sm text-muted-foreground">
-            {{
-                searchQuery
-                    ? 'Try a different name, email, phone number, link, or address.'
-                    : 'Create your first team contact to start building a shared address book.'
-            }}
-        </p>
-        <Button
-            v-if="!searchQuery"
-            variant="outline"
-            size="sm"
-            class="mt-4 cursor-pointer"
-            @click="openCreateDialog"
-        >
+        <template #icon>
+            <UserCircle class="h-12 w-12" />
+        </template>
+        <template #action-icon>
             <Plus class="mr-1.5 h-3.5 w-3.5" />
-            Add your first contact
-        </Button>
-    </div>
+        </template>
+    </EmptyState>
 </template>

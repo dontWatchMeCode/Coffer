@@ -2,12 +2,18 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { Layers3, ListPlus, Search, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import EmptyState from '@/components/list/EmptyState.vue';
+import ListContainer from '@/components/list/ListContainer.vue';
+import ListItem from '@/components/list/ListItem.vue';
+import ListItemActions from '@/components/list/ListItemActions.vue';
+import ListItemIcon from '@/components/list/ListItemIcon.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import CreateCollectionDialog from '@/components/pages/collections/CreateCollectionDialog.vue';
 import DeleteCollectionDialog from '@/components/pages/collections/DeleteCollectionDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { formatDate } from '@/lib/utils';
 import {
     index as collectionsIndex,
     show as showCollection,
@@ -63,10 +69,6 @@ function navigateToCollection(collection: CollectionItem): void {
     );
 }
 
-function formatDate(value?: string | null): string {
-    return value ? new Date(value).toLocaleDateString() : '';
-}
-
 defineOptions({
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
@@ -118,22 +120,16 @@ defineOptions({
                 </div>
             </div>
 
-            <div
-                v-if="filteredCollections.length > 0"
-                class="divide-y rounded-lg border"
-            >
-                <div
+            <ListContainer v-if="filteredCollections.length > 0">
+                <ListItem
                     v-for="collection in filteredCollections"
                     :key="collection.id"
-                    class="group cursor-pointer p-4 transition-colors hover:bg-muted/50"
                     @click="navigateToCollection(collection)"
                 >
                     <div class="flex items-start gap-4">
-                        <div
-                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted"
-                        >
+                        <ListItemIcon size="sm" rounded="lg">
                             <Layers3 class="h-4 w-4 text-muted-foreground" />
-                        </div>
+                        </ListItemIcon>
 
                         <div class="min-w-0 flex-1 space-y-2">
                             <div class="flex items-start justify-between gap-3">
@@ -155,20 +151,21 @@ defineOptions({
                                     </p>
                                 </div>
 
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    class="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-                                    @click.stop="
-                                        deleteDialogRef?.openDeleteDialog(
-                                            collection,
-                                        )
-                                    "
-                                >
-                                    <Trash2
-                                        class="h-4 w-4 text-muted-foreground"
-                                    />
-                                </Button>
+                                <ListItemActions>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        class="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                        aria-label="Delete collection"
+                                        @click.stop="
+                                            deleteDialogRef?.openDeleteDialog(
+                                                collection,
+                                            )
+                                        "
+                                    >
+                                        <Trash2 class="h-4 w-4" />
+                                    </Button>
+                                </ListItemActions>
                             </div>
 
                             <div
@@ -195,39 +192,32 @@ defineOptions({
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                </ListItem>
+            </ListContainer>
 
-            <div
+            <EmptyState
                 v-else
-                class="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center"
+                :title="
+                    searchQuery
+                        ? 'No collections match your search.'
+                        : 'No collections yet.'
+                "
+                :description="
+                    searchQuery
+                        ? 'Try another title, description, or tag.'
+                        : 'Create a collection to bring related records together.'
+                "
+                :show-action="!searchQuery"
+                action-label="Add your first collection"
+                @action="openCreateDialog"
             >
-                <Layers3 class="mb-3 h-12 w-12 text-muted-foreground/50" />
-                <p class="font-medium">
-                    {{
-                        searchQuery
-                            ? 'No collections match your search.'
-                            : 'No collections yet.'
-                    }}
-                </p>
-                <p class="mt-1 max-w-sm text-sm text-muted-foreground">
-                    {{
-                        searchQuery
-                            ? 'Try another title, description, or tag.'
-                            : 'Create a collection to bring related records together.'
-                    }}
-                </p>
-                <Button
-                    v-if="!searchQuery"
-                    variant="outline"
-                    size="sm"
-                    class="mt-4 cursor-pointer"
-                    @click="openCreateDialog"
-                >
+                <template #icon>
+                    <Layers3 class="h-12 w-12" />
+                </template>
+                <template #action-icon>
                     <ListPlus class="mr-1.5 h-3.5 w-3.5" />
-                    Add your first collection
-                </Button>
-            </div>
+                </template>
+            </EmptyState>
         </div>
     </div>
 

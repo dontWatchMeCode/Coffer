@@ -201,3 +201,29 @@
     - Fix: assert preview fields in record-link tests so future link payload changes do not silently drop collection previews.
 
 4. **Collection show page should reuse the shared edit layout** — keeping tags and link management in `EditorSidebarLayout` matches the other record pages and avoids a separate interaction model.
+
+### Session: Shared List Components (May 2026)
+
+1. **Extracted reusable list UI components** to `resources/js/components/list/`:
+    - `ListContainer.vue` — layout container (list/grid toggle)
+    - `ListItem.vue` — clickable card with keyboard accessibility (Enter/Space)
+    - `ListItemIcon.vue` — icon wrapper
+    - `ListItemActions.vue` — hover-reveal action buttons
+    - `EmptyState.vue` — shared empty state with optional action
+
+2. **Refactored pages to use shared components**:
+    - Contacts (`ContactList.vue`)
+    - Bookmarks (`BookmarkList.vue`)
+    - Notes (`pages/notes/Index.vue`)
+    - Collections (`pages/collections/Index.vue`)
+    - Calendar list view (`CalendarList.vue`)
+
+3. **Extracted `formatDate`** to `resources/js/lib/utils.ts` for reuse across components.
+
+4. **Bug fixes during QA**:
+    - `CalendarList` — unsafe date parsing fixed
+    - `EmptyState` — `actionLabel` default value added
+    - `ListItem` — click guard for disabled state
+    - `ListItem` — keyboard accessibility (Enter/Space on div[role="link"])
+    - Collections delete button — added `destructive` styling
+    - `EmptyState` — `description` prop made optional

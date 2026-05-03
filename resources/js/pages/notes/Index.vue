@@ -2,19 +2,18 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { FileText, ListPlus, Search, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import EmptyState from '@/components/list/EmptyState.vue';
+import ListContainer from '@/components/list/ListContainer.vue';
+import ListItem from '@/components/list/ListItem.vue';
+import ListItemActions from '@/components/list/ListItemActions.vue';
+import ListItemIcon from '@/components/list/ListItemIcon.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import CreateNoteDialog from '@/components/pages/notes/CreateNoteDialog.vue';
 import DeleteNoteDialog from '@/components/pages/notes/DeleteNoteDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { formatDate } from '@/lib/utils';
 import { index as notesIndex, show as showNote } from '@/routes/team/notes';
 import type { NoteItem, Team } from '@/types';
 
@@ -59,10 +58,6 @@ function navigateToNote(note: NoteItem): void {
             note: note.id,
         }).url,
     );
-}
-
-function formatDate(value?: string | null): string {
-    return value ? new Date(value).toLocaleDateString() : '';
 }
 
 defineOptions({
@@ -116,42 +111,39 @@ defineOptions({
                 </div>
             </div>
 
-            <div
-                v-if="filteredNotes.length > 0"
-                class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-            >
-                <Card
+            <ListContainer v-if="filteredNotes.length > 0" layout="grid">
+                <ListItem
                     v-for="note in filteredNotes"
                     :key="note.id"
-                    class="group cursor-pointer transition-colors hover:bg-accent/50"
                     @click="navigateToNote(note)"
                 >
-                    <CardHeader class="gap-3">
+                    <div class="flex flex-col gap-3">
                         <div class="flex items-start justify-between gap-3">
-                            <div
-                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted"
-                            >
+                            <ListItemIcon>
                                 <FileText
                                     class="h-5 w-5 text-muted-foreground"
                                 />
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
-                                @click.stop="
-                                    deleteDialogRef?.openDeleteDialog(note)
-                                "
-                            >
-                                <Trash2 class="h-4 w-4 text-muted-foreground" />
-                            </Button>
+                            </ListItemIcon>
+                            <ListItemActions>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="h-8 w-8"
+                                    @click.stop="
+                                        deleteDialogRef?.openDeleteDialog(note)
+                                    "
+                                >
+                                    <Trash2
+                                        class="h-4 w-4 text-muted-foreground"
+                                    />
+                                </Button>
+                            </ListItemActions>
                         </div>
-                        <CardTitle class="line-clamp-2 text-base">
-                            {{ note.title }}
-                        </CardTitle>
-                    </CardHeader>
 
-                    <CardContent>
+                        <p class="line-clamp-2 text-base font-medium">
+                            {{ note.title }}
+                        </p>
+
                         <p
                             v-if="note.excerpt"
                             class="line-clamp-4 text-sm text-muted-foreground"
@@ -161,59 +153,52 @@ defineOptions({
                         <p v-else class="text-sm text-muted-foreground italic">
                             No body yet.
                         </p>
-                    </CardContent>
 
-                    <CardFooter class="flex-col items-start gap-3">
-                        <div
-                            v-if="note.tags.length"
-                            class="flex flex-wrap gap-1"
-                        >
-                            <Badge
-                                v-for="tag in note.tags.slice(0, 4)"
-                                :key="tag.id"
-                                variant="secondary"
-                                class="text-[11px]"
+                        <div class="mt-auto flex flex-col gap-3">
+                            <div
+                                v-if="note.tags.length"
+                                class="flex flex-wrap gap-1"
                             >
-                                {{ tag.name }}
-                            </Badge>
+                                <Badge
+                                    v-for="tag in note.tags.slice(0, 4)"
+                                    :key="tag.id"
+                                    variant="secondary"
+                                    class="text-[11px]"
+                                >
+                                    {{ tag.name }}
+                                </Badge>
+                            </div>
+                            <p class="text-xs text-muted-foreground">
+                                Updated {{ formatDate(note.updatedAt) }}
+                            </p>
                         </div>
-                        <p class="text-xs text-muted-foreground">
-                            Updated {{ formatDate(note.updatedAt) }}
-                        </p>
-                    </CardFooter>
-                </Card>
-            </div>
+                    </div>
+                </ListItem>
+            </ListContainer>
 
-            <div
+            <EmptyState
                 v-else
-                class="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center"
+                :title="
+                    searchQuery
+                        ? 'No notes match your search.'
+                        : 'No notes yet.'
+                "
+                :description="
+                    searchQuery
+                        ? 'Try another title, body, or tag.'
+                        : 'Create your first note to capture team context.'
+                "
+                :show-action="!searchQuery"
+                action-label="Add your first note"
+                @action="openCreateDialog"
             >
-                <FileText class="mb-3 h-12 w-12 text-muted-foreground/50" />
-                <p class="font-medium">
-                    {{
-                        searchQuery
-                            ? 'No notes match your search.'
-                            : 'No notes yet.'
-                    }}
-                </p>
-                <p class="mt-1 max-w-sm text-sm text-muted-foreground">
-                    {{
-                        searchQuery
-                            ? 'Try another title, body, or tag.'
-                            : 'Create your first note to capture team context.'
-                    }}
-                </p>
-                <Button
-                    v-if="!searchQuery"
-                    variant="outline"
-                    size="sm"
-                    class="mt-4 cursor-pointer"
-                    @click="openCreateDialog"
-                >
+                <template #icon>
+                    <FileText class="h-12 w-12" />
+                </template>
+                <template #action-icon>
                     <ListPlus class="mr-1.5 h-3.5 w-3.5" />
-                    Add your first note
-                </Button>
-            </div>
+                </template>
+            </EmptyState>
         </div>
     </div>
 
