@@ -28,10 +28,10 @@ import {
 import './rich-text-editor.css';
 
 const editorShellClass =
-    'min-h-32 overflow-hidden rounded-2xl border bg-card p-2 shadow-sm';
+    'min-h-32 overflow-hidden rounded-2xl border bg-card shadow-sm';
 
 const toolbarClass =
-    'flex flex-wrap items-center gap-1.5 rounded-xl bg-muted/80 px-2 py-2';
+    'flex flex-wrap items-center gap-1 rounded-t-2xl border-b bg-muted/80 px-2 py-1';
 
 const props = withDefaults(
     defineProps<{
@@ -307,7 +307,10 @@ watch(
                     :model-value="currentBlockType()"
                     @update:model-value="updateBlockType"
                 >
-                    <SelectTrigger size="sm" class="h-8 w-28 shrink-0 gap-1.5">
+                    <SelectTrigger
+                        size="sm"
+                        class="h-7 w-30 shrink-0 gap-1.5 border-0 bg-transparent text-sm shadow-none"
+                    >
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
