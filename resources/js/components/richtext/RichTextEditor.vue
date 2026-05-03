@@ -25,6 +25,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import './rich-text-editor.css';
+
+const editorShellClass =
+    'min-h-32 overflow-hidden rounded-2xl border bg-card p-2 shadow-sm';
+
+const toolbarClass =
+    'flex flex-wrap items-center gap-1.5 rounded-xl bg-muted/80 px-2 py-2';
 
 const props = withDefaults(
     defineProps<{
@@ -294,11 +301,8 @@ watch(
         ]"
         @dblclick="handleDblclick"
     >
-        <div
-            v-if="editable"
-            class="min-h-32 overflow-hidden rounded-xl border border-dashed bg-card p-3 shadow-sm"
-        >
-            <div class="flex flex-wrap items-center gap-2 border-b px-1 pb-3">
+        <div v-if="editable" :class="editorShellClass">
+            <div :class="toolbarClass">
                 <Select
                     :model-value="currentBlockType()"
                     @update:model-value="updateBlockType"
@@ -313,97 +317,118 @@ watch(
                         <SelectItem value="heading-3">Heading 3</SelectItem>
                     </SelectContent>
                 </Select>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    :class="
-                        isActive('bold')
-                            ? 'rich-text-editor__button--active'
-                            : ''
-                    "
-                    @click="editor?.chain().focus().toggleBold().run()"
-                >
-                    Bold
-                </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    :class="
-                        isActive('italic')
-                            ? 'rich-text-editor__button--active'
-                            : ''
-                    "
-                    @click="editor?.chain().focus().toggleItalic().run()"
-                >
-                    Italic
-                </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    :class="
-                        isActive('strike')
-                            ? 'rich-text-editor__button--active'
-                            : ''
-                    "
-                    @click="editor?.chain().focus().toggleStrike().run()"
-                >
-                    Strike
-                </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    :class="
-                        isActive('bulletList')
-                            ? 'rich-text-editor__button--active'
-                            : ''
-                    "
-                    @click="editor?.chain().focus().toggleBulletList().run()"
-                >
-                    Bullets
-                </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    :class="
-                        isActive('orderedList')
-                            ? 'rich-text-editor__button--active'
-                            : ''
-                    "
-                    @click="editor?.chain().focus().toggleOrderedList().run()"
-                >
-                    Numbers
-                </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    :class="
-                        isActive('blockquote')
-                            ? 'rich-text-editor__button--active'
-                            : ''
-                    "
-                    @click="editor?.chain().focus().toggleBlockquote().run()"
-                >
-                    Quote
-                </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    :class="
-                        isActive('link')
-                            ? 'rich-text-editor__button--active'
-                            : ''
-                    "
-                    @click="setLink"
-                >
-                    Link
-                </Button>
+                <div class="rich-text-editor__toolbar-group">
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        :class="[
+                            'rich-text-editor__bar-button',
+                            isActive('bold')
+                                ? 'rich-text-editor__button--active'
+                                : '',
+                        ]"
+                        @click="editor?.chain().focus().toggleBold().run()"
+                    >
+                        B
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        :class="[
+                            'rich-text-editor__bar-button italic',
+                            isActive('italic')
+                                ? 'rich-text-editor__button--active'
+                                : '',
+                        ]"
+                        @click="editor?.chain().focus().toggleItalic().run()"
+                    >
+                        I
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        :class="[
+                            'rich-text-editor__bar-button line-through',
+                            isActive('strike')
+                                ? 'rich-text-editor__button--active'
+                                : '',
+                        ]"
+                        @click="editor?.chain().focus().toggleStrike().run()"
+                    >
+                        S
+                    </Button>
+                </div>
+
+                <div class="rich-text-editor__toolbar-group">
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        :class="[
+                            'rich-text-editor__bar-button',
+                            isActive('bulletList')
+                                ? 'rich-text-editor__button--active'
+                                : '',
+                        ]"
+                        @click="
+                            editor?.chain().focus().toggleBulletList().run()
+                        "
+                    >
+                        • List
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        :class="[
+                            'rich-text-editor__bar-button',
+                            isActive('orderedList')
+                                ? 'rich-text-editor__button--active'
+                                : '',
+                        ]"
+                        @click="
+                            editor?.chain().focus().toggleOrderedList().run()
+                        "
+                    >
+                        1. List
+                    </Button>
+                </div>
+
+                <div class="rich-text-editor__toolbar-group">
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        :class="[
+                            'rich-text-editor__bar-button',
+                            isActive('blockquote')
+                                ? 'rich-text-editor__button--active'
+                                : '',
+                        ]"
+                        @click="
+                            editor?.chain().focus().toggleBlockquote().run()
+                        "
+                    >
+                        Quote
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        :class="[
+                            'rich-text-editor__bar-button',
+                            isActive('link')
+                                ? 'rich-text-editor__button--active'
+                                : '',
+                        ]"
+                        @click="setLink"
+                    >
+                        Link
+                    </Button>
+                </div>
             </div>
             <EditorContent :editor="editorInstance" />
         </div>
@@ -415,94 +440,3 @@ watch(
         />
     </div>
 </template>
-
-<style>
-.rich-text-editor__button--active {
-    background: hsl(var(--secondary));
-    color: hsl(var(--secondary-foreground));
-}
-
-.rich-text-editor .tiptap {
-    padding-top: calc(var(--spacing) * 3);
-}
-
-.rich-text-editor__html {
-    overflow-wrap: anywhere;
-}
-
-.rich-text-editor .tiptap h1,
-.rich-text-editor__html h1 {
-    margin: 1.25rem 0 0.75rem;
-    font-size: 1.75rem;
-    line-height: 1.2;
-    font-weight: 700;
-}
-
-.rich-text-editor .tiptap h2,
-.rich-text-editor__html h2 {
-    margin: 1.125rem 0 0.625rem;
-    font-size: 1.375rem;
-    line-height: 1.25;
-    font-weight: 700;
-}
-
-.rich-text-editor .tiptap h3,
-.rich-text-editor__html h3 {
-    margin: 1rem 0 0.5rem;
-    font-size: 1.125rem;
-    line-height: 1.3;
-    font-weight: 600;
-}
-
-.rich-text-editor .tiptap ul,
-.rich-text-editor .tiptap ol,
-.rich-text-editor__html ul,
-.rich-text-editor__html ol {
-    padding-left: 1.5rem;
-}
-
-.rich-text-editor .tiptap ul,
-.rich-text-editor__html ul {
-    list-style: disc;
-}
-
-.rich-text-editor .tiptap ol,
-.rich-text-editor__html ol {
-    list-style: decimal;
-}
-
-.rich-text-editor .tiptap blockquote,
-.rich-text-editor__html blockquote {
-    border-left: 3px solid hsl(var(--border));
-    margin: 1rem 0;
-    padding-left: 1rem;
-    color: hsl(var(--muted-foreground));
-    border-inline-start-width: 3px;
-    border-inline-start-style: solid;
-    border-inline-start-color: hsl(var(--border));
-}
-
-.rich-text-editor .tiptap p.is-editor-empty:first-child::before {
-    color: hsl(var(--muted-foreground));
-    content: attr(data-placeholder);
-    float: left;
-    height: 0;
-    pointer-events: none;
-}
-
-.rich-text-editor .tiptap :first-child {
-    margin-top: 0;
-}
-
-.rich-text-editor .tiptap :last-child {
-    margin-bottom: 0;
-}
-
-.rich-text-editor__html > :first-child {
-    margin-top: 0;
-}
-
-.rich-text-editor__html > :last-child {
-    margin-bottom: 0;
-}
-</style>
