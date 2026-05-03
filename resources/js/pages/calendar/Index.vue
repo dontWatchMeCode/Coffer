@@ -188,7 +188,11 @@ function eventsForDay(day: number | null): CalendarEventItem[] {
 const futureEvents = computed(() =>
     props.events
         .filter((e) => e.date && e.date >= today.value)
-        .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '')),
+        .sort((a, b) =>
+            `${a.date ?? ''} ${a.time ?? ''}`.localeCompare(
+                `${b.date ?? ''} ${b.time ?? ''}`,
+            ),
+        ),
 );
 
 function prevMonth(): void {

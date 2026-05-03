@@ -23,6 +23,7 @@ class CalendarPageController extends Controller
         $events = CalendarEvent::query()
             ->whereBelongsTo($currentTeam)
             ->orderBy('date')
+            ->orderBy('time')
             ->orderByDesc('updated_at')
             ->get();
 
@@ -46,7 +47,7 @@ class CalendarPageController extends Controller
     }
 
     /**
-     * @return array{id: int, title: string, description: string|null, date: string|null, createdAt?: string|null, updatedAt?: string|null}
+     * @return array{id: int, title: string, description: string|null, date: string|null, time: string|null, createdAt?: string|null, updatedAt?: string|null}
      */
     private function formatEvent(CalendarEvent $event, bool $includeTimestamps = false): array
     {
@@ -57,6 +58,9 @@ class CalendarPageController extends Controller
             'description' => $event->description,
             'date' => $date instanceof \DateTimeInterface
                 ? $date->format('Y-m-d')
+                : null,
+            'time' => is_string($event->time) && $event->time !== ''
+                ? substr($event->time, 0, 5)
                 : null,
         ];
 

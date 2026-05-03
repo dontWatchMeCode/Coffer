@@ -71,6 +71,12 @@ test('date is cast properly', function () {
     expect($event->date->format('Y-m-d'))->toBe('2026-04-20');
 });
 
+test('time is fillable', function () {
+    $event = CalendarEvent::factory()->create(['time' => '14:30']);
+
+    expect($event->time)->toBe('14:30');
+});
+
 test('description is nullable', function () {
     $event = CalendarEvent::factory()->create(['description' => null]);
 

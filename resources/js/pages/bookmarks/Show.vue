@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { Archive, ExternalLink, Pencil } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
+import DetailLinkRow from '@/components/page/DetailLinkRow.vue';
+import DetailSection from '@/components/page/DetailSection.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import DeleteBookmarkDialog from '@/components/pages/bookmarks/DeleteBookmarkDialog.vue';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +45,7 @@ const props = defineProps<Props>();
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
+const isEditing = ref(false);
 
 defineOptions({
     layout: (layoutProps: {
@@ -67,6 +72,28 @@ const editIsArchived = ref(props.bookmark.isArchived);
 const isSubmitting = ref(false);
 const formRef = ref<HTMLFormElement | null>(null);
 
+watch(
+    () => props.bookmark,
+    (bookmark) => {
+        if (!isEditing.value) {
+            resetEditFields(bookmark);
+        }
+    },
+);
+
+function resetEditFields(bookmark: BookmarkItem): void {
+    editTitle.value = bookmark.title;
+    editUrl.value = bookmark.url;
+    editDescription.value = bookmark.description ?? '';
+    editNotes.value = bookmark.notes ?? '';
+    editIsArchived.value = bookmark.isArchived;
+}
+
+function cancelEdit(): void {
+    resetEditFields(props.bookmark);
+    isEditing.value = false;
+}
+
 function submitEdit(): void {
     isSubmitting.value = true;
 
@@ -83,8 +110,10 @@ function submitEdit(): void {
             is_archived: editIsArchived.value,
         },
         {
+            preserveScroll: true,
+            preserveState: false,
             onSuccess: () => {
-                router.visit(bookmarksIndex(currentTeamSlug.value).url);
+                isEditing.value = false;
             },
             onFinish: () => {
                 isSubmitting.value = false;
@@ -104,7 +133,7 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
     <div class="flex min-h-screen flex-col">
         <PageHeader
             :title="bookmark.title"
-            description="Edit bookmark details."
+            description="Review bookmark details and related records."
             :back-href="bookmarksIndex(currentTeamSlug).url"
             back-label="Back to bookmarks"
         />
@@ -113,7 +142,7 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="bookmark.updatedAt"
-                :on-save="() => formRef?.requestSubmit()"
+                :on-save="isEditing ? () => formRef?.requestSubmit() : null"
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(bookmark)"
                 save-label="Save changes"
                 delete-label="Delete bookmark"
@@ -123,9 +152,65 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
                 :record-tags="recordTags"
             >
                 <template #main>
+                    <div v-if="!isEditing" class="space-y-5">
+                        <DetailSection title="URL">
+                            <DetailLinkRow
+                                :href="bookmark.url"
+                                :value="bookmark.url"
+                                external
+                            >
+                                <template #icon>
+                                    <ExternalLink
+                                        class="h-4 w-4 shrink-0 text-muted-foreground"
+                                    />
+                                </template>
+                            </DetailLinkRow>
+                        </DetailSection>
+
+                        <DetailSection
+                            title="Description"
+                            empty="No description."
+                            :has-content="Boolean(bookmark.description)"
+                        >
+                            <p class="text-sm whitespace-pre-wrap">
+                                {{ bookmark.description }}
+                            </p>
+                        </DetailSection>
+
+                        <DetailSection
+                            title="Notes"
+                            empty="No notes."
+                            :has-content="Boolean(bookmark.notes)"
+                        >
+                            <p class="text-sm whitespace-pre-wrap">
+                                {{ bookmark.notes }}
+                            </p>
+                        </DetailSection>
+
+                        <div
+                            v-if="bookmark.isArchived"
+                            class="inline-flex items-center gap-2 text-sm text-muted-foreground"
+                        >
+                            <Archive class="h-4 w-4" />
+                            Archived
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                @click="isEditing = true"
+                            >
+                                <Pencil class="mr-1.5 h-4 w-4" />
+                                Edit
+                            </Button>
+                        </div>
+                    </div>
+
                     <form
+                        v-else
                         ref="formRef"
-                        class="space-y-4"
+                        class="space-y-5"
                         @submit.prevent="submitEdit"
                     >
                         <div class="grid gap-2">
@@ -184,6 +269,20 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
                             >
                                 Archived
                             </Label>
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                type="button"
+                                :disabled="isSubmitting"
+                                @click="cancelEdit"
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" :disabled="isSubmitting">
+                                Save changes
+                            </Button>
                         </div>
                     </form>
                 </template>

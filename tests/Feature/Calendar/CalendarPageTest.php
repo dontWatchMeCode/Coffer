@@ -31,6 +31,7 @@ test('calendar page shows events for current team', function () {
         'team_id' => $team->id,
         'title' => 'Team standup',
         'date' => '2026-04-20',
+        'time' => '09:30',
     ]);
 
     actingAs($user)
@@ -40,7 +41,8 @@ test('calendar page shows events for current team', function () {
             ->component('calendar/Index')
             ->has('events', 1)
             ->where('events.0.title', 'Team standup')
-            ->where('events.0.date', '2026-04-20'),
+            ->where('events.0.date', '2026-04-20')
+            ->where('events.0.time', '09:30'),
         );
 });
 
@@ -90,6 +92,7 @@ test('a calendar event can be created', function () {
             'title' => 'Team standup',
             'description' => 'Daily standup meeting',
             'date' => '2026-04-20',
+            'time' => '09:30',
         ])
         ->assertRedirect();
 
@@ -97,7 +100,21 @@ test('a calendar event can be created', function () {
         'team_id' => $team->id,
         'title' => 'Team standup',
         'description' => 'Daily standup meeting',
+        'time' => '09:30',
     ]);
+});
+
+test('a calendar event time must use hour and minute format', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    actingAs($user)
+        ->post(route('team.calendar.events.store', ['current_team' => $team]), [
+            'title' => 'Team standup',
+            'date' => '2026-04-20',
+            'time' => '9am',
+        ])
+        ->assertSessionHasErrors(['time']);
 });
 
 test('a calendar event requires a title and date', function () {
@@ -124,11 +141,12 @@ test('a calendar event can be updated', function () {
     actingAs($user)
         ->patch(
             route('team.calendar.events.update', ['current_team' => $team, 'event' => $event]),
-            ['title' => 'New title'],
+            ['title' => 'New title', 'time' => '14:45'],
         )
         ->assertRedirect();
 
     expect($event->fresh()->title)->toBe('New title');
+    expect($event->fresh()->time)->toBe('14:45');
 });
 
 test('calendar edit page includes timestamps for editor metadata', function () {

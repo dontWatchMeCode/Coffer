@@ -70,6 +70,9 @@ defineProps<Props>();
                         class="flex w-full cursor-pointer items-center gap-1 truncate rounded-md bg-primary/10 px-1.5 py-0.5 text-left text-xs text-primary transition-colors hover:bg-primary/20"
                         @click="openEditDialog(event)"
                     >
+                        <span v-if="event.time" class="shrink-0 opacity-70">
+                            {{ event.time }}
+                        </span>
                         <span class="truncate font-medium">
                             {{ event.title }}
                         </span>

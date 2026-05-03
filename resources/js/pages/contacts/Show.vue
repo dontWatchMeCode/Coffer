@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Plus, X } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { Pencil, Plus, X } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
+import ContactReadOnlyDetails from '@/components/pages/contacts/ContactReadOnlyDetails.vue';
 import DeleteContactDialog from '@/components/pages/contacts/DeleteContactDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,7 @@ const props = defineProps<Props>();
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
+const isEditing = ref(false);
 
 defineOptions({
     layout: (layoutProps: {
@@ -81,6 +83,37 @@ const editAddress = ref(props.contact.address ?? '');
 const editAdditionalInfo = ref(props.contact.additionalInfo ?? '');
 const isSubmitting = ref(false);
 const formRef = ref<HTMLFormElement | null>(null);
+
+watch(
+    () => props.contact,
+    (contact) => {
+        if (!isEditing.value) {
+            resetEditFields(contact);
+        }
+    },
+);
+
+function editableEntries(
+    entries: ContactEntry[] | null | undefined,
+): ContactEntry[] {
+    return entries?.length
+        ? entries.map((entry) => ({ ...entry }))
+        : [emptyEntry()];
+}
+
+function resetEditFields(contact: ContactItem): void {
+    editName.value = contact.name;
+    editPhones.value = editableEntries(contact.phoneNumbers);
+    editEmails.value = editableEntries(contact.emailAddresses);
+    editLinks.value = editableEntries(contact.links);
+    editAddress.value = contact.address ?? '';
+    editAdditionalInfo.value = contact.additionalInfo ?? '';
+}
+
+function cancelEdit(): void {
+    resetEditFields(props.contact);
+    isEditing.value = false;
+}
 
 function addEditPhone(): void {
     editPhones.value.push(emptyEntry());
@@ -129,8 +162,10 @@ function submitEdit(): void {
             additional_info: editAdditionalInfo.value,
         },
         {
+            preserveScroll: true,
+            preserveState: false,
             onSuccess: () => {
-                router.visit(contactsIndex(currentTeamSlug.value).url);
+                isEditing.value = false;
             },
             onFinish: () => {
                 isSubmitting.value = false;
@@ -150,7 +185,7 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
     <div class="flex min-h-screen flex-col">
         <PageHeader
             :title="contact.name"
-            description="Edit contact details."
+            description="Review contact details and related records."
             :back-href="contactsIndex(currentTeamSlug).url"
             back-label="Back to contacts"
         />
@@ -159,7 +194,7 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="contact.updatedAt"
-                :on-save="() => formRef?.requestSubmit()"
+                :on-save="isEditing ? () => formRef?.requestSubmit() : null"
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(contact)"
                 save-label="Save changes"
                 delete-label="Delete contact"
@@ -169,9 +204,25 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
                 :record-tags="recordTags"
             >
                 <template #main>
+                    <div v-if="!isEditing" class="space-y-4">
+                        <ContactReadOnlyDetails :contact="contact" />
+
+                        <div class="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                @click="isEditing = true"
+                            >
+                                <Pencil class="mr-1.5 h-4 w-4" />
+                                Edit
+                            </Button>
+                        </div>
+                    </div>
+
                     <form
+                        v-else
                         ref="formRef"
-                        class="space-y-4"
+                        class="space-y-5"
                         @submit.prevent="submitEdit"
                     >
                         <div class="grid gap-2">
@@ -357,6 +408,20 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
                                 placeholder="Notes, context, or anything helpful for the team"
                             />
                             <InputError :message="errors.additional_info" />
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                type="button"
+                                :disabled="isSubmitting"
+                                @click="cancelEdit"
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" :disabled="isSubmitting">
+                                Save changes
+                            </Button>
                         </div>
                     </form>
                 </template>

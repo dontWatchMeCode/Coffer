@@ -1,16 +1,25 @@
 import type { ContactEntry } from '@/types';
 
+type ContactEntryField = 'email_addresses' | 'links' | 'phone_numbers';
+
+const maxContactEntries = 20;
+
 export function emptyEntry(): ContactEntry {
     return { label: '', value: '' };
 }
 
 export function firstEntryValueError(
     errors: Record<string, unknown>,
-    field: string,
+    field: ContactEntryField,
 ): string | undefined {
-    const message = Object.entries(errors).find(([key]) =>
-        new RegExp(`^${field}\\.\\d+\\.value$`).test(key),
-    )?.[1];
+    // Server validation allows up to 20 rows per contact entry group.
+    for (let index = 0; index < maxContactEntries; index += 1) {
+        const message = errors[`${field}.${index}.value`];
 
-    return typeof message === 'string' ? message : undefined;
+        if (typeof message === 'string') {
+            return message;
+        }
+    }
+
+    return undefined;
 }

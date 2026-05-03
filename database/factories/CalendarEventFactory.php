@@ -23,6 +23,7 @@ class CalendarEventFactory extends Factory
             'title' => fake()->sentence(4),
             'description' => fake()->optional()->sentence(),
             'date' => fake()->dateTimeBetween('-6 months', '+6 months')->format('Y-m-d'),
+            'time' => fake()->optional()->time('H:i'),
         ];
     }
 }

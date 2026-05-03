@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Trash2 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { CalendarDays, Clock, Pencil, Trash2 } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import CalendarEventController from '@/actions/App/Http/Controllers/Calendar/CalendarEventController';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
+import DetailSection from '@/components/page/DetailSection.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,11 +48,13 @@ const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const deleteDialogOpen = ref(false);
+const isEditing = ref(false);
 const isSubmitting = ref(false);
 const formRef = ref<HTMLFormElement | null>(null);
 const editTitle = ref(props.event.title);
 const editDescription = ref(props.event.description ?? '');
 const editDate = ref(props.event.date ?? '');
+const editTime = ref(props.event.time ?? '');
 
 defineOptions({
     layout: (layoutProps: {
@@ -69,6 +72,35 @@ defineOptions({
         ],
     }),
 });
+
+watch(
+    () => props.event,
+    (event) => {
+        if (!isEditing.value) {
+            resetEditFields(event);
+        }
+    },
+);
+
+function resetEditFields(event: CalendarEventItem): void {
+    editTitle.value = event.title;
+    editDescription.value = event.description ?? '';
+    editDate.value = event.date ?? '';
+    editTime.value = event.time ?? '';
+}
+
+function cancelEdit(): void {
+    resetEditFields(props.event);
+    isEditing.value = false;
+}
+
+function formatEventDate(date: string | null | undefined): string {
+    if (!date) {
+        return '';
+    }
+
+    return new Date(`${date}T00:00:00`).toLocaleDateString();
+}
 
 function confirmDelete(): void {
     if (!props.event) {
@@ -102,10 +134,13 @@ function submitEdit(): void {
             title: editTitle.value,
             description: editDescription.value,
             date: editDate.value,
+            time: editTime.value,
         },
         {
+            preserveScroll: true,
+            preserveState: false,
             onSuccess: () => {
-                router.visit(calendarIndex(currentTeamSlug.value).url);
+                isEditing.value = false;
             },
             onFinish: () => {
                 isSubmitting.value = false;
@@ -129,7 +164,7 @@ function submitEdit(): void {
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="event.updatedAt"
-                :on-save="() => formRef?.requestSubmit()"
+                :on-save="isEditing ? () => formRef?.requestSubmit() : null"
                 :on-delete="() => (deleteDialogOpen = true)"
                 save-label="Save changes"
                 delete-label="Delete event"
@@ -139,9 +174,57 @@ function submitEdit(): void {
                 :record-tags="recordTags"
             >
                 <template #main>
+                    <div v-if="!isEditing" class="space-y-5">
+                        <DetailSection
+                            title="Date"
+                            empty="No date."
+                            :has-content="Boolean(event.date)"
+                        >
+                            <div class="flex items-center gap-2 text-sm">
+                                <CalendarDays
+                                    class="h-4 w-4 text-muted-foreground"
+                                />
+                                {{ formatEventDate(event.date) }}
+                            </div>
+                        </DetailSection>
+
+                        <DetailSection
+                            title="Time"
+                            empty="No time."
+                            :has-content="Boolean(event.time)"
+                        >
+                            <div class="flex items-center gap-2 text-sm">
+                                <Clock class="h-4 w-4 text-muted-foreground" />
+                                {{ event.time }}
+                            </div>
+                        </DetailSection>
+
+                        <DetailSection
+                            title="Description"
+                            empty="No description."
+                            :has-content="Boolean(event.description)"
+                        >
+                            <p class="text-sm whitespace-pre-wrap">
+                                {{ event.description }}
+                            </p>
+                        </DetailSection>
+
+                        <div class="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                @click="isEditing = true"
+                            >
+                                <Pencil class="mr-1.5 h-4 w-4" />
+                                Edit
+                            </Button>
+                        </div>
+                    </div>
+
                     <form
+                        v-else
                         ref="formRef"
-                        class="space-y-4"
+                        class="space-y-5"
                         @submit.prevent="submitEdit"
                     >
                         <div class="grid gap-2">
@@ -176,6 +259,30 @@ function submitEdit(): void {
                                 required
                             />
                             <InputError :message="errors.date" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="edit-event-time">Time</Label>
+                            <Input
+                                id="edit-event-time"
+                                v-model="editTime"
+                                type="time"
+                            />
+                            <InputError :message="errors.time" />
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                type="button"
+                                :disabled="isSubmitting"
+                                @click="cancelEdit"
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" :disabled="isSubmitting">
+                                Save changes
+                            </Button>
                         </div>
                     </form>
                 </template>

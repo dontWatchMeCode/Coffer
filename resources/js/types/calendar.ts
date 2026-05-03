@@ -3,6 +3,7 @@ export type CalendarEventItem = {
     title: string;
     description?: string | null;
     date?: string | null;
+    time?: string | null;
     createdAt?: string | null;
     updatedAt?: string | null;
 };

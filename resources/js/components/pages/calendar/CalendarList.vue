@@ -97,7 +97,17 @@ const groupedEvents = computed<GroupedEvents[]>(() => {
                     </div>
 
                     <div class="min-w-0 flex-1">
-                        <p class="truncate font-medium">{{ event.title }}</p>
+                        <div class="flex items-baseline gap-2">
+                            <p class="min-w-0 flex-1 truncate font-medium">
+                                {{ event.title }}
+                            </p>
+                            <span
+                                v-if="event.time"
+                                class="shrink-0 text-xs text-muted-foreground"
+                            >
+                                {{ event.time }}
+                            </span>
+                        </div>
                         <p
                             v-if="event.description"
                             class="truncate text-sm text-muted-foreground"

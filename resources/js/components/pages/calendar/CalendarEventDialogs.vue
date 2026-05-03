@@ -103,6 +103,12 @@ defineExpose({
                     <InputError :message="errors.date" />
                 </div>
 
+                <div class="grid gap-2">
+                    <Label for="create-event-time">Time</Label>
+                    <Input id="create-event-time" name="time" type="time" />
+                    <InputError :message="errors.time" />
+                </div>
+
                 <div class="flex justify-end">
                     <Button type="submit" :disabled="processing">
                         Create event

@@ -144,10 +144,8 @@ defineOptions({
             >
                 <template #main>
                     <div class="space-y-6">
-                        <div
-                            class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
-                        >
-                            <div class="min-w-0 space-y-3">
+                        <div class="space-y-4">
+                            <div class="flex items-start justify-between gap-4">
                                 <div class="flex items-center gap-2">
                                     <div
                                         class="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground"
@@ -159,86 +157,82 @@ defineOptions({
                                     </Badge>
                                 </div>
 
-                                <div v-if="!isEditing" class="space-y-2">
-                                    <h1
-                                        class="text-2xl font-semibold tracking-tight"
-                                    >
-                                        {{ collection.title }}
-                                    </h1>
-                                    <p
-                                        v-if="collection.description"
-                                        class="max-w-3xl text-muted-foreground"
-                                    >
-                                        {{ collection.description }}
-                                    </p>
-                                    <p
-                                        v-else
-                                        class="max-w-3xl text-muted-foreground italic"
-                                    >
-                                        No description yet.
-                                    </p>
-                                </div>
-
-                                <form
-                                    v-else
-                                    class="max-w-3xl space-y-4"
-                                    @submit.prevent="submitEdit"
-                                >
-                                    <div class="grid gap-2">
-                                        <Label for="collection-title"
-                                            >Title</Label
+                                <div class="flex shrink-0 flex-wrap gap-2">
+                                    <template v-if="isEditing">
+                                        <Button
+                                            variant="outline"
+                                            :disabled="isSubmitting"
+                                            @click="cancelEdit"
                                         >
-                                        <Input
-                                            id="collection-title"
-                                            v-model="editTitle"
-                                            required
-                                        />
-                                        <InputError :message="errors.title" />
-                                    </div>
-                                    <div class="grid gap-2">
-                                        <Label for="collection-description">
-                                            Description
-                                        </Label>
-                                        <textarea
-                                            id="collection-description"
-                                            v-model="editDescription"
-                                            :class="taskInputLikeClass"
-                                            rows="5"
-                                        />
-                                        <InputError
-                                            :message="errors.description"
-                                        />
-                                    </div>
-                                </form>
+                                            <X class="mr-1.5 h-4 w-4" />
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            :disabled="isSubmitting"
+                                            @click="submitEdit"
+                                        >
+                                            <Save class="mr-1.5 h-4 w-4" />
+                                            Save
+                                        </Button>
+                                    </template>
+                                    <Button
+                                        v-else
+                                        variant="outline"
+                                        @click="isEditing = true"
+                                    >
+                                        <Pencil class="mr-1.5 h-4 w-4" />
+                                        Edit
+                                    </Button>
+                                </div>
                             </div>
 
-                            <div class="flex shrink-0 flex-wrap gap-2">
-                                <template v-if="isEditing">
-                                    <Button
-                                        variant="outline"
-                                        :disabled="isSubmitting"
-                                        @click="cancelEdit"
-                                    >
-                                        <X class="mr-1.5 h-4 w-4" />
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        :disabled="isSubmitting"
-                                        @click="submitEdit"
-                                    >
-                                        <Save class="mr-1.5 h-4 w-4" />
-                                        Save
-                                    </Button>
-                                </template>
-                                <Button
-                                    v-else
-                                    variant="outline"
-                                    @click="isEditing = true"
+                            <div v-if="!isEditing" class="space-y-2">
+                                <h1
+                                    class="text-2xl font-semibold tracking-tight"
                                 >
-                                    <Pencil class="mr-1.5 h-4 w-4" />
-                                    Edit
-                                </Button>
+                                    {{ collection.title }}
+                                </h1>
+                                <p
+                                    v-if="collection.description"
+                                    class="max-w-3xl text-muted-foreground"
+                                >
+                                    {{ collection.description }}
+                                </p>
+                                <p
+                                    v-else
+                                    class="max-w-3xl text-muted-foreground italic"
+                                >
+                                    No description yet.
+                                </p>
                             </div>
+
+                            <form
+                                v-else
+                                class="w-full space-y-4"
+                                @submit.prevent="submitEdit"
+                            >
+                                <div class="grid gap-2">
+                                    <Label for="collection-title">Title</Label>
+                                    <Input
+                                        id="collection-title"
+                                        v-model="editTitle"
+                                        required
+                                    />
+                                    <InputError :message="errors.title" />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="collection-description">
+                                        Description
+                                    </Label>
+                                    <textarea
+                                        id="collection-description"
+                                        v-model="editDescription"
+                                        :class="taskInputLikeClass"
+                                        rows="5"
+                                    />
+                                    <InputError :message="errors.description" />
+                                </div>
+                            </form>
                         </div>
 
                         <section class="space-y-4 border-t pt-6">

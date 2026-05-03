@@ -143,7 +143,7 @@ test('a contact requires a name', function () {
         ->assertSessionHasErrors(['name']);
 });
 
-test('a contact phone value is required when a phone row is submitted', function () {
+test('a contact phone row without a value is ignored', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -154,10 +154,12 @@ test('a contact phone value is required when a phone row is submitted', function
                 ['label' => 'Mobile'],
             ],
         ])
-        ->assertSessionHasErrors(['phone_numbers.0.value']);
+        ->assertRedirect();
+
+    expect(Contact::where('team_id', $team->id)->first()->phone_numbers)->toBe([]);
 });
 
-test('a contact email value is required when an email row is submitted', function () {
+test('a contact email row without a value is ignored', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -168,7 +170,9 @@ test('a contact email value is required when an email row is submitted', functio
                 ['label' => 'Work'],
             ],
         ])
-        ->assertSessionHasErrors(['email_addresses.0.value']);
+        ->assertRedirect();
+
+    expect(Contact::where('team_id', $team->id)->first()->email_addresses)->toBe([]);
 });
 
 test('a contact email value must be valid', function () {
@@ -199,7 +203,7 @@ test('a contact link value must be a valid URL', function () {
         ->assertSessionHasErrors(['links.0.value']);
 });
 
-test('a contact link value is required when a link row is submitted', function () {
+test('a contact link row without a value is ignored', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -210,7 +214,9 @@ test('a contact link value is required when a link row is submitted', function (
                 ['label' => 'Website'],
             ],
         ])
-        ->assertSessionHasErrors(['links.0.value']);
+        ->assertRedirect();
+
+    expect(Contact::where('team_id', $team->id)->first()->links)->toBe([]);
 });
 
 test('a contact can be updated with new phones emails and links', function () {
@@ -253,6 +259,49 @@ test('a contact can be updated with new phones emails and links', function () {
     expect($contact->phone_numbers)->toBe($newPhones);
     expect($contact->email_addresses)->toBe($newEmails);
     expect($contact->links)->toBe($newLinks);
+});
+
+test('empty contact entry rows are removed when saving', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $contact = Contact::factory()->create([
+        'team_id' => $team->id,
+        'name' => 'Jane Doe',
+    ]);
+
+    actingAs($user)
+        ->patch(
+            route('team.contacts.update', ['current_team' => $team, 'contact' => $contact]),
+            [
+                'name' => 'Jane Doe',
+                'phone_numbers' => [
+                    ['label' => 'Mobile', 'value' => '+1 555-9999'],
+                    ['label' => 'Empty phone', 'value' => ''],
+                ],
+                'email_addresses' => [
+                    ['label' => 'Work', 'value' => 'jane@example.com'],
+                    ['label' => 'Empty email', 'value' => ''],
+                ],
+                'links' => [
+                    ['label' => 'Website', 'value' => 'https://example.com'],
+                    ['label' => 'Empty link', 'value' => ''],
+                ],
+            ],
+        )
+        ->assertRedirect(route('team.contacts.show', ['current_team' => $team, 'contact' => $contact->id]));
+
+    $contact = $contact->fresh();
+
+    expect($contact->phone_numbers)->toBe([
+        ['label' => 'Mobile', 'value' => '+1 555-9999'],
+    ]);
+    expect($contact->email_addresses)->toBe([
+        ['label' => 'Work', 'value' => 'jane@example.com'],
+    ]);
+    expect($contact->links)->toBe([
+        ['label' => 'Website', 'value' => 'https://example.com'],
+    ]);
 });
 
 test('a contact can be deleted', function () {

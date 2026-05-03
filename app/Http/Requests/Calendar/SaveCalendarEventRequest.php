@@ -41,6 +41,7 @@ class SaveCalendarEventRequest extends FormRequest
             'title' => $this->isMethod('patch') ? ['sometimes', 'string', 'max:255'] : ['required', 'string', 'max:255'],
             'description' => $this->isMethod('patch') ? ['sometimes', 'nullable', 'string'] : ['nullable', 'string'],
             'date' => $this->isMethod('patch') ? ['sometimes', 'date'] : ['required', 'date'],
+            'time' => $this->isMethod('patch') ? ['sometimes', 'nullable', 'date_format:H:i'] : ['nullable', 'date_format:H:i'],
         ];
     }
 }

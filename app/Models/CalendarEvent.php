@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['team_id', 'title', 'description', 'date'])]
+#[Fillable(['team_id', 'title', 'description', 'date', 'time'])]
 class CalendarEvent extends Model implements LinkableRecord
 {
     use BelongsToTeam;
