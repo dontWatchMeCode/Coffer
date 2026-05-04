@@ -4,6 +4,7 @@ import { ListPlus, Settings } from 'lucide-vue-next';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, ref } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
+import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import CreateTaskDialog from '@/components/pages/tasks/CreateTaskDialog.vue';
 import ProjectSettingsDialog from '@/components/pages/tasks/ProjectSettingsDialog.vue';
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { index, show, edit } from '@/routes/team/tasks/index';
 import type {
+    ActivityHistoryItem,
     TaskItem,
     TaskMember,
     TaskProject,
@@ -42,6 +44,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
+    activityHistory?: ActivityHistoryItem[];
 };
 
 const props = defineProps<Props>();
@@ -178,6 +181,11 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                         :links="recordLinks.links"
                         :context="recordLinks.context"
                         :endpoints="recordLinks.endpoints"
+                    />
+
+                    <ActivityHistoryPanel
+                        v-if="activityHistory"
+                        :activities="activityHistory"
                     />
 
                     <div>

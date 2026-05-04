@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['team_id', 'project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'position', 'due_at'])]
 class Task extends Model implements LinkableRecord
@@ -27,6 +29,16 @@ class Task extends Model implements LinkableRecord
 
     use HasRecordLinks;
     use HasRecordTags;
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('tasks')
+            ->logOnly(['project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'position', 'due_at'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
 
     /**
      * Bootstrap the model and its traits.

@@ -22,8 +22,47 @@ trait ProvidesActivityHistory
             ->orderByDesc('id')
             ->get()
             ->map(fn (Activity $activity): array => $this->buildActivityItem($activity))
-            ->filter(fn (array $item): bool => count($item['changedFields']) > 0 || $item['relationChanges'] !== null)
+            ->filter(fn (array $item): bool => $this->isSignificantActivity($item))
             ->values()
+            ->all();
+    }
+
+    /**
+     * Batch-build activity history payloads for multiple models.
+     *
+     * @param  iterable<int, Model>  $models
+     * @return array<int, array<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null}>>
+     */
+    protected function activityHistoryPayloadForModels(iterable $models): array
+    {
+        $models = collect($models);
+
+        if ($models->isEmpty()) {
+            return [];
+        }
+
+        $morphClass = $models->first()->getMorphClass();
+
+        throw_if(
+            $models->contains(fn (Model $model): bool => $model->getMorphClass() !== $morphClass),
+            new \InvalidArgumentException('All models passed to activityHistoryPayloadForModels must share the same morph class.')
+        );
+
+        $ids = $models->map->getKey()->all();
+
+        return Activity::where('subject_type', $morphClass)
+            ->whereIn('subject_id', $ids)
+            ->with('causer')
+            ->orderByDesc('id')
+            ->get()
+            ->mapToGroups(fn (Activity $activity): array => [
+                (int) $activity->subject_id => $this->buildActivityItem($activity),
+            ])
+            ->map(fn ($items) => $items
+                ->filter(fn (array $item): bool => $this->isSignificantActivity($item))
+                ->values()
+                ->all()
+            )
             ->all();
     }
 
@@ -52,6 +91,14 @@ trait ProvidesActivityHistory
             'attributes' => $changes['attributes'] ?? null,
             'relationChanges' => is_array($relationChanges) ? $relationChanges : null,
         ];
+    }
+
+    /**
+     * @param  array{changedFields: array<int, string>, relationChanges: array<string, mixed>|null}  $item
+     */
+    private function isSignificantActivity(array $item): bool
+    {
+        return count($item['changedFields']) > 0 || $item['relationChanges'] !== null;
     }
 
     /**

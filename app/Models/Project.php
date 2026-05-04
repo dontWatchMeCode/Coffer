@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['team_id', 'name', 'description', 'archived'])]
 class Project extends Model implements LinkableRecord
@@ -24,6 +26,16 @@ class Project extends Model implements LinkableRecord
 
     use HasRecordLinks;
     use HasRecordTags;
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('projects')
+            ->logOnly(['name', 'description'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
 
     /**
      * Get the tasks for the project.

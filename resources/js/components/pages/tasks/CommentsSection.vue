@@ -15,6 +15,7 @@ import {
     store as storeTaskComment,
     update as updateTaskComment,
 } from '@/actions/App/Http/Controllers/Tasks/TaskCommentController';
+import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import InputError from '@/components/form/InputError.vue';
 import RichTextEditor from '@/components/richtext/RichTextEditor.vue';
 import { trimStoredRichText } from '@/components/richtext/storage';
@@ -255,113 +256,130 @@ function deleteComment(comment: TaskCommentItem): void {
                                     </Tooltip>
                                 </TooltipProvider>
                             </div>
-                            <TooltipProvider
-                                v-if="comment.userId === userId"
-                                :delay-duration="150"
-                            >
-                                <div class="flex items-start gap-3">
-                                    <template
-                                        v-if="editingCommentId === comment.id"
-                                    >
-                                        <Tooltip>
-                                            <TooltipTrigger as-child>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    class="h-8 w-8 p-0"
-                                                    @click="
-                                                        cancelEditingComment
-                                                    "
-                                                >
-                                                    <X class="h-3.5 w-3.5" />
-                                                    <span class="sr-only"
-                                                        >Cancel edit</span
+                            <div class="flex items-start gap-3">
+                                <ActivityHistoryPanel
+                                    v-if="
+                                        comment.activityHistory &&
+                                        comment.activityHistory.length > 0
+                                    "
+                                    :activities="comment.activityHistory"
+                                    variant="compact"
+                                />
+                                <TooltipProvider
+                                    v-if="comment.userId === userId"
+                                    :delay-duration="150"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <template
+                                            v-if="
+                                                editingCommentId === comment.id
+                                            "
+                                        >
+                                            <Tooltip>
+                                                <TooltipTrigger as-child>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        class="h-8 w-8 p-0"
+                                                        @click="
+                                                            cancelEditingComment
+                                                        "
                                                     >
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                Cancel
-                                            </TooltipContent>
-                                        </Tooltip>
-                                        <Tooltip>
-                                            <TooltipTrigger as-child>
-                                                <Button
-                                                    type="button"
-                                                    size="sm"
-                                                    class="h-8 w-8 p-0"
-                                                    :disabled="
-                                                        editCommentForm.processing
-                                                    "
-                                                    @click="
-                                                        updateComment(comment)
-                                                    "
-                                                >
-                                                    <Check
-                                                        class="h-3.5 w-3.5"
-                                                    />
-                                                    <span class="sr-only"
-                                                        >Save comment</span
+                                                        <X
+                                                            class="h-3.5 w-3.5"
+                                                        />
+                                                        <span class="sr-only"
+                                                            >Cancel edit</span
+                                                        >
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    Cancel
+                                                </TooltipContent>
+                                            </Tooltip>
+                                            <Tooltip>
+                                                <TooltipTrigger as-child>
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        class="h-8 w-8 p-0"
+                                                        :disabled="
+                                                            editCommentForm.processing
+                                                        "
+                                                        @click="
+                                                            updateComment(
+                                                                comment,
+                                                            )
+                                                        "
                                                     >
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                Save
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </template>
-                                    <template v-else>
-                                        <Tooltip>
-                                            <TooltipTrigger as-child>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    class="h-8 w-8 p-0"
-                                                    @click="
-                                                        startEditingComment(
-                                                            comment,
-                                                        )
-                                                    "
-                                                >
-                                                    <Pencil
-                                                        class="h-3.5 w-3.5"
-                                                    />
-                                                    <span class="sr-only"
-                                                        >Edit comment</span
+                                                        <Check
+                                                            class="h-3.5 w-3.5"
+                                                        />
+                                                        <span class="sr-only"
+                                                            >Save comment</span
+                                                        >
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    Save
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </template>
+                                        <template v-else>
+                                            <Tooltip>
+                                                <TooltipTrigger as-child>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        class="h-8 w-8 p-0"
+                                                        @click="
+                                                            startEditingComment(
+                                                                comment,
+                                                            )
+                                                        "
                                                     >
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                Edit comment
-                                            </TooltipContent>
-                                        </Tooltip>
-                                        <Tooltip>
-                                            <TooltipTrigger as-child>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    class="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                    @click="
-                                                        openDeleteCommentDialog(
-                                                            comment,
-                                                        )
-                                                    "
-                                                >
-                                                    <Trash2
-                                                        class="h-3.5 w-3.5"
-                                                    />
-                                                    <span class="sr-only"
-                                                        >Delete comment</span
+                                                        <Pencil
+                                                            class="h-3.5 w-3.5"
+                                                        />
+                                                        <span class="sr-only"
+                                                            >Edit comment</span
+                                                        >
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    Edit comment
+                                                </TooltipContent>
+                                            </Tooltip>
+                                            <Tooltip>
+                                                <TooltipTrigger as-child>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        class="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                        @click="
+                                                            openDeleteCommentDialog(
+                                                                comment,
+                                                            )
+                                                        "
                                                     >
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                Delete comment
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </template>
-                                </div>
-                            </TooltipProvider>
+                                                        <Trash2
+                                                            class="h-3.5 w-3.5"
+                                                        />
+                                                        <span class="sr-only"
+                                                            >Delete
+                                                            comment</span
+                                                        >
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    Delete comment
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </template>
+                                    </div>
+                                </TooltipProvider>
+                            </div>
                         </div>
 
                         <form

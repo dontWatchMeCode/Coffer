@@ -441,10 +441,12 @@ test('creating a link logs activity on both sides', function () {
 
     $taskActivities = Activity::where('subject_type', $task->getMorphClass())
         ->where('subject_id', $task->id)
+        ->whereIn('event', ['linked', 'unlinked'])
         ->orderByDesc('id')
         ->get();
     $contactActivities = Activity::where('subject_type', $contact->getMorphClass())
         ->where('subject_id', $contact->id)
+        ->whereIn('event', ['linked', 'unlinked'])
         ->orderByDesc('id')
         ->get();
 
@@ -453,7 +455,7 @@ test('creating a link logs activity on both sides', function () {
     expect($taskActivities->first()->description)->toBe('Linked to contact: John Doe');
     expect($taskActivities->first()->properties['relation_changes']['type'])->toBe('link');
 
-    expect($contactActivities)->toHaveCount(2);
+    expect($contactActivities)->toHaveCount(1);
     expect($contactActivities->first()->event)->toBe('linked');
     expect($contactActivities->first()->description)->toBe('Linked to task: '.$task->title);
 });
@@ -484,10 +486,12 @@ test('destroying a link logs activity on both sides', function () {
 
     $taskActivities = Activity::where('subject_type', $task->getMorphClass())
         ->where('subject_id', $task->id)
+        ->whereIn('event', ['linked', 'unlinked'])
         ->orderByDesc('id')
         ->get();
     $contactActivities = Activity::where('subject_type', $contact->getMorphClass())
         ->where('subject_id', $contact->id)
+        ->whereIn('event', ['linked', 'unlinked'])
         ->orderByDesc('id')
         ->get();
 
@@ -495,7 +499,7 @@ test('destroying a link logs activity on both sides', function () {
     expect($taskActivities->first()->event)->toBe('unlinked');
     expect($taskActivities->first()->description)->toBe('Unlinked from contact: Jane Doe');
 
-    expect($contactActivities)->toHaveCount(3);
+    expect($contactActivities)->toHaveCount(2);
     expect($contactActivities->first()->event)->toBe('unlinked');
     expect($contactActivities->first()->description)->toBe('Unlinked from task: '.$task->title);
 });

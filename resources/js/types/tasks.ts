@@ -1,3 +1,5 @@
+import type { ActivityHistoryItem } from './activity-history';
+
 export type TaskStatusOption = {
     value: string;
     label: string;
@@ -34,6 +36,7 @@ export type TaskCommentItem = {
     body: string;
     createdAt?: string | null;
     updatedAt?: string | null;
+    activityHistory?: ActivityHistoryItem[];
 };
 
 export type TaskItem = {

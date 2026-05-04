@@ -15,9 +15,12 @@ import TextDiff from './TextDiff.vue';
 
 type Props = {
     activities: ActivityHistoryItem[];
+    variant?: 'default' | 'compact';
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    variant: 'default',
+});
 
 const open = ref(false);
 const expandedDrawings = ref<Record<number, 'old' | 'new' | null>>({});
@@ -66,7 +69,7 @@ function getFieldValue(
 
     let text = typeof raw === 'string' ? raw : JSON.stringify(raw);
 
-    if (field === 'body') {
+    if (field === 'body' || field === 'description') {
         text = stripHtml(text);
     }
 
@@ -74,7 +77,12 @@ function getFieldValue(
 }
 
 function isTextField(field: string): boolean {
-    return field === 'title' || field === 'body';
+    return (
+        field === 'title' ||
+        field === 'body' ||
+        field === 'name' ||
+        field === 'description'
+    );
 }
 
 function isDrawingField(field: string): boolean {
@@ -130,6 +138,7 @@ function relationChangeTargetUrl(
 <template>
     <div>
         <button
+            v-if="props.variant === 'default'"
             type="button"
             class="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
             @click="open = true"
@@ -139,6 +148,22 @@ function relationChangeTargetUrl(
             <span
                 v-if="props.activities.length > 0"
                 class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+            >
+                {{ props.activities.length }}
+            </span>
+        </button>
+
+        <button
+            v-else
+            type="button"
+            class="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            title="Activity History"
+            @click="open = true"
+        >
+            <History class="h-3.5 w-3.5" />
+            <span
+                v-if="props.activities.length > 0"
+                class="inline-flex items-center rounded-full border px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
             >
                 {{ props.activities.length }}
             </span>

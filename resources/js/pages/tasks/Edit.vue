@@ -2,6 +2,7 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
+import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import CommentsSection from '@/components/pages/tasks/CommentsSection.vue';
@@ -10,6 +11,7 @@ import TaskEditForm from '@/components/pages/tasks/TaskEditForm.vue';
 import TaskSidebar from '@/components/pages/tasks/TaskSidebar.vue';
 import { index, show, edit } from '@/routes/team/tasks/index';
 import type {
+    ActivityHistoryItem,
     TaskCommentItem,
     TaskItem,
     TaskMember,
@@ -40,6 +42,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
+    activityHistory?: ActivityHistoryItem[];
 };
 
 const props = defineProps<Props>();
@@ -165,6 +168,11 @@ function confirmDelete(): void {
                         :show-creator-meta="false"
                         :show-actions="false"
                         @update:selected-project-id="selectedProjectId = $event"
+                    />
+
+                    <ActivityHistoryPanel
+                        v-if="activityHistory"
+                        :activities="activityHistory"
                     />
                 </template>
             </EditorSidebarLayout>

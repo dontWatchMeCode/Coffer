@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tasks;
 
+use App\Concerns\ProvidesActivityHistory;
 use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Task;
+use App\Models\TaskComment;
 use App\Models\Team;
 use App\Services\TaskPageDataService;
 use Illuminate\Http\Request;
@@ -17,6 +19,7 @@ use Inertia\Response;
 
 class TaskPageController extends Controller
 {
+    use ProvidesActivityHistory;
     use ProvidesRecordLinks;
     use ProvidesRecordTags;
 
@@ -67,14 +70,19 @@ class TaskPageController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $comments = $task->comments->all();
+        $commentActivities = $this->activityHistoryPayloadForModels($comments);
+
         return Inertia::render('tasks/Edit', [
             'project' => $this->dataService->projectPayload($project),
             'task' => $this->dataService->taskPayload($task, [
                 'commentsCount' => $task->comments_count ?? 0,
             ]),
             'comments' => array_map(
-                $this->dataService->commentPayload(...),
-                $task->comments->all(),
+                fn (TaskComment $comment): array => $this->dataService->commentPayload($comment, [
+                    'activityHistory' => $commentActivities[$comment->getKey()] ?? [],
+                ]),
+                $comments,
             ),
             'members' => $this->dataService->memberPayload($members),
             'statuses' => $this->dataService->statusPayload(),
@@ -84,6 +92,7 @@ class TaskPageController extends Controller
             ], $projects->all())),
             'recordLinks' => $this->recordLinksPayload($task, $currentTeam),
             'recordTags' => $this->recordTagsPayload($task, $currentTeam),
+            'activityHistory' => $this->activityHistoryPayload($task),
         ]);
     }
 
@@ -118,6 +127,7 @@ class TaskPageController extends Controller
             'statuses' => $this->dataService->statusPayload(),
             'recordLinks' => $this->recordLinksPayload($project, $currentTeam),
             'recordTags' => $this->recordTagsPayload($project, $currentTeam),
+            'activityHistory' => $this->activityHistoryPayload($project),
         ]);
     }
 }

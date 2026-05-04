@@ -154,9 +154,10 @@ class TaskPageDataService
     /**
      * Transform a task comment for the frontend.
      *
+     * @param  array<string, mixed>  $extra
      * @return array<string, mixed>
      */
-    public function commentPayload(TaskComment $comment): array
+    public function commentPayload(TaskComment $comment, array $extra = []): array
     {
         $createdAt = $comment->getAttribute('created_at');
         $updatedAt = $comment->getAttribute('updated_at');
@@ -173,6 +174,7 @@ class TaskPageDataService
             'updatedAt' => $updatedAt instanceof DateTimeInterface
                 ? $updatedAt->format(DateTimeInterface::ATOM)
                 : null,
+            ...$extra,
         ];
     }
 
