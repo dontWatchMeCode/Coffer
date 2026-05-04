@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Calendar;
 
+use App\Concerns\ProvidesActivityHistory;
 use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
@@ -15,6 +16,7 @@ use Inertia\Response;
 
 class CalendarPageController extends Controller
 {
+    use ProvidesActivityHistory;
     use ProvidesRecordLinks;
     use ProvidesRecordTags;
 
@@ -43,6 +45,7 @@ class CalendarPageController extends Controller
             'event' => $this->formatEvent($event, includeTimestamps: true),
             'recordLinks' => $this->recordLinksPayload($event, $currentTeam),
             'recordTags' => $this->recordTagsPayload($event, $currentTeam),
+            'activityHistory' => $this->activityHistoryPayload($event),
         ]);
     }
 

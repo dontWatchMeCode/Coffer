@@ -12,6 +12,8 @@ use Database\Factories\BookmarkFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['team_id', 'title', 'url', 'description', 'notes', 'is_archived'])]
 class Bookmark extends Model implements LinkableRecord
@@ -23,6 +25,16 @@ class Bookmark extends Model implements LinkableRecord
 
     use HasRecordLinks;
     use HasRecordTags;
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('bookmarks')
+            ->logOnly(['title', 'url', 'description', 'notes', 'is_archived'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
 
     protected function casts(): array
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Bookmarks;
 
+use App\Concerns\ProvidesActivityHistory;
 use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
@@ -15,6 +16,7 @@ use Inertia\Response;
 
 class BookmarkPageController extends Controller
 {
+    use ProvidesActivityHistory;
     use ProvidesRecordLinks;
     use ProvidesRecordTags;
 
@@ -60,6 +62,7 @@ class BookmarkPageController extends Controller
             ],
             'recordLinks' => $this->recordLinksPayload($bookmark, $currentTeam),
             'recordTags' => $this->recordTagsPayload($bookmark, $currentTeam),
+            'activityHistory' => $this->activityHistoryPayload($bookmark),
         ]);
     }
 }

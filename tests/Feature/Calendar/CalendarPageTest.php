@@ -170,6 +170,56 @@ test('calendar edit page includes timestamps for editor metadata', function () {
         );
 });
 
+test('updating a calendar event logs an activity', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $event = CalendarEvent::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Old Title',
+        'date' => '2026-04-20',
+    ]);
+
+    actingAs($user)
+        ->patch(
+            route('team.calendar.events.update', ['current_team' => $team, 'event' => $event]),
+            ['title' => 'New Title'],
+        )
+        ->assertRedirect();
+
+    $activities = $event->activitiesAsSubject()->orderByDesc('id')->get();
+
+    expect($activities)->toHaveCount(2);
+    expect($activities->first()->event)->toBe('updated');
+});
+
+test('calendar edit page includes activity history', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $event = CalendarEvent::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Old Title',
+        'date' => '2026-04-20',
+    ]);
+
+    actingAs($user)
+        ->patch(
+            route('team.calendar.events.update', ['current_team' => $team, 'event' => $event]),
+            ['title' => 'New Title'],
+        );
+
+    actingAs($user)
+        ->get(route('team.calendar.events.edit', ['current_team' => $team, 'event' => $event]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('calendar/Edit')
+            ->has('activityHistory', 2)
+            ->where('activityHistory.0.event', 'updated')
+            ->where('activityHistory.0.causerName', $user->name)
+            ->has('activityHistory.0.changedFields'));
+});
+
 test('a calendar event can be deleted', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

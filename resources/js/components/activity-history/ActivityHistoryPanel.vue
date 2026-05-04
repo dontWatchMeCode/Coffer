@@ -57,9 +57,7 @@ function getFieldValue(
     side: 'old' | 'new',
 ): string {
     const raw =
-        side === 'old'
-            ? activity.old?.[field]
-            : activity.attributes?.[field];
+        side === 'old' ? activity.old?.[field] : activity.attributes?.[field];
 
     if (raw === null || raw === undefined) {
         return '';
@@ -80,6 +78,35 @@ function isTextField(field: string): boolean {
 
 function isDrawingField(field: string): boolean {
     return field === 'drawing_data';
+}
+
+function isArrayField(field: string): boolean {
+    return (
+        field === 'phone_numbers' ||
+        field === 'email_addresses' ||
+        field === 'links'
+    );
+}
+
+function formatEntryList(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+        return [typeof value === 'string' ? value : JSON.stringify(value)];
+    }
+
+    if (value.length === 0) {
+        return ['None'];
+    }
+
+    return value.map((entry) => {
+        if (entry && typeof entry === 'object' && 'value' in entry) {
+            const label = (entry as Record<string, string>).label;
+            const val = (entry as Record<string, string>).value;
+
+            return label ? `${label}: ${val}` : val;
+        }
+
+        return JSON.stringify(entry);
+    });
 }
 </script>
 
@@ -236,9 +263,56 @@ function isDrawingField(field: string): boolean {
 
                                 <TextDiff
                                     v-else-if="isTextField(field)"
-                                    :old-text="getFieldValue(activity, field, 'old')"
-                                    :new-text="getFieldValue(activity, field, 'new')"
+                                    :old-text="
+                                        getFieldValue(activity, field, 'old')
+                                    "
+                                    :new-text="
+                                        getFieldValue(activity, field, 'new')
+                                    "
                                 />
+
+                                <div
+                                    v-else-if="isArrayField(field)"
+                                    class="space-y-1"
+                                >
+                                    <div
+                                        v-if="
+                                            activity.old?.[field] !== undefined
+                                        "
+                                        class="space-y-0.5"
+                                    >
+                                        <div
+                                            v-for="(
+                                                line, idx
+                                            ) in formatEntryList(
+                                                activity.old[field],
+                                            )"
+                                            :key="`old-${idx}`"
+                                            class="text-xs text-muted-foreground line-through"
+                                        >
+                                            {{ line }}
+                                        </div>
+                                    </div>
+                                    <div
+                                        v-if="
+                                            activity.attributes?.[field] !==
+                                            undefined
+                                        "
+                                        class="space-y-0.5"
+                                    >
+                                        <div
+                                            v-for="(
+                                                line, idx
+                                            ) in formatEntryList(
+                                                activity.attributes[field],
+                                            )"
+                                            :key="`new-${idx}`"
+                                            class="text-xs"
+                                        >
+                                            {{ line }}
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <div v-else class="space-y-1">
                                     <div
@@ -247,10 +321,22 @@ function isDrawingField(field: string): boolean {
                                         "
                                         class="text-xs text-muted-foreground line-through"
                                     >
-                                        {{ getFieldValue(activity, field, 'old') }}
+                                        {{
+                                            getFieldValue(
+                                                activity,
+                                                field,
+                                                'old',
+                                            )
+                                        }}
                                     </div>
                                     <div class="text-xs">
-                                        {{ getFieldValue(activity, field, 'new') }}
+                                        {{
+                                            getFieldValue(
+                                                activity,
+                                                field,
+                                                'new',
+                                            )
+                                        }}
                                     </div>
                                 </div>
                             </div>

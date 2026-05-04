@@ -429,6 +429,54 @@ test('all fields can be nullable except name', function () {
     expect($contact->additional_info)->toBeNull();
 });
 
+test('updating a contact logs an activity', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $contact = Contact::factory()->create([
+        'team_id' => $team->id,
+        'name' => 'Old Name',
+    ]);
+
+    actingAs($user)
+        ->patch(
+            route('team.contacts.update', ['current_team' => $team, 'contact' => $contact]),
+            ['name' => 'New Name'],
+        )
+        ->assertRedirect();
+
+    $activities = $contact->activitiesAsSubject()->orderByDesc('id')->get();
+
+    expect($activities)->toHaveCount(2);
+    expect($activities->first()->event)->toBe('updated');
+});
+
+test('contact show page includes activity history', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $contact = Contact::factory()->create([
+        'team_id' => $team->id,
+        'name' => 'Old Name',
+    ]);
+
+    actingAs($user)
+        ->patch(
+            route('team.contacts.update', ['current_team' => $team, 'contact' => $contact]),
+            ['name' => 'New Name'],
+        );
+
+    actingAs($user)
+        ->get(route('team.contacts.show', ['current_team' => $team, 'contact' => $contact]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('contacts/Show')
+            ->has('activityHistory', 2)
+            ->where('activityHistory.0.event', 'updated')
+            ->where('activityHistory.0.causerName', $user->name)
+            ->has('activityHistory.0.changedFields'));
+});
+
 test('contact show page can be rendered', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

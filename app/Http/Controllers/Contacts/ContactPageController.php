@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Contacts;
 
+use App\Concerns\ProvidesActivityHistory;
 use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
@@ -15,6 +16,7 @@ use Inertia\Response;
 
 class ContactPageController extends Controller
 {
+    use ProvidesActivityHistory;
     use ProvidesRecordLinks;
     use ProvidesRecordTags;
 
@@ -61,6 +63,7 @@ class ContactPageController extends Controller
             ],
             'recordLinks' => $this->recordLinksPayload($contact, $currentTeam),
             'recordTags' => $this->recordTagsPayload($contact, $currentTeam),
+            'activityHistory' => $this->activityHistoryPayload($contact),
         ]);
     }
 }

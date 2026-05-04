@@ -12,6 +12,8 @@ use Database\Factories\CalendarEventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['team_id', 'title', 'description', 'date', 'time'])]
 class CalendarEvent extends Model implements LinkableRecord
@@ -23,6 +25,16 @@ class CalendarEvent extends Model implements LinkableRecord
 
     use HasRecordLinks;
     use HasRecordTags;
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('calendar')
+            ->logOnly(['title', 'description', 'date', 'time'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
 
     protected function casts(): array
     {

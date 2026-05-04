@@ -4,6 +4,7 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { CalendarDays, Clock, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import CalendarEventController from '@/actions/App/Http/Controllers/Calendar/CalendarEventController';
+import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import ConfirmDeleteDialog from '@/components/dialogs/ConfirmDeleteDialog.vue';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
@@ -15,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
 import { index as calendarIndex } from '@/routes/team/calendar';
-import type { CalendarEventItem, Team } from '@/types';
+import type { ActivityHistoryItem, CalendarEventItem, Team } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -35,6 +36,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
+    activityHistory?: ActivityHistoryItem[];
 };
 
 const props = defineProps<Props>();
@@ -168,6 +170,13 @@ function submitEdit(): void {
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >
+                <template #sidebar-top>
+                    <ActivityHistoryPanel
+                        v-if="activityHistory"
+                        :activities="activityHistory"
+                    />
+                </template>
+
                 <template #main>
                     <div v-if="!isEditing" class="space-y-5">
                         <DetailSection

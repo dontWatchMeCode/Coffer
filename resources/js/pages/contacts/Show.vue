@@ -3,6 +3,7 @@ import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { Pencil, Plus, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
@@ -17,7 +18,12 @@ import {
     index as contactsIndex,
     update as updateContact,
 } from '@/routes/team/contacts';
-import type { ContactEntry, ContactItem, Team } from '@/types';
+import type {
+    ActivityHistoryItem,
+    ContactEntry,
+    ContactItem,
+    Team,
+} from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -37,6 +43,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
+    activityHistory?: ActivityHistoryItem[];
 };
 
 const props = defineProps<Props>();
@@ -203,6 +210,13 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >
+                <template #sidebar-top>
+                    <ActivityHistoryPanel
+                        v-if="activityHistory"
+                        :activities="activityHistory"
+                    />
+                </template>
+
                 <template #main>
                     <div v-if="!isEditing" class="space-y-4">
                         <ContactReadOnlyDetails :contact="contact" />

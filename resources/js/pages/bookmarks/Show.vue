@@ -3,6 +3,7 @@ import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { Archive, ExternalLink, Pencil } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import DetailLinkRow from '@/components/page/DetailLinkRow.vue';
@@ -18,7 +19,7 @@ import {
     index as bookmarksIndex,
     update as updateBookmark,
 } from '@/routes/team/bookmarks';
-import type { BookmarkItem, Team } from '@/types';
+import type { ActivityHistoryItem, BookmarkItem, Team } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -38,6 +39,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
+    activityHistory?: ActivityHistoryItem[];
 };
 
 const props = defineProps<Props>();
@@ -151,6 +153,13 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >
+                <template #sidebar-top>
+                    <ActivityHistoryPanel
+                        v-if="activityHistory"
+                        :activities="activityHistory"
+                    />
+                </template>
+
                 <template #main>
                     <div v-if="!isEditing" class="space-y-5">
                         <DetailSection title="URL">

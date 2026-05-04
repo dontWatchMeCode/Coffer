@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { diffWords } from 'diff';
+import { computed } from 'vue';
 
 const props = defineProps<{
     oldText: string;

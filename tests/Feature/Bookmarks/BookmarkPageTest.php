@@ -340,6 +340,54 @@ test('bookmarks can be created with nullable fields', function () {
     expect($bookmark->is_archived)->toBeFalse();
 });
 
+test('updating a bookmark logs an activity', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $bookmark = Bookmark::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Old Title',
+    ]);
+
+    actingAs($user)
+        ->patch(
+            route('team.bookmarks.update', ['current_team' => $team, 'bookmark' => $bookmark]),
+            ['title' => 'New Title'],
+        )
+        ->assertRedirect();
+
+    $activities = $bookmark->activitiesAsSubject()->orderByDesc('id')->get();
+
+    expect($activities)->toHaveCount(2);
+    expect($activities->first()->event)->toBe('updated');
+});
+
+test('bookmark show page includes activity history', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $bookmark = Bookmark::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Old Title',
+    ]);
+
+    actingAs($user)
+        ->patch(
+            route('team.bookmarks.update', ['current_team' => $team, 'bookmark' => $bookmark]),
+            ['title' => 'New Title'],
+        );
+
+    actingAs($user)
+        ->get(route('team.bookmarks.show', ['current_team' => $team, 'bookmark' => $bookmark]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('bookmarks/Show')
+            ->has('activityHistory', 2)
+            ->where('activityHistory.0.event', 'updated')
+            ->where('activityHistory.0.causerName', $user->name)
+            ->has('activityHistory.0.changedFields'));
+});
+
 test('bookmarks search returns results', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
