@@ -54,8 +54,7 @@ const props = withDefaults(
             <TooltipContent
                 :side="props.side"
                 align="end"
-                class="max-w-xs space-y-1.5 border border-border bg-zinc-950 text-zinc-50 shadow-lg dark:bg-zinc-900"
-                :show-arrow="false"
+                class="max-w-xs space-y-1.5"
             >
                 <p class="font-medium">Search prefixes</p>
                 <div class="space-y-0.5 text-xs">

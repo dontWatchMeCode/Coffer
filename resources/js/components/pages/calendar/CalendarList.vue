@@ -35,7 +35,8 @@ function parseDateParts(
         return null;
     }
 
-    const parts = dateStr.split('-');
+    const dateOnly = dateStr.split('T')[0];
+    const parts = dateOnly.split('-');
 
     if (parts.length < 3) {
         return null;
@@ -52,6 +53,7 @@ function parseDateParts(
 
 const groupedEvents = computed<GroupedEvents[]>(() => {
     const groups = new Map<string, EventDisplay[]>();
+    const todayDateOnly = props.today.split('T')[0];
 
     for (const event of props.events) {
         const date = event.date ?? '';
@@ -61,7 +63,7 @@ const groupedEvents = computed<GroupedEvents[]>(() => {
             continue;
         }
 
-        const parsed = parseDateParts(event.date);
+        const parsed = parseDateParts(date);
 
         if (!parsed) {
             continue;
@@ -73,9 +75,9 @@ const groupedEvents = computed<GroupedEvents[]>(() => {
 
         groups.get(monthKey)!.push({
             event,
-            monthShort: props.months[parsed.monthIndex].slice(0, 3),
+            monthShort: props.months[parsed.monthIndex]?.slice(0, 3) ?? '',
             day: parsed.day,
-            isToday: event.date === props.today,
+            isToday: date.split('T')[0] === todayDateOnly,
         });
     }
 
@@ -90,7 +92,9 @@ const groupedEvents = computed<GroupedEvents[]>(() => {
             return {
                 monthKey,
                 monthLabel,
-                events,
+                events: events.sort((a, b) =>
+                    (a.event.date ?? '').localeCompare(b.event.date ?? ''),
+                ),
             };
         });
 });
@@ -159,7 +163,7 @@ const groupedEvents = computed<GroupedEvents[]>(() => {
         </div>
     </div>
 
-    <EmptyState v-else title="No upcoming events." description="">
+    <EmptyState v-else title="No upcoming events.">
         <template #icon>
             <CalendarDays class="h-8 w-8" />
         </template>

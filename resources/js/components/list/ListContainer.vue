@@ -1,15 +1,15 @@
 <script setup lang="ts">
-type Layout = 'list' | 'grid';
+import type { ViewMode } from '@/composables/useViewMode';
 
 type Props = {
-    layout?: Layout;
+    layout?: ViewMode;
 };
 
 const props = withDefaults(defineProps<Props>(), {
-    layout: 'list',
+    layout: 'grid',
 });
 
-const layoutClasses: Record<Layout, string> = {
+const layoutClasses: Record<ViewMode, string> = {
     list: 'space-y-3',
     grid: 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3',
 };

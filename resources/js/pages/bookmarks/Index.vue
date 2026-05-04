@@ -2,12 +2,14 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, Search } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import BookmarkList from '@/components/pages/bookmarks/BookmarkList.vue';
 import CreateBookmarkDialog from '@/components/pages/bookmarks/CreateBookmarkDialog.vue';
 import DeleteBookmarkDialog from '@/components/pages/bookmarks/DeleteBookmarkDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useViewMode } from '@/composables/useViewMode';
 import {
     index as bookmarksIndex,
     show as showBookmark,
@@ -66,6 +68,8 @@ function openDeleteDialog(bookmark: BookmarkItem): void {
     deleteDialogRef.value?.openDeleteDialog(bookmark);
 }
 
+const { viewMode } = useViewMode();
+
 defineOptions({
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
@@ -108,21 +112,31 @@ defineOptions({
                         class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                     />
                     <Input
-                        :model-value="searchQuery"
+                        v-model="searchQuery"
+                        data-testid="bookmarks-search-input"
                         placeholder="Search bookmarks..."
                         class="pl-9"
-                        @update:model-value="searchQuery = String($event)"
                     />
                 </div>
             </div>
 
-            <BookmarkList
-                :filtered-bookmarks="filteredBookmarks"
-                :search-query="searchQuery"
-                :navigate-to-bookmark="navigateToBookmark"
-                :open-delete-dialog="openDeleteDialog"
-                :open-create-dialog="openCreateDialog"
-            />
+            <div class="space-y-4">
+                <div
+                    v-if="filteredBookmarks.length > 0"
+                    class="flex items-center justify-end"
+                >
+                    <ViewModeToggle v-model:view-mode="viewMode" />
+                </div>
+
+                <BookmarkList
+                    :filtered-bookmarks="filteredBookmarks"
+                    :search-query="searchQuery"
+                    :navigate-to-bookmark="navigateToBookmark"
+                    :open-delete-dialog="openDeleteDialog"
+                    :open-create-dialog="openCreateDialog"
+                    :view-mode="viewMode"
+                />
+            </div>
         </div>
     </div>
 

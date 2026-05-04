@@ -12,9 +12,21 @@ export function toUrl(href: NonNullable<InertiaLinkProps['href']>) {
 }
 
 export function formatDate(value?: string | null): string {
-    return value ? new Date(value).toLocaleDateString() : '';
+    if (!value) {
+        return '';
+    }
+
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString();
 }
 
 export function formatDateTime(value?: string | null): string {
-    return value ? new Date(value).toLocaleString() : '';
+    if (!value) {
+        return '';
+    }
+
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleString();
 }

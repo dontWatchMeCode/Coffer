@@ -270,23 +270,20 @@ defineOptions({
                                         </div>
 
                                         <ListItemActions>
-                                            <a
+                                            <Button
                                                 v-if="link.url"
+                                                as="a"
                                                 :href="link.url"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
+                                                variant="ghost"
+                                                size="icon"
+                                                class="h-8 w-8"
+                                                aria-label="Open link"
                                                 @click.stop
                                             >
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    class="h-8 w-8"
-                                                >
-                                                    <ExternalLink
-                                                        class="h-4 w-4"
-                                                    />
-                                                </Button>
-                                            </a>
+                                                <ExternalLink class="h-4 w-4" />
+                                            </Button>
                                         </ListItemActions>
                                     </div>
                                 </ListItem>

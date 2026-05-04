@@ -2,12 +2,14 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, Search } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import ContactList from '@/components/pages/contacts/ContactList.vue';
 import CreateContactDialog from '@/components/pages/contacts/CreateContactDialog.vue';
 import DeleteContactDialog from '@/components/pages/contacts/DeleteContactDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useViewMode } from '@/composables/useViewMode';
 import {
     index as contactsIndex,
     show as showContact,
@@ -93,6 +95,8 @@ function openCreateDialog(): void {
 function openDeleteDialog(contact: ContactItem): void {
     deleteDialogRef.value?.openDeleteDialog(contact);
 }
+
+const { viewMode } = useViewMode();
 </script>
 
 <template>
@@ -122,21 +126,31 @@ function openDeleteDialog(contact: ContactItem): void {
                         class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                     />
                     <Input
-                        :model-value="searchQuery"
+                        v-model="searchQuery"
+                        data-testid="contacts-search-input"
                         placeholder="Search contacts..."
                         class="pl-9"
-                        @update:model-value="searchQuery = String($event)"
                     />
                 </div>
             </div>
 
-            <ContactList
-                :filtered-contacts="filteredContacts"
-                :search-query="searchQuery"
-                :navigate-to-contact="navigateToContact"
-                :open-delete-dialog="openDeleteDialog"
-                :open-create-dialog="openCreateDialog"
-            />
+            <div class="space-y-4">
+                <div
+                    v-if="filteredContacts.length > 0"
+                    class="flex items-center justify-end"
+                >
+                    <ViewModeToggle v-model:view-mode="viewMode" />
+                </div>
+
+                <ContactList
+                    :filtered-contacts="filteredContacts"
+                    :search-query="searchQuery"
+                    :navigate-to-contact="navigateToContact"
+                    :open-delete-dialog="openDeleteDialog"
+                    :open-create-dialog="openCreateDialog"
+                    :view-mode="viewMode"
+                />
+            </div>
         </div>
     </div>
 

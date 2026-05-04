@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Pencil, Plus, Trash2, UserCircle } from 'lucide-vue-next';
+import { Plus, Trash2, UserCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 import EmptyState from '@/components/list/EmptyState.vue';
 import ListContainer from '@/components/list/ListContainer.vue';
@@ -7,6 +7,7 @@ import ListItem from '@/components/list/ListItem.vue';
 import ListItemActions from '@/components/list/ListItemActions.vue';
 import ContactAvatar from '@/components/pages/contacts/ContactAvatar.vue';
 import { Button } from '@/components/ui/button';
+import type { ViewMode } from '@/composables/useViewMode';
 import type { ContactItem } from '@/types';
 
 type Props = {
@@ -15,17 +16,38 @@ type Props = {
     navigateToContact: (contact: ContactItem) => void;
     openDeleteDialog: (contact: ContactItem) => void;
     openCreateDialog: () => void;
+    viewMode: ViewMode;
 };
 
 const props = defineProps<Props>();
 
+function filterEntries<T extends { value: string }>(
+    entries: T[] | null | undefined,
+): T[] {
+    return entries?.filter((e) => e.value.trim()) ?? [];
+}
+
+function buildContactInfo(item: {
+    primaryEmail?: string;
+    primaryPhone?: string;
+    primaryLink?: string;
+    secondaryInfo: string[];
+}): string {
+    return [
+        item.primaryEmail,
+        item.primaryPhone,
+        item.primaryLink,
+        ...item.secondaryInfo,
+    ]
+        .filter(Boolean)
+        .join(' • ');
+}
+
 const contactsWithDisplay = computed(() =>
     props.filteredContacts.map((contact) => {
-        const emails =
-            contact.emailAddresses?.filter((e) => e.value.trim()) ?? [];
-        const phones =
-            contact.phoneNumbers?.filter((e) => e.value.trim()) ?? [];
-        const links = contact.links?.filter((e) => e.value.trim()) ?? [];
+        const emails = filterEntries(contact.emailAddresses);
+        const phones = filterEntries(contact.phoneNumbers);
+        const links = filterEntries(contact.links);
 
         return {
             contact,
@@ -43,13 +65,54 @@ const contactsWithDisplay = computed(() =>
 </script>
 
 <template>
-    <ListContainer v-if="contactsWithDisplay.length > 0">
+    <ListContainer v-if="contactsWithDisplay.length > 0" :layout="viewMode">
         <ListItem
             v-for="item in contactsWithDisplay"
             :key="item.contact.id"
             @click="navigateToContact(item.contact)"
         >
-            <div class="flex items-center gap-4">
+            <div v-if="viewMode === 'grid'" class="flex flex-col gap-3">
+                <div class="flex items-start justify-between gap-3">
+                    <ContactAvatar :name="item.contact.name ?? ''" size="sm" />
+                    <ListItemActions>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            class="h-8 w-8"
+                            aria-label="Delete contact"
+                            @click.stop="openDeleteDialog(item.contact)"
+                        >
+                            <Trash2 class="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                    </ListItemActions>
+                </div>
+
+                <p class="line-clamp-2 text-base font-medium">
+                    {{ item.contact.name }}
+                </p>
+
+                <p
+                    v-if="
+                        item.primaryEmail ||
+                        item.primaryPhone ||
+                        item.primaryLink
+                    "
+                    class="line-clamp-4 text-sm text-muted-foreground"
+                >
+                    {{ buildContactInfo(item) }}
+                </p>
+                <p
+                    v-else-if="item.contact.address"
+                    class="line-clamp-4 text-sm text-muted-foreground"
+                >
+                    {{ item.contact.address }}
+                </p>
+                <p v-else class="text-sm text-muted-foreground italic">
+                    No contact info yet.
+                </p>
+            </div>
+
+            <div v-else class="flex items-center gap-4">
                 <ContactAvatar :name="item.contact.name ?? ''" size="sm" />
 
                 <div class="min-w-0 flex-1">
@@ -62,22 +125,19 @@ const contactsWithDisplay = computed(() =>
                         "
                         class="truncate text-sm text-muted-foreground"
                     >
-                        {{
-                            [
-                                item.primaryEmail,
-                                item.primaryPhone,
-                                item.primaryLink,
-                                ...item.secondaryInfo,
-                            ]
-                                .filter(Boolean)
-                                .join(' • ')
-                        }}
+                        {{ buildContactInfo(item) }}
                     </p>
                     <p
                         v-else-if="item.contact.address"
                         class="truncate text-sm text-muted-foreground"
                     >
                         {{ item.contact.address }}
+                    </p>
+                    <p
+                        v-else
+                        class="truncate text-sm text-muted-foreground italic"
+                    >
+                        No contact info yet.
                     </p>
                 </div>
 
@@ -86,20 +146,10 @@ const contactsWithDisplay = computed(() =>
                         variant="ghost"
                         size="icon"
                         class="h-8 w-8"
-                        aria-label="Edit contact"
-                        @click.stop="navigateToContact(item.contact)"
-                    >
-                        <Pencil class="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        class="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         aria-label="Delete contact"
                         @click.stop="openDeleteDialog(item.contact)"
                     >
-                        <Trash2 class="h-4 w-4" />
+                        <Trash2 class="h-4 w-4 text-muted-foreground" />
                     </Button>
                 </ListItemActions>
             </div>

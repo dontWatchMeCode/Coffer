@@ -12,10 +12,20 @@ const emit = defineEmits<{
     (e: 'click'): void;
 }>();
 
+function handleClick(): void {
+    if (props.clickable) {
+        emit('click');
+    }
+}
+
 function handleKeydown(event: KeyboardEvent): void {
+    if (event.target !== event.currentTarget) {
+        return;
+    }
+
     if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        emit('click');
+        handleClick();
     }
 }
 </script>
@@ -27,8 +37,8 @@ function handleKeydown(event: KeyboardEvent): void {
         :role="props.clickable ? 'button' : undefined"
         :tabindex="props.clickable ? 0 : undefined"
         :aria-label="props.ariaLabel || undefined"
-        @click="props.clickable && emit('click')"
-        @keydown="props.clickable && handleKeydown"
+        @click="handleClick"
+        @keydown="handleKeydown"
     >
         <slot />
     </div>

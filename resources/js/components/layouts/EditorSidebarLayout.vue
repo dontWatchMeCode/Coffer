@@ -76,7 +76,7 @@ const hasRecordTags = computed(() => props.recordTags !== null);
                 hasRecordLinks ||
                 hasRecordTags
             "
-            class="order-1 h-fit w-full shrink-0 overflow-hidden border-l bg-background/60 pl-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
+            class="order-1 h-fit w-full shrink-0 overflow-hidden bg-background/60 pl-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
         >
             <div
                 v-if="hasRecordTags && recordTags"

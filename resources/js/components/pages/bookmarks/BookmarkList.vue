@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { Bookmark, ExternalLink, Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import { Bookmark, ExternalLink, Plus, Trash2 } from 'lucide-vue-next';
 import EmptyState from '@/components/list/EmptyState.vue';
 import ListContainer from '@/components/list/ListContainer.vue';
 import ListItem from '@/components/list/ListItem.vue';
 import ListItemActions from '@/components/list/ListItemActions.vue';
 import ListItemIcon from '@/components/list/ListItemIcon.vue';
 import { Button } from '@/components/ui/button';
+import type { ViewMode } from '@/composables/useViewMode';
 import type { BookmarkItem } from '@/types';
 
 type Props = {
@@ -14,19 +15,67 @@ type Props = {
     navigateToBookmark: (bookmark: BookmarkItem) => void;
     openDeleteDialog: (bookmark: BookmarkItem) => void;
     openCreateDialog: () => void;
+    viewMode: ViewMode;
 };
 
 defineProps<Props>();
 </script>
 
 <template>
-    <ListContainer v-if="filteredBookmarks.length > 0">
+    <ListContainer v-if="filteredBookmarks.length > 0" :layout="viewMode">
         <ListItem
             v-for="bookmark in filteredBookmarks"
             :key="bookmark.id"
             @click="navigateToBookmark(bookmark)"
         >
-            <div class="flex items-center gap-4">
+            <div v-if="viewMode === 'grid'" class="flex flex-col gap-3">
+                <div class="flex items-start justify-between gap-3">
+                    <ListItemIcon>
+                        <Bookmark class="h-5 w-5 text-muted-foreground" />
+                    </ListItemIcon>
+                    <ListItemActions>
+                        <Button
+                            as="a"
+                            :href="bookmark.url"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="ghost"
+                            size="icon"
+                            class="h-8 w-8"
+                            aria-label="Open bookmark"
+                            @click.stop
+                        >
+                            <ExternalLink class="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            class="h-8 w-8"
+                            aria-label="Delete bookmark"
+                            @click.stop="openDeleteDialog(bookmark)"
+                        >
+                            <Trash2 class="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                    </ListItemActions>
+                </div>
+
+                <p class="line-clamp-2 text-base font-medium">
+                    {{ bookmark.title }}
+                </p>
+
+                <p
+                    v-if="bookmark.description"
+                    class="line-clamp-4 text-sm text-muted-foreground"
+                >
+                    {{ bookmark.description }}
+                </p>
+                <p v-else class="text-sm text-muted-foreground italic">
+                    {{ bookmark.url }}
+                </p>
+            </div>
+
+            <div v-else class="flex items-center gap-4">
                 <ListItemIcon>
                     <Bookmark class="h-5 w-5 text-muted-foreground" />
                 </ListItemIcon>
@@ -45,35 +94,28 @@ defineProps<Props>();
                 </div>
 
                 <ListItemActions>
-                    <a
+                    <Button
+                        as="a"
                         :href="bookmark.url"
                         target="_blank"
                         rel="noopener noreferrer"
-                        @click.stop
-                    >
-                        <Button variant="ghost" size="icon" class="h-8 w-8">
-                            <ExternalLink class="h-4 w-4" />
-                        </Button>
-                    </a>
-
-                    <Button
                         variant="ghost"
                         size="icon"
                         class="h-8 w-8"
-                        aria-label="Edit bookmark"
-                        @click.stop="navigateToBookmark(bookmark)"
+                        aria-label="Open bookmark"
+                        @click.stop
                     >
-                        <Pencil class="h-4 w-4" />
+                        <ExternalLink class="h-4 w-4" />
                     </Button>
 
                     <Button
                         variant="ghost"
                         size="icon"
-                        class="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        class="h-8 w-8"
                         aria-label="Delete bookmark"
                         @click.stop="openDeleteDialog(bookmark)"
                     >
-                        <Trash2 class="h-4 w-4" />
+                        <Trash2 class="h-4 w-4 text-muted-foreground" />
                     </Button>
                 </ListItemActions>
             </div>

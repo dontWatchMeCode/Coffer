@@ -236,3 +236,45 @@
     - Edit form added cancel button with proper state reset
 
 6. **Linked records section** — `border-t` restored on the linked records section for visual separation.
+
+### Session: View Mode Toggle & QA Loop (May 2026)
+
+1. **Created `useViewMode` composable** (`resources/js/composables/useViewMode.ts`) for shared list/card view mode state persisted to `localStorage` (`app-list-view-mode`).
+
+2. **Created `ViewModeToggle` component** (`resources/js/components/list/ViewModeToggle.vue`) to deduplicate toggle UI across pages.
+
+3. **Added view mode toggle to all list pages**: Collections, Notes, Contacts, Bookmarks.
+    - Grid view: card layout with icon, title, description, tags, updated date
+    - List view: horizontal row with icon, title, description, actions
+    - All pages share the same `localStorage` setting
+
+4. **Removed edit buttons** from Contacts and Bookmarks list items (navigation is via card click).
+
+5. **Bug fixes during QA loop**:
+    - `ListItem.vue` — fixed keyboard event bubbling (`event.target !== event.currentTarget` guard) so inner buttons don't trigger card navigation
+    - `BookmarkList.vue` — fixed invalid HTML nesting (`<a>` wrapping `<Button>` → `Button as="a"`)
+    - `collections/Show.vue` — same `<a>`/`<Button>` nesting fix for external links
+    - `BookmarkList.vue` — added missing `aria-label` on external-link buttons
+    - `notes/Index.vue` — added missing `aria-label` on delete buttons
+    - `collections/Show.vue` — added missing `aria-label` on external-link button
+    - `ContactList.vue` — extracted `filterEntries` helper to remove duplicated `.filter((e) => e.value.trim())`
+    - `contacts/Index.vue` & `bookmarks/Index.vue` — removed duplicate list component rendering (render list once, conditionally show toggle)
+
+6. **Refactors**:
+    - Reverted `EditorSidebarLayout.vue` null guard simplification — Vue TSC doesn't understand computed narrowing in templates
+    - Removed unused `List`/`LayoutGrid` imports from index pages after extracting `ViewModeToggle`
+    - `ViewModeToggle.vue` — switched to `defineModel` for cleaner v-model API
+    - `ListContainer.vue` — changed default layout from `'list'` to `'grid'` to match `useViewMode` default
+    - `ContactList.vue` — extracted `buildContactInfo` helper for shared contact info rendering
+
+7. **Additional QA loop fixes (passes 4–10)**:
+    - `CalendarList.vue` — fixed `isToday` comparison to handle ISO datetimes correctly
+    - `CalendarList.vue` — hoisted `todayDateOnly` computation outside event loop
+    - `CalendarList.vue` — used normalized `date` variable consistently instead of raw `event.date`
+    - `CalendarList.vue` — added `data-testid` attributes for testing consistency
+    - `CalendarList.vue` — removed redundant `description=""` from EmptyState
+    - `CalendarList.vue` — added event sorting within month groups
+    - `ContactList.vue` — added missing "No contact info yet" fallback in list view
+    - `useViewMode.ts` — hoisted `sharedViewMode` ref to module scope so all pages share state
+    - `useViewMode.ts` — added `typeof window` guards for SSR safety
+    - `ListItem.vue` — fixed `@keydown` handler (`props.clickable && handleKeydown` returned function ref but never called it)
