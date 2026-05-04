@@ -89,6 +89,10 @@ function isArrayField(field: string): boolean {
 }
 
 function formatEntryList(value: unknown): string[] {
+    if (value === null || value === undefined) {
+        return ['None'];
+    }
+
     if (!Array.isArray(value)) {
         return [typeof value === 'string' ? value : JSON.stringify(value)];
     }
@@ -276,9 +280,7 @@ function formatEntryList(value: unknown): string[] {
                                     class="space-y-1"
                                 >
                                     <div
-                                        v-if="
-                                            activity.old?.[field] !== undefined
-                                        "
+                                        v-if="activity.old?.[field] != null"
                                         class="space-y-0.5"
                                     >
                                         <div
@@ -295,8 +297,7 @@ function formatEntryList(value: unknown): string[] {
                                     </div>
                                     <div
                                         v-if="
-                                            activity.attributes?.[field] !==
-                                            undefined
+                                            activity.attributes?.[field] != null
                                         "
                                         class="space-y-0.5"
                                     >
@@ -316,9 +317,7 @@ function formatEntryList(value: unknown): string[] {
 
                                 <div v-else class="space-y-1">
                                     <div
-                                        v-if="
-                                            activity.old?.[field] !== undefined
-                                        "
+                                        v-if="activity.old?.[field] != null"
                                         class="text-xs text-muted-foreground line-through"
                                     >
                                         {{
@@ -329,7 +328,12 @@ function formatEntryList(value: unknown): string[] {
                                             )
                                         }}
                                     </div>
-                                    <div class="text-xs">
+                                    <div
+                                        v-if="
+                                            activity.attributes?.[field] != null
+                                        "
+                                        class="text-xs"
+                                    >
                                         {{
                                             getFieldValue(
                                                 activity,
