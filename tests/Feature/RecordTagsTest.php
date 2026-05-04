@@ -9,6 +9,7 @@ use App\Models\Tag;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
+use Spatie\Activitylog\Models\Activity;
 
 use function Pest\Laravel\actingAs;
 
@@ -249,4 +250,82 @@ test('a collection can be tagged through the shared tag endpoint', function () {
         ->assertCreated();
 
     expect($collection->fresh()->recordTags()->pluck('name')->all())->toBe(['planning']);
+});
+
+test('attaching a tag logs an activity on the record', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $note = Note::factory()->create(['team_id' => $team->id]);
+    $tag = Tag::factory()->create(['team_id' => $team->id, 'name' => 'Important']);
+
+    actingAs($user)
+        ->postJson(route('team.tags.store', ['current_team' => $team]), [
+            'from_type' => 'note',
+            'from_id' => $note->id,
+            'tag_id' => $tag->id,
+        ])
+        ->assertCreated();
+
+    $activities = Activity::where('subject_type', $note->getMorphClass())
+        ->where('subject_id', $note->id)
+        ->orderByDesc('id')
+        ->get();
+
+    expect($activities)->toHaveCount(2);
+    expect($activities->first()->event)->toBe('tagged');
+    expect($activities->first()->description)->toBe('Added tag Important');
+    expect($activities->first()->properties['relation_changes']['type'])->toBe('tag');
+    expect($activities->first()->properties['relation_changes']['action'])->toBe('added');
+});
+
+test('detaching a tag logs an activity on the record', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $note = Note::factory()->create(['team_id' => $team->id]);
+    $tag = Tag::factory()->create(['team_id' => $team->id, 'name' => 'Draft']);
+
+    $note->recordTags()->attach($tag->id);
+
+    actingAs($user)
+        ->deleteJson(route('team.tags.destroy', ['current_team' => $team]).'?'.http_build_query([
+            'from_type' => 'note',
+            'from_id' => $note->id,
+            'tag_id' => $tag->id,
+        ]))
+        ->assertOk();
+
+    $activities = Activity::where('subject_type', $note->getMorphClass())
+        ->where('subject_id', $note->id)
+        ->orderByDesc('id')
+        ->get();
+
+    expect($activities)->toHaveCount(2);
+    expect($activities->first()->event)->toBe('untagged');
+    expect($activities->first()->description)->toBe('Removed tag Draft');
+    expect($activities->first()->properties['relation_changes']['action'])->toBe('removed');
+});
+
+test('tag activity appears in activity history payload', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $note = Note::factory()->create(['team_id' => $team->id]);
+    $tag = Tag::factory()->create(['team_id' => $team->id, 'name' => 'Review']);
+
+    actingAs($user)
+        ->postJson(route('team.tags.store', ['current_team' => $team]), [
+            'from_type' => 'note',
+            'from_id' => $note->id,
+            'tag_id' => $tag->id,
+        ])
+        ->assertCreated();
+
+    actingAs($user)
+        ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('notes/Show')
+            ->has('activityHistory')
+            ->where('activityHistory.0.event', 'tagged')
+            ->where('activityHistory.0.description', 'Added tag Review')
+            ->has('activityHistory.0.relationChanges'));
 });

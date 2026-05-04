@@ -10,6 +10,7 @@ use App\Models\RecordLink;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
+use Spatie\Activitylog\Models\Activity;
 
 use function Pest\Laravel\actingAs;
 
@@ -420,4 +421,134 @@ test('record links are cleaned up when a linked model is deleted', function () {
     $contact->delete();
 
     expect(RecordLink::count())->toBe(0);
+});
+
+test('creating a link logs activity on both sides', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $task = Task::factory()->create(['team_id' => $team->id, 'project_id' => Project::factory()->create(['team_id' => $team->id])->id]);
+    $contact = Contact::factory()->create(['team_id' => $team->id, 'name' => 'John Doe']);
+
+    actingAs($user)
+        ->postJson(route('team.links.store', ['current_team' => $team]), [
+            'from_type' => 'task',
+            'from_id' => $task->id,
+            'to_type' => 'contact',
+            'to_id' => $contact->id,
+        ])
+        ->assertCreated();
+
+    $taskActivities = Activity::where('subject_type', $task->getMorphClass())
+        ->where('subject_id', $task->id)
+        ->orderByDesc('id')
+        ->get();
+    $contactActivities = Activity::where('subject_type', $contact->getMorphClass())
+        ->where('subject_id', $contact->id)
+        ->orderByDesc('id')
+        ->get();
+
+    expect($taskActivities)->toHaveCount(1);
+    expect($taskActivities->first()->event)->toBe('linked');
+    expect($taskActivities->first()->description)->toBe('Linked to contact: John Doe');
+    expect($taskActivities->first()->properties['relation_changes']['type'])->toBe('link');
+
+    expect($contactActivities)->toHaveCount(2);
+    expect($contactActivities->first()->event)->toBe('linked');
+    expect($contactActivities->first()->description)->toBe('Linked to task: '.$task->title);
+});
+
+test('destroying a link logs activity on both sides', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $task = Task::factory()->create(['team_id' => $team->id, 'project_id' => Project::factory()->create(['team_id' => $team->id])->id]);
+    $contact = Contact::factory()->create(['team_id' => $team->id, 'name' => 'Jane Doe']);
+
+    actingAs($user)
+        ->postJson(route('team.links.store', ['current_team' => $team]), [
+            'from_type' => 'task',
+            'from_id' => $task->id,
+            'to_type' => 'contact',
+            'to_id' => $contact->id,
+        ]);
+
+    actingAs($user)
+        ->deleteJson(route('team.links.destroy', ['current_team' => $team]).'?'.http_build_query([
+            'from_type' => 'task',
+            'from_id' => $task->id,
+            'to_type' => 'contact',
+            'to_id' => $contact->id,
+        ]))
+        ->assertOk();
+
+    $taskActivities = Activity::where('subject_type', $task->getMorphClass())
+        ->where('subject_id', $task->id)
+        ->orderByDesc('id')
+        ->get();
+    $contactActivities = Activity::where('subject_type', $contact->getMorphClass())
+        ->where('subject_id', $contact->id)
+        ->orderByDesc('id')
+        ->get();
+
+    expect($taskActivities)->toHaveCount(2);
+    expect($taskActivities->first()->event)->toBe('unlinked');
+    expect($taskActivities->first()->description)->toBe('Unlinked from contact: Jane Doe');
+
+    expect($contactActivities)->toHaveCount(3);
+    expect($contactActivities->first()->event)->toBe('unlinked');
+    expect($contactActivities->first()->description)->toBe('Unlinked from task: '.$task->title);
+});
+
+test('deleting a record logs unlink activity on the surviving side', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $task = Task::factory()->create(['team_id' => $team->id, 'project_id' => Project::factory()->create(['team_id' => $team->id])->id]);
+    $contact = Contact::factory()->create(['team_id' => $team->id, 'name' => 'Survivor']);
+
+    actingAs($user)
+        ->postJson(route('team.links.store', ['current_team' => $team]), [
+            'from_type' => 'task',
+            'from_id' => $task->id,
+            'to_type' => 'contact',
+            'to_id' => $contact->id,
+        ]);
+
+    $task->delete();
+
+    $contactActivities = Activity::where('subject_type', $contact->getMorphClass())
+        ->where('subject_id', $contact->id)
+        ->orderByDesc('id')
+        ->get();
+
+    expect($contactActivities)->toHaveCount(3);
+    expect($contactActivities->first()->event)->toBe('unlinked');
+    expect($contactActivities->first()->description)->toBe('Unlinked from task: '.$task->title);
+});
+
+test('link activity appears in activity history payload', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $note = Note::factory()->create(['team_id' => $team->id, 'title' => 'Note A']);
+    $contact = Contact::factory()->create(['team_id' => $team->id, 'name' => 'Contact B']);
+
+    actingAs($user)
+        ->postJson(route('team.links.store', ['current_team' => $team]), [
+            'from_type' => 'note',
+            'from_id' => $note->id,
+            'to_type' => 'contact',
+            'to_id' => $contact->id,
+        ]);
+
+    actingAs($user)
+        ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('notes/Show')
+            ->has('activityHistory')
+            ->where('activityHistory.0.event', 'linked')
+            ->where('activityHistory.0.description', 'Linked to contact: Contact B')
+            ->has('activityHistory.0.relationChanges'));
 });

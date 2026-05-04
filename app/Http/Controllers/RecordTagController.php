@@ -12,6 +12,7 @@ use App\Http\Requests\RecordTags\StoreRecordTagRequest;
 use App\Models\RecordLink;
 use App\Models\Tag;
 use App\Models\Team;
+use App\Services\ActivityLogger;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 
@@ -77,6 +78,7 @@ class RecordTagController extends Controller
         }
 
         $from->recordTags()->attach($tag->id);
+        ActivityLogger::logTagAttached($from, $tag);
 
         return response()->json([
             'message' => 'Tag added.',
@@ -102,6 +104,7 @@ class RecordTagController extends Controller
         }
 
         $from->recordTags()->detach($tag->id);
+        ActivityLogger::logTagDetached($from, $tag);
         Tag::deleteUnused([$tag->id]);
 
         return response()->json(['message' => 'Tag removed.']);

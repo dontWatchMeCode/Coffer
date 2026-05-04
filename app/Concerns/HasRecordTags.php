@@ -6,6 +6,7 @@ namespace App\Concerns;
 
 use App\Models\Tag;
 use App\Models\Team;
+use App\Services\ActivityLogger;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
@@ -74,6 +75,11 @@ trait HasRecordTags
             ->all();
 
         $changes = $this->recordTags()->sync($tagIds);
+
+        $addedNames = Tag::query()->whereIn('id', $changes['attached'])->pluck('name')->all();
+        $removedNames = Tag::query()->whereIn('id', $changes['detached'])->pluck('name')->all();
+
+        ActivityLogger::logTagsSynced($this, $addedNames, $removedNames);
 
         Tag::deleteUnused($changes['detached']);
     }

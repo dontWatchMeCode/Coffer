@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { History } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import ExcalidrawEditor from '@/components/excalidraw/ExcalidrawEditor.vue';
@@ -112,6 +113,18 @@ function formatEntryList(value: unknown): string[] {
         return JSON.stringify(entry);
     });
 }
+
+function relationChangeTargetUrl(
+    activity: ActivityHistoryItem,
+): string | undefined {
+    const target = activity.relationChanges?.target;
+
+    if (target && typeof target === 'object' && 'url' in target) {
+        return (target as Record<string, string>).url;
+    }
+
+    return undefined;
+}
 </script>
 
 <template>
@@ -167,7 +180,77 @@ function formatEntryList(value: unknown): string[] {
                         </div>
 
                         <div
-                            v-if="activity.changedFields.length > 0"
+                            v-if="activity.relationChanges"
+                            class="space-y-1.5"
+                        >
+                            <div class="text-sm">
+                                <Link
+                                    v-if="relationChangeTargetUrl(activity)"
+                                    :href="relationChangeTargetUrl(activity)"
+                                    class="font-medium text-foreground hover:underline"
+                                >
+                                    {{ activity.description }}
+                                </Link>
+                                <span v-else>
+                                    {{ activity.description }}
+                                </span>
+                            </div>
+
+                            <div
+                                v-if="
+                                    activity.relationChanges.action ===
+                                        'sync' &&
+                                    (activity.relationChanges.added?.length ||
+                                        activity.relationChanges.removed
+                                            ?.length)
+                                "
+                                class="space-y-1"
+                            >
+                                <div
+                                    v-if="
+                                        activity.relationChanges.added?.length
+                                    "
+                                    class="flex flex-wrap items-center gap-1"
+                                >
+                                    <span
+                                        class="text-[10px] font-medium text-muted-foreground uppercase"
+                                    >
+                                        Added
+                                    </span>
+                                    <span
+                                        v-for="name in activity.relationChanges
+                                            .added"
+                                        :key="name"
+                                        class="inline-flex items-center rounded-full border bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
+                                    >
+                                        {{ name }}
+                                    </span>
+                                </div>
+                                <div
+                                    v-if="
+                                        activity.relationChanges.removed?.length
+                                    "
+                                    class="flex flex-wrap items-center gap-1"
+                                >
+                                    <span
+                                        class="text-[10px] font-medium text-muted-foreground uppercase"
+                                    >
+                                        Removed
+                                    </span>
+                                    <span
+                                        v-for="name in activity.relationChanges
+                                            .removed"
+                                        :key="name"
+                                        class="inline-flex items-center rounded-full border bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive line-through"
+                                    >
+                                        {{ name }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            v-else-if="activity.changedFields.length > 0"
                             class="space-y-2"
                         >
                             <div
@@ -344,6 +427,13 @@ function formatEntryList(value: unknown): string[] {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div
+                            v-else-if="activity.description"
+                            class="text-sm text-muted-foreground"
+                        >
+                            {{ activity.description }}
                         </div>
                     </div>
                 </div>

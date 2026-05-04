@@ -7,6 +7,7 @@ namespace App\Concerns;
 use App\Contracts\LinkableRecord;
 use App\Models\RecordLink;
 use App\Models\Team;
+use App\Services\ActivityLogger;
 use App\Services\RecordLinkHelper;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -32,7 +33,12 @@ trait HasRecordLinks
             $teamId = $model->getAttribute('team_id');
 
             if ($teamId !== null) {
-                RecordLink::queryForModel($model->linkableType(), $model->getKey(), (int) $teamId)->delete();
+                $links = RecordLink::queryForModel($model->linkableType(), $model->getKey(), (int) $teamId)->get();
+
+                foreach ($links as $link) {
+                    ActivityLogger::logLinkCleanup($model, $link);
+                    $link->delete();
+                }
             }
         });
     }

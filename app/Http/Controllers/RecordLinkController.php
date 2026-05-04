@@ -9,6 +9,7 @@ use App\Http\Requests\RecordLinks\RecordLinkCandidatesRequest;
 use App\Http\Requests\RecordLinks\StoreRecordLinkRequest;
 use App\Models\RecordLink;
 use App\Models\Team;
+use App\Services\ActivityLogger;
 use App\Services\RecordSearchService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -77,13 +78,15 @@ class RecordLinkController extends Controller
         }
 
         try {
-            RecordLink::create([
+            $link = RecordLink::create([
                 'team_id' => $currentTeam->id,
                 'left_type' => $leftType,
                 'left_id' => $leftId,
                 'right_type' => $rightType,
                 'right_id' => $rightId,
             ]);
+
+            ActivityLogger::logLinkCreated($link);
         } catch (QueryException $queryException) {
             if ($queryException->getCode() === '23000') {
                 return response()->json(['message' => 'Link already exists.'], 422);
@@ -122,6 +125,7 @@ class RecordLinkController extends Controller
             return response()->json(['message' => 'Link not found.'], 404);
         }
 
+        ActivityLogger::logLinkDestroyed($link);
         $link->delete();
 
         return response()->json(['message' => 'Link removed.']);
