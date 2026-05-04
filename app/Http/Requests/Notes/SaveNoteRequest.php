@@ -8,6 +8,7 @@ use App\Http\Requests\Tasks\AuthorizesTeamResource;
 use App\Models\Note;
 use App\Models\Team;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SaveNoteRequest extends FormRequest
 {
@@ -33,7 +34,7 @@ class SaveNoteRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
@@ -46,6 +47,10 @@ class SaveNoteRequest extends FormRequest
             'body' => $sometimes
                 ? ['sometimes', 'nullable', 'string']
                 : ['nullable', 'string'],
+            'format' => ['sometimes', 'required', 'string', Rule::in(['text', 'excalidraw'])],
+            'drawing_data' => $sometimes
+                ? ['sometimes', 'nullable', 'array']
+                : ['nullable', 'array'],
         ];
     }
 }

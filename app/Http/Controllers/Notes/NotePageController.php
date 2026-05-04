@@ -26,7 +26,7 @@ class NotePageController extends Controller
             ->get();
 
         return Inertia::render('notes/Index', [
-            'notes' => $notes->map(fn (Note $note): array => $this->notePayload($note))->values()->all(),
+            'notes' => $notes->map(fn (Note $note): array => $this->notePayload($note, includeDrawingData: false))->values()->all(),
         ]);
     }
 
@@ -45,15 +45,21 @@ class NotePageController extends Controller
     }
 
     /**
-     * @return array{id: int, title: string, body: string|null, excerpt: string|null, tags: array<int, array{id: int, name: string, slug: string}>, createdAt: string|null, updatedAt: string|null}
+     * @return array{id: int, title: string, body: string|null, format: string, drawingData: array<string, mixed>|null, excerpt: string|null, tags: array<int, array{id: int, name: string, slug: string}>, createdAt: string|null, updatedAt: string|null}
      */
-    protected function notePayload(Note $note): array
+    protected function notePayload(Note $note, bool $includeDrawingData = true): array
     {
+        $format = $note->format ?? 'text';
+
         return [
             'id' => $note->id,
             'title' => $note->title,
             'body' => $note->body,
-            'excerpt' => str($note->body ?? '')->stripTags()->squish()->limit(180)->toString() ?: null,
+            'format' => $format,
+            'drawingData' => $includeDrawingData ? $note->drawing_data : null,
+            'excerpt' => $format === 'excalidraw'
+                ? 'Excalidraw drawing'
+                : (str($note->body ?? '')->stripTags()->squish()->limit(180)->toString() ?: null),
             'tags' => $note->formattedRecordTags(),
             'createdAt' => $note->created_at?->format(\DateTimeInterface::ATOM),
             'updatedAt' => $note->updated_at?->format(\DateTimeInterface::ATOM),

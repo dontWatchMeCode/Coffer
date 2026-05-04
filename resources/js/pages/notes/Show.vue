@@ -2,6 +2,7 @@
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import ExcalidrawEditor from '@/components/excalidraw/ExcalidrawEditor.vue';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
@@ -12,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { index as notesIndex, update as updateNote } from '@/routes/team/notes';
-import type { NoteItem, Team } from '@/types';
+import type { ExcalidrawScene, NoteFormat, NoteItem, Team } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -43,6 +44,10 @@ const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const isEditing = ref(false);
 const editTitle = ref(props.note.title);
 const editBody = ref(props.note.body ?? '');
+const editFormat = ref<NoteFormat>(props.note.format);
+const editDrawingData = ref<ExcalidrawScene | null>(
+    props.note.drawingData ?? null,
+);
 const isSubmitting = ref(false);
 const deleteDialogRef = ref<InstanceType<typeof DeleteNoteDialog> | null>(null);
 
@@ -52,6 +57,8 @@ watch(
         if (!isEditing.value) {
             editTitle.value = note.title;
             editBody.value = note.body ?? '';
+            editFormat.value = note.format;
+            editDrawingData.value = note.drawingData ?? null;
         }
     },
 );
@@ -59,6 +66,8 @@ watch(
 function cancelEdit(): void {
     editTitle.value = props.note.title;
     editBody.value = props.note.body ?? '';
+    editFormat.value = props.note.format;
+    editDrawingData.value = props.note.drawingData ?? null;
     isEditing.value = false;
 }
 
@@ -72,7 +81,9 @@ function submitEdit(): void {
         }).url,
         {
             title: editTitle.value,
+            format: editFormat.value,
             body: trimStoredRichText(editBody.value) || null,
+            drawing_data: editDrawingData.value,
         },
         {
             preserveScroll: true,
@@ -131,8 +142,15 @@ defineOptions({
                 <template #main>
                     <div v-if="!isEditing" class="space-y-4">
                         <div class="rounded-lg border bg-card p-4 shadow-sm">
+                            <ExcalidrawEditor
+                                v-if="note.format === 'excalidraw'"
+                                :key="`view-${note.id}-${note.updatedAt}`"
+                                :model-value="note.drawingData"
+                                :readonly="true"
+                                :name="note.title"
+                            />
                             <RichTextEditor
-                                v-if="note.body"
+                                v-else-if="note.body"
                                 :model-value="note.body"
                                 :editable="false"
                                 :on-activate="() => (isEditing = true)"
@@ -167,8 +185,44 @@ defineOptions({
                                 </div>
 
                                 <div class="grid gap-2">
-                                    <Label>Body</Label>
+                                    <Label>Format</Label>
+                                    <div class="flex flex-wrap gap-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="
+                                                editFormat === 'text'
+                                                    ? 'default'
+                                                    : 'outline'
+                                            "
+                                            @click="editFormat = 'text'"
+                                        >
+                                            Text
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="
+                                                editFormat === 'excalidraw'
+                                                    ? 'default'
+                                                    : 'outline'
+                                            "
+                                            @click="editFormat = 'excalidraw'"
+                                        >
+                                            Excalidraw
+                                        </Button>
+                                    </div>
+                                    <InputError :message="errors.format" />
+                                </div>
+
+                                <div class="grid gap-2">
+                                    <Label>{{
+                                        editFormat === 'text'
+                                            ? 'Body'
+                                            : 'Drawing'
+                                    }}</Label>
                                     <RichTextEditor
+                                        v-if="editFormat === 'text'"
                                         :model-value="editBody"
                                         :editable="true"
                                         placeholder="Write the note..."
@@ -176,7 +230,15 @@ defineOptions({
                                             (value) => (editBody = value)
                                         "
                                     />
+                                    <ExcalidrawEditor
+                                        v-else
+                                        v-model="editDrawingData"
+                                        :name="editTitle || note.title"
+                                    />
                                     <InputError :message="errors.body" />
+                                    <InputError
+                                        :message="errors.drawing_data"
+                                    />
                                 </div>
                             </div>
                         </div>

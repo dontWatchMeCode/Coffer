@@ -61,6 +61,8 @@ test('note show page can be rendered with links and tags payloads', function () 
             ->where('note.id', $note->id)
             ->where('note.title', 'Decision Log')
             ->where('note.body', '**Approved** launch plan')
+            ->where('note.format', 'text')
+            ->where('note.drawingData', null)
             ->has('recordLinks')
             ->has('recordTags'));
 });
@@ -83,6 +85,38 @@ test('a note can be created', function () {
 
     expect($note->title)->toBe('New Note');
     expect($note->body)->toBe('Body text');
+    expect($note->format)->toBe('text');
+});
+
+test('an excalidraw note can be created', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $drawingData = [
+        'type' => 'excalidraw',
+        'version' => 2,
+        'elements' => [
+            ['id' => 'rectangle-1', 'type' => 'rectangle'],
+        ],
+        'appState' => ['name' => 'Sketch'],
+        'files' => [],
+    ];
+
+    actingAs($user)
+        ->post(route('team.notes.store', ['current_team' => $team]), [
+            'title' => 'Sketch',
+            'format' => 'excalidraw',
+            'drawing_data' => $drawingData,
+        ])
+        ->assertRedirect(route('team.notes.show', [
+            'current_team' => $team,
+            'note' => Note::whereTitle('Sketch')->first()->id,
+        ]));
+
+    $note = Note::where('team_id', $team->id)->first();
+
+    expect($note->format)->toBe('excalidraw');
+    expect($note->drawing_data)->toBe($drawingData);
 });
 
 test('a note requires a title', function () {
@@ -117,6 +151,42 @@ test('a note can be updated', function () {
 
     expect($note->title)->toBe('New Title');
     expect($note->body)->toBe('New body');
+});
+
+test('a note can be updated to excalidraw format', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $note = Note::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Old Title',
+        'body' => 'Old body',
+    ]);
+
+    $drawingData = [
+        'type' => 'excalidraw',
+        'version' => 2,
+        'elements' => [
+            ['id' => 'arrow-1', 'type' => 'arrow'],
+        ],
+        'appState' => ['name' => 'New Sketch'],
+        'files' => [],
+    ];
+
+    actingAs($user)
+        ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
+            'title' => 'New Sketch',
+            'format' => 'excalidraw',
+            'body' => 'Old body',
+            'drawing_data' => $drawingData,
+        ])
+        ->assertRedirect(route('team.notes.show', ['current_team' => $team, 'note' => $note->id]));
+
+    $note = $note->fresh();
+
+    expect($note->title)->toBe('New Sketch');
+    expect($note->format)->toBe('excalidraw');
+    expect($note->drawing_data)->toBe($drawingData);
 });
 
 test('a note can be deleted', function () {

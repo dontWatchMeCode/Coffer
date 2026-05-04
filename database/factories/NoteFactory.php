@@ -22,6 +22,7 @@ class NoteFactory extends Factory
             'team_id' => Team::factory(),
             'title' => fake()->sentence(3),
             'body' => fake()->optional(0.8)->paragraph(),
+            'format' => 'text',
         ];
     }
 }

@@ -13,7 +13,10 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['team_id', 'title', 'body'])]
+/**
+ * @property array<string, mixed>|null $drawing_data
+ */
+#[Fillable(['team_id', 'title', 'body', 'format', 'drawing_data'])]
 class Note extends Model implements LinkableRecord
 {
     use BelongsToTeam;
@@ -23,4 +26,14 @@ class Note extends Model implements LinkableRecord
 
     use HasRecordLinks;
     use HasRecordTags;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'drawing_data' => 'array',
+        ];
+    }
 }
