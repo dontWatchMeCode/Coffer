@@ -170,3 +170,24 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Hide all Excalidraw UI chrome in readonly preview containers.
+ * Used by Activity History drawing previews and note readonly view.
+ */
+.excalidraw-preview .excalidraw .layer-ui__wrapper,
+.excalidraw-preview .excalidraw .App-bottom-bar,
+.excalidraw-preview .excalidraw .App-menu,
+.excalidraw-preview .excalidraw .App-menu_bottom,
+.excalidraw-preview .excalidraw .fixed-bottom-right {
+    display: none !important;
+}
+
+.excalidraw-preview .excalidraw .excalidraw__canvas {
+    position: absolute;
+    inset: 0;
+}
+
+/* Hide the library button in Excalidraw editor */
+.excalidraw .sidebar-trigger {
+    display: none !important;
+}

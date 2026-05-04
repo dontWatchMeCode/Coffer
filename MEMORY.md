@@ -277,4 +277,30 @@
     - `ContactList.vue` — added missing "No contact info yet" fallback in list view
     - `useViewMode.ts` — hoisted `sharedViewMode` ref to module scope so all pages share state
     - `useViewMode.ts` — added `typeof window` guards for SSR safety
-    - `ListItem.vue` — fixed `@keydown` handler (`props.clickable && handleKeydown` returned function ref but never called it)
+     - `ListItem.vue` — fixed `@keydown` handler (`props.clickable && handleKeydown` returned function ref but never called it)
+
+### Session: Activity History Feature (May 2026)
+
+1. **Spatie activitylog integration** on Note model with `logOnly`, `logOnlyDirty`, `dontLogEmptyChanges`.
+    - Created reusable `ProvidesActivityHistory` trait for building Inertia payloads.
+    - Filtered viewport-only `drawing_data` changes (scrollX/Y/zoom) so panning doesn't log false updates.
+
+2. **ActivityHistoryPanel Vue component** — Dialog modal showing event, timestamp, user, changed fields.
+    - Drawing fields: Before/After toggle buttons with active-state styling.
+    - Text fields: word-level diff via `diff` npm package in `TextDiff.vue`.
+    - Toggles reset when dialog closes via `watch(open)`.
+
+3. **Excalidraw focus/escape fixes**:
+    - Scoped Escape handler to overlay div (`@keydown.esc.stop.prevent`) instead of global document listener.
+    - Save/restore `document.activeElement` when opening/closing overlay so focus returns to Dialog (prevents PageHeader back-navigation bug).
+
+4. **UI layout adjustments**:
+    - Reordered sidebar: Updated at above Activity History with reduced spacing.
+    - Removed outer card border from notes view mode for both text and excalidraw.
+
+5. **QA loop findings**:
+    - `TextDiff.vue` missing `computed()` wrapper caused stale diffs on prop changes.
+    - `getOldValue`/`getNewValue` duplicated logic — consolidated to `getFieldValue(activity, field, side)`.
+    - `stripSelectionState` double-cloned appState — removed inner `cloneJson`, used shallow spread.
+    - `drawingDataEqualsIgnoringViewport` originally mutated arrays via `unset` — refactored to pure closure with `appState` guard.
+

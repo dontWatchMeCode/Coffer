@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Notes;
 
+use App\Concerns\ProvidesActivityHistory;
 use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
@@ -14,6 +15,7 @@ use Inertia\Response;
 
 class NotePageController extends Controller
 {
+    use ProvidesActivityHistory;
     use ProvidesRecordLinks;
     use ProvidesRecordTags;
 
@@ -41,6 +43,7 @@ class NotePageController extends Controller
             'note' => $this->notePayload($note),
             'recordLinks' => $this->recordLinksPayload($note, $currentTeam),
             'recordTags' => $this->recordTagsPayload($note, $currentTeam),
+            'activityHistory' => $this->activityHistoryPayload($note),
         ]);
     }
 

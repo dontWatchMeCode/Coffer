@@ -12,6 +12,8 @@ use Database\Factories\NoteFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * @property array<string, mixed>|null $drawing_data
@@ -26,6 +28,16 @@ class Note extends Model implements LinkableRecord
 
     use HasRecordLinks;
     use HasRecordTags;
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('notes')
+            ->logOnly(['title', 'body', 'format', 'drawing_data'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
 
     /**
      * @return array<string, string>

@@ -2,6 +2,7 @@
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import ExcalidrawEditor from '@/components/excalidraw/ExcalidrawEditor.vue';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
@@ -13,7 +14,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { index as notesIndex, update as updateNote } from '@/routes/team/notes';
-import type { ExcalidrawScene, NoteFormat, NoteItem, Team } from '@/types';
+import type {
+    ActivityHistoryItem,
+    ExcalidrawScene,
+    NoteFormat,
+    NoteItem,
+    Team,
+} from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -33,6 +40,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
+    activityHistory?: ActivityHistoryItem[];
 };
 
 const props = defineProps<Props>();
@@ -139,9 +147,22 @@ defineOptions({
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >
+                <template #sidebar-top>
+                    <ActivityHistoryPanel
+                        v-if="activityHistory"
+                        :activities="activityHistory"
+                    />
+                </template>
+
                 <template #main>
                     <div v-if="!isEditing" class="space-y-4">
-                        <div class="rounded-lg border bg-card p-4 shadow-sm">
+                        <div
+                            :class="
+                                note.format === 'excalidraw'
+                                    ? 'excalidraw-preview'
+                                    : ''
+                            "
+                        >
                             <ExcalidrawEditor
                                 v-if="note.format === 'excalidraw'"
                                 :key="`view-${note.id}-${note.updatedAt}`"

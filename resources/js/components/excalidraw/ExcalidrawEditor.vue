@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { Maximize2, Minimize2 } from 'lucide-vue-next';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { ExcalidrawCanvas } from '@/components/excalidraw/ExcalidrawCanvas';
 import { Button } from '@/components/ui/button';
+import { useAppearance } from '@/composables/useAppearance';
 import type { ExcalidrawScene } from '@/types';
 
 const props = withDefaults(
@@ -12,11 +14,13 @@ const props = withDefaults(
         modelValue?: ExcalidrawScene | null;
         readonly?: boolean;
         name?: string;
+        height?: string;
     }>(),
     {
         modelValue: null,
         readonly: false,
         name: 'Drawing',
+        height: '620px',
     },
 );
 
@@ -27,9 +31,13 @@ const emit = defineEmits<{
 const isExpanded = ref(false);
 const inlineContainer = ref<HTMLDivElement | null>(null);
 const expandedContainer = ref<HTMLDivElement | null>(null);
+const expandedWrapper = ref<HTMLDivElement | null>(null);
 let root: Root | null = null;
 let rootElement: HTMLDivElement | null = null;
 let canvasComponent: typeof ExcalidrawCanvas | null = null;
+let savedFocusElement: Element | null = null;
+
+const { resolvedAppearance } = useAppearance();
 
 function currentContainer(): HTMLDivElement | null {
     return isExpanded.value ? expandedContainer.value : inlineContainer.value;
@@ -63,28 +71,18 @@ async function renderCanvas(): Promise<void> {
     }
 
     root.render(
-        canvasComponent({
+        React.createElement(canvasComponent, {
             initialData: props.modelValue,
             name: props.name,
             readonly: props.readonly,
-            onChange: (scene) => emit('update:modelValue', scene),
+            theme: resolvedAppearance.value,
+            onChange: (scene: ExcalidrawScene) =>
+                emit('update:modelValue', scene),
         }),
     );
 }
 
-function handleKeydown(event: KeyboardEvent): void {
-    if (!isExpanded.value || event.key !== 'Escape') {
-        return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-    isExpanded.value = false;
-}
-
 onMounted(() => {
-    document.addEventListener('keydown', handleKeydown, { capture: true });
     void renderCanvas();
 });
 
@@ -97,11 +95,22 @@ watch(isExpanded, async (expanded) => {
     document.body.style.overflow = expanded ? 'hidden' : '';
 
     await nextTick();
+
+    if (expanded) {
+        savedFocusElement = document.activeElement;
+        expandedWrapper.value?.focus();
+    } else if (
+        savedFocusElement instanceof HTMLElement &&
+        savedFocusElement.isConnected
+    ) {
+        savedFocusElement.focus();
+        savedFocusElement = null;
+    }
+
     void renderCanvas();
 });
 
 onBeforeUnmount(() => {
-    document.removeEventListener('keydown', handleKeydown, { capture: true });
     document.body.style.overflow = '';
     root?.unmount();
     root = null;
@@ -112,7 +121,11 @@ onBeforeUnmount(() => {
 <template>
     <div
         v-show="!isExpanded"
-        class="relative h-[620px] min-h-[420px] overflow-hidden rounded-lg border bg-background"
+        class="relative overflow-hidden rounded-lg border bg-background"
+        :style="{
+            height: props.height,
+            minHeight: props.height === '620px' ? '420px' : undefined,
+        }"
     >
         <Button
             type="button"
@@ -132,7 +145,10 @@ onBeforeUnmount(() => {
     <Teleport to="body">
         <div
             v-if="isExpanded"
-            class="fixed inset-0 z-[9999] h-[100dvh] w-[100dvw] overflow-hidden bg-background"
+            ref="expandedWrapper"
+            tabindex="-1"
+            class="fixed inset-0 z-[9999] h-[100dvh] w-[100dvw] overflow-hidden bg-background outline-none"
+            @keydown.esc.stop.prevent="isExpanded = false"
         >
             <Button
                 type="button"

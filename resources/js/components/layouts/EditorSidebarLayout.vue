@@ -101,15 +101,11 @@ const hasRecordTags = computed(() => props.recordTags !== null);
             </div>
 
             <div
-                v-if="hasSidebarTop"
-                class="border-t py-6 first:border-t-0 first:pt-1"
-            >
-                <slot name="sidebar-top" />
-            </div>
-
-            <div
                 v-if="hasMeta"
-                class="space-y-2 border-t py-6 first:border-t-0 first:pt-1"
+                :class="[
+                    'space-y-2 border-t first:border-t-0 first:pt-1',
+                    hasSidebarTop ? 'pt-6 pb-2' : 'py-6',
+                ]"
             >
                 <div
                     v-if="createdBy"
@@ -128,6 +124,17 @@ const hasRecordTags = computed(() => props.recordTags !== null);
                         formatDateTime(updatedAt)
                     }}</span>
                 </div>
+            </div>
+
+            <div
+                v-if="hasSidebarTop"
+                :class="[
+                    'pb-6 first:border-t-0 first:pt-1',
+                    hasMeta ? 'pt-2' : 'py-6',
+                    !hasMeta && 'border-t',
+                ]"
+            >
+                <slot name="sidebar-top" />
             </div>
 
             <div

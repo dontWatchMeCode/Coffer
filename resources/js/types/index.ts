@@ -1,3 +1,4 @@
+export * from './activity-history';
 export * from './auth';
 export * from './bookmarks';
 export * from './calendar';
