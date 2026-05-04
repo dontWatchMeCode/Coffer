@@ -3,16 +3,9 @@ import type { PageProps } from '@inertiajs/core';
 import { router, usePage } from '@inertiajs/vue3';
 import { Plus, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import CreateDialog from '@/components/dialogs/CreateDialog.vue';
 import InputError from '@/components/form/InputError.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { emptyEntry, firstEntryValueError } from '@/lib/contacts';
@@ -106,203 +99,191 @@ defineExpose({
 </script>
 
 <template>
-    <Dialog :open="createDialogOpen" @update:open="handleCreateClose">
-        <DialogTrigger as-child>
+    <CreateDialog
+        :open="createDialogOpen"
+        title="Add Contact"
+        description="Add a new contact to your address book."
+        submit-label="Add Contact"
+        @update:open="handleCreateClose"
+        @submit="submitCreate"
+    >
+        <template #trigger>
             <slot name="trigger" />
-        </DialogTrigger>
+        </template>
 
-        <DialogContent class="max-h-[85vh] overflow-y-auto">
-            <form class="space-y-4" @submit.prevent="submitCreate">
-                <DialogHeader>
-                    <DialogTitle>Add Contact</DialogTitle>
-                    <DialogDescription>
-                        Add a new contact to your address book.
-                    </DialogDescription>
-                </DialogHeader>
+        <div class="grid gap-2">
+            <Label for="create-contact-name">Name</Label>
+            <Input
+                id="create-contact-name"
+                v-model="createName"
+                placeholder="John Doe"
+                required
+                autofocus
+            />
+            <InputError :message="errors.name" />
+        </div>
 
-                <div class="grid gap-2">
-                    <Label for="create-contact-name">Name</Label>
+        <div class="space-y-2">
+            <div class="flex items-center justify-between">
+                <Label>Phone Numbers</Label>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="h-6 cursor-pointer text-xs"
+                    @click="addCreatePhone"
+                >
+                    <Plus class="mr-1 h-3 w-3" />
+                    Add
+                </Button>
+            </div>
+            <div class="space-y-2">
+                <div
+                    v-for="(phone, idx) in createPhones"
+                    :key="idx"
+                    class="flex items-center gap-2"
+                >
                     <Input
-                        id="create-contact-name"
-                        v-model="createName"
-                        placeholder="John Doe"
-                        required
-                        autofocus
+                        v-model="phone.label"
+                        placeholder="Label"
+                        class="w-28 shrink-0"
                     />
-                    <InputError :message="errors.name" />
-                </div>
-
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <Label>Phone Numbers</Label>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            class="h-6 cursor-pointer text-xs"
-                            @click="addCreatePhone"
-                        >
-                            <Plus class="mr-1 h-3 w-3" />
-                            Add
-                        </Button>
-                    </div>
-                    <div class="space-y-2">
-                        <div
-                            v-for="(phone, idx) in createPhones"
-                            :key="idx"
-                            class="flex items-center gap-2"
-                        >
-                            <Input
-                                v-model="phone.label"
-                                placeholder="Label"
-                                class="w-28 shrink-0"
-                            />
-                            <Input
-                                v-model="phone.value"
-                                type="tel"
-                                placeholder="+1 555-0123"
-                            />
-                            <Button
-                                v-if="createPhones.length > 1"
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                                @click="removeCreatePhone(idx)"
-                            >
-                                <X class="h-3.5 w-3.5" />
-                            </Button>
-                        </div>
-                    </div>
-                    <InputError
-                        :message="firstEntryValueError(errors, 'phone_numbers')"
-                    />
-                </div>
-
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <Label>Email Addresses</Label>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            class="h-6 cursor-pointer text-xs"
-                            @click="addCreateEmail"
-                        >
-                            <Plus class="mr-1 h-3 w-3" />
-                            Add
-                        </Button>
-                    </div>
-                    <div class="space-y-2">
-                        <div
-                            v-for="(email, idx) in createEmails"
-                            :key="idx"
-                            class="flex items-center gap-2"
-                        >
-                            <Input
-                                v-model="email.label"
-                                placeholder="Label"
-                                class="w-28 shrink-0"
-                            />
-                            <Input
-                                v-model="email.value"
-                                type="email"
-                                placeholder="john@example.com"
-                            />
-                            <Button
-                                v-if="createEmails.length > 1"
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                                @click="removeCreateEmail(idx)"
-                            >
-                                <X class="h-3.5 w-3.5" />
-                            </Button>
-                        </div>
-                    </div>
-                    <InputError
-                        :message="
-                            firstEntryValueError(errors, 'email_addresses')
-                        "
-                    />
-                </div>
-
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <Label>Links</Label>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            class="h-6 cursor-pointer text-xs"
-                            @click="addCreateLink"
-                        >
-                            <Plus class="mr-1 h-3 w-3" />
-                            Add
-                        </Button>
-                    </div>
-                    <div class="space-y-2">
-                        <div
-                            v-for="(link, idx) in createLinks"
-                            :key="idx"
-                            class="flex items-center gap-2"
-                        >
-                            <Input
-                                v-model="link.label"
-                                placeholder="Label"
-                                class="w-28 shrink-0"
-                            />
-                            <Input
-                                v-model="link.value"
-                                type="url"
-                                placeholder="https://example.com"
-                            />
-                            <Button
-                                v-if="createLinks.length > 1"
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                                @click="removeCreateLink(idx)"
-                            >
-                                <X class="h-3.5 w-3.5" />
-                            </Button>
-                        </div>
-                    </div>
-                    <InputError
-                        :message="firstEntryValueError(errors, 'links')"
-                    />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="create-contact-address">Address</Label>
                     <Input
-                        id="create-contact-address"
-                        v-model="createAddress"
-                        placeholder="123 Main St, City, State"
+                        v-model="phone.value"
+                        type="tel"
+                        placeholder="+1 555-0123"
                     />
-                    <InputError :message="errors.address" />
+                    <Button
+                        v-if="createPhones.length > 1"
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
+                        @click="removeCreatePhone(idx)"
+                    >
+                        <X class="h-3.5 w-3.5" />
+                    </Button>
                 </div>
+            </div>
+            <InputError
+                :message="firstEntryValueError(errors, 'phone_numbers')"
+            />
+        </div>
 
-                <div class="grid gap-2">
-                    <Label for="create-contact-additional-info">
-                        Additional Info
-                    </Label>
-                    <textarea
-                        id="create-contact-additional-info"
-                        v-model="createAdditionalInfo"
-                        :class="taskInputLikeClass"
-                        rows="3"
-                        placeholder="Notes, company, job title..."
+        <div class="space-y-2">
+            <div class="flex items-center justify-between">
+                <Label>Email Addresses</Label>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="h-6 cursor-pointer text-xs"
+                    @click="addCreateEmail"
+                >
+                    <Plus class="mr-1 h-3 w-3" />
+                    Add
+                </Button>
+            </div>
+            <div class="space-y-2">
+                <div
+                    v-for="(email, idx) in createEmails"
+                    :key="idx"
+                    class="flex items-center gap-2"
+                >
+                    <Input
+                        v-model="email.label"
+                        placeholder="Label"
+                        class="w-28 shrink-0"
                     />
-                    <InputError :message="errors.additional_info" />
+                    <Input
+                        v-model="email.value"
+                        type="email"
+                        placeholder="john@example.com"
+                    />
+                    <Button
+                        v-if="createEmails.length > 1"
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
+                        @click="removeCreateEmail(idx)"
+                    >
+                        <X class="h-3.5 w-3.5" />
+                    </Button>
                 </div>
+            </div>
+            <InputError
+                :message="firstEntryValueError(errors, 'email_addresses')"
+            />
+        </div>
 
-                <div class="flex justify-end">
-                    <Button type="submit"> Add Contact </Button>
+        <div class="space-y-2">
+            <div class="flex items-center justify-between">
+                <Label>Links</Label>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="h-6 cursor-pointer text-xs"
+                    @click="addCreateLink"
+                >
+                    <Plus class="mr-1 h-3 w-3" />
+                    Add
+                </Button>
+            </div>
+            <div class="space-y-2">
+                <div
+                    v-for="(link, idx) in createLinks"
+                    :key="idx"
+                    class="flex items-center gap-2"
+                >
+                    <Input
+                        v-model="link.label"
+                        placeholder="Label"
+                        class="w-28 shrink-0"
+                    />
+                    <Input
+                        v-model="link.value"
+                        type="url"
+                        placeholder="https://example.com"
+                    />
+                    <Button
+                        v-if="createLinks.length > 1"
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
+                        @click="removeCreateLink(idx)"
+                    >
+                        <X class="h-3.5 w-3.5" />
+                    </Button>
                 </div>
-            </form>
-        </DialogContent>
-    </Dialog>
+            </div>
+            <InputError :message="firstEntryValueError(errors, 'links')" />
+        </div>
+
+        <div class="grid gap-2">
+            <Label for="create-contact-address">Address</Label>
+            <Input
+                id="create-contact-address"
+                v-model="createAddress"
+                placeholder="123 Main St, City, State"
+            />
+            <InputError :message="errors.address" />
+        </div>
+
+        <div class="grid gap-2">
+            <Label for="create-contact-additional-info">
+                Additional Info
+            </Label>
+            <textarea
+                id="create-contact-additional-info"
+                v-model="createAdditionalInfo"
+                :class="taskInputLikeClass"
+                rows="3"
+                placeholder="Notes, company, job title..."
+            />
+            <InputError :message="errors.additional_info" />
+        </div>
+    </CreateDialog>
 </template>

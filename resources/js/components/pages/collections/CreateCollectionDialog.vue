@@ -2,16 +2,8 @@
 import type { PageProps } from '@inertiajs/core';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import CreateDialog from '@/components/dialogs/CreateDialog.vue';
 import InputError from '@/components/form/InputError.vue';
-import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
@@ -59,50 +51,40 @@ defineExpose({
 </script>
 
 <template>
-    <Dialog :open="createDialogOpen" @update:open="handleCreateClose">
-        <DialogTrigger as-child>
+    <CreateDialog
+        :open="createDialogOpen"
+        title="Add Collection"
+        description="Group related records into a focused collection."
+        submit-label="Add Collection"
+        @update:open="handleCreateClose"
+        @submit="submitCreate"
+    >
+        <template #trigger>
             <slot name="trigger" />
-        </DialogTrigger>
+        </template>
 
-        <DialogContent class="max-h-[85vh] overflow-y-auto">
-            <form class="space-y-4" @submit.prevent="submitCreate">
-                <DialogHeader>
-                    <DialogTitle>Add Collection</DialogTitle>
-                    <DialogDescription>
-                        Group related records into a focused collection.
-                    </DialogDescription>
-                </DialogHeader>
+        <div class="grid gap-2">
+            <Label for="create-collection-title">Title</Label>
+            <Input
+                id="create-collection-title"
+                v-model="createTitle"
+                placeholder="Launch plan, hiring packet, research set..."
+                required
+                autofocus
+            />
+            <InputError :message="errors.title" />
+        </div>
 
-                <div class="grid gap-2">
-                    <Label for="create-collection-title">Title</Label>
-                    <Input
-                        id="create-collection-title"
-                        v-model="createTitle"
-                        placeholder="Launch plan, hiring packet, research set..."
-                        required
-                        autofocus
-                    />
-                    <InputError :message="errors.title" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="create-collection-description"
-                        >Description</Label
-                    >
-                    <textarea
-                        id="create-collection-description"
-                        v-model="createDescription"
-                        :class="taskInputLikeClass"
-                        rows="4"
-                        placeholder="What belongs in this collection?"
-                    />
-                    <InputError :message="errors.description" />
-                </div>
-
-                <div class="flex justify-end">
-                    <Button type="submit">Add Collection</Button>
-                </div>
-            </form>
-        </DialogContent>
-    </Dialog>
+        <div class="grid gap-2">
+            <Label for="create-collection-description">Description</Label>
+            <textarea
+                id="create-collection-description"
+                v-model="createDescription"
+                :class="taskInputLikeClass"
+                rows="4"
+                placeholder="What belongs in this collection?"
+            />
+            <InputError :message="errors.description" />
+        </div>
+    </CreateDialog>
 </template>

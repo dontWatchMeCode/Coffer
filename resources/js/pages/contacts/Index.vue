@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ListPlus, Search } from 'lucide-vue-next';
+import { ListPlus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import ContactList from '@/components/pages/contacts/ContactList.vue';
 import CreateContactDialog from '@/components/pages/contacts/CreateContactDialog.vue';
 import DeleteContactDialog from '@/components/pages/contacts/DeleteContactDialog.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useViewMode } from '@/composables/useViewMode';
 import {
     index as contactsIndex,
@@ -121,17 +121,11 @@ const { viewMode } = useViewMode();
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
             <div class="mb-4 flex items-center justify-end gap-3">
-                <div class="relative w-full max-w-sm">
-                    <Search
-                        class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                    />
-                    <Input
-                        v-model="searchQuery"
-                        data-testid="contacts-search-input"
-                        placeholder="Search contacts..."
-                        class="pl-9"
-                    />
-                </div>
+                <SearchInput
+                    v-model="searchQuery"
+                    data-testid="contacts-search-input"
+                    placeholder="Search contacts..."
+                />
             </div>
 
             <div class="space-y-4">

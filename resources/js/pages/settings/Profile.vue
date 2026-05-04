@@ -3,6 +3,7 @@ import { Form, Head, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/auth/DeleteUser.vue';
+import FormSuccessMessage from '@/components/form/FormSuccessMessage.vue';
 import InputError from '@/components/form/InputError.vue';
 import Heading from '@/components/page/Heading.vue';
 import { Button } from '@/components/ui/button';
@@ -105,19 +106,7 @@ const user = computed(() => page.props.auth.user);
                     >Save</Button
                 >
 
-                <Transition
-                    enter-active-class="transition ease-in-out"
-                    enter-from-class="opacity-0"
-                    leave-active-class="transition ease-in-out"
-                    leave-to-class="opacity-0"
-                >
-                    <p
-                        v-show="recentlySuccessful"
-                        class="text-sm text-neutral-600"
-                    >
-                        Saved.
-                    </p>
-                </Transition>
+                <FormSuccessMessage :show="recentlySuccessful" />
             </div>
         </Form>
     </div>

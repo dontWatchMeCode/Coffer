@@ -6,6 +6,7 @@ import SecurityController from '@/actions/App/Http/Controllers/Settings/Security
 import PasswordInput from '@/components/auth/PasswordInput.vue';
 import TwoFactorRecoveryCodes from '@/components/auth/TwoFactorRecoveryCodes.vue';
 import TwoFactorSetupModal from '@/components/auth/TwoFactorSetupModal.vue';
+import FormSuccessMessage from '@/components/form/FormSuccessMessage.vue';
 import InputError from '@/components/form/InputError.vue';
 import Heading from '@/components/page/Heading.vue';
 import { Button } from '@/components/ui/button';
@@ -114,19 +115,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                     Save password
                 </Button>
 
-                <Transition
-                    enter-active-class="transition ease-in-out"
-                    enter-from-class="opacity-0"
-                    leave-active-class="transition ease-in-out"
-                    leave-to-class="opacity-0"
-                >
-                    <p
-                        v-show="recentlySuccessful"
-                        class="text-sm text-neutral-600"
-                    >
-                        Saved.
-                    </p>
-                </Transition>
+                <FormSuccessMessage :show="recentlySuccessful" />
             </div>
         </Form>
     </div>

@@ -1,16 +1,9 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
+import { Trash2 } from 'lucide-vue-next';
 import { ref } from 'vue';
-import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import ConfirmDeleteDialog from '@/components/dialogs/ConfirmDeleteDialog.vue';
+import { DialogDescription } from '@/components/ui/dialog';
 import { destroy as destroyMember } from '@/routes/teams/members';
 import type { Team, TeamMember } from '@/types';
 
@@ -41,30 +34,24 @@ const removeMember = () => {
 </script>
 
 <template>
-    <Dialog :open="props.open" @update:open="emit('update:open', $event)">
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Remove team member</DialogTitle>
-                <DialogDescription>
-                    Are you sure you want to remove
-                    <strong>{{ props.member?.name }}</strong> from this team?
-                </DialogDescription>
-            </DialogHeader>
-
-            <DialogFooter class="gap-2">
-                <DialogClose as-child>
-                    <Button variant="secondary"> Cancel </Button>
-                </DialogClose>
-
-                <Button
-                    data-test="remove-member-confirm"
-                    variant="destructive"
-                    :disabled="processing"
-                    @click="removeMember"
-                >
-                    Remove member
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
+    <ConfirmDeleteDialog
+        :open="props.open"
+        title="Remove team member"
+        confirm-label="Remove member"
+        confirm-data-testid="remove-member-confirm"
+        :confirm-icon="Trash2"
+        :processing="processing"
+        @update:open="emit('update:open', $event)"
+        @confirm="removeMember"
+    >
+        <template #description>
+            <DialogDescription v-if="props.member">
+                Are you sure you want to remove
+                <span class="font-semibold text-foreground">{{
+                    props.member.name
+                }}</span>
+                from this team?
+            </DialogDescription>
+        </template>
+    </ConfirmDeleteDialog>
 </template>

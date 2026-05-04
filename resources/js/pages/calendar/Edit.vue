@@ -4,18 +4,13 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { CalendarDays, Clock, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import CalendarEventController from '@/actions/App/Http/Controllers/Calendar/CalendarEventController';
+import ConfirmDeleteDialog from '@/components/dialogs/ConfirmDeleteDialog.vue';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import DetailSection from '@/components/page/DetailSection.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
@@ -289,37 +284,21 @@ function submitEdit(): void {
             </EditorSidebarLayout>
         </div>
 
-        <Dialog v-model:open="deleteDialogOpen">
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Delete event</DialogTitle>
-                    <DialogDescription>
-                        Are you sure you want to delete
-                        <span class="font-semibold text-foreground">{{
-                            event.title
-                        }}</span
-                        >? This action cannot be undone.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="flex justify-end gap-2 pt-2">
-                    <Button
-                        variant="outline"
-                        class="cursor-pointer"
-                        @click="deleteDialogOpen = false"
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        class="cursor-pointer"
-                        @click="confirmDelete"
-                    >
-                        <Trash2 class="mr-1.5 h-3.5 w-3.5" />
-                        Delete
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+        <ConfirmDeleteDialog
+            v-model:open="deleteDialogOpen"
+            title="Delete event"
+            :confirm-icon="Trash2"
+            @confirm="confirmDelete"
+        >
+            <template #description>
+                <DialogDescription>
+                    Are you sure you want to delete
+                    <span class="font-semibold text-foreground">{{
+                        event.title
+                    }}</span
+                    >? This action cannot be undone.
+                </DialogDescription>
+            </template>
+        </ConfirmDeleteDialog>
     </div>
 </template>
