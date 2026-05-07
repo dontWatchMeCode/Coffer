@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Concerns;
 
 use App\Contracts\LinkableRecord;
+use App\Models\Note;
 use App\Models\RecordLink;
 use App\Models\Team;
 use App\Services\ActivityLogger;
@@ -128,16 +129,25 @@ trait HasRecordLinks
     /**
      * Format linked records for the frontend.
      *
-     * @return array<int, array{id: int, type: string, title: string, url: string, preview: string|null}>
+     * @return array<int, array{id: int, type: string, title: string, url: string, preview: string|null, format?: string|null, drawingData?: array<string, mixed>|null}>
      */
-    public function formattedLinkedRecords(Team $currentTeam): array
+    public function formattedLinkedRecords(Team $currentTeam, bool $includeDrawingData = false): array
     {
-        return $this->linkedRecords()->map(fn (Model $model): array => [
-            'id' => (int) $model->getKey(),
-            'type' => static::typeAliasFor($model::class),
-            'title' => RecordLinkHelper::titleForModel($model),
-            'url' => RecordLinkHelper::urlForModel($model, $currentTeam),
-            'preview' => RecordLinkHelper::previewForModel($model),
-        ])->values()->all();
+        return $this->linkedRecords()->map(function (Model $model) use ($currentTeam, $includeDrawingData): array {
+            $record = [
+                'id' => (int) $model->getKey(),
+                'type' => static::typeAliasFor($model::class),
+                'title' => RecordLinkHelper::titleForModel($model),
+                'url' => RecordLinkHelper::urlForModel($model, $currentTeam),
+                'preview' => RecordLinkHelper::previewForModel($model),
+            ];
+
+            if ($model instanceof Note) {
+                $record['format'] = $model->format;
+                $record['drawingData'] = $includeDrawingData ? $model->drawing_data : null;
+            }
+
+            return $record;
+        })->values()->all();
     }
 }

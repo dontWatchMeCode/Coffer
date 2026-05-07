@@ -157,23 +157,27 @@ function confirmDelete(): void {
                 </template>
 
                 <template #sidebar-top>
-                    <TaskSidebar
-                        :task="task"
-                        :project="project"
-                        :members="members"
-                        :statuses="statuses"
-                        :projects="projects"
-                        :current-team-slug="currentTeamSlug"
-                        :selected-project-id="selectedProjectId"
-                        :show-creator-meta="false"
-                        :show-actions="false"
-                        @update:selected-project-id="selectedProjectId = $event"
-                    />
+                    <div class="space-y-4">
+                        <ActivityHistoryPanel
+                            v-if="activityHistory"
+                            :activities="activityHistory"
+                        />
 
-                    <ActivityHistoryPanel
-                        v-if="activityHistory"
-                        :activities="activityHistory"
-                    />
+                        <TaskSidebar
+                            :task="task"
+                            :project="project"
+                            :members="members"
+                            :statuses="statuses"
+                            :projects="projects"
+                            :current-team-slug="currentTeamSlug"
+                            :selected-project-id="selectedProjectId"
+                            :show-creator-meta="false"
+                            :show-actions="false"
+                            @update:selected-project-id="
+                                selectedProjectId = $event
+                            "
+                        />
+                    </div>
                 </template>
             </EditorSidebarLayout>
         </div>

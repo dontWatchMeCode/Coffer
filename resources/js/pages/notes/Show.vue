@@ -138,11 +138,8 @@ defineOptions({
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="note.updatedAt"
-                :on-save="isEditing ? submitEdit : null"
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(note)"
-                save-label="Save changes"
                 delete-label="Delete note"
-                :save-disabled="isSubmitting"
                 :delete-disabled="isSubmitting"
                 :record-links="recordLinks"
                 :record-tags="recordTags"

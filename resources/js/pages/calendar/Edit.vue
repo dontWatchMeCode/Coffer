@@ -47,7 +47,6 @@ const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const deleteDialogOpen = ref(false);
 const isEditing = ref(false);
 const isSubmitting = ref(false);
-const formRef = ref<HTMLFormElement | null>(null);
 const editTitle = ref(props.event.title);
 const editDescription = ref(props.event.description ?? '');
 const editDate = ref(props.event.date ?? '');
@@ -161,11 +160,8 @@ function submitEdit(): void {
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="event.updatedAt"
-                :on-save="isEditing ? () => formRef?.requestSubmit() : null"
                 :on-delete="() => (deleteDialogOpen = true)"
-                save-label="Save changes"
                 delete-label="Delete event"
-                :save-disabled="isSubmitting"
                 :delete-disabled="isSubmitting"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
@@ -225,12 +221,7 @@ function submitEdit(): void {
                         </div>
                     </div>
 
-                    <form
-                        v-else
-                        ref="formRef"
-                        class="space-y-5"
-                        @submit.prevent="submitEdit"
-                    >
+                    <form v-else class="space-y-5" @submit.prevent="submitEdit">
                         <div class="grid gap-2">
                             <Label for="edit-event-title">Title</Label>
                             <Input

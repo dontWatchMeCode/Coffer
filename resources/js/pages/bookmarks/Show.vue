@@ -72,7 +72,6 @@ const editDescription = ref(props.bookmark.description ?? '');
 const editNotes = ref(props.bookmark.notes ?? '');
 const editIsArchived = ref(props.bookmark.isArchived);
 const isSubmitting = ref(false);
-const formRef = ref<HTMLFormElement | null>(null);
 
 watch(
     () => props.bookmark,
@@ -144,11 +143,8 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="bookmark.updatedAt"
-                :on-save="isEditing ? () => formRef?.requestSubmit() : null"
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(bookmark)"
-                save-label="Save changes"
                 delete-label="Delete bookmark"
-                :save-disabled="isSubmitting"
                 :delete-disabled="isSubmitting"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
@@ -216,12 +212,7 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
                         </div>
                     </div>
 
-                    <form
-                        v-else
-                        ref="formRef"
-                        class="space-y-5"
-                        @submit.prevent="submitEdit"
-                    >
+                    <form v-else class="space-y-5" @submit.prevent="submitEdit">
                         <div class="grid gap-2">
                             <Label for="edit-bookmark-title">Title</Label>
                             <Input

@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Note;
 use App\Models\RecordCollection;
+use App\Models\RecordLink;
 use App\Models\Team;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -51,6 +53,25 @@ test('collection show page can be rendered with links and tags payloads', functi
         'team_id' => $team->id,
         'title' => 'Decision Set',
     ]);
+    $note = Note::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Sketch note',
+        'format' => 'excalidraw',
+        'drawing_data' => [
+            'type' => 'excalidraw',
+            'elements' => [
+                ['id' => 'box-1', 'type' => 'rectangle'],
+            ],
+        ],
+    ]);
+
+    RecordLink::create([
+        'team_id' => $team->id,
+        'left_type' => $collection->linkableType(),
+        'left_id' => $collection->id,
+        'right_type' => $note->linkableType(),
+        'right_id' => $note->id,
+    ]);
 
     actingAs($user)
         ->get(route('team.collections.show', ['current_team' => $team, 'collection' => $collection]))
@@ -60,7 +81,11 @@ test('collection show page can be rendered with links and tags payloads', functi
             ->where('collection.id', $collection->id)
             ->where('collection.title', 'Decision Set')
             ->has('recordLinks')
-            ->has('recordTags'));
+            ->where('recordLinks.links.0.type', 'note')
+            ->where('recordLinks.links.0.format', 'excalidraw')
+            ->where('recordLinks.links.0.drawingData.type', 'excalidraw')
+            ->has('recordTags')
+            ->has('activityHistory'));
 });
 
 test('a collection can be created', function () {

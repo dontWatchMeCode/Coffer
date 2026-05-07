@@ -13,12 +13,14 @@ const props = withDefaults(
     defineProps<{
         modelValue?: ExcalidrawScene | null;
         readonly?: boolean;
+        hideUi?: boolean;
         name?: string;
         height?: string;
     }>(),
     {
         modelValue: null,
         readonly: false,
+        hideUi: false,
         name: 'Drawing',
         height: '620px',
     },
@@ -75,6 +77,7 @@ async function renderCanvas(): Promise<void> {
             initialData: props.modelValue,
             name: props.name,
             readonly: props.readonly,
+            hideUi: props.hideUi,
             theme: resolvedAppearance.value,
             onChange: (scene: ExcalidrawScene) =>
                 emit('update:modelValue', scene),
@@ -87,7 +90,7 @@ onMounted(() => {
 });
 
 watch(
-    () => [props.readonly, props.name],
+    () => [props.readonly, props.hideUi, props.name],
     () => void renderCanvas(),
 );
 
@@ -122,6 +125,7 @@ onBeforeUnmount(() => {
     <div
         v-show="!isExpanded"
         class="relative overflow-hidden rounded-lg border bg-background"
+        :class="{ 'excalidraw-editor--hide-ui': props.hideUi }"
         :style="{
             height: props.height,
             minHeight: props.height === '620px' ? '420px' : undefined,
@@ -148,6 +152,7 @@ onBeforeUnmount(() => {
             ref="expandedWrapper"
             tabindex="-1"
             class="fixed inset-0 z-[9999] h-[100dvh] w-[100dvw] overflow-hidden bg-background outline-none"
+            :class="{ 'excalidraw-editor--hide-ui': props.hideUi }"
             @keydown.esc.stop.prevent="isExpanded = false"
         >
             <Button
@@ -166,3 +171,11 @@ onBeforeUnmount(() => {
         </div>
     </Teleport>
 </template>
+
+<style scoped>
+.excalidraw-editor--hide-ui :deep(.App-bottom-bar),
+.excalidraw-editor--hide-ui :deep(.FixedSideContainer),
+.excalidraw-editor--hide-ui :deep(.layer-ui__wrapper) {
+    display: none !important;
+}
+</style>

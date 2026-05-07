@@ -319,6 +319,36 @@ test('collections can be linked to other records', function () {
     expect($noteLinks[0]['preview'])->toBe('Collection preview');
 });
 
+test('linked record drawing data is opt in', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $collection = RecordCollection::factory()->create(['team_id' => $team->id]);
+    $note = Note::factory()->create([
+        'team_id' => $team->id,
+        'format' => 'excalidraw',
+        'drawing_data' => [
+            'type' => 'excalidraw',
+            'elements' => [
+                ['id' => 'box-1', 'type' => 'rectangle'],
+            ],
+        ],
+    ]);
+
+    RecordLink::create([
+        'team_id' => $team->id,
+        'left_type' => $collection->linkableType(),
+        'left_id' => $collection->id,
+        'right_type' => $note->linkableType(),
+        'right_id' => $note->id,
+    ]);
+
+    actingAs($user);
+
+    expect($collection->formattedLinkedRecords($team)[0]['drawingData'])->toBeNull();
+    expect($collection->formattedLinkedRecords($team, includeDrawingData: true)[0]['drawingData'])->toBe($note->drawing_data);
+});
+
 test('unknown candidate search prefix is treated as literal query', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

@@ -89,7 +89,6 @@ const editLinks = ref<ContactEntry[]>(
 const editAddress = ref(props.contact.address ?? '');
 const editAdditionalInfo = ref(props.contact.additionalInfo ?? '');
 const isSubmitting = ref(false);
-const formRef = ref<HTMLFormElement | null>(null);
 
 watch(
     () => props.contact,
@@ -201,11 +200,8 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="contact.updatedAt"
-                :on-save="isEditing ? () => formRef?.requestSubmit() : null"
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(contact)"
-                save-label="Save changes"
                 delete-label="Delete contact"
-                :save-disabled="isSubmitting"
                 :delete-disabled="isSubmitting"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
@@ -233,12 +229,7 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
                         </div>
                     </div>
 
-                    <form
-                        v-else
-                        ref="formRef"
-                        class="space-y-5"
-                        @submit.prevent="submitEdit"
-                    >
+                    <form v-else class="space-y-5" @submit.prevent="submitEdit">
                         <div class="grid gap-2">
                             <Label for="edit-contact-name">Name</Label>
                             <Input

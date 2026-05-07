@@ -21,9 +21,9 @@ interface LinkableRecord
     public function recordLinkContext(): array;
 
     /**
-     * @return array<int, array{id: int, type: string, title: string, url: string, preview: string|null}>
+     * @return array<int, array{id: int, type: string, title: string, url: string, preview: string|null, format?: string|null, drawingData?: array<string, mixed>|null}>
      */
-    public function formattedLinkedRecords(Team $currentTeam): array;
+    public function formattedLinkedRecords(Team $currentTeam, bool $includeDrawingData = false): array;
 
     /**
      * @return array<int, array{id: int, name: string, slug: string}>

@@ -12,12 +12,12 @@ trait ProvidesRecordLinks
     /**
      * Build the record links payload for Inertia.
      *
-     * @return array{links: array<int, array{id: int, type: string, title: string, url: string, preview: string|null}>, context: array{type: string, id: int, title: string}, endpoints: array{candidates: string, store: string, destroy: string}}
+     * @return array{links: array<int, array{id: int, type: string, title: string, url: string, preview: string|null, format?: string|null, drawingData?: array<string, mixed>|null}>, context: array{type: string, id: int, title: string}, endpoints: array{candidates: string, store: string, destroy: string}}
      */
-    protected function recordLinksPayload(LinkableRecord $model, Team $currentTeam): array
+    protected function recordLinksPayload(LinkableRecord $model, Team $currentTeam, bool $includeDrawingData = false): array
     {
         return [
-            'links' => $model->formattedLinkedRecords($currentTeam),
+            'links' => $model->formattedLinkedRecords($currentTeam, $includeDrawingData),
             'context' => $model->recordLinkContext(),
             'endpoints' => [
                 'candidates' => route('team.links.candidates', ['current_team' => $currentTeam]),

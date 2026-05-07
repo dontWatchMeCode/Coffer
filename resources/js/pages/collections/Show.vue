@@ -3,6 +3,8 @@ import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ExternalLink, Layers3, Pencil } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
+import ExcalidrawEditor from '@/components/excalidraw/ExcalidrawEditor.vue';
 import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import EmptyState from '@/components/list/EmptyState.vue';
@@ -21,7 +23,7 @@ import {
     index as collectionsIndex,
     update as updateCollection,
 } from '@/routes/team/collections';
-import type { CollectionItem, Team } from '@/types';
+import type { ActivityHistoryItem, CollectionItem, Team } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -41,6 +43,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
+    activityHistory?: ActivityHistoryItem[];
 };
 
 const props = defineProps<Props>();
@@ -56,6 +59,19 @@ const isSubmitting = ref(false);
 const deleteDialogRef = ref<InstanceType<typeof DeleteCollectionDialog> | null>(
     null,
 );
+
+const groupedRecordLinks = computed(() => {
+    const groups = new Map<string, LinkRecord[]>();
+
+    for (const link of props.recordLinks?.links ?? []) {
+        groups.set(link.type, [...(groups.get(link.type) ?? []), link]);
+    }
+
+    return Array.from(groups, ([type, links]) => ({ type, links })).sort(
+        (a, b) =>
+            recordTypeHeading(a.type).localeCompare(recordTypeHeading(b.type)),
+    );
+});
 
 watch(
     () => props.collection,
@@ -101,6 +117,26 @@ function formatType(type: string): string {
     return type.replaceAll('_', ' ');
 }
 
+function recordTypeHeading(type: string): string {
+    const label = formatType(type).replace(/\b\w/g, (char) =>
+        char.toUpperCase(),
+    );
+
+    return label.endsWith('s') ? label : `${label}s`;
+}
+
+function recordTypeBadge(type: string): string {
+    const labels: Record<string, string> = {
+        bookmark: 'BMK',
+        calendar_event: 'CAL',
+        contact: 'CNT',
+        note: 'NOTE',
+        task: 'TASK',
+    };
+
+    return labels[type] ?? type.slice(0, 4).toUpperCase();
+}
+
 defineOptions({
     layout: (layoutProps: {
         currentTeam?: Team | null;
@@ -134,15 +170,19 @@ defineOptions({
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="collection.updatedAt"
-                :on-save="isEditing ? submitEdit : null"
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(collection)"
-                save-label="Save changes"
                 delete-label="Delete collection"
-                :save-disabled="isSubmitting"
                 :delete-disabled="isSubmitting"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >
+                <template #sidebar-top>
+                    <ActivityHistoryPanel
+                        v-if="activityHistory"
+                        :activities="activityHistory"
+                    />
+                </template>
+
                 <template #main>
                     <div class="space-y-6">
                         <div v-if="!isEditing" class="space-y-4">
@@ -230,64 +270,120 @@ defineOptions({
                                 </div>
                             </div>
 
-                            <ListContainer v-if="recordLinks?.links.length">
-                                <ListItem
-                                    v-for="link in recordLinks.links"
-                                    :key="`${link.type}-${link.id}`"
-                                    :clickable="!!link.url"
-                                    :aria-label="
-                                        link.url
-                                            ? `Open ${formatType(link.type)}: ${link.title}`
-                                            : undefined
-                                    "
-                                    @click="link.url && router.visit(link.url)"
+                            <div
+                                v-if="groupedRecordLinks.length"
+                                class="space-y-6"
+                            >
+                                <section
+                                    v-for="group in groupedRecordLinks"
+                                    :key="group.type"
+                                    class="space-y-2"
                                 >
-                                    <div class="flex items-center gap-4">
-                                        <ListItemIcon size="sm" rounded="lg">
-                                            <span
-                                                class="text-[10px] font-medium text-muted-foreground uppercase"
-                                            >
-                                                {{ formatType(link.type) }}
-                                            </span>
-                                        </ListItemIcon>
+                                    <h3
+                                        class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                                    >
+                                        {{ recordTypeHeading(group.type) }}
+                                    </h3>
 
-                                        <div class="min-w-0 flex-1">
-                                            <p class="truncate font-medium">
-                                                {{ link.title }}
-                                            </p>
-                                            <p
-                                                v-if="link.preview"
-                                                class="line-clamp-2 text-sm text-muted-foreground"
+                                    <ListContainer layout="list">
+                                        <ListItem
+                                            v-for="link in group.links"
+                                            :key="`${link.type}-${link.id}`"
+                                            :clickable="!!link.url"
+                                            :aria-label="
+                                                link.url
+                                                    ? `Open ${formatType(link.type)}: ${link.title}`
+                                                    : undefined
+                                            "
+                                            @click="
+                                                link.url &&
+                                                router.visit(link.url)
+                                            "
+                                        >
+                                            <div
+                                                class="flex items-center gap-4"
                                             >
-                                                {{ link.preview }}
-                                            </p>
-                                            <p
-                                                v-else
-                                                class="text-sm text-muted-foreground italic"
-                                            >
-                                                No preview available.
-                                            </p>
-                                        </div>
+                                                <ListItemIcon
+                                                    size="sm"
+                                                    rounded="lg"
+                                                >
+                                                    <span
+                                                        class="max-w-full truncate px-1 text-[9px] font-medium text-muted-foreground uppercase"
+                                                    >
+                                                        {{
+                                                            recordTypeBadge(
+                                                                link.type,
+                                                            )
+                                                        }}
+                                                    </span>
+                                                </ListItemIcon>
 
-                                        <ListItemActions>
-                                            <Button
-                                                v-if="link.url"
-                                                as="a"
-                                                :href="link.url"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                variant="ghost"
-                                                size="icon"
-                                                class="h-8 w-8"
-                                                aria-label="Open link"
-                                                @click.stop
-                                            >
-                                                <ExternalLink class="h-4 w-4" />
-                                            </Button>
-                                        </ListItemActions>
-                                    </div>
-                                </ListItem>
-                            </ListContainer>
+                                                <div class="min-w-0 flex-1">
+                                                    <p
+                                                        class="truncate font-medium"
+                                                    >
+                                                        {{ link.title }}
+                                                    </p>
+                                                    <p
+                                                        v-if="
+                                                            link.preview &&
+                                                            link.format !==
+                                                                'excalidraw'
+                                                        "
+                                                        class="line-clamp-2 text-sm text-muted-foreground"
+                                                    >
+                                                        {{ link.preview }}
+                                                    </p>
+                                                    <div
+                                                        v-else-if="
+                                                            link.format ===
+                                                                'excalidraw' &&
+                                                            link.drawingData
+                                                        "
+                                                        class="mt-3 overflow-hidden rounded-lg border bg-background"
+                                                        @click.stop
+                                                    >
+                                                        <ExcalidrawEditor
+                                                            :model-value="
+                                                                link.drawingData
+                                                            "
+                                                            :readonly="true"
+                                                            :hide-ui="true"
+                                                            :name="link.title"
+                                                            height="180px"
+                                                        />
+                                                    </div>
+                                                    <p
+                                                        v-else
+                                                        class="text-sm text-muted-foreground italic"
+                                                    >
+                                                        No preview available.
+                                                    </p>
+                                                </div>
+
+                                                <ListItemActions>
+                                                    <Button
+                                                        v-if="link.url"
+                                                        as="a"
+                                                        :href="link.url"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        class="h-8 w-8"
+                                                        aria-label="Open link"
+                                                        @click.stop
+                                                    >
+                                                        <ExternalLink
+                                                            class="h-4 w-4"
+                                                        />
+                                                    </Button>
+                                                </ListItemActions>
+                                            </div>
+                                        </ListItem>
+                                    </ListContainer>
+                                </section>
+                            </div>
 
                             <EmptyState
                                 v-else

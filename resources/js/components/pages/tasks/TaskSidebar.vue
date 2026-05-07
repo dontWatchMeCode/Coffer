@@ -103,9 +103,33 @@ watch(
     },
 );
 
-const statusMeta = computed(() => {
-    return getTaskStatusMeta(selectedStatus.value);
-});
+const statusMeta = computed(() => getTaskStatusMeta(selectedStatus.value));
+
+const progressMarkers = Array.from({ length: 11 }, (_, index) => index * 10);
+
+function progressMarkerPosition(marker: number): string {
+    if (marker === 0) {
+        return '0.1875rem';
+    }
+
+    if (marker === 100) {
+        return 'calc(100% - 0.1875rem)';
+    }
+
+    return `${marker}%`;
+}
+
+function progressFillWidth(progress: number): string {
+    if (progress <= 0) {
+        return '0%';
+    }
+
+    if (progress >= 100) {
+        return '100%';
+    }
+
+    return `calc(${progress}% + 0.1875rem)`;
+}
 
 const taskReloadOnly = ['task'];
 
@@ -265,7 +289,6 @@ function deleteTask(): void {
 
 <template>
     <div class="space-y-4 select-none">
-        <!-- Assignees -->
         <div>
             <h3
                 class="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
@@ -328,7 +351,6 @@ function deleteTask(): void {
 
         <Separator v-if="showCreatorMeta" />
 
-        <!-- Status -->
         <div>
             <h3
                 class="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
@@ -376,7 +398,6 @@ function deleteTask(): void {
 
         <Separator v-if="showCreatorMeta" />
 
-        <!-- Progress -->
         <div>
             <h3
                 class="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
@@ -384,31 +405,32 @@ function deleteTask(): void {
                 Progress
             </h3>
             <div class="mb-3 flex items-center gap-2">
-                <div class="group relative flex-1">
-                    <div class="h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                    class="group relative h-2 flex-1 overflow-hidden rounded-full bg-muted"
+                >
+                    <div
+                        class="pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity group-hover:opacity-100"
+                    >
                         <div
-                            class="h-full rounded-full bg-primary transition-all"
-                            :style="{
-                                width: `${selectedProgress}%`,
-                            }"
+                            v-for="marker in progressMarkers"
+                            :key="marker"
+                            class="absolute top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/20"
+                            :style="{ left: progressMarkerPosition(marker) }"
                         />
                     </div>
                     <div
-                        class="pointer-events-none absolute inset-0 top-0 flex items-center justify-between opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                        <div
-                            v-for="n in 11"
-                            :key="n"
-                            class="h-1.5 w-1.5 rounded-full bg-foreground/20"
-                        />
-                    </div>
+                        class="absolute inset-y-0 left-0 z-10 rounded-full bg-primary transition-all"
+                        :style="{
+                            width: progressFillWidth(selectedProgress),
+                        }"
+                    />
                     <input
                         :value="selectedProgress"
                         type="range"
                         min="0"
                         max="100"
                         step="10"
-                        class="absolute inset-0 h-2 w-full cursor-pointer appearance-none bg-transparent opacity-0"
+                        class="absolute inset-0 z-20 h-2 w-full cursor-pointer appearance-none bg-transparent opacity-0"
                         @input="
                             selectedProgress = Number(
                                 ($event.target as HTMLInputElement).value,
@@ -423,7 +445,7 @@ function deleteTask(): void {
                         "
                     />
                 </div>
-                <span class="w-10 text-right text-sm"
+                <span class="w-10 text-right text-sm leading-none"
                     >{{ selectedProgress }}%</span
                 >
             </div>
@@ -431,7 +453,6 @@ function deleteTask(): void {
 
         <Separator v-if="showCreatorMeta || showActions" />
 
-        <!-- Creator -->
         <div v-if="showCreatorMeta" class="space-y-3">
             <div class="flex justify-between text-sm">
                 <span class="text-muted-foreground">Created by</span>
@@ -441,7 +462,6 @@ function deleteTask(): void {
 
         <Separator v-if="showCreatorMeta" />
 
-        <!-- Project + schedule -->
         <div class="space-y-3">
             <div class="grid gap-1.5">
                 <Label
@@ -482,7 +502,6 @@ function deleteTask(): void {
 
         <Separator v-if="showActions" />
 
-        <!-- Actions -->
         <div v-if="showActions" class="space-y-2">
             <Button
                 variant="outline"

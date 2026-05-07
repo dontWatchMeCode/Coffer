@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Collections;
 
+use App\Concerns\ProvidesActivityHistory;
 use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
@@ -15,6 +16,7 @@ use Inertia\Response;
 
 class CollectionPageController extends Controller
 {
+    use ProvidesActivityHistory;
     use ProvidesRecordLinks;
     use ProvidesRecordTags;
 
@@ -40,8 +42,9 @@ class CollectionPageController extends Controller
 
         return Inertia::render('collections/Show', [
             'collection' => $this->collectionPayload($collection),
-            'recordLinks' => $this->recordLinksPayload($collection, $currentTeam),
+            'recordLinks' => $this->recordLinksPayload($collection, $currentTeam, includeDrawingData: true),
             'recordTags' => $this->recordTagsPayload($collection, $currentTeam),
+            'activityHistory' => $this->activityHistoryPayload($collection),
         ]);
     }
 

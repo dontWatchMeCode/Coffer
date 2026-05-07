@@ -7,6 +7,7 @@ type Props = {
     initialData?: ExcalidrawScene | null;
     name: string;
     readonly: boolean;
+    hideUi?: boolean;
     theme?: 'light' | 'dark';
     onChange: (scene: ExcalidrawScene) => void;
 };
@@ -36,6 +37,7 @@ export function ExcalidrawCanvas({
     initialData,
     name,
     readonly,
+    hideUi = false,
     theme = 'light',
     onChange,
 }: Props): React.ReactElement {
@@ -64,6 +66,7 @@ export function ExcalidrawCanvas({
         name,
         theme,
         viewModeEnabled: readonly,
+        zenModeEnabled: hideUi,
         onChange: (
             elements: readonly unknown[],
             appState: unknown,
