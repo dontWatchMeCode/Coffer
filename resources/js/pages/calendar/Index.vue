@@ -36,6 +36,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCalendarViewMode } from '@/composables/useCalendarViewMode';
 import { index as calendarIndex } from '@/routes/team/calendar';
 import { edit as editEventRoute } from '@/routes/team/calendar/events';
 import type { CalendarEventItem, Team } from '@/types';
@@ -81,9 +82,7 @@ const months = [
 
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-type ViewMode = 'calendar' | 'list';
-
-const viewMode = ref<ViewMode>('list');
+const { viewMode } = useCalendarViewMode();
 const isYearPickerOpen = ref(false);
 
 const minYear = 1900;
