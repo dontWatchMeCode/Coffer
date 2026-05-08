@@ -60,8 +60,13 @@
             "@php artisan key:generate",
             "@php artisan migrate --force",
             "npm install",
-            "npm run test",
             "npm run build"
+        ],
+        "setup-dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php -r \"array_map('unlink', array_filter(['database/database.sqlite', 'database/database.sqlite-shm', 'database/database.sqlite-wal'], 'file_exists')); touch('database/database.sqlite');\"",
+            "@php artisan migrate --force",
+            "@php -d memory_limit=512M artisan app:generate-test-records"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
