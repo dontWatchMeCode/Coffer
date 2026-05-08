@@ -39,6 +39,8 @@ const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const createProjectOpen = ref(false);
 const createProjectFormKey = ref(0);
 const showArchived = ref(false);
+const emptyProjectStateCardClass =
+    'flex h-full min-h-[180px] cursor-pointer items-center justify-center border-dashed transition-colors hover:border-primary hover:bg-accent/20';
 
 const hasArchivedProjects = computed(() =>
     props.projects.some((p) => p.isArchived),
@@ -77,143 +79,107 @@ function handleCreateProjectModal(value: boolean): void {
         <PageHeader
             title="Tasks"
             description="Choose a project to work on or create a new one."
-        >
-            <template #actions>
-                <Button
-                    v-if="hasArchivedProjects"
-                    variant="outline"
-                    size="icon"
-                    title="Show archived"
-                    class="cursor-pointer"
-                    :class="
-                        showArchived
-                            ? 'bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90'
-                            : 'bg-muted hover:bg-muted/80'
-                    "
-                    @click="showArchived = !showArchived"
-                >
-                    <Archive class="h-4 w-4" />
-                </Button>
-
-                <Button
-                    size="icon"
-                    title="New project"
-                    class="cursor-pointer"
-                    @click="createProjectOpen = true"
-                >
-                    <FolderPlus class="h-4 w-4" />
-                </Button>
-            </template>
-        </PageHeader>
+        />
 
         <div class="flex-1 px-4 py-6">
-            <div
-                class="mx-auto grid max-w-7xl gap-4 md:grid-cols-2 xl:grid-cols-3"
-            >
-                <template v-if="visibleProjects.length > 0">
-                    <Link
-                        v-for="project in visibleProjects"
-                        :key="project.id"
-                        :href="
-                            show({
-                                current_team: currentTeamSlug,
-                                project: project.id,
-                            }).url
+            <div class="mx-auto max-w-7xl space-y-4">
+                <div class="flex items-center justify-end gap-2">
+                    <Button
+                        v-if="hasArchivedProjects"
+                        variant="outline"
+                        size="icon"
+                        title="Show archived"
+                        class="cursor-pointer"
+                        :class="
+                            showArchived
+                                ? 'bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90'
+                                : 'bg-muted hover:bg-muted/80'
                         "
-                        class="block"
-                    >
-                        <Card
-                            class="h-full transition-colors hover:border-primary hover:bg-accent/20"
-                        >
-                            <CardHeader>
-                                <div
-                                    class="flex items-center justify-between gap-3"
-                                >
-                                    <CardTitle>{{ project.name }}</CardTitle>
-                                    <Badge
-                                        variant="secondary"
-                                        :class="
-                                            project.isArchived
-                                                ? ''
-                                                : 'invisible'
-                                        "
-                                    >
-                                        Archived
-                                    </Badge>
-                                </div>
-                                <CardDescription>
-                                    {{
-                                        project.description ||
-                                        'No description yet.'
-                                    }}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent class="space-y-3">
-                                <div
-                                    class="flex items-center justify-between text-sm"
-                                >
-                                    <span class="text-muted-foreground"
-                                        >Open tasks</span
-                                    >
-                                    <span class="font-medium">{{
-                                        project.openTasksCount
-                                    }}</span>
-                                </div>
-                                <div
-                                    class="flex items-center justify-between text-sm"
-                                >
-                                    <span class="text-muted-foreground"
-                                        >Total tasks</span
-                                    >
-                                    <span class="font-medium">{{
-                                        project.tasksCount
-                                    }}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                </template>
-
-                <Card
-                    v-else-if="projects.length === 0"
-                    class="flex h-full min-h-[180px] cursor-pointer items-center justify-center border-dashed transition-colors hover:border-primary hover:bg-accent/20"
-                    @click="createProjectOpen = true"
-                >
-                    <div class="text-center">
-                        <FolderPlus
-                            class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
-                        />
-                        <CardTitle class="text-base"
-                            >Create your first project</CardTitle
-                        >
-                        <CardDescription
-                            >Get started by creating a new project for your
-                            team.</CardDescription
-                        >
-                    </div>
-                </Card>
-
-                <template v-else>
-                    <Card
-                        class="flex h-full min-h-[180px] cursor-pointer items-center justify-center border-dashed transition-colors hover:border-primary hover:bg-accent/20"
                         @click="showArchived = !showArchived"
                     >
-                        <div class="text-center">
-                            <Archive
-                                class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
-                            />
-                            <CardTitle class="text-base"
-                                >All projects are archived</CardTitle
+                        <Archive class="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                        size="icon"
+                        title="New project"
+                        class="cursor-pointer"
+                        @click="createProjectOpen = true"
+                    >
+                        <FolderPlus class="h-4 w-4" />
+                    </Button>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <template v-if="visibleProjects.length > 0">
+                        <Link
+                            v-for="project in visibleProjects"
+                            :key="project.id"
+                            :href="
+                                show({
+                                    current_team: currentTeamSlug,
+                                    project: project.id,
+                                }).url
+                            "
+                            class="block"
+                        >
+                            <Card
+                                class="h-full transition-colors hover:border-primary hover:bg-accent/20"
                             >
-                            <CardDescription
-                                >Toggle the archive filter to view your existing
-                                projects.</CardDescription
-                            >
-                        </div>
-                    </Card>
+                                <CardHeader>
+                                    <div
+                                        class="flex items-center justify-between gap-3"
+                                    >
+                                        <CardTitle>{{
+                                            project.name
+                                        }}</CardTitle>
+                                        <Badge
+                                            variant="secondary"
+                                            :class="
+                                                project.isArchived
+                                                    ? ''
+                                                    : 'invisible'
+                                            "
+                                        >
+                                            Archived
+                                        </Badge>
+                                    </div>
+                                    <CardDescription>
+                                        {{
+                                            project.description ||
+                                            'No description yet.'
+                                        }}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent class="space-y-3">
+                                    <div
+                                        class="flex items-center justify-between text-sm"
+                                    >
+                                        <span class="text-muted-foreground"
+                                            >Open tasks</span
+                                        >
+                                        <span class="font-medium">{{
+                                            project.openTasksCount
+                                        }}</span>
+                                    </div>
+                                    <div
+                                        class="flex items-center justify-between text-sm"
+                                    >
+                                        <span class="text-muted-foreground"
+                                            >Total tasks</span
+                                        >
+                                        <span class="font-medium">{{
+                                            project.tasksCount
+                                        }}</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    </template>
 
                     <Card
-                        class="flex h-full min-h-[180px] cursor-pointer items-center justify-center border-dashed transition-colors hover:border-primary hover:bg-accent/20"
+                        v-else-if="projects.length === 0"
+                        :class="emptyProjectStateCardClass"
                         @click="createProjectOpen = true"
                     >
                         <div class="text-center">
@@ -221,15 +187,53 @@ function handleCreateProjectModal(value: boolean): void {
                                 class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
                             />
                             <CardTitle class="text-base"
-                                >Create a new project</CardTitle
+                                >Create your first project</CardTitle
                             >
                             <CardDescription
-                                >Add a new project to your team
-                                workspace.</CardDescription
+                                >Get started by creating a new project for your
+                                team.</CardDescription
                             >
                         </div>
                     </Card>
-                </template>
+
+                    <template v-else>
+                        <Card
+                            :class="emptyProjectStateCardClass"
+                            @click="showArchived = !showArchived"
+                        >
+                            <div class="text-center">
+                                <Archive
+                                    class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
+                                />
+                                <CardTitle class="text-base"
+                                    >All projects are archived</CardTitle
+                                >
+                                <CardDescription
+                                    >Toggle the archive filter to view your
+                                    existing projects.</CardDescription
+                                >
+                            </div>
+                        </Card>
+
+                        <Card
+                            :class="emptyProjectStateCardClass"
+                            @click="createProjectOpen = true"
+                        >
+                            <div class="text-center">
+                                <FolderPlus
+                                    class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
+                                />
+                                <CardTitle class="text-base"
+                                    >Create a new project</CardTitle
+                                >
+                                <CardDescription
+                                    >Add a new project to your team
+                                    workspace.</CardDescription
+                                >
+                            </div>
+                        </Card>
+                    </template>
+                </div>
             </div>
         </div>
 

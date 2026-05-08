@@ -119,45 +119,24 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
         :back-href="index(currentTeamSlug).url"
         back-label="Back to projects"
     >
-        <template #actions>
-            <Badge v-if="project.isArchived" variant="secondary">
-                Archived
-            </Badge>
-
-            <ProjectSettingsDialog :project="project">
-                <template #trigger>
-                    <Button size="icon" title="Project settings">
-                        <Settings class="h-4 w-4" />
-                    </Button>
-                </template>
-            </ProjectSettingsDialog>
-
-            <CreateTaskDialog
-                :project="project"
-                :members="members"
-                :statuses="statuses"
-            >
-                <template #trigger>
-                    <Button size="icon" title="Create task">
-                        <ListPlus class="h-4 w-4" />
-                    </Button>
-                </template>
-            </CreateTaskDialog>
+        <template v-if="project.isArchived" #actions>
+            <Badge variant="secondary"> Archived </Badge>
         </template>
     </PageHeader>
 
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
-            <div
-                v-if="props.tasks.length === 0"
-                class="py-8 text-center text-sm text-muted-foreground"
-            >
-                No tasks yet. Create one to get started.
-            </div>
-
-            <div v-else class="flex flex-col gap-6 xl:flex-row xl:items-start">
+            <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
                 <div class="order-2 min-w-0 flex-1 flex-col xl:order-1">
+                    <div
+                        v-if="props.tasks.length === 0"
+                        class="py-8 text-center text-sm text-muted-foreground"
+                    >
+                        No tasks yet. Create one to get started.
+                    </div>
+
                     <TaskList
+                        v-else
                         :visible-tasks="visibleTasks"
                         :project="project"
                         :statuses="statuses"
@@ -169,6 +148,28 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                 <div
                     class="order-1 h-fit w-full shrink-0 space-y-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
                 >
+                    <div class="flex items-center justify-end gap-2">
+                        <ProjectSettingsDialog :project="project">
+                            <template #trigger>
+                                <Button size="icon" title="Project settings">
+                                    <Settings class="h-4 w-4" />
+                                </Button>
+                            </template>
+                        </ProjectSettingsDialog>
+
+                        <CreateTaskDialog
+                            :project="project"
+                            :members="members"
+                            :statuses="statuses"
+                        >
+                            <template #trigger>
+                                <Button size="icon" title="Create task">
+                                    <ListPlus class="h-4 w-4" />
+                                </Button>
+                            </template>
+                        </CreateTaskDialog>
+                    </div>
+
                     <RecordTagsPanel
                         v-if="recordTags"
                         :tags="recordTags.tags"

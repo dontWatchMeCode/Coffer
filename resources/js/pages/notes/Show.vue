@@ -190,74 +190,68 @@ defineOptions({
                     </div>
 
                     <form v-else class="space-y-4" @submit.prevent="submitEdit">
-                        <div class="rounded-lg border bg-card p-4">
-                            <div class="space-y-4">
-                                <div class="grid gap-2">
-                                    <Label for="edit-note-title">Title</Label>
-                                    <Input
-                                        id="edit-note-title"
-                                        v-model="editTitle"
-                                        required
-                                    />
-                                    <InputError :message="errors.title" />
-                                </div>
+                        <div class="space-y-4">
+                            <div class="grid gap-2">
+                                <Label for="edit-note-title">Title</Label>
+                                <Input
+                                    id="edit-note-title"
+                                    v-model="editTitle"
+                                    required
+                                />
+                                <InputError :message="errors.title" />
+                            </div>
 
-                                <div class="grid gap-2">
-                                    <Label>Format</Label>
-                                    <div class="flex flex-wrap gap-2">
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            :variant="
-                                                editFormat === 'text'
-                                                    ? 'default'
-                                                    : 'outline'
-                                            "
-                                            @click="editFormat = 'text'"
-                                        >
-                                            Text
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            :variant="
-                                                editFormat === 'excalidraw'
-                                                    ? 'default'
-                                                    : 'outline'
-                                            "
-                                            @click="editFormat = 'excalidraw'"
-                                        >
-                                            Excalidraw
-                                        </Button>
-                                    </div>
-                                    <InputError :message="errors.format" />
-                                </div>
-
-                                <div class="grid gap-2">
-                                    <Label>{{
-                                        editFormat === 'text'
-                                            ? 'Body'
-                                            : 'Drawing'
-                                    }}</Label>
-                                    <RichTextEditor
-                                        v-if="editFormat === 'text'"
-                                        :model-value="editBody"
-                                        :editable="true"
-                                        placeholder="Write the note..."
-                                        @update:model-value="
-                                            (value) => (editBody = value)
+                            <div class="grid gap-2">
+                                <Label>Format</Label>
+                                <div class="flex flex-wrap gap-2">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        :variant="
+                                            editFormat === 'text'
+                                                ? 'default'
+                                                : 'outline'
                                         "
-                                    />
-                                    <ExcalidrawEditor
-                                        v-else
-                                        v-model="editDrawingData"
-                                        :name="editTitle || note.title"
-                                    />
-                                    <InputError :message="errors.body" />
-                                    <InputError
-                                        :message="errors.drawing_data"
-                                    />
+                                        @click="editFormat = 'text'"
+                                    >
+                                        Text
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        :variant="
+                                            editFormat === 'excalidraw'
+                                                ? 'default'
+                                                : 'outline'
+                                        "
+                                        @click="editFormat = 'excalidraw'"
+                                    >
+                                        Excalidraw
+                                    </Button>
                                 </div>
+                                <InputError :message="errors.format" />
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label>{{
+                                    editFormat === 'text' ? 'Body' : 'Drawing'
+                                }}</Label>
+                                <RichTextEditor
+                                    v-if="editFormat === 'text'"
+                                    :model-value="editBody"
+                                    :editable="true"
+                                    placeholder="Write the note..."
+                                    @update:model-value="
+                                        (value) => (editBody = value)
+                                    "
+                                />
+                                <ExcalidrawEditor
+                                    v-else
+                                    v-model="editDrawingData"
+                                    :name="editTitle || note.title"
+                                />
+                                <InputError :message="errors.body" />
+                                <InputError :message="errors.drawing_data" />
                             </div>
                         </div>
 

@@ -76,21 +76,7 @@ defineOptions({
     <PageHeader
         title="Notes"
         description="Capture team knowledge and connect it to related records."
-    >
-        <template #actions>
-            <CreateNoteDialog ref="createDialogRef">
-                <template #trigger>
-                    <Button
-                        size="icon"
-                        title="Create note"
-                        class="cursor-pointer"
-                    >
-                        <ListPlus class="h-4 w-4" />
-                    </Button>
-                </template>
-            </CreateNoteDialog>
-        </template>
-    </PageHeader>
+    />
 
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
@@ -103,11 +89,23 @@ defineOptions({
             </div>
 
             <div class="space-y-4">
-                <div
-                    v-if="filteredNotes.length > 0"
-                    class="flex items-center justify-end"
-                >
-                    <ViewModeToggle v-model:view-mode="viewMode" />
+                <div class="flex items-center justify-end gap-2">
+                    <CreateNoteDialog ref="createDialogRef">
+                        <template #trigger>
+                            <Button
+                                size="icon"
+                                title="Create note"
+                                class="cursor-pointer"
+                            >
+                                <ListPlus class="h-4 w-4" />
+                            </Button>
+                        </template>
+                    </CreateNoteDialog>
+
+                    <ViewModeToggle
+                        v-if="filteredNotes.length > 0"
+                        v-model:view-mode="viewMode"
+                    />
                 </div>
 
                 <NoteList

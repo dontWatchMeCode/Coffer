@@ -254,7 +254,7 @@ defineOptions({
                             </div>
                         </form>
 
-                        <section class="space-y-4 border-t pt-6">
+                        <section class="space-y-4 pt-6">
                             <div class="flex items-end justify-between gap-3">
                                 <div>
                                     <h2 class="text-lg font-semibold">

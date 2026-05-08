@@ -88,21 +88,7 @@ defineOptions({
     <PageHeader
         title="Bookmarks"
         description="Track useful links for your team."
-    >
-        <template #actions>
-            <CreateBookmarkDialog ref="createDialogRef">
-                <template #trigger>
-                    <Button
-                        size="icon"
-                        title="Create bookmark"
-                        class="cursor-pointer"
-                    >
-                        <ListPlus class="h-4 w-4" />
-                    </Button>
-                </template>
-            </CreateBookmarkDialog>
-        </template>
-    </PageHeader>
+    />
 
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
@@ -115,11 +101,23 @@ defineOptions({
             </div>
 
             <div class="space-y-4">
-                <div
-                    v-if="filteredBookmarks.length > 0"
-                    class="flex items-center justify-end"
-                >
-                    <ViewModeToggle v-model:view-mode="viewMode" />
+                <div class="flex items-center justify-end gap-2">
+                    <CreateBookmarkDialog ref="createDialogRef">
+                        <template #trigger>
+                            <Button
+                                size="icon"
+                                title="Create bookmark"
+                                class="cursor-pointer"
+                            >
+                                <ListPlus class="h-4 w-4" />
+                            </Button>
+                        </template>
+                    </CreateBookmarkDialog>
+
+                    <ViewModeToggle
+                        v-if="filteredBookmarks.length > 0"
+                        v-model:view-mode="viewMode"
+                    />
                 </div>
 
                 <BookmarkList

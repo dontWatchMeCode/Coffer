@@ -73,29 +73,27 @@ function handleEditSuccess(): void {
     >
         <input name="_return_to_edit" type="hidden" value="1" />
 
-        <div class="rounded-lg border bg-card p-4">
-            <div class="space-y-4">
-                <div class="grid gap-2">
-                    <Label>Title</Label>
-                    <Input name="title" :default-value="task.title" required />
-                    <InputError :message="errors.title" />
-                </div>
+        <div class="space-y-4">
+            <div class="grid gap-2">
+                <Label>Title</Label>
+                <Input name="title" :default-value="task.title" required />
+                <InputError :message="errors.title" />
+            </div>
 
-                <div class="grid gap-2">
-                    <Label class="mb-1">Description</Label>
-                    <input
-                        name="description"
-                        type="hidden"
-                        :value="trimStoredRichText(descriptionBody)"
-                    />
-                    <RichTextEditor
-                        :model-value="descriptionBody"
-                        :editable="true"
-                        placeholder="Add a description..."
-                        @update:model-value="(v) => (descriptionBody = v)"
-                    />
-                    <InputError :message="errors.description" />
-                </div>
+            <div class="grid gap-2">
+                <Label class="mb-1">Description</Label>
+                <input
+                    name="description"
+                    type="hidden"
+                    :value="trimStoredRichText(descriptionBody)"
+                />
+                <RichTextEditor
+                    :model-value="descriptionBody"
+                    :editable="true"
+                    placeholder="Add a description..."
+                    @update:model-value="(v) => (descriptionBody = v)"
+                />
+                <InputError :message="errors.description" />
             </div>
         </div>
 

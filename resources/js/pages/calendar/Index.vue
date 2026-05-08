@@ -245,18 +245,7 @@ function openEditDialog(event: CalendarEventItem): void {
 <template>
     <Head title="Calendar" />
 
-    <PageHeader title="Calendar" description="View and manage team events.">
-        <template #actions>
-            <Button
-                size="icon"
-                title="Create event"
-                class="cursor-pointer"
-                @click="dialogsRef?.openCreateDialogNoDate()"
-            >
-                <ListPlus class="h-4 w-4" />
-            </Button>
-        </template>
-    </PageHeader>
+    <PageHeader title="Calendar" description="View and manage team events." />
 
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
@@ -377,33 +366,44 @@ function openEditDialog(event: CalendarEventItem): void {
                     </ComboboxRoot>
                 </div>
 
-                <div
-                    class="ml-auto flex items-center gap-1 rounded-lg border bg-muted p-0.5"
-                >
+                <div class="ml-auto flex items-center gap-2">
                     <Button
-                        variant="ghost"
-                        size="sm"
-                        :class="{
-                            'bg-background': viewMode === 'calendar',
-                        }"
-                        class="cursor-pointer hover:bg-background!"
-                        @click="viewMode = 'calendar'"
+                        size="icon"
+                        title="Create event"
+                        class="cursor-pointer"
+                        @click="dialogsRef?.openCreateDialogNoDate()"
                     >
-                        <CalendarDays class="mr-1.5 h-3.5 w-3.5" />
-                        Calendar
+                        <ListPlus class="h-4 w-4" />
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        :class="{
-                            'bg-background': viewMode === 'list',
-                        }"
-                        class="cursor-pointer hover:bg-background!"
-                        @click="viewMode = 'list'"
+
+                    <div
+                        class="flex items-center gap-1 rounded-lg border bg-muted p-0.5"
                     >
-                        <List class="mr-1.5 h-3.5 w-3.5" />
-                        List
-                    </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            :class="{
+                                'bg-background': viewMode === 'calendar',
+                            }"
+                            class="cursor-pointer hover:bg-background!"
+                            @click="viewMode = 'calendar'"
+                        >
+                            <CalendarDays class="mr-1.5 h-3.5 w-3.5" />
+                            Calendar
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            :class="{
+                                'bg-background': viewMode === 'list',
+                            }"
+                            class="cursor-pointer hover:bg-background!"
+                            @click="viewMode = 'list'"
+                        >
+                            <List class="mr-1.5 h-3.5 w-3.5" />
+                            List
+                        </Button>
+                    </div>
                 </div>
             </div>
 

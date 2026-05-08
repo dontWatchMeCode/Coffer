@@ -56,7 +56,7 @@ class GenerateTestRecords extends Command
         );
 
         if ($testUser->wasRecentlyCreated) {
-            $testUser->email_verified_at = now();
+            $testUser->email_verified_at = now()->toDateTimeString();
             $testUser->save();
         }
 

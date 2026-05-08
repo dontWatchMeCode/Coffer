@@ -85,21 +85,7 @@ defineOptions({
     <PageHeader
         title="Collections"
         description="Group linked records into browsable collections."
-    >
-        <template #actions>
-            <CreateCollectionDialog ref="createDialogRef">
-                <template #trigger>
-                    <Button
-                        size="icon"
-                        title="Create collection"
-                        class="cursor-pointer"
-                    >
-                        <ListPlus class="h-4 w-4" />
-                    </Button>
-                </template>
-            </CreateCollectionDialog>
-        </template>
-    </PageHeader>
+    />
 
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
@@ -112,11 +98,23 @@ defineOptions({
             </div>
 
             <div class="space-y-4">
-                <div
-                    v-if="filteredCollections.length > 0"
-                    class="flex items-center justify-end"
-                >
-                    <ViewModeToggle v-model:view-mode="viewMode" />
+                <div class="flex items-center justify-end gap-2">
+                    <CreateCollectionDialog ref="createDialogRef">
+                        <template #trigger>
+                            <Button
+                                size="icon"
+                                title="Create collection"
+                                class="cursor-pointer"
+                            >
+                                <ListPlus class="h-4 w-4" />
+                            </Button>
+                        </template>
+                    </CreateCollectionDialog>
+
+                    <ViewModeToggle
+                        v-if="filteredCollections.length > 0"
+                        v-model:view-mode="viewMode"
+                    />
                 </div>
 
                 <CollectionList

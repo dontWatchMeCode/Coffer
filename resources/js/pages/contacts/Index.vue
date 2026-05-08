@@ -102,21 +102,7 @@ const { viewMode } = useViewMode();
 <template>
     <Head title="Contacts" />
 
-    <PageHeader title="Contacts" description="Manage your team address book.">
-        <template #actions>
-            <CreateContactDialog ref="createDialogRef">
-                <template #trigger>
-                    <Button
-                        size="icon"
-                        title="Create contact"
-                        class="cursor-pointer"
-                    >
-                        <ListPlus class="h-4 w-4" />
-                    </Button>
-                </template>
-            </CreateContactDialog>
-        </template>
-    </PageHeader>
+    <PageHeader title="Contacts" description="Manage your team address book." />
 
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
@@ -129,11 +115,23 @@ const { viewMode } = useViewMode();
             </div>
 
             <div class="space-y-4">
-                <div
-                    v-if="filteredContacts.length > 0"
-                    class="flex items-center justify-end"
-                >
-                    <ViewModeToggle v-model:view-mode="viewMode" />
+                <div class="flex items-center justify-end gap-2">
+                    <CreateContactDialog ref="createDialogRef">
+                        <template #trigger>
+                            <Button
+                                size="icon"
+                                title="Create contact"
+                                class="cursor-pointer"
+                            >
+                                <ListPlus class="h-4 w-4" />
+                            </Button>
+                        </template>
+                    </CreateContactDialog>
+
+                    <ViewModeToggle
+                        v-if="filteredContacts.length > 0"
+                        v-model:view-mode="viewMode"
+                    />
                 </div>
 
                 <ContactList
