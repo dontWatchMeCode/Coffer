@@ -7,6 +7,7 @@ import {
     Contact,
     FileText,
     FolderGit2,
+    KeyRound,
     Layers3,
     LayoutGrid,
     ListTodo,
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { dashboard as teamDashboard } from '@/routes/team';
+import { index as teamApiTokens } from '@/routes/team/api-tokens/index';
 import { index as teamBookmarks } from '@/routes/team/bookmarks/index';
 import { index as teamCalendar } from '@/routes/team/calendar/index';
 import { index as teamCollections } from '@/routes/team/collections/index';
@@ -83,6 +85,11 @@ const mainNavItems = computed<NavItem[]>(() => [
                   title: 'Collections',
                   href: teamCollections(page.props.currentTeam.slug).url,
                   icon: Layers3,
+              },
+              {
+                  title: 'API Tokens',
+                  href: teamApiTokens(page.props.currentTeam.slug).url,
+                  icon: KeyRound,
               },
           ]
         : []),

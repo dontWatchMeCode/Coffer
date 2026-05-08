@@ -279,6 +279,35 @@
     - `useViewMode.ts` — added `typeof window` guards for SSR safety
      - `ListItem.vue` — fixed `@keydown` handler (`props.clickable && handleKeydown` returned function ref but never called it)
 
+### Session: MCP API Token Feature (May 2026)
+
+1. **McpToken model split into two migrations**: `create_mcp_tokens_table` has the hash, abilities, timestamps. A second migration `add_token_column_to_mcp_tokens_table` adds the encrypted `token` column — ensures hash is available before the plaintext token is stored.
+
+2. **Token never stored in plaintext log/history**: `token` column uses `encrypted` Eloquent cast. Auth is done via `token_hash` (SHA-256), not the plaintext value. The plaintext `token` is shown once on create and exposed to the owner for copy.
+
+3. **`forceFill` used in `createToken`** — `forceFill` bypasses `#[Fillable]` because `user_id`, `team_id`, `token_hash`, `token`, and `abilities` are all set in a single factory method; only `name`, `abilities`, and `expires_at` are in fillable.
+
+4. **Owner-only edit/revoke** — `ApiTokenController::update` and `destroy` check both `team_id` and `user_id` match the authenticated user, returning 404 if mismatched.
+
+5. **Permission model per resource type** — `McpToken::allows()` reads abilities JSON for the mapped resource key (`task` maps to `tasks`, `calendar_event` maps to `calendar`). Three levels: `none` (deny read+write), `read` (allow read only), `write` (allow read+write).
+
+6. **Task project scoping** — `ability.task_projects` supports `mode: 'all'` (no restriction) or `mode: 'only'` with `ids: [project IDs]`. `StoreApiTokenRequest` validates the structure; `ApiTokenController::abilities()` validates project IDs exist in the team. `McpTokenPermissionService` passes `projectId` context to `allows()`.
+
+7. **MCP middleware vs web auth are separate paths** — `AuthenticateMcpToken` looks up token by hash, resolves `user` and `currentTeam` from the token, binds `McpToken::class` to the container. It does NOT use session/cookie auth. After request: Auth resolver and container binding are restored to original.
+
+8. **Permission check integration in MCP service** — `McpRecordService` calls `McpTokenPermissionService::can()` before every operation, and `McpTokenPermissionService::readableTypes()` filters schema/search results. If no token is bound (web UI context), all operations are allowed (gate + team scoping still apply).
+
+9. **Frontend: api-tokens/Index.vue** — Full create/edit modal with:
+    - Per-resource read/write/none selectors
+    - Task project scope: all-projects vs selected-projects via tags-input + listbox
+    - Copy button on every card (2s Copied state)
+    - Edit button to modify name/expiry/permissions
+    - Revoke button to delete
+
+10. **TypeScript types** — `ApiTokenAbilities`, `ApiTokenItem`, `ApiTokenProject`, `ApiTokenPermission` in `resources/js/types/api-tokens.ts`, re-exported from `index.ts`.
+
+11. **Sidebar nav** — "API Tokens" entry in `AppSidebar.vue` linking to `team.api-tokens.index`.
+
 ### Session: Activity History Feature (May 2026)
 
 1. **Spatie activitylog integration** on Note model with `logOnly`, `logOnlyDirty`, `dontLogEmptyChanges`.

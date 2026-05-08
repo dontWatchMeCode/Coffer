@@ -25,8 +25,10 @@ class McpRecordService
 
     public function schema(): ResponseFactory
     {
+        $permissions = app(McpTokenPermissionService::class);
+
         return Response::structured([
-            'types' => collect(McpRecordResolver::RECORD_TYPES)->mapWithKeys(fn (string $type): array => [
+            'types' => collect(McpRecordResolver::RECORD_TYPES)->intersect($permissions->readableTypes())->mapWithKeys(fn (string $type): array => [
                 $type => [
                     'fields' => McpRecordValidator::fieldsFor($type),
                     'create_required' => McpRecordValidator::requiredFieldsFor($type),
@@ -54,6 +56,7 @@ class McpRecordService
         }
 
         [, $team] = $context;
+        $permissions = app(McpTokenPermissionService::class);
 
         $validated = $request->validate([
             'query' => ['required', 'string', 'max:255'],
@@ -64,8 +67,15 @@ class McpRecordService
         $query = trim((string) $validated['query']);
         $limit = (int) ($validated['limit'] ?? 20);
         $types = isset($validated['type']) ? [$validated['type']] : McpRecordResolver::RECORD_TYPES;
+        $readableTypes = $permissions->readableTypes();
 
-        if ($query === '') {
+        if (isset($validated['type']) && ! in_array($validated['type'], $readableTypes, true)) {
+            return Response::error('Permission denied.');
+        }
+
+        $types = array_values(array_intersect($types, $readableTypes));
+
+        if ($query === '' || $types === []) {
             return Response::structured(['records' => []]);
         }
 
@@ -79,6 +89,10 @@ class McpRecordService
 
             $models = $class::query()
                 ->whereBelongsTo($team)
+                ->when(
+                    $type === 'task' && $permissions->currentToken()?->taskProjectIds() !== null,
+                    fn ($recordQuery) => $recordQuery->whereIn('project_id', $permissions->currentToken()?->taskProjectIds() ?? []),
+                )
                 ->where(function ($recordQuery) use ($definition, $like): void {
                     foreach ($definition['columns'] as $index => $column) {
                         $index === 0
@@ -111,6 +125,7 @@ class McpRecordService
         }
 
         [$user, $team] = $context;
+        $permissions = app(McpTokenPermissionService::class);
         $validated = McpRecordResolver::validateTypeAndId($request);
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 
@@ -118,9 +133,13 @@ class McpRecordService
             return Response::error('Record not found.');
         }
 
+        if (! $permissions->can($validated['type'], 'read', $model)) {
+            return Response::error('Permission denied.');
+        }
+
         Gate::forUser($user)->authorize('view', $model);
 
-        return Response::structured(['record' => McpRecordPayload::forModel($model, $team, includeRelations: true)]);
+        return Response::structured(['record' => $permissions->filterPayload(McpRecordPayload::forModel($model, $team, includeRelations: true))]);
     }
 
     public function create(Request $request): Response|ResponseFactory
@@ -132,6 +151,7 @@ class McpRecordService
         }
 
         [$user, $team] = $context;
+        $permissions = app(McpTokenPermissionService::class);
         $validated = $request->validate([
             'type' => ['required', 'string', Rule::in(McpRecordResolver::RECORD_TYPES)],
             'data' => ['required', 'array'],
@@ -149,6 +169,10 @@ class McpRecordService
             $validated['data'],
             McpRecordValidator::rulesFor($validated['type'], false, $team),
         );
+
+        if (! $permissions->can($validated['type'], 'write', data: $data)) {
+            return Response::error('Permission denied.');
+        }
 
         $data['team_id'] = $team->id;
 
@@ -173,6 +197,7 @@ class McpRecordService
         }
 
         [$user, $team] = $context;
+        $permissions = app(McpTokenPermissionService::class);
         $validated = $request->validate([
             'type' => ['required', 'string', Rule::in(McpRecordResolver::RECORD_TYPES)],
             'id' => ['required', 'integer', 'min:1'],
@@ -185,12 +210,16 @@ class McpRecordService
             return Response::error('Record not found.');
         }
 
-        Gate::forUser($user)->authorize('update', $model);
-
         $data = Validator::validate(
             $validated['data'],
             McpRecordValidator::rulesFor($validated['type'], true, $team),
         );
+
+        if (! $permissions->can($validated['type'], 'write', $model, $data)) {
+            return Response::error('Permission denied.');
+        }
+
+        Gate::forUser($user)->authorize('update', $model);
 
         $model->fill($data);
         $model->save();
@@ -207,11 +236,16 @@ class McpRecordService
         }
 
         [$user, $team] = $context;
+        $permissions = app(McpTokenPermissionService::class);
         $validated = McpRecordResolver::validateTypeAndId($request);
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 
         if (! $model instanceof Model) {
             return Response::error('Record not found.');
+        }
+
+        if (! $permissions->can($validated['type'], 'write', $model)) {
+            return Response::error('Permission denied.');
         }
 
         Gate::forUser($user)->authorize('delete', $model);
@@ -230,10 +264,15 @@ class McpRecordService
         }
 
         [$user, $team] = $context;
+        $permissions = app(McpTokenPermissionService::class);
         [$from, $to] = $this->linkedPair($request, $team);
 
         if (! $from instanceof LinkableRecord || ! $to instanceof LinkableRecord) {
             return Response::error('Record not found.');
+        }
+
+        if (! $this->canLink($permissions, $from, $to)) {
+            return Response::error('Permission denied.');
         }
 
         Gate::forUser($user)->authorize('view', $from);
@@ -286,10 +325,15 @@ class McpRecordService
         }
 
         [$user, $team] = $context;
+        $permissions = app(McpTokenPermissionService::class);
         [$from, $to] = $this->linkedPair($request, $team);
 
         if (! $from instanceof LinkableRecord || ! $to instanceof LinkableRecord) {
             return Response::error('Record not found.');
+        }
+
+        if (! $this->canLink($permissions, $from, $to)) {
+            return Response::error('Permission denied.');
         }
 
         Gate::forUser($user)->authorize('view', $from);
@@ -324,6 +368,7 @@ class McpRecordService
         }
 
         [$user, $team] = $context;
+        $permissions = app(McpTokenPermissionService::class);
         $validated = McpRecordResolver::validateTypeAndId($request);
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 
@@ -331,11 +376,15 @@ class McpRecordService
             return Response::error('Record not found.');
         }
 
+        if (! $permissions->can($validated['type'], 'read', $model)) {
+            return Response::error('Permission denied.');
+        }
+
         Gate::forUser($user)->authorize('view', $model);
 
         return Response::structured([
             'record' => McpRecordResolver::recordContext($model, $team),
-            'related' => $model->formattedLinkedRecords($team),
+            'related' => $permissions->filterPayload(['related' => $model->formattedLinkedRecords($team)])['related'],
         ]);
     }
 
@@ -348,7 +397,13 @@ class McpRecordService
         }
 
         [$user, $team] = $context;
-        [$model, $tags] = $this->tagRequest($request, $team, $user);
+        $tagResult = $this->tagRequest($request, $team, $user);
+
+        if ($tagResult instanceof Response) {
+            return $tagResult;
+        }
+
+        [$model, $tags] = $tagResult;
 
         if (! $model instanceof Model || ! $model instanceof LinkableRecord || ! method_exists($model, 'recordTags')) {
             return Response::error('Record not found.');
@@ -386,7 +441,13 @@ class McpRecordService
         }
 
         [$user, $team] = $context;
-        [$model, $tags] = $this->tagRequest($request, $team, $user);
+        $tagResult = $this->tagRequest($request, $team, $user);
+
+        if ($tagResult instanceof Response) {
+            return $tagResult;
+        }
+
+        [$model, $tags] = $tagResult;
 
         if (! $model instanceof Model || ! $model instanceof LinkableRecord || ! method_exists($model, 'recordTags')) {
             return Response::error('Record not found.');
@@ -417,11 +478,16 @@ class McpRecordService
         }
 
         [$user, $team] = $context;
+        $permissions = app(McpTokenPermissionService::class);
         $validated = McpRecordResolver::validateTypeAndId($request);
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 
         if (! $model instanceof Model || ! $model instanceof LinkableRecord || ! method_exists($model, 'recordTags')) {
             return Response::error('Record not found.');
+        }
+
+        if (! $permissions->can($validated['type'], 'read', $model)) {
+            return Response::error('Permission denied.');
         }
 
         Gate::forUser($user)->authorize('view', $model);
@@ -450,6 +516,15 @@ class McpRecordService
         return [$user, $team];
     }
 
+    private function canLink(McpTokenPermissionService $permissions, LinkableRecord $from, LinkableRecord $to): bool
+    {
+        $fromModel = $from instanceof Model ? $from : null;
+        $toModel = $to instanceof Model ? $to : null;
+
+        return $permissions->can(McpRecordResolver::typeForClass($from::class), 'write', $fromModel)
+            && $permissions->can(McpRecordResolver::typeForClass($to::class), 'write', $toModel);
+    }
+
     /**
      * @return array<int, Model|null>
      */
@@ -469,10 +544,11 @@ class McpRecordService
     }
 
     /**
-     * @return array{0: Model|null, 1: array<int, string>}
+     * @return array{0: Model|null, 1: array<int, string>}|Response
      */
-    private function tagRequest(Request $request, Team $team, User $user): array
+    private function tagRequest(Request $request, Team $team, User $user): array|Response
     {
+        $permissions = app(McpTokenPermissionService::class);
         $validated = $request->validate([
             'type' => ['required', 'string', Rule::in(McpRecordResolver::RECORD_TYPES)],
             'id' => ['required', 'integer', 'min:1'],
@@ -483,6 +559,10 @@ class McpRecordService
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 
         if ($model instanceof Model) {
+            if (! $permissions->can($validated['type'], 'write', $model)) {
+                return Response::error('Permission denied.');
+            }
+
             Gate::forUser($user)->authorize('update', $model);
         }
 

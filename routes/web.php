@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ApiTokens\ApiTokenController;
+use App\Http\Controllers\ApiTokens\ApiTokenPageController;
 use App\Http\Controllers\Bookmarks\BookmarkController;
 use App\Http\Controllers\Bookmarks\BookmarkPageController;
 use App\Http\Controllers\Calendar\CalendarEventController;
@@ -35,6 +37,11 @@ Route::prefix('{current_team}')
     ->group(function () {
         Route::inertia('dashboard', 'Dashboard')->name('team.dashboard');
         Route::get('search', SearchController::class)->middleware('throttle:30,1')->name('team.search');
+
+        Route::get('api-tokens', [ApiTokenPageController::class, 'index'])->name('team.api-tokens.index');
+        Route::post('api-tokens', [ApiTokenController::class, 'store'])->middleware('throttle:10,1')->name('team.api-tokens.store');
+        Route::patch('api-tokens/{token}', [ApiTokenController::class, 'update'])->whereNumber('token')->name('team.api-tokens.update');
+        Route::delete('api-tokens/{token}', [ApiTokenController::class, 'destroy'])->whereNumber('token')->name('team.api-tokens.destroy');
 
         Route::get('links/candidates', [RecordLinkController::class, 'candidates'])->middleware('throttle:30,1')->name('team.links.candidates');
         Route::post('links', [RecordLinkController::class, 'store'])->middleware('throttle:60,1')->name('team.links.store');

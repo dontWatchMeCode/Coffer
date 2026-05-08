@@ -17,6 +17,7 @@ use App\Mcp\Tools\UpdateRecordTool;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\McpToken;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
@@ -24,6 +25,14 @@ use App\Models\RecordLink;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\User;
+
+beforeEach(function () {
+    app()->forgetInstance(McpToken::class);
+});
+
+afterEach(function () {
+    app()->forgetInstance(McpToken::class);
+});
 
 test('the records mcp server describes its supported schema', function () {
     $user = User::factory()->create();
@@ -191,4 +200,115 @@ test('duplicate links are rejected through mcp', function () {
 
 test('the web mcp route is registered', function () {
     expect(route('mcp.records'))->toContain('/mcp/records');
+});
+
+test('mcp token read permissions allow reads and deny writes', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $note = Note::factory()->create(['team_id' => $team->id, 'title' => 'Readable MCP Note']);
+
+    $token = McpToken::factory()->create([
+        'user_id' => $user->id,
+        'team_id' => $team->id,
+        'abilities' => [
+            'collections' => 'none',
+            'notes' => 'read',
+            'bookmarks' => 'none',
+            'contacts' => 'none',
+            'calendar' => 'none',
+            'tasks' => 'none',
+            'task_projects' => ['mode' => 'all', 'ids' => []],
+        ],
+    ])->load('team');
+
+    app()->instance(McpToken::class, $token);
+
+    RecordsServer::actingAs($user)->tool(SearchRecordsTool::class, [
+        'query' => 'Readable MCP',
+    ])->assertOk()->assertSee('Readable MCP Note');
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'note',
+        'id' => $note->id,
+    ])->assertOk()->assertSee('Readable MCP Note');
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'note',
+        'data' => ['title' => 'Denied', 'body' => 'Denied'],
+    ])->assertHasErrors(['Permission denied.']);
+});
+
+test('mcp token none permissions hide and block record types', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    Bookmark::factory()->create(['team_id' => $team->id, 'title' => 'Hidden Bookmark']);
+
+    $token = McpToken::factory()->create([
+        'user_id' => $user->id,
+        'team_id' => $team->id,
+        'abilities' => [
+            'collections' => 'none',
+            'notes' => 'read',
+            'bookmarks' => 'none',
+            'contacts' => 'none',
+            'calendar' => 'none',
+            'tasks' => 'none',
+            'task_projects' => ['mode' => 'all', 'ids' => []],
+        ],
+    ])->load('team');
+
+    app()->instance(McpToken::class, $token);
+
+    RecordsServer::actingAs($user)->tool(RecordsSchemaTool::class)
+        ->assertOk()
+        ->assertSee('note')
+        ->assertHasNoErrors();
+
+    RecordsServer::actingAs($user)->tool(SearchRecordsTool::class, [
+        'query' => 'Hidden',
+        'type' => 'bookmark',
+    ])->assertHasErrors(['Permission denied.']);
+});
+
+test('mcp task project scope is enforced', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $allowedProject = Project::factory()->create(['team_id' => $team->id]);
+    $blockedProject = Project::factory()->create(['team_id' => $team->id]);
+    $blockedTask = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $blockedProject->id,
+        'title' => 'Blocked Scoped Task',
+    ]);
+
+    $token = McpToken::factory()->create([
+        'user_id' => $user->id,
+        'team_id' => $team->id,
+        'abilities' => [
+            'collections' => 'none',
+            'notes' => 'none',
+            'bookmarks' => 'none',
+            'contacts' => 'none',
+            'calendar' => 'none',
+            'tasks' => 'write',
+            'task_projects' => ['mode' => 'only', 'ids' => [$allowedProject->id]],
+        ],
+    ])->load('team');
+
+    app()->instance(McpToken::class, $token);
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'task',
+        'data' => ['project_id' => $blockedProject->id, 'title' => 'Denied task', 'status' => TaskStatus::Planned->value],
+    ])->assertHasErrors(['Permission denied.']);
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'task',
+        'id' => $blockedTask->id,
+    ])->assertHasErrors(['Permission denied.']);
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'task',
+        'data' => ['project_id' => $allowedProject->id, 'title' => 'Allowed task', 'status' => TaskStatus::Planned->value],
+    ])->assertOk()->assertSee('Allowed task');
 });
