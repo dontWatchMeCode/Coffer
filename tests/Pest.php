@@ -25,6 +25,8 @@ pest()->extends(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature', 'Browser');
 
+pest()->group('browser')->in('Browser');
+
 pest()->beforeEach(function () {
     $this->withoutVite();
 })->in('Feature');
