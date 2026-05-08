@@ -42,7 +42,7 @@ jobs:
         run: php artisan key:generate
 
       - name: Tests
-        run: ./vendor/bin/pest --exclude-group=browser
+        run: ./vendor/bin/pest tests/Unit tests/Feature tests/Architecture
 
   browser-tests:
     runs-on: ubuntu-latest
