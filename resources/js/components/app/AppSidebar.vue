@@ -125,24 +125,32 @@ const searchOpen = ref(false);
 
         <SidebarContent>
             <div class="px-2 py-1.5" v-if="page.props.currentTeam">
-                <button
-                    data-testid="global-search-trigger"
-                    @click="searchOpen = true"
-                    class="flex h-8 w-full items-center gap-2 rounded-md bg-sidebar-accent/50 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                >
-                    <Search class="h-3.5 w-3.5 shrink-0 opacity-70" />
-                    <span class="flex-1 text-left">Search</span>
-                    <span
-                        class="hidden items-center gap-0.5 text-[10px] opacity-60 lg:flex"
-                    >
-                        <kbd class="rounded bg-sidebar px-1 py-0.5 font-sans"
-                            >Ctrl</kbd
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            data-testid="global-search-trigger"
+                            tooltip="Search"
+                            aria-label="Search"
+                            class="bg-sidebar-accent/50 text-xs text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                            @click="searchOpen = true"
                         >
-                        <kbd class="rounded bg-sidebar px-1 py-0.5 font-sans"
-                            >K</kbd
-                        >
-                    </span>
-                </button>
+                            <Search class="h-3.5 w-3.5 opacity-70" />
+                            <span>Search</span>
+                            <span
+                                class="ml-auto hidden items-center gap-0.5 text-[10px] opacity-60 lg:flex"
+                            >
+                                <kbd
+                                    class="rounded bg-sidebar px-1 py-0.5 font-sans"
+                                    >Ctrl</kbd
+                                >
+                                <kbd
+                                    class="rounded bg-sidebar px-1 py-0.5 font-sans"
+                                    >K</kbd
+                                >
+                            </span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
             </div>
             <NavMain :items="mainNavItems" />
         </SidebarContent>
