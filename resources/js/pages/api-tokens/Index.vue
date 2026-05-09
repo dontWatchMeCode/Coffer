@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Copy, KeyRound, Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import {
+    Copy,
+    Info,
+    KeyRound,
+    ListPlus,
+    Pencil,
+    Plus,
+    Trash2,
+} from 'lucide-vue-next';
 import { computed, reactive, ref } from 'vue';
+import ConfirmDeleteDialog from '@/components/dialogs/ConfirmDeleteDialog.vue';
 import EmptyState from '@/components/list/EmptyState.vue';
 import ListContainer from '@/components/list/ListContainer.vue';
 import ListItem from '@/components/list/ListItem.vue';
@@ -10,6 +19,13 @@ import ListItemIcon from '@/components/list/ListItemIcon.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { destroy, index, store, update } from '@/routes/team/mcp';
 import { apiTokenResourceLabels } from '@/types';
 import type {
@@ -25,6 +41,7 @@ type Props = {
     tokens: ApiTokenItem[];
     projects: ApiTokenProject[];
     permissionLevels: ApiTokenPermission[];
+    mcpEndpointUrl: string;
 };
 
 defineProps<Props>();
@@ -55,9 +72,12 @@ const form = reactive({
 });
 
 const copiedId = ref<number | null>(null);
+const infoDialogOpen = ref(false);
 const tokenDialogOpen = ref(false);
 const tokenDialogMode = ref<'create' | 'edit'>('create');
 const editingTokenId = ref<number | null>(null);
+const revokeDialogOpen = ref(false);
+const selectedToken = ref<ApiTokenItem | null>(null);
 
 function resetForm(): void {
     form.name = '';
@@ -136,15 +156,36 @@ function submit(data: {
     });
 }
 
-function revoke(token: ApiTokenItem): void {
+function openRevokeDialog(token: ApiTokenItem): void {
+    selectedToken.value = token;
+    revokeDialogOpen.value = true;
+}
+
+function confirmRevoke(): void {
+    if (!selectedToken.value) {
+        return;
+    }
+
+    const token = selectedToken.value;
+
     router.delete(
         destroy({ current_team: currentTeamSlug.value, mcpToken: token.id })
             .url,
-        { preserveScroll: true },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                revokeDialogOpen.value = false;
+                selectedToken.value = null;
+            },
+        },
     );
 }
 
-async function copyToken(tokenId: number, token: string): Promise<void> {
+async function copyToken(tokenId: number, token: string | null): Promise<void> {
+    if (token === null) {
+        return;
+    }
+
     await navigator.clipboard.writeText(token);
     copiedId.value = tokenId;
     window.setTimeout(() => (copiedId.value = null), 2000);
@@ -176,10 +217,24 @@ defineOptions({
 
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl space-y-4">
-            <div class="flex justify-end">
-                <Button @click="openCreateModal">
-                    <Plus class="mr-2 h-4 w-4" />
-                    Create MCP
+            <div class="flex justify-end gap-2">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    title="How to connect MCP"
+                    class="cursor-pointer"
+                    @click="infoDialogOpen = true"
+                >
+                    <Info class="h-4 w-4" />
+                </Button>
+
+                <Button
+                    size="icon"
+                    title="Create MCP"
+                    class="cursor-pointer"
+                    @click="openCreateModal"
+                >
+                    <ListPlus class="h-4 w-4" />
                 </Button>
 
                 <TokenDialog
@@ -255,10 +310,13 @@ defineOptions({
                                 size="icon"
                                 class="h-8 w-8"
                                 :title="
-                                    copiedId === token.id
-                                        ? 'Copied'
-                                        : 'Copy token'
+                                    token.token === null
+                                        ? 'Token unavailable. Create a new MCP token to copy it.'
+                                        : copiedId === token.id
+                                          ? 'Copied'
+                                          : 'Copy token'
                                 "
+                                :disabled="token.token === null"
                                 @click="copyToken(token.id, token.token)"
                             >
                                 <Copy class="h-4 w-4" />
@@ -277,7 +335,7 @@ defineOptions({
                                 size="icon"
                                 class="h-8 w-8"
                                 title="Revoke token"
-                                @click="revoke(token)"
+                                @click="openRevokeDialog(token)"
                             >
                                 <Trash2 class="h-4 w-4 text-muted-foreground" />
                             </Button>
@@ -303,4 +361,68 @@ defineOptions({
             </EmptyState>
         </div>
     </div>
+
+    <Dialog v-model:open="infoDialogOpen">
+        <DialogContent class="sm:max-w-lg">
+            <DialogHeader>
+                <DialogTitle>Connect MCP</DialogTitle>
+                <DialogDescription>
+                    Use a generated MCP token to connect external clients to
+                    your records.
+                </DialogDescription>
+            </DialogHeader>
+
+            <div class="space-y-4 text-sm">
+                <div class="space-y-2">
+                    <p class="font-medium">Endpoint</p>
+                    <code
+                        class="block rounded-md border bg-muted px-3 py-2 text-xs break-all text-muted-foreground"
+                    >
+                        {{ mcpEndpointUrl }}
+                    </code>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="font-medium">Authentication</p>
+                    <p class="text-muted-foreground">
+                        Add an Authorization header using the token copied from
+                        this page.
+                    </p>
+                    <code
+                        class="block rounded-md border bg-muted px-3 py-2 text-xs break-all text-muted-foreground"
+                    >
+                        Authorization: Bearer YOUR_MCP_TOKEN
+                    </code>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="font-medium">Client setup</p>
+                    <ol
+                        class="list-decimal space-y-1 pl-5 text-muted-foreground"
+                    >
+                        <li>Create an MCP token.</li>
+                        <li>Copy the token before closing the page.</li>
+                        <li>
+                            Add an HTTP/streamable MCP server in your client
+                            using the endpoint above.
+                        </li>
+                        <li>Send the bearer token with every request.</li>
+                    </ol>
+                </div>
+            </div>
+        </DialogContent>
+    </Dialog>
+
+    <ConfirmDeleteDialog
+        v-model:open="revokeDialogOpen"
+        title="Revoke MCP Token"
+        description="This token will stop working immediately for any connected MCP clients."
+        confirm-label="Revoke"
+        :confirm-icon="Trash2"
+        @confirm="confirmRevoke"
+    >
+        <p v-if="selectedToken" class="text-sm">
+            Revoke "{{ selectedToken.name }}"?
+        </p>
+    </ConfirmDeleteDialog>
 </template>

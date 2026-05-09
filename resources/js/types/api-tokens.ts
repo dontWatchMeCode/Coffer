@@ -16,7 +16,7 @@ export type ApiTokenAbilities = {
 export type ApiTokenItem = {
     id: number;
     name: string;
-    token: string;
+    token: string | null;
     abilities: ApiTokenAbilities;
     created_by: string | null;
     created_at: string | null;

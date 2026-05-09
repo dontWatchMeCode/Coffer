@@ -54,6 +54,7 @@ class ApiTokenPageController extends Controller
                     'name' => $project->name,
                 ]),
             'permissionLevels' => McpToken::PERMISSION_LEVELS,
+            'mcpEndpointUrl' => route('mcp.records'),
         ]);
     }
 }

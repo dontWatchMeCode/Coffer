@@ -101,3 +101,30 @@ test('team members can edit mcp tokens', function () {
         ->and($token->abilities['notes'])->toBe('write')
         ->and($token->abilities['task_projects']['ids'])->toBe([$project->id]);
 });
+
+test('api tokens page supports legacy tokens without plaintext values', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    McpToken::factory()->create([
+        'user_id' => $user->id,
+        'team_id' => $team->id,
+        'name' => 'Legacy token',
+        'token' => null,
+    ]);
+
+    actingAs($user)
+        ->get(route('team.mcp.index', ['current_team' => $team]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('api-tokens/Index')
+            ->has('tokens', 1, fn (Assert $page) => $page
+                ->where('name', 'Legacy token')
+                ->where('token', null)
+                ->etc(),
+            )
+            ->has('projects')
+            ->has('permissionLevels')
+            ->where('mcpEndpointUrl', route('mcp.records')),
+        );
+});
