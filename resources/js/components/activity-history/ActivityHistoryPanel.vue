@@ -76,13 +76,21 @@ function getFieldValue(
     return text;
 }
 
-function isTextField(field: string): boolean {
-    return (
-        field === 'title' ||
-        field === 'body' ||
-        field === 'name' ||
-        field === 'description'
-    );
+function getDiffValue(
+    activity: ActivityHistoryItem,
+    field: string,
+    side: 'old' | 'new',
+): string {
+    const raw =
+        side === 'old' ? activity.old?.[field] : activity.attributes?.[field];
+
+    if (isArrayField(field)) {
+        return raw === null || raw === undefined
+            ? ''
+            : formatEntryList(raw).join('\n');
+    }
+
+    return getFieldValue(activity, field, side);
 }
 
 function isDrawingField(field: string): boolean {
@@ -242,14 +250,13 @@ function relationChangeTargetUrl(
                                     >
                                         Added
                                     </span>
-                                    <span
+                                    <TextDiff
                                         v-for="name in activity.relationChanges
                                             .added"
                                         :key="name"
-                                        class="inline-flex items-center rounded-full border bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
-                                    >
-                                        {{ name }}
-                                    </span>
+                                        old-text=""
+                                        :new-text="name"
+                                    />
                                 </div>
                                 <div
                                     v-if="
@@ -262,14 +269,13 @@ function relationChangeTargetUrl(
                                     >
                                         Removed
                                     </span>
-                                    <span
+                                    <TextDiff
                                         v-for="name in activity.relationChanges
                                             .removed"
                                         :key="name"
-                                        class="inline-flex items-center rounded-full border bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive line-through"
-                                    >
-                                        {{ name }}
-                                    </span>
+                                        :old-text="name"
+                                        new-text=""
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -374,83 +380,14 @@ function relationChangeTargetUrl(
                                 </div>
 
                                 <TextDiff
-                                    v-else-if="isTextField(field)"
+                                    v-else
                                     :old-text="
-                                        getFieldValue(activity, field, 'old')
+                                        getDiffValue(activity, field, 'old')
                                     "
                                     :new-text="
-                                        getFieldValue(activity, field, 'new')
+                                        getDiffValue(activity, field, 'new')
                                     "
                                 />
-
-                                <div
-                                    v-else-if="isArrayField(field)"
-                                    class="space-y-1"
-                                >
-                                    <div
-                                        v-if="activity.old?.[field] != null"
-                                        class="space-y-0.5"
-                                    >
-                                        <div
-                                            v-for="(
-                                                line, idx
-                                            ) in formatEntryList(
-                                                activity.old[field],
-                                            )"
-                                            :key="`old-${idx}`"
-                                            class="text-xs text-muted-foreground line-through"
-                                        >
-                                            {{ line }}
-                                        </div>
-                                    </div>
-                                    <div
-                                        v-if="
-                                            activity.attributes?.[field] != null
-                                        "
-                                        class="space-y-0.5"
-                                    >
-                                        <div
-                                            v-for="(
-                                                line, idx
-                                            ) in formatEntryList(
-                                                activity.attributes[field],
-                                            )"
-                                            :key="`new-${idx}`"
-                                            class="text-xs"
-                                        >
-                                            {{ line }}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div v-else class="space-y-1">
-                                    <div
-                                        v-if="activity.old?.[field] != null"
-                                        class="text-xs text-muted-foreground line-through"
-                                    >
-                                        {{
-                                            getFieldValue(
-                                                activity,
-                                                field,
-                                                'old',
-                                            )
-                                        }}
-                                    </div>
-                                    <div
-                                        v-if="
-                                            activity.attributes?.[field] != null
-                                        "
-                                        class="text-xs"
-                                    >
-                                        {{
-                                            getFieldValue(
-                                                activity,
-                                                field,
-                                                'new',
-                                            )
-                                        }}
-                                    </div>
-                                </div>
                             </div>
                         </div>
 

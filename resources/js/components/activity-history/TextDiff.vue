@@ -11,7 +11,7 @@ const changes = computed(() => diffWords(props.oldText, props.newText));
 </script>
 
 <template>
-    <span class="text-xs leading-relaxed">
+    <span class="text-xs leading-relaxed whitespace-pre-wrap">
         <template v-for="(change, idx) in changes" :key="idx">
             <span
                 v-if="change.added"
