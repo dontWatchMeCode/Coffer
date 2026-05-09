@@ -30,6 +30,19 @@ class Note extends Model implements LinkableRecord
     use HasRecordTags;
     use LogsActivity;
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $note): void {
+            if ($note->isDirty('format')) {
+                if ($note->format === 'excalidraw') {
+                    $note->body = null;
+                } else {
+                    $note->drawing_data = null;
+                }
+            }
+        });
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

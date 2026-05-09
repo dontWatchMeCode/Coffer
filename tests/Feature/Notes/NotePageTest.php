@@ -322,6 +322,33 @@ test('a note can be updated to excalidraw format', function () {
     expect($note->title)->toBe('New Sketch');
     expect($note->format)->toBe('excalidraw');
     expect($note->drawing_data)->toBe($drawingData);
+    expect($note->body)->toBeNull();
+});
+
+test('switching a note from excalidraw to text clears drawing_data', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $note = Note::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Drawing',
+        'format' => 'excalidraw',
+        'drawing_data' => ['type' => 'excalidraw', 'elements' => []],
+    ]);
+
+    actingAs($user)
+        ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
+            'title' => 'Converted',
+            'format' => 'text',
+            'body' => 'New body',
+        ])
+        ->assertRedirect(route('team.notes.show', ['current_team' => $team, 'note' => $note->id]));
+
+    $note = $note->fresh();
+
+    expect($note->format)->toBe('text');
+    expect($note->body)->toBe('New body');
+    expect($note->drawing_data)->toBeNull();
 });
 
 test('a note can be deleted', function () {

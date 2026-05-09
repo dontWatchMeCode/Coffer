@@ -141,6 +141,45 @@ test('mcp note validation explains markdown uses the text format', function () {
     ]);
 });
 
+test('switching a note format through mcp clears the previous content', function () {
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'note',
+        'data' => ['title' => 'Format Switch Note', 'body' => 'Some text content'],
+    ])->assertOk();
+
+    $note = Note::query()->where('title', 'Format Switch Note')->firstOrFail();
+
+    expect($note->format)->toBe('text');
+    expect($note->body)->toBe('Some text content');
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'note',
+        'id' => $note->id,
+        'data' => [
+            'format' => 'excalidraw',
+            'drawing_data' => ['type' => 'excalidraw', 'elements' => []],
+        ],
+    ])->assertOk();
+
+    $note = $note->fresh();
+    expect($note->format)->toBe('excalidraw');
+    expect($note->body)->toBeNull();
+    expect($note->drawing_data)->toBe(['type' => 'excalidraw', 'elements' => []]);
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'note',
+        'id' => $note->id,
+        'data' => ['format' => 'text', 'body' => 'Back to text'],
+    ])->assertOk();
+
+    $note = $note->fresh();
+    expect($note->format)->toBe('text');
+    expect($note->body)->toBe('Back to text');
+    expect($note->drawing_data)->toBeNull();
+});
+
 test('linked records and tags can be managed through mcp', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
