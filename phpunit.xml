@@ -3,6 +3,8 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         failOnRisky="true"
+         failOnWarning="true"
 >
     <testsuites>
         <testsuite name="Unit">
@@ -14,6 +16,9 @@
         <testsuite name="Browser">
             <directory>tests/Browser</directory>
         </testsuite>
+        <testsuite name="Architecture">
+            <directory>tests/Architecture</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
@@ -23,5 +28,6 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <ini name="memory_limit" value="-1"/>
     </php>
 </phpunit>
