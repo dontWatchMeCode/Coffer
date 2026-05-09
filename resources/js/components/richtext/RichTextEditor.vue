@@ -363,6 +363,20 @@ watch(
                     >
                         S
                     </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        :class="[
+                            'rich-text-editor__bar-button',
+                            isActive('code')
+                                ? 'rich-text-editor__button--active'
+                                : '',
+                        ]"
+                        @click="editor?.chain().focus().toggleCode().run()"
+                    >
+                        Code
+                    </Button>
                 </div>
 
                 <div class="rich-text-editor__toolbar-group">
@@ -416,6 +430,20 @@ watch(
                         "
                     >
                         Quote
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        :class="[
+                            'rich-text-editor__bar-button',
+                            isActive('codeBlock')
+                                ? 'rich-text-editor__button--active'
+                                : '',
+                        ]"
+                        @click="editor?.chain().focus().toggleCodeBlock().run()"
+                    >
+                        Code Block
                     </Button>
                     <Button
                         type="button"

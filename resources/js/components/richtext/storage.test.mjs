@@ -28,3 +28,12 @@ test('renderStoredRichTextAsHtml does not create empty paragraphs from extra mar
         '<p>asdasdasd</p>\n<p>asd asdasd</p>\n<p>asdasd</p>\n',
     );
 });
+
+test('renderStoredRichTextAsHtml renders code block markdown', () => {
+    const markdown = '```js\nconst value = 1;\n```';
+
+    assert.equal(
+        renderStoredRichTextAsHtml(markdown),
+        '<pre><code class="language-js">const value = 1;\n</code></pre>\n',
+    );
+});

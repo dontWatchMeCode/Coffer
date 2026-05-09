@@ -35,6 +35,67 @@ const markdown = new MarkdownIt({
 
 const EMPTY_PARAGRAPH_MARKER = '\uE000';
 
+type HtmlSanitizer = {
+    sanitize: (html: string) => string;
+};
+
+type DomPurifyFactory = (window: Window) => unknown;
+
+function hasSanitize(value: unknown): value is HtmlSanitizer {
+    return (
+        (typeof value === 'object' || typeof value === 'function') &&
+        value !== null &&
+        'sanitize' in value &&
+        typeof value.sanitize === 'function'
+    );
+}
+
+function getDefaultExport(value: unknown): unknown {
+    if (typeof value !== 'object' || value === null || !('default' in value)) {
+        return undefined;
+    }
+
+    return value.default;
+}
+
+function createSanitizer(value: unknown): HtmlSanitizer | undefined {
+    if (hasSanitize(value)) {
+        return value;
+    }
+
+    if (typeof window !== 'undefined' && typeof value === 'function') {
+        const purifier = (value as DomPurifyFactory)(window);
+
+        if (hasSanitize(purifier)) {
+            return purifier;
+        }
+    }
+
+    return undefined;
+}
+
+function sanitizeHtml(html: string): string {
+    const sanitizer =
+        createSanitizer(DOMPurify) ??
+        createSanitizer(getDefaultExport(DOMPurify));
+
+    if (sanitizer) {
+        return sanitizer.sanitize(html);
+    }
+
+    if (typeof window === 'undefined' && typeof document === 'undefined') {
+        return html;
+    }
+
+    throw new Error('DOMPurify sanitizer is unavailable.');
+}
+
+function renderMarkdownAsHtml(body: string): string {
+    return markdown
+        .render(body)
+        .replaceAll(`<p>${EMPTY_PARAGRAPH_MARKER}</p>`, '<br>');
+}
+
 function isLegacySerializedBlockNoteBody(body: string): boolean {
     return body.trimStart().startsWith('[');
 }
@@ -209,9 +270,5 @@ export function renderStoredRichTextAsHtml(
         return '';
     }
 
-    const html = markdown
-        .render(normalized)
-        .replaceAll(`<p>${EMPTY_PARAGRAPH_MARKER}</p>`, '<br>');
-
-    return DOMPurify.sanitize(html);
+    return sanitizeHtml(renderMarkdownAsHtml(normalized));
 }

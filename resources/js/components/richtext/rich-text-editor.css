@@ -3,10 +3,12 @@
     align-items: center;
     overflow: hidden;
     border-radius: calc(var(--radius) + 0.25rem);
-    background: hsl(var(--background) / 0.78);
 }
 
 .rich-text-editor__bar-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     height: 1.75rem;
     min-width: 1.75rem;
     border-radius: 0;
@@ -14,12 +16,13 @@
     padding-inline: 0.625rem;
     font-size: 0.875rem;
     font-weight: 650;
+    line-height: 1;
 }
 
 .rich-text-editor__button--active {
     border-color: transparent;
-    background: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
+    background: color-mix(in srgb, var(--foreground) 14%, transparent);
+    color: var(--foreground);
 }
 
 .rich-text-editor__button--active + .rich-text-editor__button--active,
@@ -83,14 +86,44 @@
 .rich-text-editor__html blockquote {
     margin: 1rem 0;
     padding-inline-start: 1rem;
-    color: hsl(var(--muted-foreground));
+    color: var(--muted-foreground);
     border-inline-start-width: 3px;
     border-inline-start-style: solid;
-    border-inline-start-color: hsl(var(--border));
+    border-inline-start-color: var(--border);
+}
+
+.rich-text-editor .tiptap code,
+.rich-text-editor__html code {
+    border-radius: calc(var(--radius) - 0.25rem);
+    background: var(--muted);
+    padding: 0.125rem 0.3rem;
+    font-family:
+        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.88em;
+}
+
+.rich-text-editor .tiptap pre,
+.rich-text-editor__html pre {
+    margin: 1rem 0;
+    overflow-x: auto;
+    border-radius: var(--radius);
+    background: var(--muted);
+    padding: 0.875rem 1rem;
+}
+
+.rich-text-editor .tiptap pre code,
+.rich-text-editor__html pre code {
+    display: block;
+    background: transparent;
+    padding: 0;
+    color: inherit;
+    font-size: 0.875rem;
+    line-height: 1.6;
 }
 
 .rich-text-editor .tiptap p.is-editor-empty:first-child::before {
-    color: hsl(var(--muted-foreground));
+    color: var(--muted-foreground);
     content: attr(data-placeholder);
     float: left;
     height: 0;
