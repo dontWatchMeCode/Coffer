@@ -40,6 +40,7 @@ test('the records mcp server describes its supported schema', function () {
     RecordsServer::actingAs($user)->tool(RecordsSchemaTool::class)
         ->assertOk()
         ->assertSee('calendar_event')
+        ->assertSee('Markdown-backed rich text notes')
         ->assertSee('relationships')
         ->assertSee('tags');
 });
@@ -105,6 +106,39 @@ test('records can be searched read updated and deleted through mcp', function ()
     ])->assertOk()->assertSee('deleted');
 
     expect(Note::query()->whereKey($note->id)->exists())->toBeFalse();
+});
+
+test('markdown note bodies are stored using the text format through mcp', function () {
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'note',
+        'data' => [
+            'title' => 'Markdown MCP Note',
+            'format' => 'text',
+            'body' => "# Heading\n\nThis has **bold** text and `code`.",
+        ],
+    ])->assertOk()->assertSee('Markdown MCP Note');
+
+    $note = Note::query()->where('title', 'Markdown MCP Note')->firstOrFail();
+
+    expect($note->format)->toBe('text');
+    expect($note->body)->toBe("# Heading\n\nThis has **bold** text and `code`.");
+});
+
+test('mcp note validation explains markdown uses the text format', function () {
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'note',
+        'data' => [
+            'title' => 'Invalid Markdown Format',
+            'format' => 'markdown',
+            'body' => '# Heading',
+        ],
+    ])->assertHasErrors([
+        'The selected format is invalid. Use "text" for Markdown-backed rich text notes or "excalidraw" for drawing notes.',
+    ]);
 });
 
 test('linked records and tags can be managed through mcp', function () {

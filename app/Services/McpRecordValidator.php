@@ -43,6 +43,21 @@ class McpRecordValidator
     }
 
     /**
+     * @return array<string, string>
+     */
+    public static function fieldNotesFor(string $type): array
+    {
+        return match ($type) {
+            'note' => [
+                'format' => 'Valid values are "text" and "excalidraw". Use "text" for Markdown-backed rich text notes; do not use "markdown".',
+                'body' => 'Markdown content for text notes.',
+                'drawing_data' => 'Excalidraw scene data for excalidraw notes.',
+            ],
+            default => [],
+        };
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function rulesFor(string $type, bool $updating, Team $team): array
@@ -97,6 +112,19 @@ class McpRecordValidator
             'collection' => [
                 'title' => [...$required('required'), 'string', 'max:255'],
                 'description' => [...$optional(), 'nullable', 'string'],
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function messagesFor(string $type): array
+    {
+        return match ($type) {
+            'note' => [
+                'format.in' => 'The selected format is invalid. Use "text" for Markdown-backed rich text notes or "excalidraw" for drawing notes.',
             ],
             default => [],
         };

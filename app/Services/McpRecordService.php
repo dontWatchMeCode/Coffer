@@ -33,6 +33,7 @@ class McpRecordService
                     'fields' => McpRecordValidator::fieldsFor($type),
                     'create_required' => McpRecordValidator::requiredFieldsFor($type),
                     'searchable' => RecordSearchRegistry::definitions()[$type]['columns'],
+                    'field_notes' => McpRecordValidator::fieldNotesFor($type),
                 ],
             ])->all(),
             'relationships' => [
@@ -168,6 +169,7 @@ class McpRecordService
         $data = Validator::validate(
             $validated['data'],
             McpRecordValidator::rulesFor($validated['type'], false, $team),
+            McpRecordValidator::messagesFor($validated['type']),
         );
 
         if (! $permissions->can($validated['type'], 'write', data: $data)) {
@@ -213,6 +215,7 @@ class McpRecordService
         $data = Validator::validate(
             $validated['data'],
             McpRecordValidator::rulesFor($validated['type'], true, $team),
+            McpRecordValidator::messagesFor($validated['type']),
         );
 
         if (! $permissions->can($validated['type'], 'write', $model, $data)) {
