@@ -202,6 +202,56 @@ test('the web mcp route is registered', function () {
     expect(route('mcp.records'))->toContain('/mcp/records');
 });
 
+test('the web mcp route reads team scoped records with a bearer token', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $team = $user->currentTeam;
+    $note = Note::factory()->create(['team_id' => $team->id, 'title' => 'HTTP MCP Note']);
+    $foreignNote = Note::factory()->create(['team_id' => $otherUser->currentTeam->id]);
+    [, $plainTextToken] = McpToken::createToken($user, $team, 'HTTP client', [
+        'collections' => 'write',
+        'notes' => 'write',
+        'bookmarks' => 'write',
+        'contacts' => 'write',
+        'calendar' => 'write',
+        'tasks' => 'write',
+        'task_projects' => ['mode' => 'all', 'ids' => []],
+    ]);
+
+    $this->withToken($plainTextToken)
+        ->postJson(route('mcp.records'), [
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'records.get',
+                'arguments' => [
+                    'type' => 'note',
+                    'id' => $note->id,
+                ],
+            ],
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('result.structuredContent.record.title', 'HTTP MCP Note');
+
+    $this->withToken($plainTextToken)
+        ->postJson(route('mcp.records'), [
+            'jsonrpc' => '2.0',
+            'id' => 2,
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'records.get',
+                'arguments' => [
+                    'type' => 'note',
+                    'id' => $foreignNote->id,
+                ],
+            ],
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('result.isError', true)
+        ->assertJsonPath('result.content.0.text', 'Record not found.');
+});
+
 test('mcp token read permissions allow reads and deny writes', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

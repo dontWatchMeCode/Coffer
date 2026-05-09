@@ -10,6 +10,7 @@ use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Context;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticateMcpToken
@@ -52,18 +53,20 @@ class AuthenticateMcpToken
 
         $previousUserResolver = Auth::userResolver();
 
-        Auth::resolveUsersUsing(fn (): mixed => $user);
-        app()->instance(McpToken::class, $token);
+        return Context::scope(function () use ($next, $request, $token, $user, $previousUserResolver): Response {
+            Auth::resolveUsersUsing(fn (): mixed => $user);
+            app()->instance(McpToken::class, $token);
 
-        try {
-            $response = $next($request);
+            try {
+                $response = $next($request);
 
-            $token->forceFill(['last_used_at' => now()])->save();
+                $token->forceFill(['last_used_at' => now()])->save();
 
-            return $response;
-        } finally {
-            Auth::resolveUsersUsing($previousUserResolver);
-            app()->forgetInstance(McpToken::class);
-        }
+                return $response;
+            } finally {
+                Auth::resolveUsersUsing($previousUserResolver);
+                app()->forgetInstance(McpToken::class);
+            }
+        }, data: ['current_team_id' => $team->id]);
     }
 }
