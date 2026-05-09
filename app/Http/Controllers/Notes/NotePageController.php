@@ -44,6 +44,7 @@ class NotePageController extends Controller
             'recordLinks' => $this->recordLinksPayload($note, $currentTeam),
             'recordTags' => $this->recordTagsPayload($note, $currentTeam),
             'activityHistory' => $this->activityHistoryPayload($note),
+            'startInEditMode' => session()->pull('edit', false),
         ]);
     }
 

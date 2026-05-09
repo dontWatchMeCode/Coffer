@@ -23,7 +23,7 @@ class NoteController extends Controller
         return to_route('team.notes.show', [
             'current_team' => $currentTeam,
             'note' => $note->id,
-        ]);
+        ])->with('edit', true);
     }
 
     public function update(SaveNoteRequest $request, Team $currentTeam, int $note): RedirectResponse

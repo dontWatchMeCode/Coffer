@@ -63,6 +63,7 @@ test('note show page can be rendered with links and tags payloads', function () 
             ->where('note.body', '**Approved** launch plan')
             ->where('note.format', 'text')
             ->where('note.drawingData', null)
+            ->where('startInEditMode', false)
             ->has('recordLinks')
             ->has('recordTags'));
 });
@@ -86,6 +87,27 @@ test('a note can be created', function () {
     expect($note->title)->toBe('New Note');
     expect($note->body)->toBe('Body text');
     expect($note->format)->toBe('text');
+});
+
+test('creating a note flashes edit mode for the show page', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $response = actingAs($user)
+        ->post(route('team.notes.store', ['current_team' => $team]), [
+            'title' => 'New Note',
+        ]);
+
+    $response->assertSessionHas('edit', true);
+
+    $note = Note::where('team_id', $team->id)->first();
+
+    actingAs($user)
+        ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('notes/Show')
+            ->where('startInEditMode', true));
 });
 
 test('an excalidraw note can be created', function () {

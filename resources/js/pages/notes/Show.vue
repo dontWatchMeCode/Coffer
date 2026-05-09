@@ -30,6 +30,7 @@ import type { RecordTag, TagContext, TagEndpoints } from '@/types/record-tags';
 
 type Props = {
     note: NoteItem;
+    startInEditMode?: boolean;
     recordLinks?: {
         links: LinkRecord[];
         context: LinkContext;
@@ -49,7 +50,7 @@ const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 
-const isEditing = ref(false);
+const isEditing = ref(props.startInEditMode === true);
 const editTitle = ref(props.note.title);
 const editBody = ref(props.note.body ?? '');
 const editFormat = ref<NoteFormat>(props.note.format);
