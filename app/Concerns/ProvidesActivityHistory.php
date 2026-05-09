@@ -79,6 +79,13 @@ trait ProvidesActivityHistory
         $causerName = $activity->causer?->getAttribute('name');
         $properties = $activity->properties?->toArray() ?? [];
         $relationChanges = $properties['relation_changes'] ?? null;
+        $mcpTokenName = $properties['mcp_token_name'] ?? null;
+
+        if (is_string($mcpTokenName) && $mcpTokenName !== '') {
+            $causerName = is_string($causerName)
+                ? 'MCP '.$mcpTokenName
+                : $mcpTokenName;
+        }
 
         return [
             'id' => $activity->id,
