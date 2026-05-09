@@ -44,11 +44,37 @@ class McpTokenPermissionService
         /** @var list<string> $types */
         $types = collect(McpToken::RECORD_TYPES)
             ->keys()
-            ->filter(fn (string $type): bool => $token->allows($type, 'read'))
+            ->filter(fn (string $type): bool => $this->tokenAllowsTypeLevel($token, $type, 'read'))
             ->values()
             ->all();
 
         return $types;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function writableTypes(): array
+    {
+        $token = $this->currentToken();
+
+        if (! $token instanceof McpToken) {
+            return array_keys(McpToken::RECORD_TYPES);
+        }
+
+        /** @var list<string> $types */
+        $types = collect(McpToken::RECORD_TYPES)
+            ->keys()
+            ->filter(fn (string $type): bool => $this->tokenAllowsTypeLevel($token, $type, 'write'))
+            ->values()
+            ->all();
+
+        return $types;
+    }
+
+    public function canWriteAnyType(): bool
+    {
+        return $this->writableTypes() !== [];
     }
 
     /**
@@ -99,5 +125,23 @@ class McpTokenPermissionService
         }
 
         return $model instanceof Task ? (int) $model->project_id : null;
+    }
+
+    private function tokenAllowsTypeLevel(McpToken $token, string $type, string $action): bool
+    {
+        // Tool registration only needs coarse type-level access; per-record task project scope is checked during execution.
+        $resource = McpToken::RECORD_TYPES[$type] ?? null;
+
+        if ($resource === null) {
+            return false;
+        }
+
+        $level = $token->abilities[$resource] ?? 'none';
+
+        if (! in_array($level, ['read', 'write'], true)) {
+            return false;
+        }
+
+        return $action !== 'write' || $level === 'write';
     }
 }

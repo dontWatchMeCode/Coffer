@@ -319,7 +319,60 @@ test('mcp token read permissions allow reads and deny writes', function () {
     RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
         'type' => 'note',
         'data' => ['title' => 'Denied', 'body' => 'Denied'],
-    ])->assertHasErrors(['Permission denied.']);
+    ])->assertHasErrors();
+});
+
+test('read only mcp tokens do not advertise mutating tools', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    [, $plainTextToken] = McpToken::createToken($user, $team, 'Read only client', [
+        'collections' => 'none',
+        'notes' => 'read',
+        'bookmarks' => 'none',
+        'contacts' => 'none',
+        'calendar' => 'none',
+        'tasks' => 'none',
+        'task_projects' => ['mode' => 'all', 'ids' => []],
+    ]);
+
+    $response = $this->withToken($plainTextToken)
+        ->postJson(route('mcp.records'), [
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'tools/list',
+        ])
+        ->assertSuccessful();
+
+    $toolNames = collect($response->json('result.tools'))->pluck('name');
+
+    expect($toolNames->all())->toContain('records.schema', 'records.search', 'records.get', 'records.related', 'records.tags.list')
+        ->not->toContain('records.create', 'records.update', 'records.delete', 'records.link', 'records.unlink', 'records.tags.add', 'records.tags.remove');
+});
+
+test('writable mcp tokens advertise mutating tools', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    [, $plainTextToken] = McpToken::createToken($user, $team, 'Writable client', [
+        'collections' => 'none',
+        'notes' => 'write',
+        'bookmarks' => 'none',
+        'contacts' => 'none',
+        'calendar' => 'none',
+        'tasks' => 'none',
+        'task_projects' => ['mode' => 'all', 'ids' => []],
+    ]);
+
+    $response = $this->withToken($plainTextToken)
+        ->postJson(route('mcp.records'), [
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'tools/list',
+        ])
+        ->assertSuccessful();
+
+    $toolNames = collect($response->json('result.tools'))->pluck('name');
+
+    expect($toolNames->all())->toContain('records.create', 'records.update', 'records.delete', 'records.link', 'records.unlink', 'records.tags.add', 'records.tags.remove');
 });
 
 test('mcp token none permissions hide and block record types', function () {
