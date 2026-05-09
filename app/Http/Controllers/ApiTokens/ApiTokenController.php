@@ -35,7 +35,7 @@ class ApiTokenController extends Controller
         return back();
     }
 
-    public function update(StoreApiTokenRequest $request, Team $currentTeam, McpToken $token): RedirectResponse
+    public function update(StoreApiTokenRequest $request, Team $currentTeam, McpToken $mcpToken): RedirectResponse
     {
         $user = $request->user();
 
@@ -43,9 +43,9 @@ class ApiTokenController extends Controller
             abort(401);
         }
 
-        $this->ensureTokenOwner($token, $user, $currentTeam);
+        $this->ensureTokenOwner($mcpToken, $user, $currentTeam);
 
-        $token->update([
+        $mcpToken->update([
             'name' => $request->validated('name'),
             'abilities' => $this->abilities($request->validated('abilities'), $currentTeam),
             'expires_at' => $request->validated('expires_at'),
@@ -54,7 +54,7 @@ class ApiTokenController extends Controller
         return back();
     }
 
-    public function destroy(Request $request, Team $currentTeam, McpToken $token): RedirectResponse
+    public function destroy(Request $request, Team $currentTeam, McpToken $mcpToken): RedirectResponse
     {
         $user = $request->user();
 
@@ -62,18 +62,18 @@ class ApiTokenController extends Controller
             abort(401);
         }
 
-        $this->ensureTokenOwner($token, $user, $currentTeam);
+        $this->ensureTokenOwner($mcpToken, $user, $currentTeam);
 
-        $token->delete();
+        $mcpToken->delete();
 
         return back();
     }
 
-    private function ensureTokenOwner(McpToken $token, User $user, Team $currentTeam): void
+    private function ensureTokenOwner(McpToken $mcpToken, User $user, Team $currentTeam): void
     {
         abort_unless(
-            (int) $token->team_id === (int) $currentTeam->id
-            && (int) $token->user_id === (int) $user->id,
+            (int) $mcpToken->team_id === (int) $currentTeam->id
+            && (int) $mcpToken->user_id === (int) $user->id,
             404,
         );
     }

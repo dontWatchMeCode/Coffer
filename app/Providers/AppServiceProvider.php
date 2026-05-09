@@ -8,7 +8,6 @@ use App\Database\StrictSQLiteConnection;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
-use App\Models\McpToken;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
@@ -16,7 +15,6 @@ use App\Models\RecordLink;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\TaskComment;
-use App\Models\Team;
 use App\Policies\BookmarkPolicy;
 use App\Policies\CalendarEventPolicy;
 use App\Policies\ContactPolicy;
@@ -29,7 +27,6 @@ use App\Policies\TaskCommentPolicy;
 use App\Policies\TaskPolicy;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -52,15 +49,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Route::bind('token', function (string $value): McpToken {
-            $team = request()->route('current_team');
-
-            return McpToken::query()
-                ->whereKey($value)
-                ->when($team instanceof Team, fn ($query) => $query->where('team_id', $team->id))
-                ->firstOrFail();
-        });
-
         Gate::policy(Bookmark::class, BookmarkPolicy::class);
         Gate::policy(CalendarEvent::class, CalendarEventPolicy::class);
         Gate::policy(Contact::class, ContactPolicy::class);

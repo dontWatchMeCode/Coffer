@@ -17,7 +17,7 @@ test('api tokens page can be rendered for team members', function () {
     $member->switchTeam($team);
 
     actingAs($member)
-        ->get(route('team.api-tokens.index', ['current_team' => $team]))
+        ->get(route('team.mcp.index', ['current_team' => $team]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('api-tokens/Index')
@@ -32,7 +32,7 @@ test('team members can create and revoke mcp tokens', function () {
     $project = Project::factory()->create(['team_id' => $team->id]);
 
     actingAs($user)
-        ->post(route('team.api-tokens.store', ['current_team' => $team]), [
+        ->post(route('team.mcp.store', ['current_team' => $team]), [
             'name' => 'OpenCode',
             'abilities' => [
                 'collections' => 'read',
@@ -54,7 +54,7 @@ test('team members can create and revoke mcp tokens', function () {
         ->and($token->abilities['task_projects']['ids'])->toBe([$project->id]);
 
     actingAs($user)
-        ->delete(route('team.api-tokens.destroy', ['current_team' => $team, 'token' => $token]))
+        ->delete(route('team.mcp.destroy', ['current_team' => $team, 'mcpToken' => $token]))
         ->assertRedirect();
 
     expect(McpToken::query()->whereKey($token->id)->exists())->toBeFalse();
@@ -81,7 +81,7 @@ test('team members can edit mcp tokens', function () {
     ]);
 
     actingAs($user)
-        ->patch(route('team.api-tokens.update', ['current_team' => $team, 'token' => $token]), [
+        ->patch(route('team.mcp.update', ['current_team' => $team, 'mcpToken' => $token]), [
             'name' => 'Updated',
             'abilities' => [
                 'collections' => 'read',

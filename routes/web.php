@@ -38,10 +38,10 @@ Route::prefix('{current_team}')
         Route::inertia('dashboard', 'Dashboard')->name('team.dashboard');
         Route::get('search', SearchController::class)->middleware('throttle:30,1')->name('team.search');
 
-        Route::get('api-tokens', [ApiTokenPageController::class, 'index'])->name('team.api-tokens.index');
-        Route::post('api-tokens', [ApiTokenController::class, 'store'])->middleware('throttle:10,1')->name('team.api-tokens.store');
-        Route::patch('api-tokens/{token}', [ApiTokenController::class, 'update'])->whereNumber('token')->name('team.api-tokens.update');
-        Route::delete('api-tokens/{token}', [ApiTokenController::class, 'destroy'])->whereNumber('token')->name('team.api-tokens.destroy');
+        Route::get('mcp', [ApiTokenPageController::class, 'index'])->name('team.mcp.index');
+        Route::post('mcp', [ApiTokenController::class, 'store'])->middleware('throttle:10,1')->name('team.mcp.store');
+        Route::patch('mcp/{mcpToken}', [ApiTokenController::class, 'update'])->whereNumber('mcpToken')->name('team.mcp.update');
+        Route::delete('mcp/{mcpToken}', [ApiTokenController::class, 'destroy'])->whereNumber('mcpToken')->name('team.mcp.destroy');
 
         Route::get('links/candidates', [RecordLinkController::class, 'candidates'])->middleware('throttle:30,1')->name('team.links.candidates');
         Route::post('links', [RecordLinkController::class, 'store'])->middleware('throttle:60,1')->name('team.links.store');

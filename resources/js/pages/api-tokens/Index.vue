@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Copy, KeyRound, Plus, Trash2 } from 'lucide-vue-next';
+import { Copy, KeyRound, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, reactive, ref } from 'vue';
+import EmptyState from '@/components/list/EmptyState.vue';
+import ListContainer from '@/components/list/ListContainer.vue';
+import ListItem from '@/components/list/ListItem.vue';
+import ListItemActions from '@/components/list/ListItemActions.vue';
+import ListItemIcon from '@/components/list/ListItemIcon.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { destroy, index, store, update } from '@/routes/team/api-tokens';
+import { destroy, index, store, update } from '@/routes/team/mcp';
 import { apiTokenResourceLabels } from '@/types';
 import type {
     ApiTokenAbilities,
@@ -102,7 +106,7 @@ function submit(data: {
         router.patch(
             update({
                 current_team: currentTeamSlug.value,
-                token: editingTokenId.value,
+                mcpToken: editingTokenId.value,
             }).url,
             form,
             {
@@ -134,7 +138,8 @@ function submit(data: {
 
 function revoke(token: ApiTokenItem): void {
     router.delete(
-        destroy({ current_team: currentTeamSlug.value, token: token.id }).url,
+        destroy({ current_team: currentTeamSlug.value, mcpToken: token.id })
+            .url,
         { preserveScroll: true },
     );
 }
@@ -153,7 +158,7 @@ defineOptions({
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {
-                title: 'API Tokens',
+                title: 'MCP',
                 href: index(pageProps.currentTeam?.slug).url,
             },
         ],
@@ -162,10 +167,10 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="API Tokens" />
+    <Head title="MCP" />
 
     <PageHeader
-        title="API Tokens"
+        title="MCP"
         description="Create team-scoped MCP bearer tokens for external clients."
     />
 
@@ -174,7 +179,7 @@ defineOptions({
             <div class="flex justify-end">
                 <Button @click="openCreateModal">
                     <Plus class="mr-2 h-4 w-4" />
-                    Create Token
+                    Create MCP
                 </Button>
 
                 <TokenDialog
@@ -188,86 +193,114 @@ defineOptions({
                 />
             </div>
 
-            <Card v-for="token in tokens" :key="token.id">
-                <CardHeader
-                    class="flex flex-row items-start justify-between gap-4"
+            <ListContainer v-if="tokens.length > 0" layout="list">
+                <ListItem
+                    v-for="token in tokens"
+                    :key="token.id"
+                    :clickable="false"
                 >
-                    <div>
-                        <CardTitle class="flex items-center gap-2">
-                            <KeyRound class="h-4 w-4" />
-                            {{ token.name }}
-                        </CardTitle>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Created by {{ token.created_by ?? 'Unknown' }} ·
-                            Last used
-                            {{ formatDate(token.last_used_at) }}
-                        </p>
-                    </div>
-                    <div class="flex gap-2">
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            @click="copyToken(token.id, token.token)"
-                        >
-                            <Copy class="mr-2 h-4 w-4" />
-                            {{ copiedId === token.id ? 'Copied' : 'Copy' }}
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            @click="openEditModal(token)"
-                        >
-                            Edit
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            @click="revoke(token)"
-                        >
-                            <Trash2 class="mr-2 h-4 w-4" />
-                            Revoke
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent class="space-y-4">
-                    <div class="flex flex-wrap gap-2">
-                        <Badge
-                            v-for="resource in resourceKeys"
-                            :key="resource"
-                            variant="secondary"
-                        >
-                            {{ apiTokenResourceLabels[resource] }}:
-                            {{
-                                token.abilities[resource] === 'write'
-                                    ? 'read+write'
-                                    : token.abilities[resource]
-                            }}
-                        </Badge>
-                    </div>
-                    <p class="text-sm text-muted-foreground">
-                        Task projects:
-                        <span
-                            v-if="token.abilities.task_projects.mode === 'all'"
-                            >all</span
-                        >
-                        <span v-else
-                            >{{
-                                token.abilities.task_projects.ids.length
-                            }}
-                            selected</span
-                        >
-                        · Expires {{ token.expires_at ?? 'never' }}
-                    </p>
-                </CardContent>
-            </Card>
+                    <div class="flex items-center gap-4">
+                        <ListItemIcon size="sm">
+                            <KeyRound class="h-4 w-4 text-muted-foreground" />
+                        </ListItemIcon>
 
-            <Card v-if="tokens.length === 0">
-                <CardContent
-                    class="py-10 text-center text-sm text-muted-foreground"
-                >
-                    No API tokens yet.
-                </CardContent>
-            </Card>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-medium">
+                                {{ token.name }}
+                            </p>
+                            <p class="truncate text-xs text-muted-foreground">
+                                Created by {{ token.created_by ?? 'Unknown' }}
+                                · Last used
+                                {{ formatDate(token.last_used_at) }}
+                                · Expires {{ formatDate(token.expires_at) }}
+                            </p>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                <Badge
+                                    v-for="resource in resourceKeys.filter(
+                                        (r) => token.abilities[r] !== 'none',
+                                    )"
+                                    :key="resource"
+                                    variant="secondary"
+                                    class="text-[10px]"
+                                >
+                                    {{ apiTokenResourceLabels[resource] }}
+                                </Badge>
+                                <Badge
+                                    v-if="token.abilities.tasks !== 'none'"
+                                    variant="outline"
+                                    class="px-1.5 py-0 text-[10px]"
+                                >
+                                    <template
+                                        v-if="
+                                            token.abilities.task_projects
+                                                .mode === 'all'
+                                        "
+                                    >
+                                        All projects
+                                    </template>
+                                    <template v-else>
+                                        {{
+                                            token.abilities.task_projects.ids
+                                                .length
+                                        }}
+                                        projects
+                                    </template>
+                                </Badge>
+                            </div>
+                        </div>
+
+                        <ListItemActions>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="h-8 w-8"
+                                :title="
+                                    copiedId === token.id
+                                        ? 'Copied'
+                                        : 'Copy token'
+                                "
+                                @click="copyToken(token.id, token.token)"
+                            >
+                                <Copy class="h-4 w-4" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="h-8 w-8"
+                                title="Edit token"
+                                @click="openEditModal(token)"
+                            >
+                                <Pencil class="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="h-8 w-8"
+                                title="Revoke token"
+                                @click="revoke(token)"
+                            >
+                                <Trash2 class="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                        </ListItemActions>
+                    </div>
+                </ListItem>
+            </ListContainer>
+
+            <EmptyState
+                v-else
+                title="No MCP yet."
+                description="Create your first MCP credential to authenticate external clients."
+                :show-action="true"
+                action-label="Create MCP"
+                @action="openCreateModal"
+            >
+                <template #icon>
+                    <KeyRound class="h-12 w-12" />
+                </template>
+                <template #action-icon>
+                    <Plus class="mr-1.5 h-3.5 w-3.5" />
+                </template>
+            </EmptyState>
         </div>
     </div>
 </template>

@@ -204,17 +204,13 @@ function handleSubmit(): void {
             <form class="space-y-5" @submit.prevent="handleSubmit">
                 <DialogHeader>
                     <DialogTitle>
-                        {{
-                            mode === 'create'
-                                ? 'Create API token'
-                                : 'Edit API token'
-                        }}
+                        {{ mode === 'create' ? 'Create MCP' : 'Edit MCP' }}
                     </DialogTitle>
                     <DialogDescription>
                         {{
                             mode === 'create'
-                                ? 'Generate a team-scoped MCP token with resource permissions.'
-                                : 'Update the token name, expiry, and permissions.'
+                                ? 'Generate a team-scoped MCP credential with resource permissions.'
+                                : 'Update the MCP name, expiry, and permissions.'
                         }}
                     </DialogDescription>
                 </DialogHeader>
@@ -272,7 +268,10 @@ function handleSubmit(): void {
                     </div>
                 </div>
 
-                <div class="space-y-3">
+                <div
+                    v-if="localForm.abilities.tasks !== 'none'"
+                    class="space-y-3"
+                >
                     <Label>Task project scope</Label>
                     <Select v-model="localForm.abilities.task_projects.mode">
                         <SelectTrigger class="w-full">
@@ -368,9 +367,7 @@ function handleSubmit(): void {
                 <div class="flex justify-end">
                     <Button type="submit">
                         <Plus v-if="mode === 'create'" class="mr-2 h-4 w-4" />
-                        {{
-                            mode === 'create' ? 'Create Token' : 'Save Changes'
-                        }}
+                        {{ mode === 'create' ? 'Create MCP' : 'Save Changes' }}
                     </Button>
                 </div>
             </form>

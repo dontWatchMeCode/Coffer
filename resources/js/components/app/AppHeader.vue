@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-vue-next';
+import { KeyRound, LayoutGrid, Menu, Search } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import AppLogo from '@/components/app/AppLogo.vue';
 import AppLogoIcon from '@/components/app/AppLogoIcon.vue';
@@ -36,9 +36,9 @@ import {
 } from '@/components/ui/tooltip';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
-import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { dashboard as teamDashboard } from '@/routes/team';
+import { index as teamMcp } from '@/routes/team/mcp/index';
 import type { BreadcrumbItem, NavItem } from '@/types';
 
 type Props = {
@@ -70,18 +70,17 @@ const mainNavItems = computed<NavItem[]>(() => [
     },
 ]);
 
-const rightNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+const rightNavItems = computed<NavItem[]>(() =>
+    page.props.currentTeam
+        ? [
+              {
+                  title: 'MCP',
+                  href: teamMcp(page.props.currentTeam.slug).url,
+                  icon: KeyRound,
+              },
+          ]
+        : [],
+);
 
 const searchOpen = ref(false);
 </script>
@@ -136,12 +135,10 @@ const searchOpen = ref(false);
                                     </Link>
                                 </nav>
                                 <div class="flex flex-col space-y-4">
-                                    <a
+                                    <Link
                                         v-for="item in rightNavItems"
                                         :key="item.title"
-                                        :href="toUrl(item.href)"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                        :href="item.href"
                                         class="flex items-center space-x-2 text-sm font-medium"
                                     >
                                         <component
@@ -150,7 +147,7 @@ const searchOpen = ref(false);
                                             class="h-5 w-5"
                                         />
                                         <span>{{ item.title }}</span>
-                                    </a>
+                                    </Link>
                                 </div>
                             </div>
                         </SheetContent>
@@ -226,11 +223,7 @@ const searchOpen = ref(false);
                                                 as-child
                                                 class="group h-9 w-9 cursor-pointer"
                                             >
-                                                <a
-                                                    :href="toUrl(item.href)"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
+                                                <Link :href="item.href">
                                                     <span class="sr-only">{{
                                                         item.title
                                                     }}</span>
@@ -238,7 +231,7 @@ const searchOpen = ref(false);
                                                         :is="item.icon"
                                                         class="size-5 opacity-80 group-hover:opacity-100"
                                                     />
-                                                </a>
+                                                </Link>
                                             </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>
