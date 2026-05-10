@@ -2,6 +2,7 @@
 import { router, useForm } from '@inertiajs/vue3';
 import {
     Check,
+    Bot,
     MessageCircle,
     Pencil,
     Plus,
@@ -232,6 +233,16 @@ function deleteComment(comment: TaskCommentItem): void {
                                 <span class="text-sm font-medium">
                                     {{ comment.userName ?? 'Unknown' }}
                                 </span>
+                                <Badge
+                                    v-if="comment.source === 'mcp'"
+                                    variant="outline"
+                                    class="gap-1 rounded-full px-2 py-0 text-[0.6875rem] font-medium text-muted-foreground"
+                                >
+                                    <Bot class="h-3 w-3" />
+                                    MCP<span v-if="comment.mcpTokenName"
+                                        >: {{ comment.mcpTokenName }}</span
+                                    >
+                                </Badge>
                                 <TooltipProvider :delay-duration="150">
                                     <Tooltip>
                                         <TooltipTrigger as-child>

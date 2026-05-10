@@ -168,6 +168,8 @@ test('task edit page includes existing comments', function () {
         'task_id' => $task->id,
         'user_id' => $user->id,
         'body' => 'Latest task note',
+        'source' => 'mcp',
+        'mcp_token_name' => 'Claude Desktop',
         'created_at' => now(),
     ]);
 
@@ -182,7 +184,10 @@ test('task edit page includes existing comments', function () {
             ->where('comments.0.body', 'Latest task note')
             ->where('comments.0.userId', $user->id)
             ->where('comments.0.userName', $user->name)
+            ->where('comments.0.source', 'mcp')
+            ->where('comments.0.mcpTokenName', 'Claude Desktop')
             ->where('comments.1.id', $olderComment->id)
+            ->where('comments.1.source', 'user')
             ->where('comments.1.body', 'First task note'),
         );
 });

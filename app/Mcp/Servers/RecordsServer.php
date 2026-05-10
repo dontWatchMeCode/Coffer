@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Mcp\Servers;
 
 use App\Mcp\Tools\AddRecordTagsTool;
+use App\Mcp\Tools\AddTaskCommentTool;
 use App\Mcp\Tools\CreateRecordTool;
 use App\Mcp\Tools\DeleteRecordTool;
 use App\Mcp\Tools\GetRecordTool;
 use App\Mcp\Tools\GetRelatedRecordsTool;
 use App\Mcp\Tools\LinkRecordsTool;
 use App\Mcp\Tools\ListRecordTagsTool;
+use App\Mcp\Tools\ListTaskCommentsTool;
 use App\Mcp\Tools\RecordsSchemaTool;
 use App\Mcp\Tools\RemoveRecordTagsTool;
 use App\Mcp\Tools\SearchRecordsTool;
@@ -46,6 +48,8 @@ class RecordsServer extends Server
         AddRecordTagsTool::class,
         RemoveRecordTagsTool::class,
         ListRecordTagsTool::class,
+        ListTaskCommentsTool::class,
+        AddTaskCommentTool::class,
     ];
 
     /**

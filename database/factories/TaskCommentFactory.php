@@ -35,6 +35,7 @@ class TaskCommentFactory extends Factory
                 return $user->id;
             },
             'body' => fake()->paragraph(),
+            'source' => 'user',
         ];
     }
 }

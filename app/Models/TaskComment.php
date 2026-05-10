@@ -14,7 +14,7 @@ use LogicException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-#[Fillable(['team_id', 'task_id', 'user_id', 'body'])]
+#[Fillable(['team_id', 'task_id', 'user_id', 'body', 'source', 'mcp_token_id', 'mcp_token_name'])]
 class TaskComment extends Model
 {
     use BelongsToTeam;

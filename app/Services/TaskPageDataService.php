@@ -168,6 +168,8 @@ class TaskPageDataService
             'userId' => $comment->user_id,
             'userName' => $comment->user?->name,
             'body' => $comment->body,
+            'source' => $comment->source ?? 'user',
+            'mcpTokenName' => $comment->mcp_token_name,
             'createdAt' => $createdAt instanceof DateTimeInterface
                 ? $createdAt->format(DateTimeInterface::ATOM)
                 : null,

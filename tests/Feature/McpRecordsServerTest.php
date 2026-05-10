@@ -3,12 +3,14 @@
 use App\Enums\TaskStatus;
 use App\Mcp\Servers\RecordsServer;
 use App\Mcp\Tools\AddRecordTagsTool;
+use App\Mcp\Tools\AddTaskCommentTool;
 use App\Mcp\Tools\CreateRecordTool;
 use App\Mcp\Tools\DeleteRecordTool;
 use App\Mcp\Tools\GetRecordTool;
 use App\Mcp\Tools\GetRelatedRecordsTool;
 use App\Mcp\Tools\LinkRecordsTool;
 use App\Mcp\Tools\ListRecordTagsTool;
+use App\Mcp\Tools\ListTaskCommentsTool;
 use App\Mcp\Tools\RecordsSchemaTool;
 use App\Mcp\Tools\RemoveRecordTagsTool;
 use App\Mcp\Tools\SearchRecordsTool;
@@ -24,6 +26,7 @@ use App\Models\RecordCollection;
 use App\Models\RecordLink;
 use App\Models\Tag;
 use App\Models\Task;
+use App\Models\TaskComment;
 use App\Models\User;
 
 beforeEach(function () {
@@ -225,6 +228,109 @@ test('linked records and tags can be managed through mcp', function () {
     expect(RecordLink::query()->count())->toBe(0);
     expect($note->fresh()->recordTags()->pluck('slug')->all())->toBe(['urgent']);
     expect(Tag::query()->where('slug', 'research')->exists())->toBeFalse();
+});
+
+test('task comments can be listed and added through mcp', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'title' => 'Commented MCP task',
+    ]);
+
+    TaskComment::factory()->create([
+        'team_id' => $team->id,
+        'task_id' => $task->id,
+        'user_id' => $user->id,
+        'body' => 'Existing MCP comment',
+    ]);
+
+    RecordsServer::actingAs($user)->tool(ListTaskCommentsTool::class, [
+        'task_id' => $task->id,
+    ])->assertOk()->assertSee('Existing MCP comment');
+
+    RecordsServer::actingAs($user)->tool(AddTaskCommentTool::class, [
+        'task_id' => $task->id,
+        'body' => 'Added MCP comment',
+    ])->assertOk()->assertSee('Added MCP comment');
+
+    expect($task->comments()->pluck('body')->all())->toContain('Existing MCP comment', 'Added MCP comment');
+});
+
+test('task comments added through mcp store token origin metadata', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+    ]);
+    $token = McpToken::factory()->create([
+        'user_id' => $user->id,
+        'team_id' => $team->id,
+        'name' => 'Claude Desktop',
+        'abilities' => [
+            'collections' => 'none',
+            'notes' => 'none',
+            'bookmarks' => 'none',
+            'contacts' => 'none',
+            'calendar' => 'none',
+            'tasks' => 'write',
+            'task_projects' => ['mode' => 'all', 'ids' => []],
+        ],
+    ])->load('team');
+
+    app()->instance(McpToken::class, $token);
+
+    RecordsServer::actingAs($user)->tool(AddTaskCommentTool::class, [
+        'task_id' => $task->id,
+        'body' => 'Added with origin metadata',
+    ])->assertOk()->assertSee('Claude Desktop');
+
+    $comment = $task->comments()->firstOrFail();
+
+    expect($comment->source)->toBe('mcp')
+        ->and($comment->mcp_token_id)->toBe($token->id)
+        ->and($comment->mcp_token_name)->toBe('Claude Desktop');
+});
+
+test('task comment tools respect mcp task project scope', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $allowedProject = Project::factory()->create(['team_id' => $team->id]);
+    $blockedProject = Project::factory()->create(['team_id' => $team->id]);
+    $blockedTask = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $blockedProject->id,
+        'title' => 'Blocked comment task',
+    ]);
+
+    $token = McpToken::factory()->create([
+        'user_id' => $user->id,
+        'team_id' => $team->id,
+        'abilities' => [
+            'collections' => 'none',
+            'notes' => 'none',
+            'bookmarks' => 'none',
+            'contacts' => 'none',
+            'calendar' => 'none',
+            'tasks' => 'write',
+            'task_projects' => ['mode' => 'only', 'ids' => [$allowedProject->id]],
+        ],
+    ])->load('team');
+
+    app()->instance(McpToken::class, $token);
+
+    RecordsServer::actingAs($user)->tool(ListTaskCommentsTool::class, [
+        'task_id' => $blockedTask->id,
+    ])->assertHasErrors(['Permission denied.']);
+
+    RecordsServer::actingAs($user)->tool(AddTaskCommentTool::class, [
+        'task_id' => $blockedTask->id,
+        'body' => 'Denied comment',
+    ])->assertHasErrors(['Permission denied.']);
 });
 
 test('mcp record tools are scoped to the authenticated users current team', function () {

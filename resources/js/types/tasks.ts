@@ -34,6 +34,8 @@ export type TaskCommentItem = {
     userId: number;
     userName?: string | null;
     body: string;
+    source?: 'user' | 'mcp';
+    mcpTokenName?: string | null;
     createdAt?: string | null;
     updatedAt?: string | null;
     activityHistory?: ActivityHistoryItem[];
