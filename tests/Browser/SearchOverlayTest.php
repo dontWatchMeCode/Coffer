@@ -25,24 +25,33 @@ it('searches globally and navigates to a result', function () {
         ->click('[data-testid="global-search-trigger"]')
         ->fill('[data-testid="global-search-input"]', 'Searchable Browser');
 
-    waitForBrowserText($page, 'Searchable Browser Task');
+    $clicked = false;
+    $deadline = microtime(true) + 5;
 
-    $clicked = $page->script(<<<'JS'
-        (() => {
-            const element = Array.from(document.querySelectorAll('[data-testid="global-search-result"]'))
-                .find((element) => element.innerText.includes('Searchable Browser Task'));
+    while (microtime(true) < $deadline) {
+        $clicked = $page->script(<<<'JS'
+            (() => {
+                const element = Array.from(document.querySelectorAll('[data-testid="global-search-result"]'))
+                    .find((element) => element.innerText.includes('Searchable Browser Task'));
 
-            if (!element) {
-                return false;
-            }
+                if (!element) {
+                    return false;
+                }
 
-            element.click();
+                element.click();
 
-            return true;
-        })()
-    JS);
+                return true;
+            })()
+        JS);
 
-    expect($clicked)->not->toBeFalse();
+        if ($clicked === true) {
+            break;
+        }
+
+        usleep(100_000);
+    }
+
+    expect($clicked)->toBeTrue();
 
     waitForBrowserPath($page, '/'.$team->slug.'/tasks/'.$project->id.'/'.$task->id.'/edit')
         ->assertNoJavaScriptErrors();

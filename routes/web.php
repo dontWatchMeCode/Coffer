@@ -10,6 +10,7 @@ use App\Http\Controllers\Collections\CollectionController;
 use App\Http\Controllers\Collections\CollectionPageController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Contacts\ContactPageController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Notes\NoteController;
 use App\Http\Controllers\Notes\NotePageController;
 use App\Http\Controllers\RecordLinkController;
@@ -29,13 +30,13 @@ Route::inertia('/', 'Welcome', [
 ])->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 });
 
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
     ->group(function () {
-        Route::inertia('dashboard', 'Dashboard')->name('team.dashboard');
+        Route::get('dashboard', DashboardController::class)->name('team.dashboard');
         Route::get('search', SearchController::class)->middleware('throttle:30,1')->name('team.search');
 
         Route::get('mcp', [ApiTokenPageController::class, 'index'])->name('team.mcp.index');
