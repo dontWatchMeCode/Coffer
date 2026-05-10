@@ -201,7 +201,7 @@ defineOptions({
 
                 <section class="grid gap-5 xl:grid-cols-12">
                     <Card class="self-start overflow-hidden py-0 xl:col-span-7">
-                        <CardHeader class="border-b py-5 flex">
+                        <CardHeader class="flex border-b py-5">
                             <CardTitle
                                 class="flex items-center gap-2 text-base"
                             >
@@ -319,7 +319,7 @@ defineOptions({
                         </CardContent>
                     </Card>
                     <Card class="self-start py-0 xl:col-span-5">
-                        <CardHeader class="border-b py-5 flex">
+                        <CardHeader class="flex border-b py-5">
                             <CardTitle
                                 class="flex items-center gap-2 text-base"
                             >
