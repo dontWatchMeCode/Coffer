@@ -5,7 +5,6 @@ import {
     CalendarDays,
     Contact,
     FileText,
-    KeyRound,
     Layers3,
     LayoutGrid,
     ListTodo,
@@ -32,7 +31,6 @@ import { index as teamBookmarks } from '@/routes/team/bookmarks/index';
 import { index as teamCalendar } from '@/routes/team/calendar/index';
 import { index as teamCollections } from '@/routes/team/collections/index';
 import { index as teamContacts } from '@/routes/team/contacts/index';
-import { index as teamMcp } from '@/routes/team/mcp/index';
 import { index as teamNotes } from '@/routes/team/notes/index';
 import { index as teamTasks } from '@/routes/team/tasks/index';
 import type { NavItem } from '@/types';
@@ -142,16 +140,6 @@ const searchOpen = ref(false);
         </SidebarContent>
 
         <SidebarFooter>
-            <SidebarMenu v-if="page.props.currentTeam">
-                <SidebarMenuItem>
-                    <SidebarMenuButton as-child tooltip="MCP">
-                        <Link :href="teamMcp(page.props.currentTeam.slug).url">
-                            <KeyRound />
-                            <span>MCP</span>
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
             <NavUser />
         </SidebarFooter>
     </Sidebar>

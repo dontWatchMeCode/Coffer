@@ -306,7 +306,7 @@
 
 10. **TypeScript types** — `ApiTokenAbilities`, `ApiTokenItem`, `ApiTokenProject`, `ApiTokenPermission` in `resources/js/types/api-tokens.ts`, re-exported from `index.ts`.
 
-11. **Sidebar nav** — "API Tokens" entry in `AppSidebar.vue` linking to `team.api-tokens.index`.
+11. **User menu nav** — "MCP" entry in `UserMenuContent.vue` linking to the team MCP token page.
 
 ### Session: Activity History Feature (May 2026)
 
@@ -332,4 +332,3 @@
     - `getOldValue`/`getNewValue` duplicated logic — consolidated to `getFieldValue(activity, field, side)`.
     - `stripSelectionState` double-cloned appState — removed inner `cloneJson`, used shallow spread.
     - `drawingDataEqualsIgnoringViewport` originally mutated arrays via `unset` — refactored to pure closure with `appState` guard.
-

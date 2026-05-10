@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
-import { LogOut, Settings } from 'lucide-vue-next';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import { KeyRound, LogOut, Settings } from 'lucide-vue-next';
+import { computed } from 'vue';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -10,6 +11,8 @@ import {
 import UserInfo from '@/components/user/UserInfo.vue';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
+import { index as teamMcp } from '@/routes/team/mcp/index';
+import type { Team } from '@/types';
 import type { User } from '@/types';
 
 type Props = {
@@ -21,6 +24,9 @@ const handleLogout = () => {
 };
 
 defineProps<Props>();
+
+const page = usePage();
+const currentTeam = computed(() => page.props.currentTeam as Team | null);
 </script>
 
 <template>
@@ -31,6 +37,15 @@ defineProps<Props>();
     </DropdownMenuLabel>
     <DropdownMenuSeparator />
     <DropdownMenuGroup>
+        <DropdownMenuItem v-if="currentTeam" :as-child="true">
+            <Link
+                class="block w-full cursor-pointer"
+                :href="teamMcp(currentTeam.slug).url"
+            >
+                <KeyRound class="mr-2 h-4 w-4" />
+                MCP
+            </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem :as-child="true">
             <Link class="block w-full cursor-pointer" :href="edit()" prefetch>
                 <Settings class="mr-2 h-4 w-4" />
