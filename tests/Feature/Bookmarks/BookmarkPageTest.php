@@ -81,7 +81,6 @@ test('a bookmark can be created', function () {
     expect($bookmark->url)->toBe('https://vuejs.org');
     expect($bookmark->description)->toBe('Vue.js documentation');
     expect($bookmark->notes)->toBe('Great framework');
-    expect($bookmark->is_archived)->toBeFalse();
 });
 
 test('a bookmark requires a title and url', function () {
@@ -125,7 +124,6 @@ test('a bookmark can be updated', function () {
                 'url' => 'https://new.com',
                 'description' => 'Updated description',
                 'notes' => 'Updated notes',
-                'is_archived' => true,
             ],
         )
         ->assertRedirect(route('team.bookmarks.show', ['current_team' => $team, 'bookmark' => $bookmark->id]));
@@ -136,7 +134,6 @@ test('a bookmark can be updated', function () {
     expect($bookmark->url)->toBe('https://new.com');
     expect($bookmark->description)->toBe('Updated description');
     expect($bookmark->notes)->toBe('Updated notes');
-    expect($bookmark->is_archived)->toBeTrue();
 });
 
 test('a bookmark can be deleted', function () {
@@ -256,7 +253,6 @@ test('bookmark show page can be rendered', function () {
         'url' => 'https://vuejs.org',
         'description' => 'Vue.js documentation',
         'notes' => 'Great framework',
-        'is_archived' => false,
     ]);
 
     actingAs($user)
@@ -270,7 +266,6 @@ test('bookmark show page can be rendered', function () {
             ->where('bookmark.url', 'https://vuejs.org')
             ->where('bookmark.description', 'Vue.js documentation')
             ->where('bookmark.notes', 'Great framework')
-            ->where('bookmark.isArchived', false)
             ->where('bookmark.updatedAt', fn (?string $updatedAt): bool => is_string($updatedAt)
                 && str_contains($updatedAt, 'T')),
         );
@@ -337,7 +332,6 @@ test('bookmarks can be created with nullable fields', function () {
 
     expect($bookmark->description)->toBeNull();
     expect($bookmark->notes)->toBeNull();
-    expect($bookmark->is_archived)->toBeFalse();
 });
 
 test('updating a bookmark logs an activity', function () {

@@ -88,7 +88,7 @@ Pages:
 
 Features:
 
-- Bookmarks support title, URL, description, notes, and archive state.
+- Bookmarks support title, URL, description, and notes.
 - Bookmarks belong to the active team.
 - Bookmarks can use shared tags and related-record links.
 - Bookmark changes can appear in activity history.

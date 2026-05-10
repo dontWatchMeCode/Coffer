@@ -11,7 +11,7 @@ The app is built with Laravel, Inertia, Vue, and Tailwind CSS. Most product feat
 - Tasks organized by projects, with assignment, status, progress, due dates, and comments.
 - Calendar events with date and optional time.
 - Contacts with phone numbers, email addresses, links, address, and extra notes.
-- Bookmarks with descriptions, notes, and archive state.
+- Bookmarks with descriptions and notes.
 - Notes in text or Excalidraw format.
 - Collections for grouping linked records.
 - Global search across configured team record types.

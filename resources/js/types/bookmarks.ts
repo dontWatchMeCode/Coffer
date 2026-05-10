@@ -4,7 +4,6 @@ export type BookmarkItem = {
     url: string;
     description?: string | null;
     notes?: string | null;
-    isArchived: boolean;
     createdAt?: string | null;
     updatedAt?: string | null;
 };

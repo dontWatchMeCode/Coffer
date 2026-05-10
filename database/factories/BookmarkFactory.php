@@ -24,7 +24,6 @@ class BookmarkFactory extends Factory
             'url' => fake()->url(),
             'description' => fake()->optional(0.6)->sentence(),
             'notes' => fake()->optional(0.4)->paragraph(),
-            'is_archived' => fake()->boolean(15),
         ];
     }
 }

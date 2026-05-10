@@ -19,7 +19,7 @@ class McpRecordValidator
             'task' => ['project_id', 'assigned_to', 'title', 'description', 'status', 'progress', 'position', 'due_at'],
             'calendar_event' => ['title', 'description', 'date', 'time'],
             'contact' => ['name', 'phone_numbers', 'email_addresses', 'links', 'address', 'additional_info'],
-            'bookmark' => ['title', 'url', 'description', 'notes', 'is_archived'],
+            'bookmark' => ['title', 'url', 'description', 'notes'],
             'subscription' => ['name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'url', 'description', 'notes', 'is_active', 'category'],
             'note' => ['title', 'body', 'format', 'drawing_data'],
             'collection' => ['title', 'description'],
@@ -103,7 +103,6 @@ class McpRecordValidator
                 'url' => [...$required('required'), 'string', 'url', 'max:2048'],
                 'description' => [...$optional(), 'nullable', 'string', 'max:500'],
                 'notes' => [...$optional(), 'nullable', 'string'],
-                'is_archived' => [...$optional(), 'boolean'],
             ],
             'subscription' => [
                 'name' => [...$required('required'), 'string', 'max:255'],

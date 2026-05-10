@@ -52,18 +52,6 @@ class SaveBookmarkRequest extends FormRequest
             'notes' => $sometimes
                 ? ['sometimes', 'nullable', 'string']
                 : ['nullable', 'string'],
-            'is_archived' => $sometimes
-                ? ['sometimes', 'boolean']
-                : ['nullable', 'boolean'],
         ];
-    }
-
-    protected function prepareForValidation(): void
-    {
-        if ($this->has('is_archived')) {
-            $this->merge([
-                'is_archived' => $this->boolean('is_archived'),
-            ]);
-        }
     }
 }

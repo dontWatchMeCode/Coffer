@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-#[Fillable(['team_id', 'title', 'url', 'description', 'notes', 'is_archived'])]
+#[Fillable(['team_id', 'title', 'url', 'description', 'notes'])]
 class Bookmark extends Model implements LinkableRecord
 {
     use BelongsToTeam;
@@ -31,15 +31,13 @@ class Bookmark extends Model implements LinkableRecord
     {
         return LogOptions::defaults()
             ->useLogName('bookmarks')
-            ->logOnly(['title', 'url', 'description', 'notes', 'is_archived'])
+            ->logOnly(['title', 'url', 'description', 'notes'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
 
     protected function casts(): array
     {
-        return [
-            'is_archived' => 'boolean',
-        ];
+        return [];
     }
 }

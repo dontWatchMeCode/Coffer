@@ -53,7 +53,7 @@ This is a concise feature map of the app.
 
 ## Bookmarks
 
-- Bookmarks track useful team links with descriptions, notes, and archive state.
+- Bookmarks track useful team links with descriptions and notes.
 - Details: [Bookmarks](pages.md#bookmarks)
 
 ## Notes

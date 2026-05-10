@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Archive, ExternalLink, Pencil } from 'lucide-vue-next';
+import { ExternalLink, Pencil } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import InputError from '@/components/form/InputError.vue';
@@ -11,7 +11,6 @@ import DetailSection from '@/components/page/DetailSection.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import DeleteBookmarkDialog from '@/components/pages/bookmarks/DeleteBookmarkDialog.vue';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
@@ -70,7 +69,6 @@ const editTitle = ref(props.bookmark.title);
 const editUrl = ref(props.bookmark.url);
 const editDescription = ref(props.bookmark.description ?? '');
 const editNotes = ref(props.bookmark.notes ?? '');
-const editIsArchived = ref(props.bookmark.isArchived);
 const isSubmitting = ref(false);
 
 watch(
@@ -87,7 +85,6 @@ function resetEditFields(bookmark: BookmarkItem): void {
     editUrl.value = bookmark.url;
     editDescription.value = bookmark.description ?? '';
     editNotes.value = bookmark.notes ?? '';
-    editIsArchived.value = bookmark.isArchived;
 }
 
 function cancelEdit(): void {
@@ -108,7 +105,6 @@ function submitEdit(): void {
             url: editUrl.value,
             description: editDescription.value || null,
             notes: editNotes.value || null,
-            is_archived: editIsArchived.value,
         },
         {
             preserveScroll: true,
@@ -192,14 +188,6 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
                             </p>
                         </DetailSection>
 
-                        <div
-                            v-if="bookmark.isArchived"
-                            class="inline-flex items-center gap-2 text-sm text-muted-foreground"
-                        >
-                            <Archive class="h-4 w-4" />
-                            Archived
-                        </div>
-
                         <div class="flex justify-end gap-2">
                             <Button
                                 variant="outline"
@@ -256,19 +244,6 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
                                 placeholder="Additional notes about this link..."
                             />
                             <InputError :message="errors.notes" />
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <Checkbox
-                                id="edit-bookmark-archived"
-                                v-model="editIsArchived"
-                            />
-                            <Label
-                                for="edit-bookmark-archived"
-                                class="cursor-pointer text-sm font-normal"
-                            >
-                                Archived
-                            </Label>
                         </div>
 
                         <div class="flex justify-end gap-2">

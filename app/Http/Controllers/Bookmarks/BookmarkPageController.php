@@ -24,7 +24,6 @@ class BookmarkPageController extends Controller
     {
         $bookmarks = Bookmark::query()
             ->whereBelongsTo($currentTeam)
-            ->orderBy('is_archived')
             ->orderByDesc('created_at')
             ->get();
 
@@ -35,7 +34,6 @@ class BookmarkPageController extends Controller
                 'url' => $bookmark->url,
                 'description' => $bookmark->description,
                 'notes' => $bookmark->notes,
-                'isArchived' => $bookmark->is_archived,
                 'createdAt' => $bookmark->created_at?->format(\DateTimeInterface::ATOM),
                 'updatedAt' => $bookmark->updated_at?->format(\DateTimeInterface::ATOM),
             ])->values()->all(),
@@ -56,7 +54,6 @@ class BookmarkPageController extends Controller
                 'url' => $bookmark->url,
                 'description' => $bookmark->description,
                 'notes' => $bookmark->notes,
-                'isArchived' => $bookmark->is_archived,
                 'createdAt' => $bookmark->created_at?->format(\DateTimeInterface::ATOM),
                 'updatedAt' => $bookmark->updated_at?->format(\DateTimeInterface::ATOM),
             ],
