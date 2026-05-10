@@ -4,6 +4,7 @@ export type ApiTokenAbilities = {
     collections: ApiTokenPermission;
     notes: ApiTokenPermission;
     bookmarks: ApiTokenPermission;
+    subscriptions: ApiTokenPermission;
     contacts: ApiTokenPermission;
     calendar: ApiTokenPermission;
     tasks: ApiTokenPermission;
@@ -36,6 +37,7 @@ export const apiTokenResourceLabels: Record<
     collections: 'Collections',
     notes: 'Notes',
     bookmarks: 'Bookmarks',
+    subscriptions: 'Subscriptions',
     contacts: 'Contacts',
     calendar: 'Calendar',
     tasks: 'Tasks',

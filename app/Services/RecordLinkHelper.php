@@ -10,6 +10,7 @@ use App\Models\Contact;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
+use App\Models\Subscription;
 use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,7 @@ class RecordLinkHelper
             CalendarEvent::class => 'team.calendar.events.edit',
             Contact::class => 'team.contacts.show',
             Bookmark::class => 'team.bookmarks.show',
+            Subscription::class => 'team.subscriptions.show',
             Note::class => 'team.notes.show',
             RecordCollection::class => 'team.collections.show',
             default => null,
@@ -52,6 +54,7 @@ class RecordLinkHelper
                     CalendarEvent::class => 'event',
                     Contact::class => 'contact',
                     Bookmark::class => 'bookmark',
+                    Subscription::class => 'subscription',
                     Note::class => 'note',
                     RecordCollection::class => 'collection',
                     default => $model->getTable(),
@@ -73,6 +76,7 @@ class RecordLinkHelper
             CalendarEvent::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             Contact::class => $model->getAttribute('name') ?? (string) $model->getKey(),
             Bookmark::class => $model->getAttribute('title') ?? (string) $model->getKey(),
+            Subscription::class => $model->getAttribute('name') ?? (string) $model->getKey(),
             Note::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             RecordCollection::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             default => (string) $model->getKey(),
@@ -90,6 +94,7 @@ class RecordLinkHelper
             CalendarEvent::class => $model->getAttribute('description'),
             Contact::class => $model->getAttribute('additional_info'),
             Bookmark::class => $model->getAttribute('description'),
+            Subscription::class => $model->getAttribute('description'),
             Note::class => str($model->getAttribute('body') ?? '')->stripTags()->squish()->limit(180)->toString() ?: null,
             RecordCollection::class => $model->getAttribute('description'),
             default => null,

@@ -10,6 +10,7 @@ use App\Models\Contact;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
+use App\Models\Subscription;
 use App\Models\Task;
 use Illuminate\Database\Eloquent\Model;
 
@@ -31,6 +32,7 @@ class RecordSearchRegistry
             'calendar_event' => ['prefix' => 'e', 'global' => 'events', 'class' => CalendarEvent::class, 'columns' => ['title', 'description'], 'order' => 'date'],
             'project' => ['prefix' => 'p', 'global' => 'projects', 'class' => Project::class, 'columns' => ['name', 'description'], 'order' => 'name'],
             'bookmark' => ['prefix' => 'b', 'global' => 'bookmarks', 'class' => Bookmark::class, 'columns' => ['title', 'description', 'url'], 'order' => 'title'],
+            'subscription' => ['prefix' => 's', 'global' => 'subscriptions', 'class' => Subscription::class, 'columns' => ['name', 'category', 'description'], 'order' => 'name'],
             'note' => ['prefix' => 'n', 'global' => 'notes', 'class' => Note::class, 'columns' => ['title', 'body'], 'order' => 'title'],
             'collection' => ['prefix' => 'l', 'global' => 'collections', 'class' => RecordCollection::class, 'columns' => ['title', 'description'], 'order' => 'title'],
         ];

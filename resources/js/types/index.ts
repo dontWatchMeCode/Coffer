@@ -7,6 +7,7 @@ export * from './collections';
 export * from './contacts';
 export * from './navigation';
 export * from './notes';
+export * from './subscriptions';
 export * from './tasks';
 export * from './teams';
 export * from './ui';

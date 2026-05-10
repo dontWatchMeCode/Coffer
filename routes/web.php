@@ -16,6 +16,8 @@ use App\Http\Controllers\Notes\NotePageController;
 use App\Http\Controllers\RecordLinkController;
 use App\Http\Controllers\RecordTagController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\Subscriptions\SubscriptionController;
+use App\Http\Controllers\Subscriptions\SubscriptionPageController;
 use App\Http\Controllers\Tasks\ProjectController;
 use App\Http\Controllers\Tasks\TaskCommentController;
 use App\Http\Controllers\Tasks\TaskController;
@@ -87,6 +89,18 @@ Route::prefix('{current_team}')
         Route::delete('bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])
             ->whereNumber('bookmark')
             ->name('team.bookmarks.destroy');
+
+        Route::get('subscriptions', [SubscriptionPageController::class, 'index'])->name('team.subscriptions.index');
+        Route::get('subscriptions/{subscription}', [SubscriptionPageController::class, 'show'])
+            ->whereNumber('subscription')
+            ->name('team.subscriptions.show');
+        Route::post('subscriptions', [SubscriptionController::class, 'store'])->name('team.subscriptions.store');
+        Route::patch('subscriptions/{subscription}', [SubscriptionController::class, 'update'])
+            ->whereNumber('subscription')
+            ->name('team.subscriptions.update');
+        Route::delete('subscriptions/{subscription}', [SubscriptionController::class, 'destroy'])
+            ->whereNumber('subscription')
+            ->name('team.subscriptions.destroy');
 
         Route::get('notes', [NotePageController::class, 'index'])->name('team.notes.index');
         Route::get('notes/{note}', [NotePageController::class, 'show'])

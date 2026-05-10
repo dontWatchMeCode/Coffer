@@ -61,6 +61,7 @@ const form = reactive({
         collections: 'none' as ApiTokenPermission,
         notes: 'none' as ApiTokenPermission,
         bookmarks: 'none' as ApiTokenPermission,
+        subscriptions: 'none' as ApiTokenPermission,
         contacts: 'none' as ApiTokenPermission,
         calendar: 'none' as ApiTokenPermission,
         tasks: 'none' as ApiTokenPermission,

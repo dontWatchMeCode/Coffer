@@ -46,6 +46,7 @@ type FormAbilities = {
     collections: ApiTokenPermission;
     notes: ApiTokenPermission;
     bookmarks: ApiTokenPermission;
+    subscriptions: ApiTokenPermission;
     contacts: ApiTokenPermission;
     calendar: ApiTokenPermission;
     tasks: ApiTokenPermission;
@@ -84,6 +85,7 @@ const localForm = reactive<FormData>({
         collections: 'none',
         notes: 'none',
         bookmarks: 'none',
+        subscriptions: 'none',
         contacts: 'none',
         calendar: 'none',
         tasks: 'none',

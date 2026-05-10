@@ -4,6 +4,7 @@ import {
     Bookmark,
     CalendarDays,
     Contact,
+    CreditCard,
     FileText,
     FolderGit2,
     ListTodo,
@@ -33,6 +34,7 @@ type SearchResponse = {
     events: SearchResultItem[];
     projects: SearchResultItem[];
     bookmarks: SearchResultItem[];
+    subscriptions: SearchResultItem[];
     notes: SearchResultItem[];
 };
 
@@ -47,6 +49,7 @@ const emptyResults: SearchResponse = {
     events: [],
     projects: [],
     bookmarks: [],
+    subscriptions: [],
     notes: [],
 };
 const results = ref<SearchResponse>({ ...emptyResults });
@@ -75,6 +78,10 @@ const allResults = computed(() => [
         ...item,
         type: 'bookmark' as const,
     })),
+    ...results.value.subscriptions.map((item) => ({
+        ...item,
+        type: 'subscription' as const,
+    })),
     ...results.value.notes.map((item) => ({
         ...item,
         type: 'note' as const,
@@ -93,6 +100,7 @@ const categories: {
     { key: 'events', label: 'Events', icon: CalendarDays },
     { key: 'projects', label: 'Projects', icon: FolderGit2 },
     { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
+    { key: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
     { key: 'notes', label: 'Notes', icon: FileText },
 ];
 
@@ -226,8 +234,8 @@ function getResultIndex(
         >
             <DialogTitle class="sr-only">Search</DialogTitle>
             <DialogDescription class="sr-only">
-                Search across tasks, contacts, events, projects, bookmarks, and
-                notes in your team.
+                Search across tasks, contacts, events, projects, bookmarks,
+                subscriptions, and notes in your team.
             </DialogDescription>
 
             <div class="flex items-center border-b px-4">
@@ -236,7 +244,7 @@ function getResultIndex(
                     ref="inputRef"
                     data-testid="global-search-input"
                     v-model="query"
-                    placeholder="Search tasks, contacts, events, projects, bookmarks, notes..."
+                    placeholder="Search tasks, contacts, events, projects, bookmarks, subscriptions, notes..."
                     class="h-12 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
                 />
                 <SearchPrefixTooltip class="ml-2 shrink-0" />

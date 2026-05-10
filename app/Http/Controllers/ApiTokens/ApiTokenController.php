@@ -105,6 +105,7 @@ class ApiTokenController extends Controller
             'collections' => $input['collections'],
             'notes' => $input['notes'],
             'bookmarks' => $input['bookmarks'],
+            'subscriptions' => $input['subscriptions'],
             'contacts' => $input['contacts'],
             'calendar' => $input['calendar'],
             'tasks' => $input['tasks'],

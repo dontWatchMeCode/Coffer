@@ -4,6 +4,7 @@ import {
     Bookmark,
     CalendarDays,
     Contact,
+    CreditCard,
     FileText,
     Layers3,
     LayoutGrid,
@@ -32,6 +33,7 @@ import { index as teamCalendar } from '@/routes/team/calendar/index';
 import { index as teamCollections } from '@/routes/team/collections/index';
 import { index as teamContacts } from '@/routes/team/contacts/index';
 import { index as teamNotes } from '@/routes/team/notes/index';
+import { index as teamSubscriptions } from '@/routes/team/subscriptions/index';
 import { index as teamTasks } from '@/routes/team/tasks/index';
 import type { NavItem } from '@/types';
 
@@ -70,6 +72,11 @@ const mainNavItems = computed<NavItem[]>(() => [
                   title: 'Bookmarks',
                   href: teamBookmarks(page.props.currentTeam.slug).url,
                   icon: Bookmark,
+              },
+              {
+                  title: 'Subscriptions',
+                  href: teamSubscriptions(page.props.currentTeam.slug).url,
+                  icon: CreditCard,
               },
               {
                   title: 'Notes',

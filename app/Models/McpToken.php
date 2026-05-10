@@ -27,6 +27,7 @@ class McpToken extends Model
         'collection' => 'collections',
         'note' => 'notes',
         'bookmark' => 'bookmarks',
+        'subscription' => 'subscriptions',
         'contact' => 'contacts',
         'calendar_event' => 'calendar',
         'task' => 'tasks',

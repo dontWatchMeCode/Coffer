@@ -33,6 +33,7 @@ class StoreApiTokenRequest extends FormRequest
             'abilities.collections' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
             'abilities.notes' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
             'abilities.bookmarks' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
+            'abilities.subscriptions' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
             'abilities.contacts' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
             'abilities.calendar' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
             'abilities.tasks' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
