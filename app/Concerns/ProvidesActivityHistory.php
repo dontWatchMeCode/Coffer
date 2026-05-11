@@ -73,6 +73,7 @@ trait ProvidesActivityHistory
     {
         $changes = $activity->attribute_changes?->toArray() ?? [];
         $changes = $this->filterDrawingViewportChanges($changes);
+        $changes = $this->filterEmptyFieldChanges($changes);
 
         $attributes = is_array($changes['attributes'] ?? null) ? $changes['attributes'] : [];
         $changedFields = array_values(array_filter(array_keys($attributes), is_string(...)));
@@ -131,6 +132,70 @@ trait ProvidesActivityHistory
         }
 
         return $changes;
+    }
+
+    /**
+     * @param  array<string, mixed>  $changes
+     * @return array<string, mixed>
+     */
+    protected function filterEmptyFieldChanges(array $changes): array
+    {
+        if (! is_array($changes['attributes'] ?? null)) {
+            return $changes;
+        }
+
+        foreach (array_keys($changes['attributes']) as $field) {
+            if (! is_string($field)) {
+                continue;
+            }
+
+            $old = $changes['old'][$field] ?? null;
+            $new = $changes['attributes'][$field] ?? null;
+            if (! $this->isEmptyActivityFieldValue($field, $old)) {
+                continue;
+            }
+
+            if (! $this->isEmptyActivityFieldValue($field, $new)) {
+                continue;
+            }
+
+            unset($changes['attributes'][$field]);
+
+            if (isset($changes['old'][$field])) {
+                unset($changes['old'][$field]);
+            }
+        }
+
+        return $changes;
+    }
+
+    protected function isEmptyActivityFieldValue(string $field, mixed $value): bool
+    {
+        if ($value === null) {
+            return true;
+        }
+
+        if (is_string($value)) {
+            $value = in_array($field, ['body', 'description'], true)
+                ? strip_tags($value)
+                : $value;
+
+            return str($value)->squish()->isEmpty();
+        }
+
+        if (! is_array($value)) {
+            return false;
+        }
+
+        if ($field !== 'drawing_data') {
+            return $value === [];
+        }
+
+        $elements = $value['elements'] ?? [];
+        $files = $value['files'] ?? [];
+
+        return is_array($elements) && $elements === []
+            && is_array($files) && $files === [];
     }
 
     /**

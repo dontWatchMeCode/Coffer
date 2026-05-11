@@ -250,6 +250,63 @@ test('note show page includes activity history', function () {
             ->has('activityHistory.0.changedFields'));
 });
 
+test('empty note fields are hidden from created activity history', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    actingAs($user)
+        ->post(route('team.notes.store', ['current_team' => $team]), [
+            'title' => 'Empty Body',
+            'body' => '<p></p>',
+            'format' => 'text',
+            'drawing_data' => [
+                'type' => 'excalidraw',
+                'version' => 2,
+                'elements' => [],
+                'appState' => ['name' => 'Empty Body'],
+                'files' => [],
+            ],
+        ]);
+
+    $note = Note::query()->whereBelongsTo($team)->where('title', 'Empty Body')->firstOrFail();
+
+    $response = actingAs($user)
+        ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]));
+
+    expect($response->inertiaProps('activityHistory.0.changedFields'))
+        ->toContain('title')
+        ->not->toContain('body')
+        ->not->toContain('drawing_data');
+});
+
+test('non-empty drawing data is shown in created activity history', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    actingAs($user)
+        ->post(route('team.notes.store', ['current_team' => $team]), [
+            'title' => 'Sketch',
+            'format' => 'excalidraw',
+            'drawing_data' => [
+                'type' => 'excalidraw',
+                'version' => 2,
+                'elements' => [
+                    ['id' => 'rect-1', 'type' => 'rectangle'],
+                ],
+                'appState' => ['name' => 'Sketch'],
+                'files' => [],
+            ],
+        ]);
+
+    $note = Note::query()->whereBelongsTo($team)->where('title', 'Sketch')->firstOrFail();
+
+    $response = actingAs($user)
+        ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]));
+
+    expect($response->inertiaProps('activityHistory.0.changedFields'))
+        ->toContain('drawing_data');
+});
+
 test('panning the canvas does not show drawing_data as changed', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
