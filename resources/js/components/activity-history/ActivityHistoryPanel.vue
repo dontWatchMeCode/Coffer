@@ -178,7 +178,9 @@ function relationChangeTargetUrl(
         </button>
 
         <Dialog :open="open" @update:open="open = $event">
-            <DialogContent class="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+            <DialogContent
+                class="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-lg"
+            >
                 <DialogHeader>
                     <DialogTitle>Activity History</DialogTitle>
                 </DialogHeader>
@@ -190,7 +192,7 @@ function relationChangeTargetUrl(
                     No activity yet.
                 </div>
 
-                <div v-else class="space-y-5">
+                <div v-else class="min-w-0 space-y-5">
                     <div
                         v-for="activity in props.activities"
                         :key="activity.id"
@@ -287,7 +289,7 @@ function relationChangeTargetUrl(
                             <div
                                 v-for="field in activity.changedFields"
                                 :key="field"
-                                class="rounded-md border bg-card p-2"
+                                class="min-w-0 rounded-md border bg-card p-2"
                             >
                                 <div
                                     class="mb-1 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
@@ -345,7 +347,7 @@ function relationChangeTargetUrl(
                                             expandedDrawings[activity.id] ===
                                             'old'
                                         "
-                                        class="excalidraw-preview overflow-hidden rounded-lg border"
+                                        class="excalidraw-preview min-w-0 overflow-hidden rounded-lg border"
                                     >
                                         <ExcalidrawEditor
                                             :model-value="
@@ -364,7 +366,7 @@ function relationChangeTargetUrl(
                                             expandedDrawings[activity.id] ===
                                             'new'
                                         "
-                                        class="excalidraw-preview overflow-hidden rounded-lg border"
+                                        class="excalidraw-preview min-w-0 overflow-hidden rounded-lg border"
                                     >
                                         <ExcalidrawEditor
                                             :model-value="
