@@ -1,7 +1,7 @@
 ---
 id: 15
 section: frontend
-status: todo
+status: planning
 severity: low
 ---
 
