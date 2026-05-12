@@ -26,7 +26,7 @@ const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const searchQuery = ref('');
 
-const { viewMode } = useViewMode();
+const { viewMode } = useViewMode('collections');
 
 const filteredCollections = computed(() => {
     const query = searchQuery.value.trim().toLowerCase();

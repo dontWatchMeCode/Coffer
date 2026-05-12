@@ -96,7 +96,7 @@ function openDeleteDialog(contact: ContactItem): void {
     deleteDialogRef.value?.openDeleteDialog(contact);
 }
 
-const { viewMode } = useViewMode();
+const { viewMode } = useViewMode('contacts');
 </script>
 
 <template>

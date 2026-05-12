@@ -68,7 +68,7 @@ function openDeleteDialog(subscription: SubscriptionItem): void {
     deleteDialogRef.value?.openDeleteDialog(subscription);
 }
 
-const { viewMode } = useViewMode();
+const { viewMode } = useViewMode('subscriptions');
 
 defineOptions({
     layout: (pageProps: { currentTeam?: Team | null }) => ({

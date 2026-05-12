@@ -3,32 +3,45 @@ import { ref, watch } from 'vue';
 
 export type ViewMode = 'list' | 'grid';
 
-const STORAGE_KEY = 'app-list-view-mode';
+const STORAGE_PREFIX = 'app-list-view-mode';
 
-function getStoredViewMode(): ViewMode {
+const refsByKey: Map<string, Ref<ViewMode>> | null =
+    typeof window !== 'undefined' ? new Map() : null;
+
+function getStorageKey(pageKey: string): string {
+    return `${STORAGE_PREFIX}:${pageKey}`;
+}
+
+function getStoredViewMode(pageKey: string): ViewMode {
     if (typeof window === 'undefined') {
         return 'grid';
     }
 
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(getStorageKey(pageKey));
 
     return stored === 'list' ? 'list' : 'grid';
 }
 
-const sharedViewMode = ref<ViewMode>(getStoredViewMode());
-
-watch(sharedViewMode, (mode) => {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    localStorage.setItem(STORAGE_KEY, mode);
-});
-
-export function useViewMode(): {
+export function useViewMode(pageKey: string): {
     viewMode: Ref<ViewMode>;
 } {
-    return {
-        viewMode: sharedViewMode,
-    };
+    if (refsByKey) {
+        const existing = refsByKey.get(pageKey);
+
+        if (existing) {
+            return { viewMode: existing };
+        }
+    }
+
+    const viewMode = ref<ViewMode>(getStoredViewMode(pageKey));
+
+    if (typeof window !== 'undefined') {
+        watch(viewMode, (mode) => {
+            localStorage.setItem(getStorageKey(pageKey), mode);
+        });
+
+        refsByKey!.set(pageKey, viewMode);
+    }
+
+    return { viewMode };
 }

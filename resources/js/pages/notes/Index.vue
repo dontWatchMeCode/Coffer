@@ -56,7 +56,7 @@ function navigateToNote(note: NoteItem): void {
     );
 }
 
-const { viewMode } = useViewMode();
+const { viewMode } = useViewMode('notes');
 
 defineOptions({
     layout: (pageProps: { currentTeam?: Team | null }) => ({

@@ -68,7 +68,7 @@ function openDeleteDialog(bookmark: BookmarkItem): void {
     deleteDialogRef.value?.openDeleteDialog(bookmark);
 }
 
-const { viewMode } = useViewMode();
+const { viewMode } = useViewMode('bookmarks');
 
 defineOptions({
     layout: (pageProps: { currentTeam?: Team | null }) => ({
