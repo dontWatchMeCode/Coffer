@@ -1,7 +1,7 @@
 ---
 id: 7
 section: frontend
-status: todo
+status: done
 severity: low
 ---
 
@@ -23,5 +23,5 @@ Manual `package.json` edit + verify build.
 
 ## Acceptance Criteria
 
-- [ ] Move `@types/react` and `@types/react-dom` to `devDependencies` in `package.json`
-- [ ] Verify Excalidraw still builds correctly
+- [x] Move `@types/react` and `@types/react-dom` to `devDependencies` in `package.json`
+- [x] Verify Excalidraw still builds correctly
