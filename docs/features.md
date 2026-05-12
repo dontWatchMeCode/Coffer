@@ -61,6 +61,11 @@ This is a concise feature map of the app.
 - Notes capture team knowledge in text or Excalidraw format.
 - Details: [Notes](pages.md#notes)
 
+## Log
+
+- Log captures quick team notes and thoughts with an optional category.
+- Details: [Log](pages.md#log)
+
 ## Collections
 
 - Collections group related team records through shared links.
@@ -71,7 +76,7 @@ This is a concise feature map of the app.
 - Global search covers configured record types.
 - Search supports prefixes for narrowing results.
 - Link candidate search uses the same record registry.
-- Prefixes: `t` tasks, `c` contacts, `e` events, `p` projects, `b` bookmarks, `n` notes, `l` collections.
+- Prefixes: `t` tasks, `c` contacts, `e` events, `p` projects, `b` bookmarks, `n` notes, `s` subscriptions, `g` log entries, `l` collections.
 
 ## Tags
 

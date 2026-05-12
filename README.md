@@ -13,6 +13,7 @@ The app is built with Laravel, Inertia, Vue, and Tailwind CSS. Most product feat
 - Contacts with phone numbers, email addresses, links, address, and extra notes.
 - Bookmarks with descriptions and notes.
 - Notes in text or Excalidraw format.
+- Log for quick notes and thoughts.
 - Collections for grouping linked records.
 - Global search across configured team record types.
 - Shared tags, related-record links, and activity history on supported records.

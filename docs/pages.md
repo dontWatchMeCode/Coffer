@@ -1,6 +1,6 @@
 # Main Pages
 
-The main team pages are Tasks, Calendar, Contacts, Bookmarks, Notes, and Collections.
+The main team pages are Tasks, Calendar, Contacts, Bookmarks, Notes, Log, and Collections.
 
 ## Shared Record Tools
 
@@ -123,6 +123,27 @@ Search and MCP:
 - Note search uses the `n` prefix.
 - MCP tokens can allow note read/write access.
 - Through MCP, use `format: "text"` or `format: "excalidraw"`.
+
+## Log
+
+Log is the team quick-notes area.
+
+Pages:
+
+- Log page: view, create, and delete log entries.
+
+Features:
+
+- Log entries support body text and an optional category.
+- Entries are ordered by creation date.
+- Entries belong to the active team.
+- Log entries do not support tags, related-record links, or activity history.
+
+Search and MCP:
+
+- Global search includes log entries (backend; frontend rendering not yet wired).
+- Log entry search uses the `g` prefix.
+- MCP tokens can allow log entry read/write access.
 
 ## Collections
 
