@@ -9,6 +9,7 @@ import {
     Layers3,
     LayoutGrid,
     ListTodo,
+    MessageSquareText,
     Search,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
@@ -32,6 +33,7 @@ import { index as teamBookmarks } from '@/routes/team/bookmarks/index';
 import { index as teamCalendar } from '@/routes/team/calendar/index';
 import { index as teamCollections } from '@/routes/team/collections/index';
 import { index as teamContacts } from '@/routes/team/contacts/index';
+import { index as teamLog } from '@/routes/team/log/index';
 import { index as teamNotes } from '@/routes/team/notes/index';
 import { index as teamSubscriptions } from '@/routes/team/subscriptions/index';
 import { index as teamTasks } from '@/routes/team/tasks/index';
@@ -82,6 +84,11 @@ const mainNavItems = computed<NavItem[]>(() => [
                   title: 'Notes',
                   href: teamNotes(page.props.currentTeam.slug).url,
                   icon: FileText,
+              },
+              {
+                  title: 'Log',
+                  href: teamLog(page.props.currentTeam.slug).url,
+                  icon: MessageSquareText,
               },
               {
                   title: 'Collections',

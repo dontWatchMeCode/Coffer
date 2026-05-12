@@ -23,6 +23,7 @@ class McpRecordValidator
             'subscription' => ['name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'url', 'description', 'notes', 'is_active', 'category'],
             'note' => ['title', 'body', 'format', 'drawing_data'],
             'collection' => ['title', 'description'],
+            'log_entry' => ['body', 'category'],
             default => [],
         };
     }
@@ -40,6 +41,7 @@ class McpRecordValidator
             'subscription' => ['name'],
             'note' => ['title'],
             'collection' => ['title'],
+            'log_entry' => ['body'],
             default => [],
         };
     }
@@ -125,6 +127,10 @@ class McpRecordValidator
             'collection' => [
                 'title' => [...$required('required'), 'string', 'max:255'],
                 'description' => [...$optional(), 'nullable', 'string'],
+            ],
+            'log_entry' => [
+                'body' => [...$required('required'), 'string', 'max:5000'],
+                'category' => [...$optional(), 'nullable', 'string', 'max:80'],
             ],
             default => [],
         };

@@ -19,6 +19,7 @@ use App\Mcp\Tools\UpdateRecordTool;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\LogEntry;
 use App\Models\McpToken;
 use App\Models\Note;
 use App\Models\Project;
@@ -60,6 +61,7 @@ test('records can be created for each supported type through mcp', function (str
         'bookmark' => ['title' => $expected, 'url' => 'https://example.com/'.$type],
         'note' => ['title' => $expected, 'body' => 'MCP body'],
         'collection' => ['title' => $expected, 'description' => 'MCP collection'],
+        'log_entry' => ['body' => $expected],
     };
 
     RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
@@ -75,6 +77,7 @@ test('records can be created for each supported type through mcp', function (str
     ['bookmark', 'MCP bookmark', Bookmark::class],
     ['note', 'MCP note', Note::class],
     ['collection', 'MCP collection', RecordCollection::class],
+    ['log_entry', 'MCP log entry', LogEntry::class],
 ]);
 
 test('records can be searched read updated and deleted through mcp', function () {
@@ -279,6 +282,7 @@ test('task comments added through mcp store token origin metadata', function () 
             'calendar' => 'none',
             'tasks' => 'write',
             'task_projects' => ['mode' => 'all', 'ids' => []],
+            'log_entries' => 'none',
         ],
     ])->load('team');
 
@@ -318,6 +322,7 @@ test('task comment tools respect mcp task project scope', function () {
             'calendar' => 'none',
             'tasks' => 'write',
             'task_projects' => ['mode' => 'only', 'ids' => [$allowedProject->id]],
+            'log_entries' => 'none',
         ],
     ])->load('team');
 
@@ -395,6 +400,7 @@ test('the web mcp route reads team scoped records with a bearer token', function
         'calendar' => 'write',
         'tasks' => 'write',
         'task_projects' => ['mode' => 'all', 'ids' => []],
+        'log_entries' => 'write',
     ]);
 
     $this->withToken($plainTextToken)
@@ -447,6 +453,7 @@ test('mcp token read permissions allow reads and deny writes', function () {
             'calendar' => 'none',
             'tasks' => 'none',
             'task_projects' => ['mode' => 'all', 'ids' => []],
+            'log_entries' => 'none',
         ],
     ])->load('team');
 
@@ -478,6 +485,7 @@ test('read only mcp tokens do not advertise mutating tools', function () {
         'calendar' => 'none',
         'tasks' => 'none',
         'task_projects' => ['mode' => 'all', 'ids' => []],
+        'log_entries' => 'none',
     ]);
 
     $response = $this->withToken($plainTextToken)
@@ -505,6 +513,7 @@ test('writable mcp tokens advertise mutating tools', function () {
         'calendar' => 'none',
         'tasks' => 'none',
         'task_projects' => ['mode' => 'all', 'ids' => []],
+        'log_entries' => 'write',
     ]);
 
     $response = $this->withToken($plainTextToken)
@@ -536,6 +545,7 @@ test('mcp token none permissions hide and block record types', function () {
             'calendar' => 'none',
             'tasks' => 'none',
             'task_projects' => ['mode' => 'all', 'ids' => []],
+            'log_entries' => 'none',
         ],
     ])->load('team');
 
@@ -574,6 +584,7 @@ test('mcp task project scope is enforced', function () {
             'calendar' => 'none',
             'tasks' => 'write',
             'task_projects' => ['mode' => 'only', 'ids' => [$allowedProject->id]],
+            'log_entries' => 'none',
         ],
     ])->load('team');
 

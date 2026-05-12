@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\LogEntry;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
@@ -31,6 +32,7 @@ class RecordLinkHelper
             Subscription::class => 'team.subscriptions.show',
             Note::class => 'team.notes.show',
             RecordCollection::class => 'team.collections.show',
+            LogEntry::class => null,
             default => null,
         };
 
@@ -79,6 +81,7 @@ class RecordLinkHelper
             Subscription::class => $model->getAttribute('name') ?? (string) $model->getKey(),
             Note::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             RecordCollection::class => $model->getAttribute('title') ?? (string) $model->getKey(),
+            LogEntry::class => str($model->getAttribute('body') ?? '')->limit(80)->toString() ?: (string) $model->getKey(),
             default => (string) $model->getKey(),
         };
     }
@@ -97,6 +100,7 @@ class RecordLinkHelper
             Subscription::class => $model->getAttribute('description'),
             Note::class => str($model->getAttribute('body') ?? '')->stripTags()->squish()->limit(180)->toString() ?: null,
             RecordCollection::class => $model->getAttribute('description'),
+            LogEntry::class => str($model->getAttribute('body') ?? '')->limit(180)->toString() ?: null,
             default => null,
         };
     }

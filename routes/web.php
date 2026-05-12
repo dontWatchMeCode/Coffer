@@ -11,6 +11,8 @@ use App\Http\Controllers\Collections\CollectionPageController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Contacts\ContactPageController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Log\LogEntryController;
+use App\Http\Controllers\Log\LogPageController;
 use App\Http\Controllers\Notes\NoteController;
 use App\Http\Controllers\Notes\NotePageController;
 use App\Http\Controllers\RecordLinkController;
@@ -101,6 +103,12 @@ Route::prefix('{current_team}')
         Route::delete('subscriptions/{subscription}', [SubscriptionController::class, 'destroy'])
             ->whereNumber('subscription')
             ->name('team.subscriptions.destroy');
+
+        Route::get('log', [LogPageController::class, 'index'])->name('team.log.index');
+        Route::post('log', [LogEntryController::class, 'store'])->name('team.log.store');
+        Route::delete('log/{logEntry}', [LogEntryController::class, 'destroy'])
+            ->whereNumber('logEntry')
+            ->name('team.log.destroy');
 
         Route::get('notes', [NotePageController::class, 'index'])->name('team.notes.index');
         Route::get('notes/{note}', [NotePageController::class, 'show'])

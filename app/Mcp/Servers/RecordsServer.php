@@ -28,7 +28,7 @@ use Laravel\Mcp\Server\Tool;
 
 #[Name('Records Server')]
 #[Version('1.0.0')]
-#[Instructions('CRUD current-team tasks, calendar events, contacts, bookmarks, notes, and collections. Supports generic linked records and tags.')]
+#[Instructions('CRUD current-team tasks, calendar events, contacts, bookmarks, notes, collections, and log entries. Supports generic linked records and tags.')]
 class RecordsServer extends Server
 {
     /**

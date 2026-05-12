@@ -15,7 +15,7 @@ use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tool;
 
 #[Name('records.create')]
-#[Description('Create a task, calendar event, contact, bookmark, note, or collection in the current team.')]
+#[Description('Create a task, calendar event, contact, bookmark, note, collection, or log entry in the current team.')]
 class CreateRecordTool extends Tool
 {
     use RegistersForWritableTokens;

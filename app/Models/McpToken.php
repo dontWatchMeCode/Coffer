@@ -31,6 +31,7 @@ class McpToken extends Model
         'contact' => 'contacts',
         'calendar_event' => 'calendar',
         'task' => 'tasks',
+        'log_entry' => 'log_entries',
     ];
 
     public const array PERMISSION_LEVELS = ['none', 'read', 'write'];

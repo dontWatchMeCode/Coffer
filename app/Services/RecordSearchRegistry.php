@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\LogEntry;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
@@ -35,6 +36,7 @@ class RecordSearchRegistry
             'subscription' => ['prefix' => 's', 'global' => 'subscriptions', 'class' => Subscription::class, 'columns' => ['name', 'category', 'description'], 'order' => 'name'],
             'note' => ['prefix' => 'n', 'global' => 'notes', 'class' => Note::class, 'columns' => ['title', 'body'], 'order' => 'title'],
             'collection' => ['prefix' => 'l', 'global' => 'collections', 'class' => RecordCollection::class, 'columns' => ['title', 'description'], 'order' => 'title'],
+            'log_entry' => ['prefix' => 'g', 'global' => 'log_entries', 'class' => LogEntry::class, 'columns' => ['body'], 'order' => 'created_at'],
         ];
     }
 
