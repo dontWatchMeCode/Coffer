@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesLinkableRecord;
 use App\Contracts\LinkableRecord;
 use App\Http\Requests\RecordLinks\RecordLinkCandidatesRequest;
 use App\Http\Requests\RecordLinks\StoreRecordLinkRequest;
@@ -17,22 +18,9 @@ use Illuminate\Http\JsonResponse;
 
 class RecordLinkController extends Controller
 {
+    use ResolvesLinkableRecord;
+
     public function __construct(private readonly RecordSearchService $recordSearch) {}
-
-    /**
-     * Resolve a model instance from its type and id within the current team.
-     */
-    protected function resolveModel(Team $currentTeam, string $type, int|string $id): ?Model
-    {
-        $map = RecordLink::linkableMap();
-        $class = $map[$type] ?? null;
-
-        if ($class === null) {
-            return null;
-        }
-
-        return $class::query()->whereBelongsTo($currentTeam)->find((int) $id);
-    }
 
     /**
      * Find a record link by its normalized pair.

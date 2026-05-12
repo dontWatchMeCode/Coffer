@@ -1,7 +1,7 @@
 ---
 id: 4
 section: backend
-status: todo
+status: done
 severity: low
 ---
 
@@ -35,6 +35,6 @@ Extract to a shared trait in `app/Concerns/`.
 
 ## Acceptance Criteria
 
-- [ ] Extract to shared trait or service (e.g. `ResolvesLinkableRecord`)
-- [ ] Include the `LinkableRecord` type guard in the shared implementation
-- [ ] Both controllers use shared implementation
+- [x] Extract to shared trait or service (e.g. `ResolvesLinkableRecord`)
+- [x] Include the `LinkableRecord` type guard in the shared implementation
+- [x] Both controllers use shared implementation

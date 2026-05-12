@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Concerns\EscapesLikeWildcards;
-use App\Contracts\LinkableRecord;
+use App\Concerns\ResolvesLinkableRecord;
 use App\Http\Requests\RecordTags\DeleteRecordTagRequest;
 use App\Http\Requests\RecordTags\RecordTagCandidatesRequest;
 use App\Http\Requests\RecordTags\StoreRecordTagRequest;
-use App\Models\RecordLink;
 use App\Models\Tag;
 use App\Models\Team;
 use App\Services\ActivityLogger;
@@ -19,6 +18,7 @@ use Illuminate\Http\JsonResponse;
 class RecordTagController extends Controller
 {
     use EscapesLikeWildcards;
+    use ResolvesLinkableRecord;
 
     public function candidates(RecordTagCandidatesRequest $request, Team $currentTeam): JsonResponse
     {
@@ -108,19 +108,6 @@ class RecordTagController extends Controller
         Tag::deleteUnused([$tag->id]);
 
         return response()->json(['message' => 'Tag removed.']);
-    }
-
-    protected function resolveModel(Team $currentTeam, string $type, int|string $id): ?Model
-    {
-        $class = RecordLink::linkableMap()[$type] ?? null;
-
-        if ($class === null) {
-            return null;
-        }
-
-        $model = $class::query()->whereBelongsTo($currentTeam)->find((int) $id);
-
-        return $model instanceof LinkableRecord ? $model : null;
     }
 
     /**
