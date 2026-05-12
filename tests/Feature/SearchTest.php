@@ -3,6 +3,7 @@
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\LogEntry;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
@@ -58,6 +59,11 @@ test('search returns matching team records', function () {
         'title' => 'Special collection title',
     ]);
 
+    LogEntry::factory()->create([
+        'team_id' => $team->id,
+        'body' => 'Special log entry body',
+    ]);
+
     actingAs($user)
         ->getJson(route('team.search', ['current_team' => $team, 'q' => 'Special']))
         ->assertOk()
@@ -66,7 +72,8 @@ test('search returns matching team records', function () {
         ->assertJsonPath('events.0.title', 'Special event title')
         ->assertJsonPath('projects.0.title', 'Special project name')
         ->assertJsonPath('notes.0.title', 'Special note title')
-        ->assertJsonPath('collections.0.title', 'Special collection title');
+        ->assertJsonPath('collections.0.title', 'Special collection title')
+        ->assertJsonPath('log_entries.0.title', 'Special log entry body');
 });
 
 test('search does not return records from other teams', function () {
@@ -105,6 +112,11 @@ test('search does not return records from other teams', function () {
         'title' => 'Secret collection',
     ]);
 
+    LogEntry::factory()->create([
+        'team_id' => $otherTeam->id,
+        'body' => 'Secret log',
+    ]);
+
     actingAs($user)
         ->getJson(route('team.search', ['current_team' => $team, 'q' => 'Secret']))
         ->assertOk()
@@ -113,7 +125,8 @@ test('search does not return records from other teams', function () {
         ->assertJsonCount(0, 'events')
         ->assertJsonCount(0, 'projects')
         ->assertJsonCount(0, 'notes')
-        ->assertJsonCount(0, 'collections');
+        ->assertJsonCount(0, 'collections')
+        ->assertJsonCount(0, 'log_entries');
 });
 
 test('search returns empty results for blank query', function () {
@@ -128,7 +141,8 @@ test('search returns empty results for blank query', function () {
         ->assertJsonCount(0, 'events')
         ->assertJsonCount(0, 'projects')
         ->assertJsonCount(0, 'notes')
-        ->assertJsonCount(0, 'collections');
+        ->assertJsonCount(0, 'collections')
+        ->assertJsonCount(0, 'log_entries');
 });
 
 test('search requires team membership', function () {
@@ -316,6 +330,49 @@ test('prefix l: filters to collections only', function () {
         ->assertJsonCount(0, 'bookmarks')
         ->assertJsonCount(0, 'notes')
         ->assertJsonCount(1, 'collections');
+});
+
+test('prefix g: filters to log entries only', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'My task',
+    ]);
+
+    LogEntry::factory()->create([
+        'team_id' => $team->id,
+        'body' => 'My log entry',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'g: My']))
+        ->assertOk()
+        ->assertJsonCount(0, 'tasks')
+        ->assertJsonCount(0, 'contacts')
+        ->assertJsonCount(0, 'events')
+        ->assertJsonCount(0, 'projects')
+        ->assertJsonCount(0, 'bookmarks')
+        ->assertJsonCount(0, 'notes')
+        ->assertJsonCount(1, 'log_entries');
+});
+
+test('log entries link to log list page in search results', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    LogEntry::factory()->create([
+        'team_id' => $team->id,
+        'body' => 'Unique log body text',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'Unique log']))
+        ->assertOk()
+        ->assertJsonCount(1, 'log_entries')
+        ->assertJsonPath('log_entries.0.url', route('team.log.index', ['current_team' => $team]));
 });
 
 test('prefix is case-insensitive', function () {

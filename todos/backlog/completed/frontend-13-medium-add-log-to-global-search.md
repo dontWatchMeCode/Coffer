@@ -1,7 +1,7 @@
 ---
 id: 13
 section: frontend
-status: todo
+status: done
 severity: medium
 ---
 
@@ -52,8 +52,8 @@ Link search results to log list page (`team.log.index`). No new detail page.
 
 ## Acceptance Criteria
 
-- [ ] Update `RecordLinkHelper::urlForModel()` to return a URL for `LogEntry` (log list page)
-- [ ] Add `log_entries` to `SearchOverlay.vue` (`SearchResponse`, `emptyResults`, `allResults`, `categories`)
-- [ ] Add log entry icon to `SearchOverlay.vue` categories
-- [ ] Add `g` prefix to `SearchPrefixTooltip.vue` if missing
-- [ ] Write feature test for global search returning log entries
+- [x] Update `RecordLinkHelper::urlForModel()` to return a URL for `LogEntry` (log list page)
+- [x] Add `log_entries` to `SearchOverlay.vue` (`SearchResponse`, `emptyResults`, `allResults`, `categories`)
+- [x] Add log entry icon to `SearchOverlay.vue` categories
+- [x] Add `g` prefix to `SearchPrefixTooltip.vue` if missing
+- [x] Write feature test for global search returning log entries

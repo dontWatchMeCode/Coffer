@@ -8,6 +8,7 @@ import {
     FileText,
     FolderGit2,
     ListTodo,
+    ScrollText,
     Search,
 } from 'lucide-vue-next';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
@@ -36,6 +37,7 @@ type SearchResponse = {
     bookmarks: SearchResultItem[];
     subscriptions: SearchResultItem[];
     notes: SearchResultItem[];
+    log_entries: SearchResultItem[];
 };
 
 const open = defineModel<boolean>('open', { default: false });
@@ -51,6 +53,7 @@ const emptyResults: SearchResponse = {
     bookmarks: [],
     subscriptions: [],
     notes: [],
+    log_entries: [],
 };
 const results = ref<SearchResponse>({ ...emptyResults });
 const selectedIndex = ref(0);
@@ -86,6 +89,10 @@ const allResults = computed(() => [
         ...item,
         type: 'note' as const,
     })),
+    ...results.value.log_entries.map((item) => ({
+        ...item,
+        type: 'log_entry' as const,
+    })),
 ]);
 
 const hasResults = computed(() => allResults.value.length > 0);
@@ -102,6 +109,7 @@ const categories: {
     { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
     { key: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
     { key: 'notes', label: 'Notes', icon: FileText },
+    { key: 'log_entries', label: 'Log', icon: ScrollText },
 ];
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -235,7 +243,7 @@ function getResultIndex(
             <DialogTitle class="sr-only">Search</DialogTitle>
             <DialogDescription class="sr-only">
                 Search across tasks, contacts, events, projects, bookmarks,
-                subscriptions, and notes in your team.
+                subscriptions, notes, and log entries in your team.
             </DialogDescription>
 
             <div class="flex items-center border-b px-4">
@@ -244,7 +252,7 @@ function getResultIndex(
                     ref="inputRef"
                     data-testid="global-search-input"
                     v-model="query"
-                    placeholder="Search tasks, contacts, events, projects, bookmarks, subscriptions, notes..."
+                    placeholder="Search tasks, contacts, events, projects, bookmarks, subscriptions, notes, log..."
                     class="h-12 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
                 />
                 <SearchPrefixTooltip class="ml-2 shrink-0" />

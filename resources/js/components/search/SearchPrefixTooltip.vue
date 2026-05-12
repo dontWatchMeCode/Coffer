@@ -23,6 +23,7 @@ const prefixes: PrefixItem[] = [
     { prefix: 's:', label: 'Subscriptions' },
     { prefix: 'n:', label: 'Notes' },
     { prefix: 'l:', label: 'Collections' },
+    { prefix: 'g:', label: 'Log' },
 ];
 
 const props = withDefaults(

@@ -32,7 +32,7 @@ class RecordLinkHelper
             Subscription::class => 'team.subscriptions.show',
             Note::class => 'team.notes.show',
             RecordCollection::class => 'team.collections.show',
-            LogEntry::class => null,
+            LogEntry::class => 'team.log.index',
             default => null,
         };
 
@@ -49,6 +49,9 @@ class RecordLinkHelper
             Project::class => [
                 'current_team' => $currentTeam,
                 'project' => $model->getKey(),
+            ],
+            LogEntry::class => [
+                'current_team' => $currentTeam,
             ],
             default => [
                 'current_team' => $currentTeam,
