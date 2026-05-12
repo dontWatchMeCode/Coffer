@@ -42,6 +42,8 @@ class TeamMemberController extends Controller
         $owner = $team->owner();
         abort_if($owner instanceof Model && $owner->is($user), 403, 'The team owner cannot be removed.');
 
+        abort_if($team->memberships()->count() <= 1, 403, 'Cannot remove the last team member.');
+
         $team->memberships()
             ->where('user_id', $user->id)
             ->delete();

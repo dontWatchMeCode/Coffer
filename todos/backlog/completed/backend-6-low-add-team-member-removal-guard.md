@@ -1,7 +1,7 @@
 ---
 id: 6
 section: backend
-status: todo
+status: done
 severity: low
 ---
 
@@ -40,5 +40,5 @@ Add a count check before deletion in `TeamMemberController::destroy()`.
 
 ## Acceptance Criteria
 
-- [ ] Add check preventing self-removal when user is the last member (or last non-owner member)
-- [ ] Return appropriate error message
+- [x] Add check preventing self-removal when user is the last member (or last non-owner member)
+- [x] Return appropriate error message
