@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Log;
 
-use App\Http\Requests\Tasks\AuthorizesTeamResource;
+use App\Http\Requests\Concerns\AuthorizesTeamResource;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SaveLogEntryRequest extends FormRequest

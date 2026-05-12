@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Tasks;
+namespace App\Http\Requests\Concerns;
 
 use App\Models\TaskComment;
 use App\Models\Team;

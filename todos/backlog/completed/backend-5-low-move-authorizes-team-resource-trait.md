@@ -1,7 +1,7 @@
 ---
 id: 5
 section: backend
-status: todo
+status: done
 severity: low
 ---
 
@@ -48,5 +48,5 @@ Move to `App\Http\Requests\Concerns\` namespace. Simple file move + namespace up
 
 ## Acceptance Criteria
 
-- [ ] Move to `App\Http\Requests\Concerns\AuthorizesTeamResource`
-- [ ] Update all imports across domain FormRequest classes
+- [x] Move to `App\Http\Requests\Concerns\AuthorizesTeamResource`
+- [x] Update all imports across domain FormRequest classes

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tasks;
 
+use App\Http\Requests\Concerns\AuthorizesTeamResource;
 use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Foundation\Http\FormRequest;
