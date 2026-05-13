@@ -18,6 +18,8 @@ class TaskController extends Controller
      */
     public function store(SaveTaskRequest $request, Team $currentTeam): RedirectResponse
     {
+        $this->authorize('create', Task::class);
+
         $validated = $request->validated();
 
         Task::create([
@@ -39,6 +41,8 @@ class TaskController extends Controller
             ->findOrFail($task);
         $validated = $request->validated();
 
+        $this->authorize('update', $task);
+
         $task->update($validated);
 
         if (! $request->boolean('_return_to_edit')) {
@@ -56,6 +60,8 @@ class TaskController extends Controller
         $task = Task::query()
             ->whereBelongsTo($currentTeam)
             ->findOrFail($task);
+
+        $this->authorize('delete', $task);
 
         $projectId = $task->project_id;
 

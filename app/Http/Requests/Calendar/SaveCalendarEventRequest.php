@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Requests\Calendar;
 
 use App\Http\Requests\Concerns\AuthorizesTeamResource;
-use App\Models\CalendarEvent;
-use App\Models\Team;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SaveCalendarEventRequest extends FormRequest
@@ -15,21 +13,7 @@ class SaveCalendarEventRequest extends FormRequest
 
     public function authorize(): bool
     {
-        if (! $this->isTeamMember()) {
-            return false;
-        }
-
-        if (! $this->isMethod('patch')) {
-            return true;
-        }
-
-        $eventId = $this->route('event');
-        $team = $this->currentTeam();
-
-        return filled($eventId) && $team instanceof Team && CalendarEvent::query()
-            ->whereBelongsTo($team)
-            ->whereKey($eventId)
-            ->exists();
+        return $this->isTeamMember();
     }
 
     /**

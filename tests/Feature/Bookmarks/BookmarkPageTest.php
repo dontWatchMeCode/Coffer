@@ -217,7 +217,7 @@ test('a user cannot update a bookmark from another team', function () {
             route('team.bookmarks.update', ['current_team' => $otherTeam, 'bookmark' => $bookmark]),
             ['title' => 'Hacked'],
         )
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('bookmarks page does not show bookmarks from other teams', function () {

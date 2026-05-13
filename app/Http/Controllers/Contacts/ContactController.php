@@ -15,6 +15,8 @@ class ContactController extends Controller
 {
     public function store(SaveContactRequest $request, Team $currentTeam): RedirectResponse
     {
+        $this->authorize('create', Contact::class);
+
         $contact = Contact::create([
             ...$request->validated(),
             'team_id' => $currentTeam->id,
@@ -32,6 +34,8 @@ class ContactController extends Controller
             ->whereBelongsTo($currentTeam)
             ->findOrFail($contact);
 
+        $this->authorize('update', $contact);
+
         $contact->update($request->validated());
 
         return to_route('team.contacts.show', [
@@ -45,6 +49,8 @@ class ContactController extends Controller
         $contact = Contact::query()
             ->whereBelongsTo($currentTeam)
             ->findOrFail($contact);
+
+        $this->authorize('delete', $contact);
 
         $contact->delete();
 

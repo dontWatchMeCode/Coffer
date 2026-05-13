@@ -15,6 +15,8 @@ class CollectionController extends Controller
 {
     public function store(SaveCollectionRequest $request, Team $currentTeam): RedirectResponse
     {
+        $this->authorize('create', RecordCollection::class);
+
         $collection = RecordCollection::create([
             ...$request->validated(),
             'team_id' => $currentTeam->id,
@@ -32,6 +34,8 @@ class CollectionController extends Controller
             ->whereBelongsTo($currentTeam)
             ->findOrFail($collection);
 
+        $this->authorize('update', $collection);
+
         $collection->update($request->validated());
 
         return to_route('team.collections.show', [
@@ -45,6 +49,8 @@ class CollectionController extends Controller
         $collection = RecordCollection::query()
             ->whereBelongsTo($currentTeam)
             ->findOrFail($collection);
+
+        $this->authorize('delete', $collection);
 
         $collection->delete();
 

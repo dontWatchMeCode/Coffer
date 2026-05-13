@@ -15,6 +15,8 @@ class NoteController extends Controller
 {
     public function store(SaveNoteRequest $request, Team $currentTeam): RedirectResponse
     {
+        $this->authorize('create', Note::class);
+
         $note = Note::create([
             ...$request->validated(),
             'team_id' => $currentTeam->id,
@@ -32,6 +34,8 @@ class NoteController extends Controller
             ->whereBelongsTo($currentTeam)
             ->findOrFail($note);
 
+        $this->authorize('update', $note);
+
         $note->update($request->validated());
 
         return to_route('team.notes.show', [
@@ -45,6 +49,8 @@ class NoteController extends Controller
         $note = Note::query()
             ->whereBelongsTo($currentTeam)
             ->findOrFail($note);
+
+        $this->authorize('delete', $note);
 
         $note->delete();
 

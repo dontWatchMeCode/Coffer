@@ -15,6 +15,8 @@ class SubscriptionController extends Controller
 {
     public function store(SaveSubscriptionRequest $request, Team $currentTeam): RedirectResponse
     {
+        $this->authorize('create', Subscription::class);
+
         $subscription = Subscription::create([
             ...$request->validated(),
             'team_id' => $currentTeam->id,
@@ -32,6 +34,8 @@ class SubscriptionController extends Controller
             ->whereBelongsTo($currentTeam)
             ->findOrFail($subscription);
 
+        $this->authorize('update', $subscription);
+
         $subscription->update($request->validated());
 
         return to_route('team.subscriptions.show', [
@@ -45,6 +49,8 @@ class SubscriptionController extends Controller
         $subscription = Subscription::query()
             ->whereBelongsTo($currentTeam)
             ->findOrFail($subscription);
+
+        $this->authorize('delete', $subscription);
 
         $subscription->delete();
 

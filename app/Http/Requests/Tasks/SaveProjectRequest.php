@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Requests\Tasks;
 
 use App\Http\Requests\Concerns\AuthorizesTeamResource;
-use App\Models\Project;
 use App\Models\Team;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,27 +14,9 @@ class SaveProjectRequest extends FormRequest
 {
     use AuthorizesTeamResource;
 
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        if (! $this->isTeamMember()) {
-            return false;
-        }
-
-        if (! $this->isMethod('patch')) {
-            return true;
-        }
-
-        $projectId = $this->route('project');
-
-        $team = $this->currentTeam();
-
-        return filled($projectId) && $team instanceof Team && Project::query()
-            ->whereBelongsTo($team)
-            ->whereKey($projectId)
-            ->exists();
+        return $this->isTeamMember();
     }
 
     /**

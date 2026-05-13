@@ -20,6 +20,8 @@ class TaskCommentController extends Controller
      */
     public function store(SaveTaskCommentRequest $request, Team $currentTeam, int $task): RedirectResponse
     {
+        $this->authorize('create', TaskComment::class);
+
         $task = Task::query()
             ->whereBelongsTo($currentTeam)
             ->findOrFail($task);
@@ -46,6 +48,8 @@ class TaskCommentController extends Controller
 
         $comment = $this->resolveComment($currentTeam, $task, $comment, $user);
 
+        $this->authorize('update', $comment);
+
         $comment->update([
             'body' => $request->validated()['body'],
         ]);
@@ -62,6 +66,8 @@ class TaskCommentController extends Controller
         abort_if($user === null, 401);
 
         $comment = $this->resolveComment($currentTeam, $task, $comment, $user);
+
+        $this->authorize('delete', $comment);
 
         $comment->delete();
 

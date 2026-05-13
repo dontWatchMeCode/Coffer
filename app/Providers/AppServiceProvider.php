@@ -14,9 +14,11 @@ use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
 use App\Models\RecordLink;
+use App\Models\Subscription;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\TaskComment;
+use App\Models\Team;
 use App\Policies\BookmarkPolicy;
 use App\Policies\CalendarEventPolicy;
 use App\Policies\ContactPolicy;
@@ -26,9 +28,11 @@ use App\Policies\NotePolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\RecordCollectionPolicy;
 use App\Policies\RecordLinkPolicy;
+use App\Policies\SubscriptionPolicy;
 use App\Policies\TagPolicy;
 use App\Policies\TaskCommentPolicy;
 use App\Policies\TaskPolicy;
+use App\Policies\TeamPolicy;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -65,5 +69,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Tag::class, TagPolicy::class);
         Gate::policy(Task::class, TaskPolicy::class);
         Gate::policy(TaskComment::class, TaskCommentPolicy::class);
+        Gate::policy(Subscription::class, SubscriptionPolicy::class);
+        Gate::policy(Team::class, TeamPolicy::class);
     }
 }

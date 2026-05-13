@@ -384,7 +384,7 @@ test('a user cannot update a contact from another team', function () {
             route('team.contacts.update', ['current_team' => $otherTeam, 'contact' => $contact]),
             ['name' => 'Hacked'],
         )
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('contacts page does not show contacts from other teams', function () {

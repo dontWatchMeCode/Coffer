@@ -315,7 +315,7 @@ test('projects cannot be updated from another team route', function () {
         ->patch(route('team.tasks.projects.update', ['current_team' => $team, 'project' => $otherProject->id]), [
             'name' => 'Unauthorized update',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     assertDatabaseHas('projects', [
         'id' => $otherProject->id,
@@ -497,7 +497,7 @@ test('task comments cannot be created from another team route', function () {
         ->post(route('team.tasks.comments.store', ['current_team' => $team, 'task' => $task->id]), [
             'body' => 'Cross-team comment',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect(TaskComment::query()->count())->toBe(0);
 });
@@ -556,7 +556,7 @@ test('task comments cannot be edited by another team member', function () {
         ->patch(route('team.tasks.comments.update', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]), [
             'body' => 'Unauthorized edit',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     assertDatabaseHas('task_comments', [
         'id' => $comment->id,
@@ -610,7 +610,7 @@ test('task comments cannot be deleted by another team member', function () {
 
     actingAs($editor)
         ->delete(route('team.tasks.comments.destroy', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]))
-        ->assertForbidden();
+        ->assertNotFound();
 
     assertDatabaseHas('task_comments', [
         'id' => $comment->id,
@@ -666,7 +666,7 @@ test('tasks cannot be deleted from another team route', function () {
 
     actingAs($user)
         ->delete(route('team.tasks.destroy', ['current_team' => $team, 'task' => $otherTask->id]))
-        ->assertForbidden();
+        ->assertNotFound();
 
     assertDatabaseHas('tasks', ['id' => $otherTask->id]);
 });
@@ -680,7 +680,7 @@ test('tasks cannot be updated from another team route', function () {
         ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $otherTask->id]), [
             'status' => TaskStatus::Completed->value,
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     assertDatabaseHas('tasks', [
         'id' => $otherTask->id,

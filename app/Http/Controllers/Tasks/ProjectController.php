@@ -17,6 +17,8 @@ class ProjectController extends Controller
      */
     public function store(SaveProjectRequest $request, Team $currentTeam): RedirectResponse
     {
+        $this->authorize('create', Project::class);
+
         Project::create([
             ...$request->validated(),
             'team_id' => $currentTeam->id,
@@ -33,6 +35,8 @@ class ProjectController extends Controller
         $project = Project::query()
             ->whereBelongsTo($currentTeam)
             ->findOrFail($project);
+
+        $this->authorize('update', $project);
 
         $project->update($request->validated());
 

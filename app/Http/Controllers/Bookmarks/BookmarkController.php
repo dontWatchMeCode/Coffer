@@ -15,6 +15,8 @@ class BookmarkController extends Controller
 {
     public function store(SaveBookmarkRequest $request, Team $currentTeam): RedirectResponse
     {
+        $this->authorize('create', Bookmark::class);
+
         $bookmark = Bookmark::create([
             ...$request->validated(),
             'team_id' => $currentTeam->id,
@@ -32,6 +34,8 @@ class BookmarkController extends Controller
             ->whereBelongsTo($currentTeam)
             ->findOrFail($bookmark);
 
+        $this->authorize('update', $bookmark);
+
         $bookmark->update($request->validated());
 
         return to_route('team.bookmarks.show', [
@@ -45,6 +49,8 @@ class BookmarkController extends Controller
         $bookmark = Bookmark::query()
             ->whereBelongsTo($currentTeam)
             ->findOrFail($bookmark);
+
+        $this->authorize('delete', $bookmark);
 
         $bookmark->delete();
 

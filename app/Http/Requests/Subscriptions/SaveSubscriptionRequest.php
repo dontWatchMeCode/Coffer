@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Requests\Subscriptions;
 
 use App\Http\Requests\Concerns\AuthorizesTeamResource;
-use App\Models\Subscription;
-use App\Models\Team;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SaveSubscriptionRequest extends FormRequest
@@ -15,21 +13,7 @@ class SaveSubscriptionRequest extends FormRequest
 
     public function authorize(): bool
     {
-        if (! $this->isTeamMember()) {
-            return false;
-        }
-
-        if (! $this->isMethod('patch')) {
-            return true;
-        }
-
-        $subscriptionId = $this->route('subscription');
-        $team = $this->currentTeam();
-
-        return filled($subscriptionId) && $team instanceof Team && Subscription::query()
-            ->whereBelongsTo($team)
-            ->whereKey($subscriptionId)
-            ->exists();
+        return $this->isTeamMember();
     }
 
     /**

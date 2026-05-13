@@ -152,7 +152,7 @@ test('a log entry from another team cannot be deleted', function () {
             'current_team' => $team,
             'logEntry' => $otherEntry->id,
         ]))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('log page has no show route', function () {

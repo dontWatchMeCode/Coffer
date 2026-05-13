@@ -15,6 +15,8 @@ class CalendarEventController extends Controller
 {
     public function store(SaveCalendarEventRequest $request, Team $currentTeam): RedirectResponse
     {
+        $this->authorize('create', CalendarEvent::class);
+
         CalendarEvent::create([
             ...$request->validated(),
             'team_id' => $currentTeam->id,
@@ -29,6 +31,8 @@ class CalendarEventController extends Controller
             ->whereBelongsTo($currentTeam)
             ->findOrFail($event);
 
+        $this->authorize('update', $event);
+
         $event->update($request->validated());
 
         return back();
@@ -39,6 +43,8 @@ class CalendarEventController extends Controller
         $event = CalendarEvent::query()
             ->whereBelongsTo($currentTeam)
             ->findOrFail($event);
+
+        $this->authorize('delete', $event);
 
         $event->delete();
 

@@ -15,6 +15,8 @@ class LogEntryController extends Controller
 {
     public function store(SaveLogEntryRequest $request, Team $currentTeam): RedirectResponse
     {
+        $this->authorize('create', LogEntry::class);
+
         LogEntry::create([
             ...$request->validated(),
             'team_id' => $currentTeam->id,
@@ -28,6 +30,8 @@ class LogEntryController extends Controller
         $entry = LogEntry::query()
             ->whereBelongsTo($currentTeam)
             ->findOrFail($logEntry);
+
+        $this->authorize('delete', $entry);
 
         $entry->delete();
 

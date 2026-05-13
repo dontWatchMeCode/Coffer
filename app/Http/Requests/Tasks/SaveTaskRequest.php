@@ -6,7 +6,6 @@ namespace App\Http\Requests\Tasks;
 
 use App\Enums\TaskStatus;
 use App\Http\Requests\Concerns\AuthorizesTeamResource;
-use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -21,22 +20,7 @@ class SaveTaskRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        if (! $this->isTeamMember()) {
-            return false;
-        }
-
-        if (! $this->isMethod('patch')) {
-            return true;
-        }
-
-        $taskId = $this->route('task');
-
-        $team = $this->currentTeam();
-
-        return filled($taskId) && $team instanceof Team && Task::query()
-            ->whereBelongsTo($team)
-            ->whereKey($taskId)
-            ->exists();
+        return $this->isTeamMember();
     }
 
     /**

@@ -305,7 +305,7 @@ test('a user cannot update an event from another team', function () {
             route('team.calendar.events.update', ['current_team' => $otherTeam, 'event' => $event]),
             ['title' => 'Hacked'],
         )
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('calendar page does not show events from other teams', function () {

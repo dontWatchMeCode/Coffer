@@ -18,6 +18,8 @@ class ApiTokenController extends Controller
 {
     public function store(StoreApiTokenRequest $request, Team $currentTeam): RedirectResponse
     {
+        $this->authorize('create', McpToken::class);
+
         $user = $request->user();
 
         if ($user === null) {
@@ -45,6 +47,8 @@ class ApiTokenController extends Controller
 
         $this->ensureTokenOwner($mcpToken, $user, $currentTeam);
 
+        $this->authorize('update', $mcpToken);
+
         $mcpToken->update([
             'name' => $request->validated('name'),
             'abilities' => $this->abilities($request->validated('abilities'), $currentTeam),
@@ -63,6 +67,8 @@ class ApiTokenController extends Controller
         }
 
         $this->ensureTokenOwner($mcpToken, $user, $currentTeam);
+
+        $this->authorize('delete', $mcpToken);
 
         $mcpToken->delete();
 
