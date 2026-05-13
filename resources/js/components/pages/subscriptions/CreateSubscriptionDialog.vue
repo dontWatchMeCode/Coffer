@@ -4,6 +4,7 @@ import { router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CreateDialog from '@/components/dialogs/CreateDialog.vue';
 import InputError from '@/components/form/InputError.vue';
+import SubscriptionCategorySelect from '@/components/pages/subscriptions/SubscriptionCategorySelect.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -15,6 +16,17 @@ import {
 } from '@/components/ui/select';
 import { taskInputLikeClass } from '@/lib/tasks';
 import { store as storeSubscription } from '@/routes/team/subscriptions';
+import type { SubscriptionCategory } from '@/types';
+
+type Props = {
+    categories?: SubscriptionCategory[];
+    categoryCandidatesUrl?: string;
+};
+
+const props = withDefaults(defineProps<Props>(), {
+    categories: () => [],
+    categoryCandidatesUrl: '',
+});
 
 const page = usePage<PageProps>();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
@@ -166,9 +178,10 @@ defineExpose({
 
             <div class="grid gap-2">
                 <Label for="create-subscription-category">Category</Label>
-                <Input
-                    id="create-subscription-category"
+                <SubscriptionCategorySelect
                     v-model="createCategory"
+                    :categories="props.categories"
+                    :candidates-url="props.categoryCandidatesUrl"
                     placeholder="e.g. Entertainment"
                 />
                 <InputError :message="errors.category" />

@@ -9,6 +9,7 @@ use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\Subscription;
+use App\Models\SubscriptionCategory;
 use App\Models\Team;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -24,6 +25,7 @@ class SubscriptionPageController extends Controller
     {
         $subscriptions = Subscription::query()
             ->whereBelongsTo($currentTeam)
+            ->with('subscriptionCategory')
             ->orderByDesc('is_active')
             ->orderBy('name')
             ->get();
@@ -33,6 +35,8 @@ class SubscriptionPageController extends Controller
                 ->map(fn (Subscription $subscription): array => $this->formatSubscription($subscription))
                 ->values()
                 ->all(),
+            'categories' => $this->categoriesPayload($currentTeam),
+            'categoryCandidatesUrl' => route('team.subscriptions.categories.candidates', $currentTeam),
         ]);
     }
 
@@ -40,7 +44,7 @@ class SubscriptionPageController extends Controller
     {
         $subscription = Subscription::query()
             ->whereBelongsTo($currentTeam)
-            ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
+            ->with(['recordTags' => fn ($query) => $query->orderBy('name'), 'subscriptionCategory'])
             ->findOrFail($subscription);
 
         return Inertia::render('subscriptions/Show', [
@@ -48,6 +52,8 @@ class SubscriptionPageController extends Controller
             'recordLinks' => $this->recordLinksPayload($subscription, $currentTeam),
             'recordTags' => $this->recordTagsPayload($subscription, $currentTeam),
             'activityHistory' => $this->activityHistoryPayload($subscription),
+            'categories' => $this->categoriesPayload($currentTeam),
+            'categoryCandidatesUrl' => route('team.subscriptions.categories.candidates', $currentTeam),
         ]);
     }
 
@@ -74,6 +80,7 @@ class SubscriptionPageController extends Controller
             'notes' => $subscription->notes,
             'isActive' => $subscription->is_active,
             'category' => $subscription->category,
+            'categoryId' => $subscription->subscription_category_id,
             'createdAt' => $createdAt instanceof \DateTimeInterface
                 ? $createdAt->format(\DateTimeInterface::ATOM)
                 : null,
@@ -81,5 +88,19 @@ class SubscriptionPageController extends Controller
                 ? $updatedAt->format(\DateTimeInterface::ATOM)
                 : null,
         ];
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string, slug: string}>
+     */
+    private function categoriesPayload(Team $currentTeam): array
+    {
+        return SubscriptionCategory::query()
+            ->whereBelongsTo($currentTeam)
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug'])
+            ->map(fn (SubscriptionCategory $category): array => $category->toPayload())
+            ->values()
+            ->all();
     }
 }

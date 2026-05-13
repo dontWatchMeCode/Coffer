@@ -1,7 +1,7 @@
 ---
 id: 22
 section: backend
-status: todo
+status: done
 severity: medium
 ---
 
@@ -27,11 +27,11 @@ Replace free-text subscription categories with a scoped category system similar 
 
 ## Acceptance Criteria
 
-- [ ] Subscription category is selected from existing categories or created inline
-- [ ] Only one category can be selected per subscription
-- [ ] Categories are scoped to the current team and subscriptions only
-- [ ] Removing a category from the last subscription deletes the unused category
-- [ ] Existing free-text categories are migrated without data loss
-- [ ] Search still matches subscription category names
-- [ ] MCP create/update/read still exposes category behavior clearly
-- [ ] Tests cover create, update, cleanup, migration/backfill, search, and MCP payloads
+- [x] Subscription category is selected from existing categories or created inline
+- [x] Only one category can be selected per subscription
+- [x] Categories are scoped to the current team and subscriptions only
+- [x] Removing a category from the last subscription deletes the unused category
+- [x] Existing free-text categories are migrated without data loss
+- [x] Search still matches subscription category names
+- [x] MCP create/update/read still exposes category behavior clearly
+- [x] Tests cover create, update, cleanup, migration/backfill, search, and MCP payloads

@@ -18,6 +18,7 @@ use App\Http\Controllers\Notes\NotePageController;
 use App\Http\Controllers\RecordLinkController;
 use App\Http\Controllers\RecordTagController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\Subscriptions\SubscriptionCategoryController;
 use App\Http\Controllers\Subscriptions\SubscriptionController;
 use App\Http\Controllers\Subscriptions\SubscriptionPageController;
 use App\Http\Controllers\Tasks\ProjectController;
@@ -91,6 +92,8 @@ Route::prefix('{current_team}')
         Route::delete('bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])
             ->whereNumber('bookmark')
             ->name('team.bookmarks.destroy');
+
+        Route::get('subscriptions/categories/candidates', [SubscriptionCategoryController::class, 'candidates'])->middleware('throttle:30,1')->name('team.subscriptions.categories.candidates');
 
         Route::get('subscriptions', [SubscriptionPageController::class, 'index'])->name('team.subscriptions.index');
         Route::get('subscriptions/{subscription}', [SubscriptionPageController::class, 'show'])

@@ -10,6 +10,7 @@ import DetailLinkRow from '@/components/page/DetailLinkRow.vue';
 import DetailSection from '@/components/page/DetailSection.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import DeleteSubscriptionDialog from '@/components/pages/subscriptions/DeleteSubscriptionDialog.vue';
+import SubscriptionCategorySelect from '@/components/pages/subscriptions/SubscriptionCategorySelect.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -30,6 +31,7 @@ import {
     update as updateSubscription,
 } from '@/routes/team/subscriptions';
 import type { ActivityHistoryItem, SubscriptionItem, Team } from '@/types';
+import type { SubscriptionCategory } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -39,6 +41,8 @@ import type { RecordTag, TagContext, TagEndpoints } from '@/types/record-tags';
 
 type Props = {
     subscription: SubscriptionItem;
+    categories?: SubscriptionCategory[];
+    categoryCandidatesUrl?: string;
     recordLinks?: {
         links: LinkRecord[];
         context: LinkContext;
@@ -417,12 +421,13 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                             </div>
 
                             <div class="grid gap-2">
-                                <Label for="edit-subscription-category"
-                                    >Category</Label
-                                >
-                                <Input
-                                    id="edit-subscription-category"
+                                <Label>Category</Label>
+                                <SubscriptionCategorySelect
                                     v-model="editCategory"
+                                    :categories="props.categories ?? []"
+                                    :candidates-url="
+                                        props.categoryCandidatesUrl ?? ''
+                                    "
                                     placeholder="e.g. Entertainment"
                                 />
                                 <InputError :message="errors.category" />

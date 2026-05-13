@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Concerns\EscapesLikeWildcards;
 use App\Contracts\LinkableRecord;
 use App\Models\RecordLink;
+use App\Models\Subscription;
+use App\Models\SubscriptionCategory;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\TaskComment;
@@ -190,8 +192,19 @@ class McpRecordService
             $data['position'] ??= 0;
         }
 
+        if ($validated['type'] === 'subscription' && isset($data['category'])) {
+            $subscriptionCategoryId = SubscriptionCategory::resolveIdForTeam($data['category'], $team);
+            unset($data['category']);
+        }
+
         /** @var Model $model */
         $model = $class::create($data);
+
+        if ($validated['type'] === 'subscription' && isset($subscriptionCategoryId)) {
+            assert($model instanceof Subscription);
+            $model->subscription_category_id = $subscriptionCategoryId;
+            $model->save();
+        }
 
         return Response::structured(['record' => McpRecordPayload::forModel($model->fresh(), $team)]);
     }
@@ -231,7 +244,19 @@ class McpRecordService
         Gate::forUser($user)->authorize('update', $model);
 
         $model->fill($data);
+
+        if ($validated['type'] === 'subscription' && array_key_exists('category', $data)) {
+            assert($model instanceof Subscription);
+            $oldCategoryId = $model->subscription_category_id;
+            $model->subscription_category_id = SubscriptionCategory::resolveIdForTeam($data['category'], $team);
+            unset($data['category']);
+        }
+
         $model->save();
+
+        if ($validated['type'] === 'subscription' && $model instanceof Subscription && isset($oldCategoryId) && $oldCategoryId !== $model->subscription_category_id && $oldCategoryId) {
+            SubscriptionCategory::deleteUnused($team->id);
+        }
 
         return Response::structured(['record' => McpRecordPayload::forModel($model->fresh(), $team)]);
     }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Subscriptions\DeleteSubscriptionRequest;
 use App\Http\Requests\Subscriptions\SaveSubscriptionRequest;
 use App\Models\Subscription;
+use App\Models\SubscriptionCategory;
 use App\Models\Team;
 use Illuminate\Http\RedirectResponse;
 
@@ -17,10 +18,18 @@ class SubscriptionController extends Controller
     {
         $this->authorize('create', Subscription::class);
 
+        $validated = $request->validated();
+        $categoryName = $validated['category'] ?? null;
+        $categoryId = SubscriptionCategory::resolveIdForTeam($categoryName, $currentTeam);
+
+        unset($validated['category']);
+
         $subscription = Subscription::create([
-            ...$request->validated(),
+            ...$validated,
             'team_id' => $currentTeam->id,
         ]);
+        $subscription->subscription_category_id = $categoryId;
+        $subscription->save();
 
         return to_route('team.subscriptions.show', [
             'current_team' => $currentTeam,
@@ -36,7 +45,20 @@ class SubscriptionController extends Controller
 
         $this->authorize('update', $subscription);
 
-        $subscription->update($request->validated());
+        $validated = $request->validated();
+        $oldCategoryId = $subscription->subscription_category_id;
+        $categoryName = $validated['category'] ?? null;
+        $categoryId = SubscriptionCategory::resolveIdForTeam($categoryName, $currentTeam);
+
+        unset($validated['category']);
+
+        $subscription->update($validated);
+        $subscription->subscription_category_id = $categoryId;
+        $subscription->save();
+
+        if ($oldCategoryId !== $categoryId && $oldCategoryId) {
+            SubscriptionCategory::deleteUnused($currentTeam->id);
+        }
 
         return to_route('team.subscriptions.show', [
             'current_team' => $currentTeam,

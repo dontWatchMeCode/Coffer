@@ -127,7 +127,7 @@ class GenerateTestRecords extends Command
             }
         }
 
-        $testUser->switchTeam($teams->first());
+        $testUser->switchTeam($teams->firstOrFail());
 
         $allUsers = $users->concat([$testUser]);
 

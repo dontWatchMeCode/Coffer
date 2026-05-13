@@ -14,10 +14,12 @@ import {
     index as subscriptionsIndex,
     show as showSubscription,
 } from '@/routes/team/subscriptions';
-import type { SubscriptionItem, Team } from '@/types';
+import type { SubscriptionCategory, SubscriptionItem, Team } from '@/types';
 
 type Props = {
     subscriptions: SubscriptionItem[];
+    categories: SubscriptionCategory[];
+    categoryCandidatesUrl?: string;
 };
 
 const props = defineProps<Props>();
@@ -102,7 +104,11 @@ defineOptions({
 
             <div class="space-y-4">
                 <div class="flex items-center justify-end gap-2">
-                    <CreateSubscriptionDialog ref="createDialogRef">
+                    <CreateSubscriptionDialog
+                        ref="createDialogRef"
+                        :categories="categories"
+                        :category-candidates-url="categoryCandidatesUrl ?? ''"
+                    >
                         <template #trigger>
                             <Button
                                 size="icon"

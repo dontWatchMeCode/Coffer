@@ -220,6 +220,17 @@ function setComposerCategory(value: string): void {
     categoryDropdownOpen.value = false;
 }
 
+function reopenCategoryPicker(event: MouseEvent): void {
+    event.stopPropagation();
+    category.value = '';
+    categoryDropdownOpen.value = true;
+
+    nextTick(() => {
+        const input = categoryPicker.value?.querySelector('input');
+        input?.focus();
+    });
+}
+
 function handleComposerCategoryModel(nextValues: AcceptableInputValue[]): void {
     const nextCategory = nextValues.at(-1);
 
@@ -527,6 +538,8 @@ defineOptions({
                                 v-if="category"
                                 :value="category"
                                 :disabled="isSubmitting"
+                                class="cursor-pointer"
+                                @click="reopenCategoryPicker"
                             >
                                 <TagsInputItemText />
                                 <TagsInputItemDelete />
