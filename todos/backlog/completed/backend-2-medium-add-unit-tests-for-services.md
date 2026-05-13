@@ -1,7 +1,7 @@
 ---
 id: 2
 section: backend
-status: todo
+status: done
 severity: medium
 ---
 
@@ -42,7 +42,7 @@ Unit tests using Pest for each service class. Use factories for model creation.
 
 ## Acceptance Criteria
 
-- [ ] Unit tests for `McpRecordService` — record creation, update, deletion, validation
-- [ ] Unit tests for `McpTokenPermissionService` — ability checks, project scoping
-- [ ] Unit tests for `McpRecordValidator` — validation rules, edge cases
-- [ ] Unit tests for `ActivityLogger` — logging behavior, dirty-only tracking
+- [x] Unit tests for `McpRecordService` — record creation, update, deletion, validation
+- [x] Unit tests for `McpTokenPermissionService` — ability checks, project scoping
+- [x] Unit tests for `McpRecordValidator` — validation rules, edge cases
+- [x] Unit tests for `ActivityLogger` — logging behavior, dirty-only tracking
