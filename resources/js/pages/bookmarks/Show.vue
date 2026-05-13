@@ -13,6 +13,8 @@ import DeleteBookmarkDialog from '@/components/pages/bookmarks/DeleteBookmarkDia
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
+import { serializeBookmark } from '@/lib/markdown-serializers';
 import { taskInputLikeClass } from '@/lib/tasks';
 import {
     index as bookmarksIndex,
@@ -122,6 +124,18 @@ function submitEdit(): void {
 const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
     null,
 );
+
+const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
+
+function handleCopyAsMarkdown(): void {
+    copyAsMarkdown(
+        serializeBookmark(
+            props.bookmark,
+            props.recordTags?.tags ?? [],
+            props.recordLinks?.links ?? [],
+        ),
+    );
+}
 </script>
 
 <template>
@@ -142,6 +156,9 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(bookmark)"
                 delete-label="Delete bookmark"
                 :delete-disabled="isSubmitting"
+                :on-copy-as-markdown="handleCopyAsMarkdown"
+                :copy-as-markdown-copied="copied"
+                :copy-as-markdown-error="copyError"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >

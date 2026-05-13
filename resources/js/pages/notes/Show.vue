@@ -13,6 +13,8 @@ import { trimStoredRichText } from '@/components/richtext/storage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
+import { serializeNote } from '@/lib/markdown-serializers';
 import { index as notesIndex, update as updateNote } from '@/routes/team/notes';
 import type {
     ActivityHistoryItem,
@@ -59,6 +61,18 @@ const editDrawingData = ref<ExcalidrawScene | null>(
 );
 const isSubmitting = ref(false);
 const deleteDialogRef = ref<InstanceType<typeof DeleteNoteDialog> | null>(null);
+
+const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
+
+function handleCopyAsMarkdown(): void {
+    copyAsMarkdown(
+        serializeNote(
+            props.note,
+            props.recordTags?.tags ?? [],
+            props.recordLinks?.links ?? [],
+        ),
+    );
+}
 
 watch(
     () => props.note,
@@ -142,6 +156,9 @@ defineOptions({
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(note)"
                 delete-label="Delete note"
                 :delete-disabled="isSubmitting"
+                :on-copy-as-markdown="handleCopyAsMarkdown"
+                :copy-as-markdown-copied="copied"
+                :copy-as-markdown-error="copyError"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >

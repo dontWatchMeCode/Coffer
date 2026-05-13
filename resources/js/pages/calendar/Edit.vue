@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
+import { serializeCalendarEvent } from '@/lib/markdown-serializers';
 import { taskInputLikeClass } from '@/lib/tasks';
 import { index as calendarIndex } from '@/routes/team/calendar';
 import type { ActivityHistoryItem, CalendarEventItem, Team } from '@/types';
@@ -144,6 +146,18 @@ function submitEdit(): void {
         },
     );
 }
+
+const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
+
+function handleCopyAsMarkdown(): void {
+    copyAsMarkdown(
+        serializeCalendarEvent(
+            props.event,
+            props.recordTags?.tags ?? [],
+            props.recordLinks?.links ?? [],
+        ),
+    );
+}
 </script>
 
 <template>
@@ -163,6 +177,9 @@ function submitEdit(): void {
                 :on-delete="() => (deleteDialogOpen = true)"
                 delete-label="Delete event"
                 :delete-disabled="isSubmitting"
+                :on-copy-as-markdown="handleCopyAsMarkdown"
+                :copy-as-markdown-copied="copied"
+                :copy-as-markdown-error="copyError"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >

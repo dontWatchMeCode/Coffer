@@ -3,6 +3,8 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import {
     CheckIcon,
+    Clipboard,
+    ClipboardCheck,
     MessageSquareText,
     Plus,
     SendHorizontal,
@@ -27,6 +29,7 @@ import {
     TagsInputItemDelete,
     TagsInputItemText,
 } from '@/components/ui/tags-input';
+import { serializeLogEntry } from '@/lib/markdown-serializers';
 import { formatRelativeTime } from '@/lib/tasks';
 import { destroy as deleteEntry, index as logIndex } from '@/routes/team/log';
 import type { LogEntryItem, Team } from '@/types';
@@ -48,6 +51,21 @@ const selectedCategory = ref<string | null>(null);
 const scrollContainer = ref<HTMLElement | null>(null);
 const categoryPicker = ref<HTMLElement | null>(null);
 const isSubmitting = ref(false);
+const copiedEntryId = ref<number | null>(null);
+
+async function copyLogEntry(entry: LogEntryItem): Promise<void> {
+    try {
+        await navigator.clipboard.writeText(serializeLogEntry(entry));
+        copiedEntryId.value = entry.id;
+        setTimeout(() => {
+            if (copiedEntryId.value === entry.id) {
+                copiedEntryId.value = null;
+            }
+        }, 2000);
+    } catch {
+        copiedEntryId.value = null;
+    }
+}
 
 const categoryOptions = computed(() => {
     const categories = new Map<string, string>();
@@ -399,6 +417,28 @@ defineOptions({
                                         >
                                             {{ item.entry.body }}
                                         </p>
+
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            class="h-7 w-7 shrink-0 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                                            aria-label="Copy as Markdown"
+                                            @click.stop="
+                                                copyLogEntry(item.entry)
+                                            "
+                                        >
+                                            <ClipboardCheck
+                                                v-if="
+                                                    copiedEntryId ===
+                                                    item.entry.id
+                                                "
+                                                class="h-3.5 w-3.5 text-green-600"
+                                            />
+                                            <Clipboard
+                                                v-else
+                                                class="h-3.5 w-3.5 text-muted-foreground"
+                                            />
+                                        </Button>
 
                                         <Button
                                             variant="ghost"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Save, Trash2 } from 'lucide-vue-next';
+import { Check, Clipboard, Save, Trash2 } from 'lucide-vue-next';
 import { computed, useSlots } from 'vue';
 import RecordLinksPanel from '@/components/record-links/RecordLinksPanel.vue';
 import RecordTagsPanel from '@/components/record-tags/RecordTagsPanel.vue';
@@ -18,6 +18,9 @@ type Props = {
     updatedAt?: string | null;
     onDelete?: (() => void) | null;
     onSave?: (() => void) | null;
+    onCopyAsMarkdown?: (() => void) | null;
+    copyAsMarkdownCopied?: boolean;
+    copyAsMarkdownError?: boolean;
     deleteLabel?: string;
     saveLabel?: string;
     deleteDisabled?: boolean;
@@ -40,6 +43,9 @@ const props = withDefaults(defineProps<Props>(), {
     updatedAt: null,
     onDelete: null,
     onSave: null,
+    onCopyAsMarkdown: null,
+    copyAsMarkdownCopied: false,
+    copyAsMarkdownError: false,
     deleteLabel: 'Delete',
     saveLabel: 'Save',
     deleteDisabled: false,
@@ -52,7 +58,9 @@ const slots = useSlots();
 
 const hasSidebarTop = computed(() => Boolean(slots['sidebar-top']));
 const hasMeta = computed(() => Boolean(props.createdBy || props.updatedAt));
-const hasActions = computed(() => Boolean(props.onDelete || props.onSave));
+const hasActions = computed(() =>
+    Boolean(props.onDelete || props.onSave || props.onCopyAsMarkdown),
+);
 const hasRecordLinks = computed(() => props.recordLinks !== null);
 const hasRecordTags = computed(() => props.recordTags !== null);
 </script>
@@ -150,6 +158,31 @@ const hasRecordTags = computed(() => props.recordTags !== null);
                 >
                     <Save class="h-4 w-4" />
                     {{ saveLabel }}
+                </Button>
+
+                <Button
+                    v-if="onCopyAsMarkdown"
+                    variant="ghost"
+                    size="sm"
+                    class="w-full justify-start gap-2"
+                    @click="onCopyAsMarkdown()"
+                >
+                    <Check
+                        v-if="copyAsMarkdownCopied"
+                        class="h-4 w-4 text-green-600"
+                    />
+                    <Clipboard
+                        v-else
+                        class="h-4 w-4"
+                        :class="copyAsMarkdownError ? 'text-destructive' : ''"
+                    />
+                    {{
+                        copyAsMarkdownCopied
+                            ? 'Copied!'
+                            : copyAsMarkdownError
+                              ? 'Copy failed'
+                              : 'Copy as Markdown'
+                    }}
                 </Button>
 
                 <Button

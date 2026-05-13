@@ -17,6 +17,8 @@ import DeleteCollectionDialog from '@/components/pages/collections/DeleteCollect
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
+import { serializeCollection } from '@/lib/markdown-serializers';
 import { taskInputLikeClass } from '@/lib/tasks';
 import { formatDateTime } from '@/lib/utils';
 import {
@@ -59,6 +61,18 @@ const isSubmitting = ref(false);
 const deleteDialogRef = ref<InstanceType<typeof DeleteCollectionDialog> | null>(
     null,
 );
+
+const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
+
+function handleCopyAsMarkdown(): void {
+    copyAsMarkdown(
+        serializeCollection(
+            props.collection,
+            props.recordTags?.tags ?? [],
+            props.recordLinks?.links ?? [],
+        ),
+    );
+}
 
 const groupedRecordLinks = computed(() => {
     const groups = new Map<string, LinkRecord[]>();
@@ -173,6 +187,9 @@ defineOptions({
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(collection)"
                 delete-label="Delete collection"
                 :delete-disabled="isSubmitting"
+                :on-copy-as-markdown="handleCopyAsMarkdown"
+                :copy-as-markdown-copied="copied"
+                :copy-as-markdown-error="copyError"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >

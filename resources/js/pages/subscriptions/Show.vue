@@ -22,6 +22,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
+import { serializeSubscription } from '@/lib/markdown-serializers';
 import { taskInputLikeClass } from '@/lib/tasks';
 import {
     index as subscriptionsIndex,
@@ -153,6 +155,18 @@ const deleteDialogRef = ref<InstanceType<
     typeof DeleteSubscriptionDialog
 > | null>(null);
 
+const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
+
+function handleCopyAsMarkdown(): void {
+    copyAsMarkdown(
+        serializeSubscription(
+            props.subscription,
+            props.recordTags?.tags ?? [],
+            props.recordLinks?.links ?? [],
+        ),
+    );
+}
+
 function formatPrice(
     price: string | null | undefined,
     currency: string | null | undefined,
@@ -211,6 +225,9 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                 "
                 delete-label="Delete subscription"
                 :delete-disabled="isSubmitting"
+                :on-copy-as-markdown="handleCopyAsMarkdown"
+                :copy-as-markdown-copied="copied"
+                :copy-as-markdown-error="copyError"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >

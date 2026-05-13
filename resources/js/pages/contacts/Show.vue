@@ -12,7 +12,9 @@ import DeleteContactDialog from '@/components/pages/contacts/DeleteContactDialog
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { emptyEntry, firstEntryValueError } from '@/lib/contacts';
+import { serializeContact } from '@/lib/markdown-serializers';
 import { taskInputLikeClass } from '@/lib/tasks';
 import {
     index as contactsIndex,
@@ -183,6 +185,18 @@ function submitEdit(): void {
 const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
     null,
 );
+
+const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
+
+function handleCopyAsMarkdown(): void {
+    copyAsMarkdown(
+        serializeContact(
+            props.contact,
+            props.recordTags?.tags ?? [],
+            props.recordLinks?.links ?? [],
+        ),
+    );
+}
 </script>
 
 <template>
@@ -203,6 +217,9 @@ const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(contact)"
                 delete-label="Delete contact"
                 :delete-disabled="isSubmitting"
+                :on-copy-as-markdown="handleCopyAsMarkdown"
+                :copy-as-markdown-copied="copied"
+                :copy-as-markdown-error="copyError"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >

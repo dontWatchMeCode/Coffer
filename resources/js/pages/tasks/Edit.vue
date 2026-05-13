@@ -9,6 +9,8 @@ import CommentsSection from '@/components/pages/tasks/CommentsSection.vue';
 import DeleteTaskDialog from '@/components/pages/tasks/DeleteTaskDialog.vue';
 import TaskEditForm from '@/components/pages/tasks/TaskEditForm.vue';
 import TaskSidebar from '@/components/pages/tasks/TaskSidebar.vue';
+import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
+import { serializeTask } from '@/lib/markdown-serializers';
 import { index, show, edit } from '@/routes/team/tasks/index';
 import type {
     ActivityHistoryItem,
@@ -106,6 +108,20 @@ function confirmDelete(): void {
         }),
     );
 }
+
+const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
+
+function handleCopyAsMarkdown(): void {
+    copyAsMarkdown(
+        serializeTask(
+            props.task,
+            props.project,
+            props.comments,
+            props.recordTags?.tags ?? [],
+            props.recordLinks?.links ?? [],
+        ),
+    );
+}
 </script>
 
 <template>
@@ -131,6 +147,9 @@ function confirmDelete(): void {
                 :updated-at="task.updatedAt"
                 :on-delete="() => (deleteDialogOpen = true)"
                 delete-label="Delete task"
+                :on-copy-as-markdown="handleCopyAsMarkdown"
+                :copy-as-markdown-copied="copied"
+                :copy-as-markdown-error="copyError"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
             >
