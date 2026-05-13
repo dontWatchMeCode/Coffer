@@ -32,20 +32,20 @@ use Spatie\Activitylog\Facades\Activity;
 #[Description('Generate test records for all model types with tags, links, and log entries')]
 class GenerateTestRecords extends Command
 {
-    private const PER_TYPE = 1000;
+    private const int PER_TYPE = 1000;
 
-    private const BATCH_SIZE = 100;
+    private const int BATCH_SIZE = 100;
 
-    private const TAGS_PER_TEAM = 20;
+    private const int TAGS_PER_TEAM = 20;
 
-    private const TAGS_PER_RECORD_MIN = 0;
+    private const int TAGS_PER_RECORD_MIN = 0;
 
-    private const TAGS_PER_RECORD_MAX = 3;
+    private const int TAGS_PER_RECORD_MAX = 3;
 
     /**
      * @var array<int, string>
      */
-    private const RECORD_TYPES = [
+    private const array RECORD_TYPES = [
         Bookmark::class,
         CalendarEvent::class,
         Contact::class,
@@ -131,7 +131,7 @@ class GenerateTestRecords extends Command
 
         $allUsers = $users->concat([$testUser]);
 
-        $batches = (int) (self::PER_TYPE / self::BATCH_SIZE);
+        $batches = self::PER_TYPE / self::BATCH_SIZE;
 
         $this->info('Generating 1,000 Tasks...');
         for ($i = 0; $i < $batches; $i++) {
@@ -218,7 +218,7 @@ class GenerateTestRecords extends Command
                 $inserts = [];
 
                 foreach ($recordIds as $recordId) {
-                    $count = rand(self::TAGS_PER_RECORD_MIN, self::TAGS_PER_RECORD_MAX);
+                    $count = random_int(self::TAGS_PER_RECORD_MIN, self::TAGS_PER_RECORD_MAX);
 
                     if ($count > 0) {
                         $selected = array_rand(array_flip($tagIds), min($count, count($tagIds)));
