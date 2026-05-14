@@ -95,6 +95,10 @@
         ],
         "qa": [
             "Composer\\Config::disableProcessTimeout",
+            "bash scripts/qa.sh"
+        ],
+        "qa-vvv": [
+            "Composer\\Config::disableProcessTimeout",
             "@ide-helper",
             "@rector",
             "@lint",
