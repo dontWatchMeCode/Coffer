@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, router, usePage } from '@inertiajs/vue3';
 import { ListPlus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
@@ -9,41 +9,28 @@ import CollectionList from '@/components/pages/collections/CollectionList.vue';
 import CreateCollectionDialog from '@/components/pages/collections/CreateCollectionDialog.vue';
 import DeleteCollectionDialog from '@/components/pages/collections/DeleteCollectionDialog.vue';
 import { Button } from '@/components/ui/button';
+import { useSearch } from '@/composables/useSearch';
 import { useViewMode } from '@/composables/useViewMode';
 import {
     index as collectionsIndex,
     show as showCollection,
 } from '@/routes/team/collections';
-import type { CollectionItem, Team } from '@/types';
+import type { CollectionItem, PaginatedData, Team } from '@/types';
 
 type Props = {
-    collections: CollectionItem[];
+    collections: PaginatedData<CollectionItem>;
 };
 
 const props = defineProps<Props>();
 
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
-const searchQuery = ref('');
+const { searchQuery } = useSearch(
+    collectionsIndex(currentTeamSlug.value).url,
+    'collections',
+);
 
 const { viewMode } = useViewMode('collections');
-
-const filteredCollections = computed(() => {
-    const query = searchQuery.value.trim().toLowerCase();
-
-    if (!query) {
-        return props.collections;
-    }
-
-    return props.collections.filter(
-        (collection) =>
-            collection.title.toLowerCase().includes(query) ||
-            collection.description?.toLowerCase().includes(query) ||
-            collection.tags.some((tag) =>
-                tag.name.toLowerCase().includes(query),
-            ),
-    );
-});
 
 const createDialogRef = ref<InstanceType<typeof CreateCollectionDialog> | null>(
     null,
@@ -112,22 +99,24 @@ defineOptions({
                     </CreateCollectionDialog>
 
                     <ViewModeToggle
-                        v-if="filteredCollections.length > 0"
+                        v-if="props.collections.data.length > 0"
                         v-model:view-mode="viewMode"
                     />
                 </div>
 
-                <CollectionList
-                    :filtered-collections="filteredCollections"
-                    :search-query="searchQuery"
-                    :navigate-to-collection="navigateToCollection"
-                    :open-delete-dialog="
-                        (collection) =>
-                            deleteDialogRef?.openDeleteDialog(collection)
-                    "
-                    :open-create-dialog="openCreateDialog"
-                    :view-mode="viewMode"
-                />
+                <InfiniteScroll data="collections">
+                    <CollectionList
+                        :filtered-collections="props.collections.data"
+                        :search-query="searchQuery"
+                        :navigate-to-collection="navigateToCollection"
+                        :open-delete-dialog="
+                            (collection) =>
+                                deleteDialogRef?.openDeleteDialog(collection)
+                        "
+                        :open-create-dialog="openCreateDialog"
+                        :view-mode="viewMode"
+                    />
+                </InfiniteScroll>
             </div>
         </div>
     </div>

@@ -38,10 +38,10 @@ test('bookmarks page shows bookmarks for current team', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('bookmarks/Index')
-            ->has('bookmarks', 1)
-            ->where('bookmarks.0.title', 'Laravel Docs')
-            ->where('bookmarks.0.url', 'https://laravel.com')
-            ->where('bookmarks.0.description', 'Official documentation'),
+            ->has('bookmarks.data', 1)
+            ->where('bookmarks.data.0.title', 'Laravel Docs')
+            ->where('bookmarks.data.0.url', 'https://laravel.com')
+            ->where('bookmarks.data.0.description', 'Official documentation'),
         );
 });
 
@@ -238,8 +238,8 @@ test('bookmarks page does not show bookmarks from other teams', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('bookmarks/Index')
-            ->has('bookmarks', 1)
-            ->where('bookmarks.0.title', 'My Bookmark'),
+            ->has('bookmarks.data', 1)
+            ->where('bookmarks.data.0.title', 'My Bookmark'),
         );
 });
 

@@ -37,9 +37,10 @@ test('log page shows entries for current team', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('log/Index')
-            ->has('entries', 1)
-            ->where('entries.0.body', 'Team thought')
-            ->where('entries.0.category', 'Ops'));
+            ->has('entries.data', 1)
+            ->where('entries.data.0.body', 'Team thought')
+            ->where('entries.data.0.category', 'Ops')
+            ->has('categories'));
 });
 
 test('log entries are ordered oldest first', function () {
@@ -60,9 +61,9 @@ test('log entries are ordered oldest first', function () {
         ->get(route('team.log.index', ['current_team' => $team]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('entries.0.id', $first->id)
-            ->where('entries.0.body', 'First entry')
-            ->where('entries.1.body', 'Second entry'));
+            ->where('entries.data.0.id', $first->id)
+            ->where('entries.data.0.body', 'First entry')
+            ->where('entries.data.1.body', 'Second entry'));
 });
 
 test('a log entry can be created', function () {
@@ -178,11 +179,11 @@ test('log entry payload includes expected fields', function () {
         ->get(route('team.log.index', ['current_team' => $team]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->has('entries', 1)
-            ->where('entries.0.id', $entry->id)
-            ->where('entries.0.body', 'Payload test')
-            ->where('entries.0.category', 'Research')
-            ->has('entries.0.createdAt'));
+            ->has('entries.data', 1)
+            ->where('entries.data.0.id', $entry->id)
+            ->where('entries.data.0.body', 'Payload test')
+            ->where('entries.data.0.category', 'Research')
+            ->has('entries.data.0.createdAt'));
 });
 
 test('unauthenticated user cannot access log', function () {

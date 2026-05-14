@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, router, usePage } from '@inertiajs/vue3';
 import { ListPlus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
@@ -9,34 +9,23 @@ import CreateNoteDialog from '@/components/pages/notes/CreateNoteDialog.vue';
 import DeleteNoteDialog from '@/components/pages/notes/DeleteNoteDialog.vue';
 import NoteList from '@/components/pages/notes/NoteList.vue';
 import { Button } from '@/components/ui/button';
+import { useSearch } from '@/composables/useSearch';
 import { useViewMode } from '@/composables/useViewMode';
 import { index as notesIndex, show as showNote } from '@/routes/team/notes';
-import type { NoteItem, Team } from '@/types';
+import type { NoteItem, PaginatedData, Team } from '@/types';
 
 type Props = {
-    notes: NoteItem[];
+    notes: PaginatedData<NoteItem>;
 };
 
 const props = defineProps<Props>();
 
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
-const searchQuery = ref('');
-
-const filteredNotes = computed(() => {
-    const query = searchQuery.value.trim().toLowerCase();
-
-    if (!query) {
-        return props.notes;
-    }
-
-    return props.notes.filter(
-        (note) =>
-            note.title.toLowerCase().includes(query) ||
-            note.excerpt?.toLowerCase().includes(query) ||
-            note.tags.some((tag) => tag.name.toLowerCase().includes(query)),
-    );
-});
+const { searchQuery } = useSearch(
+    notesIndex(currentTeamSlug.value).url,
+    'notes',
+);
 
 const createDialogRef = ref<InstanceType<typeof CreateNoteDialog> | null>(null);
 const deleteDialogRef = ref<InstanceType<typeof DeleteNoteDialog> | null>(null);
@@ -103,21 +92,23 @@ defineOptions({
                     </CreateNoteDialog>
 
                     <ViewModeToggle
-                        v-if="filteredNotes.length > 0"
+                        v-if="props.notes.data.length > 0"
                         v-model:view-mode="viewMode"
                     />
                 </div>
 
-                <NoteList
-                    :filtered-notes="filteredNotes"
-                    :search-query="searchQuery"
-                    :navigate-to-note="navigateToNote"
-                    :open-delete-dialog="
-                        (note) => deleteDialogRef?.openDeleteDialog(note)
-                    "
-                    :open-create-dialog="openCreateDialog"
-                    :view-mode="viewMode"
-                />
+                <InfiniteScroll data="notes">
+                    <NoteList
+                        :filtered-notes="props.notes.data"
+                        :search-query="searchQuery"
+                        :navigate-to-note="navigateToNote"
+                        :open-delete-dialog="
+                            (note) => deleteDialogRef?.openDeleteDialog(note)
+                        "
+                        :open-create-dialog="openCreateDialog"
+                        :view-mode="viewMode"
+                    />
+                </InfiniteScroll>
             </div>
         </div>
     </div>

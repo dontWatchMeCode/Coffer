@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Models\RecordCollection;
 use App\Models\Team;
 use DateTimeInterface;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,16 +21,24 @@ class CollectionPageController extends Controller
     use ProvidesRecordLinks;
     use ProvidesRecordTags;
 
-    public function index(Team $currentTeam): Response
+    public function index(Request $request, Team $currentTeam): Response
     {
+        $search = $request->string('search')->toString();
+
         $collections = RecordCollection::query()
             ->whereBelongsTo($currentTeam)
             ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
+            ->when($search, function ($q) use ($search): void {
+                $q->where(function ($q) use ($search): void {
+                    $q->search($search, ['title', 'description'])
+                        ->orWhereHas('recordTags', fn ($q) => $q->where('name', 'like', sprintf('%%%s%%', addcslashes($search, '%_\\'))));
+                });
+            })
             ->orderByDesc('updated_at')
-            ->get();
+            ->simplePaginate(25);
 
         return Inertia::render('collections/Index', [
-            'collections' => $collections->map(fn (RecordCollection $collection): array => $this->collectionPayload($collection))->values()->all(),
+            'collections' => Inertia::scroll($collections->through(fn (RecordCollection $collection): array => $this->collectionPayload($collection))),
         ]);
     }
 

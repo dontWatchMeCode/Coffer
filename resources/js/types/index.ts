@@ -8,6 +8,7 @@ export * from './contacts';
 export * from './log';
 export * from './navigation';
 export * from './notes';
+export * from './pagination';
 export * from './subscriptions';
 export * from './tasks';
 export * from './teams';

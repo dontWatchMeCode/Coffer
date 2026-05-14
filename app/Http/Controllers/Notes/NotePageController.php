@@ -10,6 +10,7 @@ use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\Note;
 use App\Models\Team;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,16 +20,24 @@ class NotePageController extends Controller
     use ProvidesRecordLinks;
     use ProvidesRecordTags;
 
-    public function index(Team $currentTeam): Response
+    public function index(Request $request, Team $currentTeam): Response
     {
+        $search = $request->string('search')->toString();
+
         $notes = Note::query()
             ->whereBelongsTo($currentTeam)
             ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
+            ->when($search, function ($q) use ($search): void {
+                $q->where(function ($q) use ($search): void {
+                    $q->search($search, ['title', 'body'])
+                        ->orWhereHas('recordTags', fn ($q) => $q->where('name', 'like', sprintf('%%%s%%', addcslashes($search, '%_\\'))));
+                });
+            })
             ->orderByDesc('updated_at')
-            ->get();
+            ->simplePaginate(25);
 
         return Inertia::render('notes/Index', [
-            'notes' => $notes->map(fn (Note $note): array => $this->notePayload($note, includeDrawingData: false))->values()->all(),
+            'notes' => Inertia::scroll($notes->through(fn (Note $note): array => $this->notePayload($note, includeDrawingData: false))),
         ]);
     }
 

@@ -24,11 +24,12 @@ class BookmarkPageController extends Controller
     {
         $bookmarks = Bookmark::query()
             ->whereBelongsTo($currentTeam)
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['title', 'description', 'url']))
             ->orderByDesc('created_at')
-            ->get();
+            ->simplePaginate(25);
 
         return Inertia::render('bookmarks/Index', [
-            'bookmarks' => $bookmarks->map(fn (Bookmark $bookmark): array => [
+            'bookmarks' => Inertia::scroll($bookmarks->through(fn (Bookmark $bookmark): array => [
                 'id' => $bookmark->id,
                 'title' => $bookmark->title,
                 'url' => $bookmark->url,
@@ -36,7 +37,7 @@ class BookmarkPageController extends Controller
                 'notes' => $bookmark->notes,
                 'createdAt' => $bookmark->created_at?->format(\DateTimeInterface::ATOM),
                 'updatedAt' => $bookmark->updated_at?->format(\DateTimeInterface::ATOM),
-            ])->values()->all(),
+            ])),
         ]);
     }
 

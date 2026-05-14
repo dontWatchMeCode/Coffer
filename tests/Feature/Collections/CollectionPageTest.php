@@ -40,9 +40,9 @@ test('collections page shows collections for current team', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('collections/Index')
-            ->has('collections', 1)
-            ->where('collections.0.title', 'Launch Collection')
-            ->where('collections.0.description', 'Records for launch'));
+            ->has('collections.data', 1)
+            ->where('collections.data.0.title', 'Launch Collection')
+            ->where('collections.data.0.description', 'Records for launch'));
 });
 
 test('collection show page can be rendered with links and tags payloads', function () {

@@ -24,11 +24,12 @@ class ContactPageController extends Controller
     {
         $contacts = Contact::query()
             ->whereBelongsTo($currentTeam)
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['name', 'address', 'additional_info', 'phone_numbers', 'email_addresses', 'links']))
             ->orderBy('name')
-            ->get();
+            ->simplePaginate(25);
 
         return Inertia::render('contacts/Index', [
-            'contacts' => $contacts->map(fn (Contact $contact): array => [
+            'contacts' => Inertia::scroll($contacts->through(fn (Contact $contact): array => [
                 'id' => $contact->id,
                 'name' => $contact->name,
                 'phoneNumbers' => $contact->phone_numbers,
@@ -38,7 +39,7 @@ class ContactPageController extends Controller
                 'additionalInfo' => $contact->additional_info,
                 'createdAt' => $contact->created_at?->format(\DateTimeInterface::ATOM),
                 'updatedAt' => $contact->updated_at?->format(\DateTimeInterface::ATOM),
-            ])->values()->all(),
+            ])),
         ]);
     }
 

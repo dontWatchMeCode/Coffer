@@ -10,6 +10,7 @@ use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\CalendarEvent;
 use App\Models\Team;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -22,15 +23,38 @@ class CalendarPageController extends Controller
 
     public function index(Request $request, Team $currentTeam): Response
     {
-        $events = CalendarEvent::query()
+        $month = $request->integer('month', now()->month);
+        $year = $request->integer('year', now()->year);
+        $search = $request->string('search')->toString();
+
+        $base = Carbon::create($year, $month, 1) ?? now();
+        $start = $base->copy()->subMonth()->startOfMonth()->toDateString();
+        $end = $base->copy()->addMonth()->endOfMonth()->toDateString();
+
+        $calendarEvents = CalendarEvent::query()
             ->whereBelongsTo($currentTeam)
+            ->when($search, fn ($q) => $q->search($search, ['title', 'description']))
+            ->whereBetween('date', [$start, $end])
             ->orderBy('date')
             ->orderBy('time')
             ->orderByDesc('updated_at')
-            ->get();
+            ->get()
+            ->map(fn (CalendarEvent $event): array => $this->formatEvent($event, includeTimestamps: true))
+            ->values()
+            ->all();
+
+        $paginatedEvents = CalendarEvent::query()
+            ->whereBelongsTo($currentTeam)
+            ->when($search, fn ($q) => $q->search($search, ['title', 'description']))
+            ->where('date', '>=', now()->toDateString())
+            ->orderBy('date')
+            ->orderBy('time')
+            ->orderByDesc('updated_at')
+            ->simplePaginate(25);
 
         return Inertia::render('calendar/Index', [
-            'events' => $events->map(fn (CalendarEvent $event): array => $this->formatEvent($event, includeTimestamps: true))->values()->all(),
+            'calendarEvents' => $calendarEvents,
+            'events' => Inertia::scroll($paginatedEvents->through(fn (CalendarEvent $event): array => $this->formatEvent($event, includeTimestamps: true))),
         ]);
     }
 

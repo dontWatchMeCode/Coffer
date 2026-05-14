@@ -38,9 +38,9 @@ test('notes page shows notes for current team', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('notes/Index')
-            ->has('notes', 1)
-            ->where('notes.0.title', 'Planning Notes')
-            ->where('notes.0.excerpt', 'Important launch details'));
+            ->has('notes.data', 1)
+            ->where('notes.data.0.title', 'Planning Notes')
+            ->where('notes.data.0.excerpt', 'Important launch details'));
 });
 
 test('note show page can be rendered with links and tags payloads', function () {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, router, usePage } from '@inertiajs/vue3';
 import { ListPlus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
@@ -9,15 +9,16 @@ import BookmarkList from '@/components/pages/bookmarks/BookmarkList.vue';
 import CreateBookmarkDialog from '@/components/pages/bookmarks/CreateBookmarkDialog.vue';
 import DeleteBookmarkDialog from '@/components/pages/bookmarks/DeleteBookmarkDialog.vue';
 import { Button } from '@/components/ui/button';
+import { useSearch } from '@/composables/useSearch';
 import { useViewMode } from '@/composables/useViewMode';
 import {
     index as bookmarksIndex,
     show as showBookmark,
 } from '@/routes/team/bookmarks';
-import type { BookmarkItem, Team } from '@/types';
+import type { BookmarkItem, PaginatedData, Team } from '@/types';
 
 type Props = {
-    bookmarks: BookmarkItem[];
+    bookmarks: PaginatedData<BookmarkItem>;
 };
 
 const props = defineProps<Props>();
@@ -25,22 +26,10 @@ const props = defineProps<Props>();
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 
-const searchQuery = ref('');
-
-const filteredBookmarks = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return props.bookmarks;
-    }
-
-    const q = searchQuery.value.toLowerCase();
-
-    return props.bookmarks.filter(
-        (b) =>
-            b.title?.toLowerCase().includes(q) ||
-            b.description?.toLowerCase().includes(q) ||
-            b.url?.toLowerCase().includes(q),
-    );
-});
+const { searchQuery } = useSearch(
+    bookmarksIndex(currentTeamSlug.value).url,
+    'bookmarks',
+);
 
 function navigateToBookmark(bookmark: BookmarkItem): void {
     router.visit(
@@ -115,19 +104,21 @@ defineOptions({
                     </CreateBookmarkDialog>
 
                     <ViewModeToggle
-                        v-if="filteredBookmarks.length > 0"
+                        v-if="props.bookmarks.data.length > 0"
                         v-model:view-mode="viewMode"
                     />
                 </div>
 
-                <BookmarkList
-                    :filtered-bookmarks="filteredBookmarks"
-                    :search-query="searchQuery"
-                    :navigate-to-bookmark="navigateToBookmark"
-                    :open-delete-dialog="openDeleteDialog"
-                    :open-create-dialog="openCreateDialog"
-                    :view-mode="viewMode"
-                />
+                <InfiniteScroll data="bookmarks">
+                    <BookmarkList
+                        :filtered-bookmarks="props.bookmarks.data"
+                        :search-query="searchQuery"
+                        :navigate-to-bookmark="navigateToBookmark"
+                        :open-delete-dialog="openDeleteDialog"
+                        :open-create-dialog="openCreateDialog"
+                        :view-mode="viewMode"
+                    />
+                </InfiniteScroll>
             </div>
         </div>
     </div>

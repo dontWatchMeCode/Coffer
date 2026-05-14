@@ -87,7 +87,7 @@ test('team project detail page can be rendered', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('tasks/Show')
             ->where('project.id', $project->id)
-            ->has('tasks', 1)
+            ->has('tasks.data', 1)
             ->has('members')
             ->has('statuses', 6),
         );
@@ -110,8 +110,8 @@ test('task payload serializes completed timestamp as iso 8601', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('tasks/Show')
-            ->where('tasks.0.id', $task->id)
-            ->where('tasks.0.completedAt', fn (?string $completedAt): bool => is_string($completedAt)
+            ->where('tasks.data.0.id', $task->id)
+            ->where('tasks.data.0.completedAt', fn (?string $completedAt): bool => is_string($completedAt)
                 && str_contains($completedAt, 'T')
                 && (str_ends_with($completedAt, 'Z') || str_contains($completedAt, '+00:00'))),
         );
@@ -842,7 +842,7 @@ test('multi team members can view another team project routes after switching co
         ->assertInertia(fn (Assert $page) => $page
             ->component('tasks/Show')
             ->where('project.id', $project->id)
-            ->has('tasks', 1),
+            ->has('tasks.data', 1),
         );
 
     actingAs($user)

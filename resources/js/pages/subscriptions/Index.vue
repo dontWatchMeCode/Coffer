@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, router, usePage } from '@inertiajs/vue3';
 import { ListPlus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
@@ -9,15 +9,21 @@ import CreateSubscriptionDialog from '@/components/pages/subscriptions/CreateSub
 import DeleteSubscriptionDialog from '@/components/pages/subscriptions/DeleteSubscriptionDialog.vue';
 import SubscriptionList from '@/components/pages/subscriptions/SubscriptionList.vue';
 import { Button } from '@/components/ui/button';
+import { useSearch } from '@/composables/useSearch';
 import { useViewMode } from '@/composables/useViewMode';
 import {
     index as subscriptionsIndex,
     show as showSubscription,
 } from '@/routes/team/subscriptions';
-import type { SubscriptionCategory, SubscriptionItem, Team } from '@/types';
+import type {
+    PaginatedData,
+    SubscriptionCategory,
+    SubscriptionItem,
+    Team,
+} from '@/types';
 
 type Props = {
-    subscriptions: SubscriptionItem[];
+    subscriptions: PaginatedData<SubscriptionItem>;
     categories: SubscriptionCategory[];
     categoryCandidatesUrl?: string;
 };
@@ -27,22 +33,10 @@ const props = defineProps<Props>();
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 
-const searchQuery = ref('');
-
-const filteredSubscriptions = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return props.subscriptions;
-    }
-
-    const q = searchQuery.value.toLowerCase();
-
-    return props.subscriptions.filter(
-        (s) =>
-            s.name?.toLowerCase().includes(q) ||
-            s.description?.toLowerCase().includes(q) ||
-            s.category?.toLowerCase().includes(q),
-    );
-});
+const { searchQuery } = useSearch(
+    subscriptionsIndex(currentTeamSlug.value).url,
+    'subscriptions',
+);
 
 function navigateToSubscription(subscription: SubscriptionItem): void {
     router.visit(
@@ -121,19 +115,21 @@ defineOptions({
                     </CreateSubscriptionDialog>
 
                     <ViewModeToggle
-                        v-if="filteredSubscriptions.length > 0"
+                        v-if="props.subscriptions.data.length > 0"
                         v-model:view-mode="viewMode"
                     />
                 </div>
 
-                <SubscriptionList
-                    :filtered-subscriptions="filteredSubscriptions"
-                    :search-query="searchQuery"
-                    :navigate-to-subscription="navigateToSubscription"
-                    :open-delete-dialog="openDeleteDialog"
-                    :open-create-dialog="openCreateDialog"
-                    :view-mode="viewMode"
-                />
+                <InfiniteScroll data="subscriptions">
+                    <SubscriptionList
+                        :filtered-subscriptions="props.subscriptions.data"
+                        :search-query="searchQuery"
+                        :navigate-to-subscription="navigateToSubscription"
+                        :open-delete-dialog="openDeleteDialog"
+                        :open-create-dialog="openCreateDialog"
+                        :view-mode="viewMode"
+                    />
+                </InfiniteScroll>
             </div>
         </div>
     </div>

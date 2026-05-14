@@ -45,11 +45,11 @@ test('contacts page shows contacts for current team', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('contacts/Index')
-            ->has('contacts', 1)
-            ->where('contacts.0.name', 'John Doe')
-            ->where('contacts.0.emailAddresses.0.value', 'john@example.com')
-            ->where('contacts.0.links.0.value', 'https://example.com')
-            ->where('contacts.0.phoneNumbers.0.value', '+1 555-0123'),
+            ->has('contacts.data', 1)
+            ->where('contacts.data.0.name', 'John Doe')
+            ->where('contacts.data.0.emailAddresses.0.value', 'john@example.com')
+            ->where('contacts.data.0.links.0.value', 'https://example.com')
+            ->where('contacts.data.0.phoneNumbers.0.value', '+1 555-0123'),
         );
 });
 
@@ -405,8 +405,8 @@ test('contacts page does not show contacts from other teams', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('contacts/Index')
-            ->has('contacts', 1)
-            ->where('contacts.0.name', 'My Contact'),
+            ->has('contacts.data', 1)
+            ->where('contacts.data.0.name', 'My Contact'),
         );
 });
 

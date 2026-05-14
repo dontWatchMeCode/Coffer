@@ -26,15 +26,13 @@ class SubscriptionPageController extends Controller
         $subscriptions = Subscription::query()
             ->whereBelongsTo($currentTeam)
             ->with('subscriptionCategory')
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['name', 'description']))
             ->orderByDesc('is_active')
             ->orderBy('name')
-            ->get();
+            ->simplePaginate(25);
 
         return Inertia::render('subscriptions/Index', [
-            'subscriptions' => $subscriptions
-                ->map(fn (Subscription $subscription): array => $this->formatSubscription($subscription))
-                ->values()
-                ->all(),
+            'subscriptions' => Inertia::scroll($subscriptions->through(fn (Subscription $subscription): array => $this->formatSubscription($subscription))),
             'categories' => $this->categoriesPayload($currentTeam),
             'categoryCandidatesUrl' => route('team.subscriptions.categories.candidates', $currentTeam),
         ]);

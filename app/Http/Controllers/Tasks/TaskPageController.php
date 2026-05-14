@@ -104,15 +104,18 @@ class TaskPageController extends Controller
         $project = $this->dataService->findProject($currentTeam, $project);
         $project->load(['recordTags' => fn ($query) => $query->orderBy('name')]);
 
+        $search = $request->string('search')->toString();
+
         $tasks = Task::query()
             ->whereBelongsTo($currentTeam)
             ->whereBelongsTo($project)
             ->with(['project:id,name', 'assignee:id,name', 'creator:id,name'])
             ->withCount('comments')
+            ->when($search, fn ($q) => $q->search($search, ['title', 'description']))
             ->orderBy('status')
             ->orderBy('position')
             ->orderByDesc('updated_at')
-            ->get();
+            ->simplePaginate(25);
 
         $members = $currentTeam->members()
             ->orderBy('name')
@@ -120,9 +123,9 @@ class TaskPageController extends Controller
 
         return Inertia::render('tasks/Show', [
             'project' => $this->dataService->projectPayload($project),
-            'tasks' => array_map(fn (Task $task): array => $this->dataService->taskPayload($task, [
+            'tasks' => Inertia::scroll($tasks->through(fn (Task $task): array => $this->dataService->taskPayload($task, [
                 'commentsCount' => $task->comments_count ?? 0,
-            ]), $tasks->all()),
+            ]))),
             'members' => $this->dataService->memberPayload($members),
             'statuses' => $this->dataService->statusPayload(),
             'recordLinks' => $this->recordLinksPayload($project, $currentTeam),

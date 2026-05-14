@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, router, usePage } from '@inertiajs/vue3';
 import {
     CalendarDays,
     Check,
@@ -23,7 +23,8 @@ import {
     ComboboxVirtualizer,
     useFilter,
 } from 'reka-ui';
-import { computed, ref } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
+import SearchInput from '@/components/list/SearchInput.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import CalendarEventDialogs from '@/components/pages/calendar/CalendarEventDialogs.vue';
 import CalendarGrid from '@/components/pages/calendar/CalendarGrid.vue';
@@ -39,16 +40,78 @@ import {
 import { useCalendarViewMode } from '@/composables/useCalendarViewMode';
 import { index as calendarIndex } from '@/routes/team/calendar';
 import { edit as editEventRoute } from '@/routes/team/calendar/events';
-import type { CalendarEventItem, Team } from '@/types';
+import type { CalendarEventItem, PaginatedData, Team } from '@/types';
 
 type Props = {
-    events: CalendarEventItem[];
+    calendarEvents: CalendarEventItem[];
+    events: PaginatedData<CalendarEventItem>;
 };
 
 const props = defineProps<Props>();
 
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
+
+const searchQuery = ref<string>(
+    new URLSearchParams(window.location.search).get('search') ?? '',
+);
+
+const now = new Date();
+const urlParams = new URLSearchParams(window.location.search);
+const currentYear = ref(
+    urlParams.has('year') ? Number(urlParams.get('year')) : now.getFullYear(),
+);
+const currentMonth = ref(
+    urlParams.has('month')
+        ? Number(urlParams.get('month')) - 1
+        : now.getMonth(),
+);
+
+let calendarTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function reloadCalendar(): void {
+    if (calendarTimeout) {
+        clearTimeout(calendarTimeout);
+    }
+
+    router.visit(calendarIndex(currentTeamSlug.value).url, {
+        data: {
+            search: searchQuery.value || undefined,
+            month: currentMonth.value + 1,
+            year: currentYear.value,
+        },
+        only: ['calendarEvents', 'events'],
+        reset: ['events'],
+        preserveScroll: true,
+        preserveState: true,
+    });
+}
+
+watch(searchQuery, () => {
+    if (calendarTimeout) {
+        clearTimeout(calendarTimeout);
+    }
+
+    calendarTimeout = setTimeout(reloadCalendar, 300);
+});
+
+watch(
+    () => [currentMonth.value, currentYear.value],
+    () => {
+        if (calendarTimeout) {
+            clearTimeout(calendarTimeout);
+            calendarTimeout = null;
+        }
+
+        reloadCalendar();
+    },
+);
+
+onUnmounted(() => {
+    if (calendarTimeout) {
+        clearTimeout(calendarTimeout);
+    }
+});
 
 defineOptions({
     layout: (pageProps: { currentTeam?: Team | null }) => ({
@@ -60,10 +123,6 @@ defineOptions({
         ],
     }),
 });
-
-const now = new Date();
-const currentYear = ref(now.getFullYear());
-const currentMonth = ref(now.getMonth());
 
 const months = [
     'January',
@@ -181,18 +240,8 @@ function eventsForDay(day: number | null): CalendarEventItem[] {
 
     const dateStr = formatDateStr(currentYear.value, currentMonth.value, day);
 
-    return props.events.filter((e) => e.date === dateStr);
+    return props.calendarEvents.filter((e) => e.date === dateStr);
 }
-
-const futureEvents = computed(() =>
-    props.events
-        .filter((e) => e.date && e.date >= today.value)
-        .sort((a, b) =>
-            `${a.date ?? ''} ${a.time ?? ''}`.localeCompare(
-                `${b.date ?? ''} ${b.time ?? ''}`,
-            ),
-        ),
-);
 
 function prevMonth(): void {
     if (currentMonth.value === 0 && currentYear.value === minYear) {
@@ -367,6 +416,13 @@ function openEditDialog(event: CalendarEventItem): void {
                 </div>
 
                 <div class="ml-auto flex items-center gap-2">
+                    <SearchInput
+                        v-if="viewMode === 'list'"
+                        v-model="searchQuery"
+                        data-testid="calendar-search-input"
+                        placeholder="Search events..."
+                    />
+
                     <Button
                         size="icon"
                         title="Create event"
@@ -421,13 +477,14 @@ function openEditDialog(event: CalendarEventItem): void {
                 :open-edit-dialog="openEditDialog"
             />
 
-            <CalendarList
-                v-else
-                :events="futureEvents"
-                :today="today"
-                :months="months"
-                :open-edit-dialog="openEditDialog"
-            />
+            <InfiniteScroll v-if="viewMode === 'list'" data="events">
+                <CalendarList
+                    :events="props.events.data"
+                    :today="today"
+                    :months="months"
+                    :open-edit-dialog="openEditDialog"
+                />
+            </InfiniteScroll>
         </div>
     </div>
 

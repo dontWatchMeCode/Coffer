@@ -19,6 +19,7 @@ test('calendar page can be rendered', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('calendar/Index')
+            ->has('calendarEvents')
             ->has('events'),
         );
 });
@@ -39,10 +40,10 @@ test('calendar page shows events for current team', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('calendar/Index')
-            ->has('events', 1)
-            ->where('events.0.title', 'Team standup')
-            ->where('events.0.date', '2026-04-20')
-            ->where('events.0.time', '09:30'),
+            ->has('calendarEvents', 1)
+            ->where('calendarEvents.0.title', 'Team standup')
+            ->where('calendarEvents.0.date', '2026-04-20')
+            ->where('calendarEvents.0.time', '09:30'),
         );
 });
 
@@ -78,8 +79,8 @@ test('events are serialised with ISO 8601 timestamps', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('calendar/Index')
-            ->has('events', 1)
-            ->where('events.0.date', '2026-04-20'),
+            ->has('calendarEvents', 1)
+            ->where('calendarEvents.0.date', '2026-04-20'),
         );
 });
 
@@ -328,7 +329,7 @@ test('calendar page does not show events from other teams', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('calendar/Index')
-            ->has('events', 1)
-            ->where('events.0.title', 'My event'),
+            ->has('calendarEvents', 1)
+            ->where('calendarEvents.0.title', 'My event'),
         );
 });

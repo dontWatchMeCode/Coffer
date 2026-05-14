@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
+use App\Concerns\Filterable;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
@@ -21,6 +22,7 @@ use Spatie\Activitylog\Support\LogOptions;
 class Subscription extends Model implements LinkableRecord
 {
     use BelongsToTeam;
+    use Filterable;
 
     /** @use HasFactory<SubscriptionFactory> */
     use HasFactory;
