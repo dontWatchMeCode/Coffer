@@ -146,7 +146,7 @@ test('mcp note validation rejects invalid block types', function () {
             ],
         ],
     ])->assertHasErrors([
-        'Block type must be "text" or "excalidraw".',
+        'Block type must be "text", "excalidraw", or "mermaid".',
     ]);
 });
 

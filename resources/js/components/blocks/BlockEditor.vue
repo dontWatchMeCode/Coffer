@@ -3,12 +3,14 @@ import {
     ArrowDown,
     ArrowUp,
     FileText,
+    GitGraph,
     Paintbrush,
     Plus,
     Trash2,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import ExcalidrawBlock from '@/components/blocks/ExcalidrawBlock.vue';
+import MermaidBlock from '@/components/blocks/MermaidBlock.vue';
 import TextBlock from '@/components/blocks/TextBlock.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type {
     ExcalidrawPayload,
+    MermaidPayload,
     RteBlock,
     RteBlockType,
     TextPayload,
@@ -50,7 +53,7 @@ function updateBlocks(blocks: RteBlock[]): void {
 
 function updateBlockPayload(
     blockId: number,
-    payload: TextPayload | ExcalidrawPayload,
+    payload: TextPayload | ExcalidrawPayload | MermaidPayload,
 ): void {
     updateBlocks(
         props.blocks.map((b) => (b.id === blockId ? { ...b, payload } : b)),
@@ -90,6 +93,16 @@ function moveBlock(blockId: number, direction: -1 | 1): void {
     updateBlocks(updated);
 }
 
+function defaultPayload(
+    type: RteBlockType,
+): TextPayload | MermaidPayload | null {
+    if (type === 'text' || type === 'mermaid') {
+        return { content: '' };
+    }
+
+    return null;
+}
+
 function addBlock(type: RteBlockType, afterPosition: number = -1): void {
     let newBlocks: RteBlock[];
 
@@ -104,7 +117,7 @@ function addBlock(type: RteBlockType, afterPosition: number = -1): void {
                 id: Date.now() * -1,
                 type,
                 position: afterPosition + 1,
-                payload: type === 'text' ? { content: '' } : null,
+                payload: defaultPayload(type),
             },
         ];
     } else if (props.blocks.length > 0) {
@@ -119,7 +132,7 @@ function addBlock(type: RteBlockType, afterPosition: number = -1): void {
                 id: Date.now() * -1,
                 type,
                 position: 0,
-                payload: type === 'text' ? { content: '' } : null,
+                payload: defaultPayload(type),
             },
         ];
     } else {
@@ -128,7 +141,7 @@ function addBlock(type: RteBlockType, afterPosition: number = -1): void {
                 id: Date.now() * -1,
                 type,
                 position: 0,
-                payload: type === 'text' ? { content: '' } : null,
+                payload: defaultPayload(type),
             },
         ];
     }
@@ -159,6 +172,28 @@ function excalidrawPayload(block: RteBlock): ExcalidrawPayload | null {
         ? (block.payload as ExcalidrawPayload | null)
         : null;
 }
+
+function mermaidPayload(block: RteBlock): MermaidPayload | null {
+    return block.type === 'mermaid'
+        ? (block.payload as MermaidPayload | null)
+        : null;
+}
+
+function blockLabel(type: RteBlockType): string {
+    if (type === 'text') {
+        return 'Text';
+    }
+
+    if (type === 'excalidraw') {
+        return 'Drawing';
+    }
+
+    if (type === 'mermaid') {
+        return 'Diagram';
+    }
+
+    return type;
+}
 </script>
 
 <template>
@@ -187,6 +222,10 @@ function excalidrawPayload(block: RteBlock): ExcalidrawPayload | null {
                         <Paintbrush class="mr-2 h-4 w-4" />
                         Drawing block
                     </DropdownMenuItem>
+                    <DropdownMenuItem @click="addBlock('mermaid', -1)">
+                        <GitGraph class="mr-2 h-4 w-4" />
+                        Diagram block
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
@@ -197,7 +236,7 @@ function excalidrawPayload(block: RteBlock): ExcalidrawPayload | null {
                     <span
                         class="mr-auto text-xs font-medium text-muted-foreground"
                     >
-                        {{ block.type === 'text' ? 'Text' : 'Drawing' }}
+                        {{ blockLabel(block.type) }}
                     </span>
 
                     <Button
@@ -247,6 +286,12 @@ function excalidrawPayload(block: RteBlock): ExcalidrawPayload | null {
                     :name="name"
                     @update:payload="(p) => updateBlockPayload(block.id, p)"
                 />
+                <MermaidBlock
+                    v-else-if="block.type === 'mermaid'"
+                    :payload="mermaidPayload(block)"
+                    :editable="editable"
+                    @update:payload="(p) => updateBlockPayload(block.id, p)"
+                />
             </div>
 
             <div v-if="editable" class="flex justify-center py-3">
@@ -273,6 +318,12 @@ function excalidrawPayload(block: RteBlock): ExcalidrawPayload | null {
                         >
                             <Paintbrush class="mr-2 h-4 w-4" />
                             Drawing block
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            @click="addBlock('mermaid', block.position)"
+                        >
+                            <GitGraph class="mr-2 h-4 w-4" />
+                            Diagram block
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -302,6 +353,10 @@ function excalidrawPayload(block: RteBlock): ExcalidrawPayload | null {
                     <DropdownMenuItem @click="addBlock('excalidraw')">
                         <Paintbrush class="mr-2 h-4 w-4" />
                         Drawing block
+                    </DropdownMenuItem>
+                    <DropdownMenuItem @click="addBlock('mermaid')">
+                        <GitGraph class="mr-2 h-4 w-4" />
+                        Diagram block
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

@@ -30,7 +30,7 @@ class SaveNoteRequest extends FormRequest
                 : ['required', 'string', 'max:255'],
             'blocks' => ['sometimes', 'nullable', 'array', 'max:50'],
             'blocks.*.id' => ['sometimes', 'nullable', 'integer'],
-            'blocks.*.type' => ['required', 'string', Rule::in(['text', 'excalidraw'])],
+            'blocks.*.type' => ['required', 'string', Rule::in(['text', 'excalidraw', 'mermaid'])],
             'blocks.*.position' => ['required', 'integer', 'min:0'],
             'blocks.*.payload' => ['sometimes', 'nullable', 'array'],
         ];

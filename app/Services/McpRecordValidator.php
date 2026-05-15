@@ -53,7 +53,7 @@ class McpRecordValidator
     {
         return match ($type) {
             'note' => [
-                'blocks' => 'Array of blocks. Each block: {type: "text"|"excalidraw", position: int, payload: {content: "markdown"} or {scene: {...}}}.',
+                'blocks' => 'Array of blocks. Each block: {type: "text"|"excalidraw"|"mermaid", position: int, payload: {content: "markdown"} or {scene: {...}} or {content: "mermaid code"}}.',
             ],
             default => [],
         };
@@ -119,7 +119,7 @@ class McpRecordValidator
             'note' => [
                 'title' => [...$required('required'), 'string', 'max:255'],
                 'blocks' => [...$optional(), 'nullable', 'array', 'max:50'],
-                'blocks.*.type' => ['required', 'string', Rule::in(['text', 'excalidraw'])],
+                'blocks.*.type' => ['required', 'string', Rule::in(['text', 'excalidraw', 'mermaid'])],
                 'blocks.*.position' => ['required', 'integer', 'min:0'],
                 'blocks.*.payload' => ['sometimes', 'nullable', 'array'],
             ],
@@ -142,7 +142,7 @@ class McpRecordValidator
     {
         return match ($type) {
             'note' => [
-                'blocks.*.type.in' => 'Block type must be "text" or "excalidraw".',
+                'blocks.*.type.in' => 'Block type must be "text", "excalidraw", or "mermaid".',
             ],
             default => [],
         };

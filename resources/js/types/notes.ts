@@ -1,6 +1,6 @@
 import type { RecordTag } from './record-tags';
 
-export type RteBlockType = 'text' | 'excalidraw';
+export type RteBlockType = 'text' | 'excalidraw' | 'mermaid';
 
 export type JsonValue =
     | string
@@ -27,11 +27,15 @@ export type ExcalidrawPayload = {
     scene?: ExcalidrawScene;
 };
 
+export type MermaidPayload = {
+    content?: string;
+};
+
 export type RteBlock = {
     id: number;
     type: RteBlockType;
     position: number;
-    payload: TextPayload | ExcalidrawPayload | null;
+    payload: TextPayload | ExcalidrawPayload | MermaidPayload | null;
 };
 
 export type NoteItem = {

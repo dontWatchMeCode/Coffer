@@ -140,7 +140,7 @@ it('validates contact link url format on create', function () {
         ->and($validator->errors()->has('links.0.value'))->toBeTrue();
 });
 
-it('validates note block type must be text or excalidraw', function () {
+it('validates note block type must be text, excalidraw, or mermaid', function () {
     $team = Team::factory()->make();
     $rules = McpRecordValidator::rulesFor('note', false, $team);
     $messages = McpRecordValidator::messagesFor('note');
@@ -153,7 +153,7 @@ it('validates note block type must be text or excalidraw', function () {
     ], $rules, $messages);
 
     expect($validator->fails())->toBeTrue()
-        ->and($validator->errors()->get('blocks.0.type'))->toContain('Block type must be "text" or "excalidraw".');
+        ->and($validator->errors()->get('blocks.0.type'))->toContain('Block type must be "text", "excalidraw", or "mermaid".');
 });
 
 it('validates subscription billing cycle values', function () {

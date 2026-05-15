@@ -53,4 +53,15 @@ class NoteFactory extends Factory
             ]);
         });
     }
+
+    public function withMermaidBlock(?string $content = null): static
+    {
+        return $this->afterCreating(function (Note $note) use ($content): void {
+            $note->blocks()->create([
+                'type' => 'mermaid',
+                'position' => 0,
+                'payload' => ['content' => $content ?? "graph TD\n    A[Start] --> B[End]"],
+            ]);
+        });
+    }
 }
