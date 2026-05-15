@@ -19,11 +19,12 @@ it('notes page shows existing notes and filters them', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
-    Note::factory()->create([
-        'team_id' => $team->id,
-        'title' => 'Architecture Decision',
-        'body' => 'Use boring technology.',
-    ]);
+    Note::factory()
+        ->withTextBlock('Use boring technology.')
+        ->create([
+            'team_id' => $team->id,
+            'title' => 'Architecture Decision',
+        ]);
 
     Note::factory()->create([
         'team_id' => $team->id,

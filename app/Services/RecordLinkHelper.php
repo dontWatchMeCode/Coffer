@@ -101,10 +101,15 @@ class RecordLinkHelper
             Contact::class => $model->getAttribute('additional_info'),
             Bookmark::class => $model->getAttribute('description'),
             Subscription::class => $model->getAttribute('description'),
-            Note::class => str($model->getAttribute('body') ?? '')->stripTags()->squish()->limit(180)->toString() ?: null,
+            Note::class => self::notePreview($model),
             RecordCollection::class => $model->getAttribute('description'),
             LogEntry::class => str($model->getAttribute('body') ?? '')->limit(180)->toString() ?: null,
             default => null,
         };
+    }
+
+    private static function notePreview(Note $note): ?string
+    {
+        return $note->textExcerpt(180);
     }
 }

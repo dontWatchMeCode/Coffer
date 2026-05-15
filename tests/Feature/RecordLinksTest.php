@@ -293,11 +293,12 @@ test('collections can be linked to other records', function () {
         'team_id' => $team->id,
         'description' => 'Collection preview',
     ]);
-    $note = Note::factory()->create([
-        'team_id' => $team->id,
-        'title' => 'Linked note',
-        'body' => 'Note preview',
-    ]);
+    $note = Note::factory()
+        ->withTextBlock('Note preview')
+        ->create([
+            'team_id' => $team->id,
+            'title' => 'Linked note',
+        ]);
 
     actingAs($user)
         ->postJson(route('team.links.store', ['current_team' => $team]), [
@@ -326,11 +327,16 @@ test('linked record drawing data is opt in', function () {
     $collection = RecordCollection::factory()->create(['team_id' => $team->id]);
     $note = Note::factory()->create([
         'team_id' => $team->id,
-        'format' => 'excalidraw',
-        'drawing_data' => [
-            'type' => 'excalidraw',
-            'elements' => [
-                ['id' => 'box-1', 'type' => 'rectangle'],
+    ]);
+    $note->blocks()->create([
+        'type' => 'excalidraw',
+        'position' => 0,
+        'payload' => [
+            'scene' => [
+                'type' => 'excalidraw',
+                'elements' => [
+                    ['id' => 'box-1', 'type' => 'rectangle'],
+                ],
             ],
         ],
     ]);
@@ -346,7 +352,11 @@ test('linked record drawing data is opt in', function () {
     actingAs($user);
 
     expect($collection->formattedLinkedRecords($team)[0]['drawingData'])->toBeNull();
-    expect($collection->formattedLinkedRecords($team, includeDrawingData: true)[0]['drawingData'])->toBe($note->drawing_data);
+
+    $drawingData = $collection->formattedLinkedRecords($team, includeDrawingData: true)[0]['drawingData'];
+    expect($drawingData)->not->toBeNull();
+    expect($drawingData['type'])->toBe('excalidraw');
+    expect($drawingData['elements'])->toBe([['id' => 'box-1', 'type' => 'rectangle']]);
 });
 
 test('unknown candidate search prefix is treated as literal query', function () {

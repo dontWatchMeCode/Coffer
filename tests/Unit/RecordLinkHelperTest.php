@@ -6,8 +6,10 @@ use App\Models\Contact;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
+use App\Models\RteBlock;
 use App\Models\Task;
 use App\Services\RecordLinkHelper;
+use Illuminate\Database\Eloquent\Collection;
 
 it('extracts titles from models', function (string $modelClass, string $attribute, string $value) {
     $model = new $modelClass;
@@ -50,18 +52,36 @@ it('extracts previews from models', function (string $modelClass, string $attrib
     [CalendarEvent::class, 'description', 'Event desc', 'Event desc'],
     [Contact::class, 'additional_info', 'Extra info', 'Extra info'],
     [Bookmark::class, 'description', 'Bookmark desc', 'Bookmark desc'],
-    [Note::class, 'body', '<p>Note body</p>', 'Note body'],
     [RecordCollection::class, 'description', 'Collection desc', 'Collection desc'],
     [Task::class, 'description', null, null],
 ]);
 
-it('strips tags and limits note preview', function () {
+it('extracts note preview from text blocks', function () {
     $note = new Note;
-    $note->setAttribute('body', '<p>'.str_repeat('a', 200).'</p>');
+    $block = new RteBlock([
+        'type' => 'text',
+        'position' => 0,
+        'payload' => ['content' => '<p>Note body</p>'],
+    ]);
+    $block->id = 1;
+    $note->setRelation('blocks', new Collection([$block]));
+
+    expect(RecordLinkHelper::previewForModel($note))->toBe('Note body');
+});
+
+it('strips tags and limits note preview from blocks', function () {
+    $note = new Note;
+    $block = new RteBlock([
+        'type' => 'text',
+        'position' => 0,
+        'payload' => ['content' => '<p>'.str_repeat('a', 200).'</p>'],
+    ]);
+    $block->id = 1;
+    $note->setRelation('blocks', new Collection([$block]));
 
     $preview = RecordLinkHelper::previewForModel($note);
 
     expect($preview)
         ->not->toContain('<')
-        ->toHaveLength(183); // 180 chars + "..."
+        ->toHaveLength(183);
 });

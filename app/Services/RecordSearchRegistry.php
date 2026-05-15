@@ -34,7 +34,7 @@ class RecordSearchRegistry
             'project' => ['prefix' => 'p', 'global' => 'projects', 'class' => Project::class, 'columns' => ['name', 'description'], 'order' => 'name'],
             'bookmark' => ['prefix' => 'b', 'global' => 'bookmarks', 'class' => Bookmark::class, 'columns' => ['title', 'description', 'url'], 'order' => 'title'],
             'subscription' => ['prefix' => 's', 'global' => 'subscriptions', 'class' => Subscription::class, 'columns' => ['name', 'category', 'description'], 'order' => 'name'],
-            'note' => ['prefix' => 'n', 'global' => 'notes', 'class' => Note::class, 'columns' => ['title', 'body'], 'order' => 'title'],
+            'note' => ['prefix' => 'n', 'global' => 'notes', 'class' => Note::class, 'columns' => ['title'], 'order' => 'title'],
             'collection' => ['prefix' => 'l', 'global' => 'collections', 'class' => RecordCollection::class, 'columns' => ['title', 'description'], 'order' => 'title'],
             'log_entry' => ['prefix' => 'g', 'global' => 'log_entries', 'class' => LogEntry::class, 'columns' => ['body'], 'order' => 'created_at'],
         ];

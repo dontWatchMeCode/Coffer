@@ -28,13 +28,11 @@ class SaveNoteRequest extends FormRequest
             'title' => $sometimes
                 ? ['sometimes', 'required', 'string', 'max:255']
                 : ['required', 'string', 'max:255'],
-            'body' => $sometimes
-                ? ['sometimes', 'nullable', 'string']
-                : ['nullable', 'string'],
-            'format' => ['sometimes', 'required', 'string', Rule::in(['text', 'excalidraw'])],
-            'drawing_data' => $sometimes
-                ? ['sometimes', 'nullable', 'array']
-                : ['nullable', 'array'],
+            'blocks' => ['sometimes', 'nullable', 'array', 'max:50'],
+            'blocks.*.id' => ['sometimes', 'nullable', 'integer'],
+            'blocks.*.type' => ['required', 'string', Rule::in(['text', 'excalidraw'])],
+            'blocks.*.position' => ['required', 'integer', 'min:0'],
+            'blocks.*.payload' => ['sometimes', 'nullable', 'array'],
         ];
     }
 }

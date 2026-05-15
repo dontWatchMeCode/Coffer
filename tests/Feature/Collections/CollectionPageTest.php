@@ -56,11 +56,16 @@ test('collection show page can be rendered with links and tags payloads', functi
     $note = Note::factory()->create([
         'team_id' => $team->id,
         'title' => 'Sketch note',
-        'format' => 'excalidraw',
-        'drawing_data' => [
-            'type' => 'excalidraw',
-            'elements' => [
-                ['id' => 'box-1', 'type' => 'rectangle'],
+    ]);
+    $note->blocks()->create([
+        'type' => 'excalidraw',
+        'position' => 0,
+        'payload' => [
+            'scene' => [
+                'type' => 'excalidraw',
+                'elements' => [
+                    ['id' => 'box-1', 'type' => 'rectangle'],
+                ],
             ],
         ],
     ]);

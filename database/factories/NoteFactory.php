@@ -21,8 +21,36 @@ class NoteFactory extends Factory
         return [
             'team_id' => Team::factory(),
             'title' => fake()->sentence(3),
-            'body' => fake()->optional(0.8)->paragraph(),
-            'format' => 'text',
         ];
+    }
+
+    public function withTextBlock(?string $content = null): static
+    {
+        return $this->afterCreating(function (Note $note) use ($content): void {
+            $note->blocks()->create([
+                'type' => 'text',
+                'position' => 0,
+                'payload' => ['content' => $content ?? fake()->paragraph()],
+            ]);
+        });
+    }
+
+    public function withExcalidrawBlock(?array $scene = null): static
+    {
+        return $this->afterCreating(function (Note $note) use ($scene): void {
+            $note->blocks()->create([
+                'type' => 'excalidraw',
+                'position' => 0,
+                'payload' => [
+                    'scene' => $scene ?? [
+                        'type' => 'excalidraw',
+                        'version' => 2,
+                        'elements' => [],
+                        'appState' => ['name' => $note->title],
+                        'files' => [],
+                    ],
+                ],
+            ]);
+        });
     }
 }

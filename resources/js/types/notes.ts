@@ -1,6 +1,6 @@
 import type { RecordTag } from './record-tags';
 
-export type NoteFormat = 'text' | 'excalidraw';
+export type RteBlockType = 'text' | 'excalidraw';
 
 export type JsonValue =
     | string
@@ -19,12 +19,25 @@ export type ExcalidrawScene = {
     files?: Record<string, JsonValue>;
 };
 
+export type TextPayload = {
+    content?: string;
+};
+
+export type ExcalidrawPayload = {
+    scene?: ExcalidrawScene;
+};
+
+export type RteBlock = {
+    id: number;
+    type: RteBlockType;
+    position: number;
+    payload: TextPayload | ExcalidrawPayload | null;
+};
+
 export type NoteItem = {
     id: number;
     title: string;
-    body?: string | null;
-    format: NoteFormat;
-    drawingData?: ExcalidrawScene | null;
+    blocks: RteBlock[];
     excerpt?: string | null;
     tags: RecordTag[];
     createdAt?: string | null;

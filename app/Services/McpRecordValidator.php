@@ -21,7 +21,7 @@ class McpRecordValidator
             'contact' => ['name', 'phone_numbers', 'email_addresses', 'links', 'address', 'additional_info'],
             'bookmark' => ['title', 'url', 'description', 'notes'],
             'subscription' => ['name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'url', 'description', 'notes', 'is_active', 'category'],
-            'note' => ['title', 'body', 'format', 'drawing_data'],
+            'note' => ['title', 'blocks'],
             'collection' => ['title', 'description'],
             'log_entry' => ['body', 'category'],
             default => [],
@@ -53,9 +53,7 @@ class McpRecordValidator
     {
         return match ($type) {
             'note' => [
-                'format' => 'Valid values are "text" and "excalidraw". Use "text" for Markdown-backed rich text notes; do not use "markdown".',
-                'body' => 'Markdown content for text notes.',
-                'drawing_data' => 'Excalidraw scene data for excalidraw notes.',
+                'blocks' => 'Array of blocks. Each block: {type: "text"|"excalidraw", position: int, payload: {content: "markdown"} or {scene: {...}}}.',
             ],
             default => [],
         };
@@ -120,9 +118,10 @@ class McpRecordValidator
             ],
             'note' => [
                 'title' => [...$required('required'), 'string', 'max:255'],
-                'body' => [...$optional(), 'nullable', 'string'],
-                'format' => ['sometimes', 'required', 'string', Rule::in(['text', 'excalidraw'])],
-                'drawing_data' => [...$optional(), 'nullable', 'array'],
+                'blocks' => [...$optional(), 'nullable', 'array', 'max:50'],
+                'blocks.*.type' => ['required', 'string', Rule::in(['text', 'excalidraw'])],
+                'blocks.*.position' => ['required', 'integer', 'min:0'],
+                'blocks.*.payload' => ['sometimes', 'nullable', 'array'],
             ],
             'collection' => [
                 'title' => [...$required('required'), 'string', 'max:255'],
@@ -143,7 +142,7 @@ class McpRecordValidator
     {
         return match ($type) {
             'note' => [
-                'format.in' => 'The selected format is invalid. Use "text" for Markdown-backed rich text notes or "excalidraw" for drawing notes.',
+                'blocks.*.type.in' => 'Block type must be "text" or "excalidraw".',
             ],
             default => [],
         };

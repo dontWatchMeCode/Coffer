@@ -15,7 +15,7 @@ it('returns fields for each record type', function (string $type, array $expecte
     'contact' => ['contact', ['name', 'phone_numbers', 'email_addresses', 'links', 'address', 'additional_info']],
     'bookmark' => ['bookmark', ['title', 'url', 'description', 'notes']],
     'subscription' => ['subscription', ['name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'url', 'description', 'notes', 'is_active', 'category']],
-    'note' => ['note', ['title', 'body', 'format', 'drawing_data']],
+    'note' => ['note', ['title', 'blocks']],
     'collection' => ['collection', ['title', 'description']],
     'log_entry' => ['log_entry', ['body', 'category']],
 ]);
@@ -44,11 +44,9 @@ it('returns empty required fields for unknown type', function () {
 it('returns field notes for note type', function () {
     $notes = McpRecordValidator::fieldNotesFor('note');
 
-    expect($notes)->toHaveKey('format')
-        ->and($notes)->toHaveKey('body')
-        ->and($notes)->toHaveKey('drawing_data')
-        ->and($notes['format'])->toContain('text')
-        ->and($notes['format'])->toContain('excalidraw');
+    expect($notes)->toHaveKey('blocks')
+        ->and($notes['blocks'])->toContain('text')
+        ->and($notes['blocks'])->toContain('excalidraw');
 });
 
 it('returns empty field notes for non-note types', function (string $type) {
@@ -58,9 +56,9 @@ it('returns empty field notes for non-note types', function (string $type) {
 it('returns custom messages for note type', function () {
     $messages = McpRecordValidator::messagesFor('note');
 
-    expect($messages)->toHaveKey('format.in')
-        ->and($messages['format.in'])->toContain('text')
-        ->and($messages['format.in'])->toContain('excalidraw');
+    expect($messages)->toHaveKey('blocks.*.type.in')
+        ->and($messages['blocks.*.type.in'])->toContain('text')
+        ->and($messages['blocks.*.type.in'])->toContain('excalidraw');
 });
 
 it('returns empty messages for non-note types', function (string $type) {
@@ -142,18 +140,20 @@ it('validates contact link url format on create', function () {
         ->and($validator->errors()->has('links.0.value'))->toBeTrue();
 });
 
-it('validates note format must be text or excalidraw', function () {
+it('validates note block type must be text or excalidraw', function () {
     $team = Team::factory()->make();
     $rules = McpRecordValidator::rulesFor('note', false, $team);
     $messages = McpRecordValidator::messagesFor('note');
 
     $validator = Validator::make([
         'title' => 'Test',
-        'format' => 'markdown',
+        'blocks' => [
+            ['type' => 'invalid', 'position' => 0],
+        ],
     ], $rules, $messages);
 
     expect($validator->fails())->toBeTrue()
-        ->and($validator->errors()->get('format'))->toContain('The selected format is invalid. Use "text" for Markdown-backed rich text notes or "excalidraw" for drawing notes.');
+        ->and($validator->errors()->get('blocks.0.type'))->toContain('Block type must be "text" or "excalidraw".');
 });
 
 it('validates subscription billing cycle values', function () {

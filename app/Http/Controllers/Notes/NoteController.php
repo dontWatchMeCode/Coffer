@@ -17,10 +17,16 @@ class NoteController extends Controller
     {
         $this->authorize('create', Note::class);
 
+        $validated = $request->validated();
+
         $note = Note::create([
-            ...$request->validated(),
             'team_id' => $currentTeam->id,
+            'title' => $validated['title'],
         ]);
+
+        if (array_key_exists('blocks', $validated)) {
+            $note->syncBlocks($validated['blocks'] ?? []);
+        }
 
         return to_route('team.notes.show', [
             'current_team' => $currentTeam,
@@ -36,7 +42,15 @@ class NoteController extends Controller
 
         $this->authorize('update', $note);
 
-        $note->update($request->validated());
+        $validated = $request->validated();
+
+        $note->update([
+            'title' => $validated['title'] ?? $note->title,
+        ]);
+
+        if (array_key_exists('blocks', $validated)) {
+            $note->syncBlocks($validated['blocks'] ?? []);
+        }
 
         return to_route('team.notes.show', [
             'current_team' => $currentTeam,

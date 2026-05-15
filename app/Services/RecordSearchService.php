@@ -127,6 +127,7 @@ class RecordSearchService
 
         return $class::query()
             ->whereBelongsTo($currentTeam)
+            ->when($class === Note::class, fn ($q) => $q->with('blocks'))
             ->where(function (Builder $query) use ($definition, $like): void {
                 foreach ($definition['columns'] as $index => $column) {
                     $index === 0
@@ -154,7 +155,7 @@ class RecordSearchService
         }
 
         if ($model instanceof Note) {
-            return str($model->getAttribute('body') ?? '')->stripTags()->squish()->limit(90)->toString() ?: null;
+            return $model->textExcerpt(90);
         }
 
         return RecordLinkHelper::previewForModel($model);

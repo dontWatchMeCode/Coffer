@@ -29,7 +29,7 @@ class NotePageController extends Controller
             ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
             ->when($search, function ($q) use ($search): void {
                 $q->where(function ($q) use ($search): void {
-                    $q->search($search, ['title', 'body'])
+                    $q->search($search, ['title'])
                         ->orWhereHas('recordTags', fn ($q) => $q->where('name', 'like', sprintf('%%%s%%', addcslashes($search, '%_\\'))));
                 });
             })
@@ -37,7 +37,7 @@ class NotePageController extends Controller
             ->simplePaginate(25);
 
         return Inertia::render('notes/Index', [
-            'notes' => Inertia::scroll($notes->through(fn (Note $note): array => $this->notePayload($note, includeDrawingData: false))),
+            'notes' => Inertia::scroll($notes->through(fn (Note $note): array => $this->notePayload($note, includeBlocks: false))),
         ]);
     }
 
@@ -45,7 +45,7 @@ class NotePageController extends Controller
     {
         $note = Note::query()
             ->whereBelongsTo($currentTeam)
-            ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
+            ->with(['recordTags' => fn ($query) => $query->orderBy('name'), 'blocks'])
             ->findOrFail($note);
 
         return Inertia::render('notes/Show', [
@@ -58,24 +58,25 @@ class NotePageController extends Controller
     }
 
     /**
-     * @return array{id: int, title: string, body: string|null, format: string, drawingData: array<string, mixed>|null, excerpt: string|null, tags: array<int, array{id: int, name: string, slug: string}>, createdAt: string|null, updatedAt: string|null}
+     * @return array{id: int, title: string, blocks: array<int, array{id: int, type: string, position: int, payload: array<string, mixed>|null}>, excerpt: string|null, tags: array<int, array{id: int, name: string, slug: string}>, createdAt: string|null, updatedAt: string|null}
      */
-    protected function notePayload(Note $note, bool $includeDrawingData = true): array
+    protected function notePayload(Note $note, bool $includeBlocks = true): array
     {
-        $format = $note->format ?? 'text';
-
         return [
             'id' => $note->id,
             'title' => $note->title,
-            'body' => $note->body,
-            'format' => $format,
-            'drawingData' => $includeDrawingData ? $note->drawing_data : null,
-            'excerpt' => $format === 'excalidraw'
-                ? 'Excalidraw drawing'
-                : (str($note->body ?? '')->stripTags()->squish()->limit(180)->toString() ?: null),
+            'blocks' => $includeBlocks
+                ? $note->blocks->map(fn ($block): array => $block->toPayloadArray())->all()
+                : [],
+            'excerpt' => $includeBlocks ? $this->excerptFromBlocks($note) : null,
             'tags' => $note->formattedRecordTags(),
             'createdAt' => $note->created_at?->format(\DateTimeInterface::ATOM),
             'updatedAt' => $note->updated_at?->format(\DateTimeInterface::ATOM),
         ];
+    }
+
+    protected function excerptFromBlocks(Note $note): ?string
+    {
+        return $note->textExcerpt(180) ?? ($note->hasDrawingBlock() ? 'Excalidraw drawing' : null);
     }
 }

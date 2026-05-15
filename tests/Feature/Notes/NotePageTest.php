@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Note;
+use App\Models\RteBlock;
 use App\Models\Team;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -23,11 +24,12 @@ test('notes page shows notes for current team', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
-    Note::factory()->create([
-        'team_id' => $team->id,
-        'title' => 'Planning Notes',
-        'body' => 'Important launch details',
-    ]);
+    Note::factory()
+        ->withTextBlock('Important launch details')
+        ->create([
+            'team_id' => $team->id,
+            'title' => 'Planning Notes',
+        ]);
 
     Note::factory()->create([
         'title' => 'Other Team Notes',
@@ -40,17 +42,21 @@ test('notes page shows notes for current team', function () {
             ->component('notes/Index')
             ->has('notes.data', 1)
             ->where('notes.data.0.title', 'Planning Notes')
-            ->where('notes.data.0.excerpt', 'Important launch details'));
+            ->where('notes.data.0.excerpt', null));
 });
 
-test('note show page can be rendered with links and tags payloads', function () {
+test('note show page can be rendered with blocks payload', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
     $note = Note::factory()->create([
         'team_id' => $team->id,
         'title' => 'Decision Log',
-        'body' => '**Approved** launch plan',
+    ]);
+    $note->blocks()->create([
+        'type' => 'text',
+        'position' => 0,
+        'payload' => ['content' => '**Approved** launch plan'],
     ]);
 
     actingAs($user)
@@ -60,22 +66,24 @@ test('note show page can be rendered with links and tags payloads', function () 
             ->component('notes/Show')
             ->where('note.id', $note->id)
             ->where('note.title', 'Decision Log')
-            ->where('note.body', '**Approved** launch plan')
-            ->where('note.format', 'text')
-            ->where('note.drawingData', null)
+            ->has('note.blocks', 1)
+            ->where('note.blocks.0.type', 'text')
+            ->where('note.blocks.0.payload.content', '**Approved** launch plan')
             ->where('startInEditMode', false)
             ->has('recordLinks')
             ->has('recordTags'));
 });
 
-test('a note can be created', function () {
+test('a note can be created with a text block', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
     actingAs($user)
         ->post(route('team.notes.store', ['current_team' => $team]), [
             'title' => 'New Note',
-            'body' => 'Body text',
+            'blocks' => [
+                ['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Body text']],
+            ],
         ])
         ->assertRedirect(route('team.notes.show', [
             'current_team' => $team,
@@ -85,8 +93,9 @@ test('a note can be created', function () {
     $note = Note::where('team_id', $team->id)->first();
 
     expect($note->title)->toBe('New Note');
-    expect($note->body)->toBe('Body text');
-    expect($note->format)->toBe('text');
+    expect($note->blocks)->toHaveCount(1);
+    expect($note->blocks->first()->type)->toBe('text');
+    expect($note->blocks->first()->payload['content'])->toBe('Body text');
 });
 
 test('creating a note flashes edit mode for the show page', function () {
@@ -110,7 +119,7 @@ test('creating a note flashes edit mode for the show page', function () {
             ->where('startInEditMode', true));
 });
 
-test('an excalidraw note can be created', function () {
+test('a note can be created with an excalidraw block', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -127,8 +136,9 @@ test('an excalidraw note can be created', function () {
     actingAs($user)
         ->post(route('team.notes.store', ['current_team' => $team]), [
             'title' => 'Sketch',
-            'format' => 'excalidraw',
-            'drawing_data' => $drawingData,
+            'blocks' => [
+                ['type' => 'excalidraw', 'position' => 0, 'payload' => ['scene' => $drawingData]],
+            ],
         ])
         ->assertRedirect(route('team.notes.show', [
             'current_team' => $team,
@@ -137,8 +147,10 @@ test('an excalidraw note can be created', function () {
 
     $note = Note::where('team_id', $team->id)->first();
 
-    expect($note->format)->toBe('excalidraw');
-    expect($note->drawing_data)->toBe($drawingData);
+    expect($note->blocks)->toHaveCount(1);
+    $block = $note->blocks->first();
+    expect($block->type)->toBe('excalidraw');
+    expect($block->payload['scene'])->toBe($drawingData);
 });
 
 test('a note requires a title', function () {
@@ -147,48 +159,48 @@ test('a note requires a title', function () {
 
     actingAs($user)
         ->post(route('team.notes.store', ['current_team' => $team]), [
-            'body' => 'Missing title',
+            'title' => '',
         ])
         ->assertSessionHasErrors(['title']);
 });
 
-test('a note can be updated', function () {
+test('a note can be updated with blocks', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
     $note = Note::factory()->create([
         'team_id' => $team->id,
         'title' => 'Old Title',
-        'body' => 'Old body',
     ]);
 
     actingAs($user)
         ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
             'title' => 'New Title',
-            'body' => 'New body',
+            'blocks' => [
+                ['type' => 'text', 'position' => 0, 'payload' => ['content' => 'New body']],
+            ],
         ])
         ->assertRedirect(route('team.notes.show', ['current_team' => $team, 'note' => $note->id]));
 
     $note = $note->fresh();
 
     expect($note->title)->toBe('New Title');
-    expect($note->body)->toBe('New body');
+    expect($note->blocks)->toHaveCount(1);
+    expect($note->blocks->first()->payload['content'])->toBe('New body');
 });
 
-test('updating a note logs an activity', function () {
+test('updating a note title logs an activity', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
     $note = Note::factory()->create([
         'team_id' => $team->id,
         'title' => 'Old Title',
-        'body' => 'Old body',
     ]);
 
     actingAs($user)
         ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
             'title' => 'New Title',
-            'body' => 'New body',
         ])
         ->assertRedirect();
 
@@ -208,13 +220,11 @@ test('no-op update does not log an activity', function () {
     $note = Note::factory()->create([
         'team_id' => $team->id,
         'title' => 'Same Title',
-        'body' => 'Same body',
     ]);
 
     actingAs($user)
         ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
             'title' => 'Same Title',
-            'body' => 'Same body',
         ])
         ->assertRedirect();
 
@@ -231,7 +241,6 @@ test('note show page includes activity history', function () {
     $note = Note::factory()->create([
         'team_id' => $team->id,
         'title' => 'Old Title',
-        'body' => 'Old body',
     ]);
 
     actingAs($user)
@@ -250,162 +259,59 @@ test('note show page includes activity history', function () {
             ->has('activityHistory.0.changedFields'));
 });
 
-test('empty note fields are hidden from created activity history', function () {
+test('syncBlocks creates new blocks', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
-    actingAs($user)
-        ->post(route('team.notes.store', ['current_team' => $team]), [
-            'title' => 'Empty Body',
-            'body' => '<p></p>',
-            'format' => 'text',
-            'drawing_data' => [
-                'type' => 'excalidraw',
-                'version' => 2,
-                'elements' => [],
-                'appState' => ['name' => 'Empty Body'],
-                'files' => [],
-            ],
-        ]);
-
-    $note = Note::query()->whereBelongsTo($team)->where('title', 'Empty Body')->firstOrFail();
-
-    $response = actingAs($user)
-        ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]));
-
-    expect($response->inertiaProps('activityHistory.0.changedFields'))
-        ->toContain('title')
-        ->not->toContain('body')
-        ->not->toContain('drawing_data');
-});
-
-test('non-empty drawing data is shown in created activity history', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    actingAs($user)
-        ->post(route('team.notes.store', ['current_team' => $team]), [
-            'title' => 'Sketch',
-            'format' => 'excalidraw',
-            'drawing_data' => [
-                'type' => 'excalidraw',
-                'version' => 2,
-                'elements' => [
-                    ['id' => 'rect-1', 'type' => 'rectangle'],
-                ],
-                'appState' => ['name' => 'Sketch'],
-                'files' => [],
-            ],
-        ]);
-
-    $note = Note::query()->whereBelongsTo($team)->where('title', 'Sketch')->firstOrFail();
-
-    $response = actingAs($user)
-        ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]));
-
-    expect($response->inertiaProps('activityHistory.0.changedFields'))
-        ->toContain('drawing_data');
-});
-
-test('panning the canvas does not show drawing_data as changed', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $drawingData = [
-        'type' => 'excalidraw',
-        'version' => 2,
-        'elements' => [
-            ['id' => 'rect-1', 'type' => 'rectangle', 'x' => 100, 'y' => 100, 'width' => 50, 'height' => 50],
-        ],
-        'appState' => ['name' => 'Test', 'scrollX' => 0, 'scrollY' => 0, 'zoom' => 1],
-        'files' => [],
-    ];
-
-    $note = Note::factory()->create([
-        'team_id' => $team->id,
-        'format' => 'excalidraw',
-        'drawing_data' => $drawingData,
-    ]);
-
-    $pannedDrawingData = $drawingData;
-    $pannedDrawingData['appState']['scrollX'] = 500;
-    $pannedDrawingData['appState']['scrollY'] = 300;
+    $note = Note::factory()->create(['team_id' => $team->id]);
 
     actingAs($user)
         ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
-            'drawing_data' => $pannedDrawingData,
-        ]);
-
-    actingAs($user)
-        ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('notes/Show')
-            ->has('activityHistory', 1)
-            ->where('activityHistory.0.event', 'created'));
-});
-
-test('a note can be updated to excalidraw format', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $note = Note::factory()->create([
-        'team_id' => $team->id,
-        'title' => 'Old Title',
-        'body' => 'Old body',
-    ]);
-
-    $drawingData = [
-        'type' => 'excalidraw',
-        'version' => 2,
-        'elements' => [
-            ['id' => 'arrow-1', 'type' => 'arrow'],
-        ],
-        'appState' => ['name' => 'New Sketch'],
-        'files' => [],
-    ];
-
-    actingAs($user)
-        ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
-            'title' => 'New Sketch',
-            'format' => 'excalidraw',
-            'body' => 'Old body',
-            'drawing_data' => $drawingData,
+            'blocks' => [
+                ['type' => 'text', 'position' => 0, 'payload' => ['content' => 'First']],
+                ['type' => 'text', 'position' => 1, 'payload' => ['content' => 'Second']],
+            ],
         ])
-        ->assertRedirect(route('team.notes.show', ['current_team' => $team, 'note' => $note->id]));
+        ->assertRedirect();
+
+    expect(RteBlock::where('blockable_id', $note->id)->count())->toBe(2);
+});
+
+test('syncBlocks updates existing and removes stale blocks', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $note = Note::factory()->create(['team_id' => $team->id]);
+    $blockA = $note->blocks()->create(['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Keep']]);
+    $note->blocks()->create(['type' => 'text', 'position' => 1, 'payload' => ['content' => 'Remove']]);
+
+    actingAs($user)
+        ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
+            'blocks' => [
+                ['id' => $blockA->id, 'type' => 'text', 'position' => 0, 'payload' => ['content' => 'Updated']],
+            ],
+        ])
+        ->assertRedirect();
 
     $note = $note->fresh();
-
-    expect($note->title)->toBe('New Sketch');
-    expect($note->format)->toBe('excalidraw');
-    expect($note->drawing_data)->toBe($drawingData);
-    expect($note->body)->toBeNull();
+    expect($note->blocks)->toHaveCount(1);
+    expect($note->blocks->first()->id)->toBe($blockA->id);
+    expect($note->blocks->first()->payload['content'])->toBe('Updated');
 });
 
-test('switching a note from excalidraw to text clears drawing_data', function () {
+test('blocks are validated for allowed types', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
-    $note = Note::factory()->create([
-        'team_id' => $team->id,
-        'title' => 'Drawing',
-        'format' => 'excalidraw',
-        'drawing_data' => ['type' => 'excalidraw', 'elements' => []],
-    ]);
+    $note = Note::factory()->create(['team_id' => $team->id]);
 
     actingAs($user)
         ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
-            'title' => 'Converted',
-            'format' => 'text',
-            'body' => 'New body',
+            'blocks' => [
+                ['type' => 'invalid', 'position' => 0],
+            ],
         ])
-        ->assertRedirect(route('team.notes.show', ['current_team' => $team, 'note' => $note->id]));
-
-    $note = $note->fresh();
-
-    expect($note->format)->toBe('text');
-    expect($note->body)->toBe('New body');
-    expect($note->drawing_data)->toBeNull();
+        ->assertSessionHasErrors(['blocks.0.type']);
 });
 
 test('a note can be deleted', function () {

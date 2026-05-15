@@ -13,13 +13,12 @@ use Database\Factories\NoteFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-/**
- * @property array<string, mixed>|null $drawing_data
- */
-#[Fillable(['team_id', 'title', 'body', 'format', 'drawing_data'])]
+#[Fillable(['team_id', 'title'])]
 class Note extends Model implements LinkableRecord
 {
     use BelongsToTeam;
@@ -34,14 +33,8 @@ class Note extends Model implements LinkableRecord
 
     protected static function booted(): void
     {
-        static::saving(function (self $note): void {
-            if ($note->isDirty('format')) {
-                if ($note->format === 'excalidraw') {
-                    $note->body = null;
-                } else {
-                    $note->drawing_data = null;
-                }
-            }
+        static::deleting(function (self $note): void {
+            $note->blocks()->delete();
         });
     }
 
@@ -49,18 +42,90 @@ class Note extends Model implements LinkableRecord
     {
         return LogOptions::defaults()
             ->useLogName('notes')
-            ->logOnly(['title', 'body', 'format', 'drawing_data'])
+            ->logOnly(['title'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
 
     /**
-     * @return array<string, string>
+     * @return MorphMany<RteBlock, $this>
      */
-    protected function casts(): array
+    public function blocks(): MorphMany
     {
-        return [
-            'drawing_data' => 'array',
-        ];
+        return $this->morphMany(RteBlock::class, 'blockable');
+    }
+
+    public function textExcerpt(int $limit = 180): ?string
+    {
+        $firstTextBlock = $this->relationLoaded('blocks')
+            ? $this->blocks->first(fn ($b): bool => $b->type === 'text' && ! empty($b->payload['content']))
+            : $this->blocks()->where('type', 'text')->whereNotNull('payload')->first();
+
+        if ($firstTextBlock && ! empty($firstTextBlock->payload['content'])) {
+            return Str::of((string) ($firstTextBlock->payload['content'] ?? ''))->stripTags()->squish()->limit($limit)->toString() ?: null;
+        }
+
+        return null;
+    }
+
+    public function hasDrawingBlock(): bool
+    {
+        if ($this->relationLoaded('blocks')) {
+            return $this->blocks->contains(fn ($b): bool => $b->type === 'excalidraw');
+        }
+
+        return $this->blocks()->where('type', 'excalidraw')->exists();
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function firstDrawingPayload(): ?array
+    {
+        $block = $this->relationLoaded('blocks')
+            ? $this->blocks->first(fn ($b): bool => $b->type === 'excalidraw')
+            : $this->blocks()->where('type', 'excalidraw')->first();
+
+        $payload = $block?->payload;
+
+        return is_array($payload) ? ($payload['scene'] ?? null) : null;
+    }
+
+    /**
+     * @param  array<int, array{id?: int, type: string, position: int, payload?: array<string, mixed>|null}>  $blocks
+     */
+    public function syncBlocks(array $blocks): void
+    {
+        $this->getConnection()->transaction(function () use ($blocks): void {
+            $existingIds = $this->blocks()->pluck('id')->all();
+
+            $incomingIds = collect($blocks)
+                ->filter(fn (array $block): bool => isset($block['id']))
+                ->pluck('id')
+                ->map(fn ($id): int => (int) $id)
+                ->filter(fn (int $id): bool => in_array($id, $existingIds, true))
+                ->all();
+
+            $this->blocks()
+                ->whereNotIn('id', $incomingIds)
+                ->delete();
+
+            foreach ($blocks as $block) {
+                $id = $block['id'] ?? null;
+                $data = [
+                    'type' => $block['type'],
+                    'position' => $block['position'],
+                    'payload' => $block['payload'] ?? null,
+                ];
+
+                if ($id !== null && in_array((int) $id, $existingIds, true)) {
+                    $this->blocks()->where('id', $id)->update($data);
+                } else {
+                    $this->blocks()->create($data);
+                }
+            }
+
+            $this->touch();
+        });
     }
 }

@@ -127,11 +127,22 @@ export function serializeNote(
 ): string {
     const parts: string[] = [`# ${note.title}`];
 
-    if (note.format === 'excalidraw') {
-        parts.push('\n*[Excalidraw drawing]*');
-    } else if (note.body) {
-        const body = stripHtml(note.body);
-        parts.push(`\n${body}`);
+    const sortedBlocks = [...(note.blocks ?? [])].sort(
+        (a, b) => a.position - b.position,
+    );
+
+    for (const block of sortedBlocks) {
+        if (block.type === 'text') {
+            const content = (block.payload as { content?: string } | null)
+                ?.content;
+
+            if (content) {
+                const body = stripHtml(content);
+                parts.push(`\n${body}`);
+            }
+        } else if (block.type === 'excalidraw') {
+            parts.push('\n*[Excalidraw drawing]*');
+        }
     }
 
     const tagList = formatTagList(tags);

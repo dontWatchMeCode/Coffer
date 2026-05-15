@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Concerns\EscapesLikeWildcards;
 use App\Contracts\LinkableRecord;
+use App\Models\Note;
 use App\Models\RecordLink;
 use App\Models\Subscription;
 use App\Models\SubscriptionCategory;
@@ -186,6 +187,11 @@ class McpRecordService
 
         $data['team_id'] = $team->id;
 
+        if ($validated['type'] === 'note') {
+            $blocks = $data['blocks'] ?? [];
+            unset($data['blocks']);
+        }
+
         if ($validated['type'] === 'task') {
             $data['created_by'] ??= $user->id;
             $data['progress'] ??= 0;
@@ -199,6 +205,11 @@ class McpRecordService
 
         /** @var Model $model */
         $model = $class::create($data);
+
+        if ($validated['type'] === 'note' && ! empty($blocks)) {
+            assert($model instanceof Note);
+            $model->syncBlocks($blocks);
+        }
 
         if ($validated['type'] === 'subscription' && isset($subscriptionCategoryId)) {
             assert($model instanceof Subscription);
@@ -243,6 +254,13 @@ class McpRecordService
 
         Gate::forUser($user)->authorize('update', $model);
 
+        $blocks = null;
+
+        if ($validated['type'] === 'note') {
+            $blocks = $data['blocks'] ?? null;
+            unset($data['blocks']);
+        }
+
         $model->fill($data);
 
         if ($validated['type'] === 'subscription' && array_key_exists('category', $data)) {
@@ -253,6 +271,11 @@ class McpRecordService
         }
 
         $model->save();
+
+        if ($validated['type'] === 'note' && $blocks !== null) {
+            assert($model instanceof Note);
+            $model->syncBlocks($blocks);
+        }
 
         if ($validated['type'] === 'subscription' && $model instanceof Subscription && isset($oldCategoryId) && $oldCategoryId !== $model->subscription_category_id && $oldCategoryId) {
             SubscriptionCategory::deleteUnused($team->id);

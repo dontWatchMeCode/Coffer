@@ -44,7 +44,7 @@ test('the records mcp server describes its supported schema', function () {
     RecordsServer::actingAs($user)->tool(RecordsSchemaTool::class)
         ->assertOk()
         ->assertSee('calendar_event')
-        ->assertSee('Markdown-backed rich text notes')
+        ->assertSee('block')
         ->assertSee('relationships')
         ->assertSee('tags');
 });
@@ -59,7 +59,7 @@ test('records can be created for each supported type through mcp', function (str
         'calendar_event' => ['title' => $expected, 'date' => '2026-05-08'],
         'contact' => ['name' => $expected],
         'bookmark' => ['title' => $expected, 'url' => 'https://example.com/'.$type],
-        'note' => ['title' => $expected, 'body' => 'MCP body'],
+        'note' => ['title' => $expected, 'blocks' => [['type' => 'text', 'position' => 0, 'payload' => ['content' => 'MCP body']]]],
         'collection' => ['title' => $expected, 'description' => 'MCP collection'],
         'log_entry' => ['body' => $expected],
     };
@@ -85,7 +85,7 @@ test('records can be searched read updated and deleted through mcp', function ()
 
     RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
         'type' => 'note',
-        'data' => ['title' => 'Alpha MCP Note', 'body' => 'Original body'],
+        'data' => ['title' => 'Alpha MCP Note', 'blocks' => [['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Original body']]]],
     ])->assertOk()->assertSee('Alpha MCP Note');
 
     $note = Note::query()->where('title', 'Alpha MCP Note')->firstOrFail();
@@ -98,7 +98,7 @@ test('records can be searched read updated and deleted through mcp', function ()
     RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
         'type' => 'note',
         'id' => $note->id,
-    ])->assertOk()->assertSee('Original body');
+    ])->assertOk()->assertSee('Alpha MCP Note');
 
     RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
         'type' => 'note',
@@ -114,76 +114,68 @@ test('records can be searched read updated and deleted through mcp', function ()
     expect(Note::query()->whereKey($note->id)->exists())->toBeFalse();
 });
 
-test('markdown note bodies are stored using the text format through mcp', function () {
+test('note blocks can be created through mcp', function () {
     $user = User::factory()->create();
 
     RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
         'type' => 'note',
         'data' => [
             'title' => 'Markdown MCP Note',
-            'format' => 'text',
-            'body' => "# Heading\n\nThis has **bold** text and `code`.",
+            'blocks' => [
+                ['type' => 'text', 'position' => 0, 'payload' => ['content' => "# Heading\n\nThis has **bold** text and `code`."]],
+            ],
         ],
     ])->assertOk()->assertSee('Markdown MCP Note');
 
     $note = Note::query()->where('title', 'Markdown MCP Note')->firstOrFail();
 
-    expect($note->format)->toBe('text');
-    expect($note->body)->toBe("# Heading\n\nThis has **bold** text and `code`.");
+    expect($note->blocks)->toHaveCount(1);
+    expect($note->blocks->first()->type)->toBe('text');
+    expect($note->blocks->first()->payload['content'])->toBe("# Heading\n\nThis has **bold** text and `code`.");
 });
 
-test('mcp note validation explains markdown uses the text format', function () {
+test('mcp note validation rejects invalid block types', function () {
     $user = User::factory()->create();
 
     RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
         'type' => 'note',
         'data' => [
-            'title' => 'Invalid Markdown Format',
-            'format' => 'markdown',
-            'body' => '# Heading',
+            'title' => 'Invalid Block Type',
+            'blocks' => [
+                ['type' => 'invalid', 'position' => 0],
+            ],
         ],
     ])->assertHasErrors([
-        'The selected format is invalid. Use "text" for Markdown-backed rich text notes or "excalidraw" for drawing notes.',
+        'Block type must be "text" or "excalidraw".',
     ]);
 });
 
-test('switching a note format through mcp clears the previous content', function () {
+test('note blocks can be updated through mcp', function () {
     $user = User::factory()->create();
 
     RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
         'type' => 'note',
-        'data' => ['title' => 'Format Switch Note', 'body' => 'Some text content'],
+        'data' => ['title' => 'Block Update Note', 'blocks' => [['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Initial content']]]],
     ])->assertOk();
 
-    $note = Note::query()->where('title', 'Format Switch Note')->firstOrFail();
+    $note = Note::query()->where('title', 'Block Update Note')->firstOrFail();
 
-    expect($note->format)->toBe('text');
-    expect($note->body)->toBe('Some text content');
+    expect($note->blocks)->toHaveCount(1);
+    expect($note->blocks->first()->payload['content'])->toBe('Initial content');
 
     RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
         'type' => 'note',
         'id' => $note->id,
         'data' => [
-            'format' => 'excalidraw',
-            'drawing_data' => ['type' => 'excalidraw', 'elements' => []],
+            'blocks' => [
+                ['type' => 'excalidraw', 'position' => 0, 'payload' => ['scene' => ['type' => 'excalidraw', 'elements' => []]]],
+            ],
         ],
     ])->assertOk();
 
     $note = $note->fresh();
-    expect($note->format)->toBe('excalidraw');
-    expect($note->body)->toBeNull();
-    expect($note->drawing_data)->toBe(['type' => 'excalidraw', 'elements' => []]);
-
-    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
-        'type' => 'note',
-        'id' => $note->id,
-        'data' => ['format' => 'text', 'body' => 'Back to text'],
-    ])->assertOk();
-
-    $note = $note->fresh();
-    expect($note->format)->toBe('text');
-    expect($note->body)->toBe('Back to text');
-    expect($note->drawing_data)->toBeNull();
+    expect($note->blocks)->toHaveCount(1);
+    expect($note->blocks->first()->type)->toBe('excalidraw');
 });
 
 test('linked records and tags can be managed through mcp', function () {
@@ -470,7 +462,7 @@ test('mcp token read permissions allow reads and deny writes', function () {
 
     RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
         'type' => 'note',
-        'data' => ['title' => 'Denied', 'body' => 'Denied'],
+        'data' => ['title' => 'Denied'],
     ])->assertHasErrors();
 });
 

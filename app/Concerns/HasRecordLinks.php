@@ -93,6 +93,7 @@ trait HasRecordLinks
             $models = $modelClass::query()
                 ->where('team_id', $teamId)
                 ->whereIn('id', array_unique($ids))
+                ->when($modelClass === Note::class, fn ($q) => $q->with('blocks'))
                 ->limit(100)
                 ->get();
 
@@ -143,8 +144,10 @@ trait HasRecordLinks
             ];
 
             if ($model instanceof Note) {
-                $record['format'] = $model->format;
-                $record['drawingData'] = $includeDrawingData ? $model->drawing_data : null;
+                $hasDrawing = $model->hasDrawingBlock();
+
+                $record['format'] = $hasDrawing ? 'excalidraw' : 'text';
+                $record['drawingData'] = $includeDrawingData ? $model->firstDrawingPayload() : null;
             }
 
             return $record;
