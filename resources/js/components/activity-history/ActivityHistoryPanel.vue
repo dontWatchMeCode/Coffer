@@ -38,12 +38,16 @@ watch(open, (isOpen) => {
     }
 });
 
+const EVENT_LABELS: Record<string, string> = {
+    blocks_updated: 'Content updated',
+};
+
 function eventLabel(event: string | null): string {
     if (!event) {
         return 'Activity';
     }
 
-    return event.charAt(0).toUpperCase() + event.slice(1);
+    return EVENT_LABELS[event] ?? fieldLabel(event);
 }
 
 function fieldLabel(field: string): string {
