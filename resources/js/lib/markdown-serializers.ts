@@ -137,18 +137,24 @@ export function serializeNote(
                 ?.content;
 
             if (content) {
-                const body = stripHtml(content);
-                parts.push(`\n${body}`);
+                parts.push(`\n\n${content}`);
             }
         } else if (block.type === 'excalidraw') {
-            parts.push('\n*[Excalidraw drawing]*');
+            parts.push('\n\n*[Excalidraw drawing]*');
+        } else if (block.type === 'mermaid') {
+            const content = (block.payload as { content?: string } | null)
+                ?.content;
+
+            if (content) {
+                parts.push(`\n\n\`\`\`mermaid\n${content}\n\`\`\``);
+            }
         }
     }
 
     const tagList = formatTagList(tags);
 
     if (tagList) {
-        parts.push(`\n## Tags\n\n${tagList}`);
+        parts.push(`\n\n## Tags\n\n${tagList}\n`);
     }
 
     const linkSection = formatLinkSection(links);

@@ -12,7 +12,7 @@ trait ProvidesActivityHistory
     /**
      * Build a reusable activity history payload for Inertia.
      *
-     * @return array<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null}>
+     * @return array<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}>
      */
     protected function activityHistoryPayload(Model $model): array
     {
@@ -31,7 +31,7 @@ trait ProvidesActivityHistory
      * Batch-build activity history payloads for multiple models.
      *
      * @param  iterable<int, Model>  $models
-     * @return array<int, array<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null}>>
+     * @return array<int, array<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}>>
      */
     protected function activityHistoryPayloadForModels(iterable $models): array
     {
@@ -67,7 +67,7 @@ trait ProvidesActivityHistory
     }
 
     /**
-     * @return array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null}
+     * @return array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}
      */
     protected function buildActivityItem(Activity $activity): array
     {
@@ -80,6 +80,7 @@ trait ProvidesActivityHistory
         $causerName = $activity->causer?->getAttribute('name');
         $properties = $activity->properties?->toArray() ?? [];
         $relationChanges = $properties['relation_changes'] ?? null;
+        $blockChanges = $properties['block_changes'] ?? null;
         $mcpTokenName = $properties['mcp_token_name'] ?? null;
 
         if (is_string($mcpTokenName) && $mcpTokenName !== '') {
@@ -98,15 +99,16 @@ trait ProvidesActivityHistory
             'old' => $changes['old'] ?? null,
             'attributes' => $changes['attributes'] ?? null,
             'relationChanges' => is_array($relationChanges) ? $relationChanges : null,
+            'blockChanges' => is_array($blockChanges) ? $blockChanges : null,
         ];
     }
 
     /**
-     * @param  array{changedFields: array<int, string>, relationChanges: array<string, mixed>|null}  $item
+     * @param  array{changedFields: array<int, string>, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}  $item
      */
     private function isSignificantActivity(array $item): bool
     {
-        return count($item['changedFields']) > 0 || $item['relationChanges'] !== null;
+        return count($item['changedFields']) > 0 || $item['relationChanges'] !== null || $item['blockChanges'] !== null;
     }
 
     /**

@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import { formatDateTime } from '@/lib/utils';
 import type { ActivityHistoryItem } from '@/types';
+import BlockChangesList from './BlockChangesList.vue';
+import { drawingToggleBtnClass } from './drawing-toggle-button-style';
 import TextDiff from './TextDiff.vue';
 
 type Props = {
@@ -283,6 +285,21 @@ function relationChangeTargetUrl(
                         </div>
 
                         <div
+                            v-else-if="activity.blockChanges"
+                            class="space-y-1.5"
+                        >
+                            <div class="text-sm">
+                                {{ activity.description }}
+                            </div>
+
+                            <BlockChangesList
+                                :activity-id="activity.id"
+                                :block-changes="activity.blockChanges"
+                                :dialog-open="open"
+                            />
+                        </div>
+
+                        <div
                             v-else-if="activity.changedFields.length > 0"
                             class="space-y-2"
                         >
@@ -306,11 +323,11 @@ function relationChangeTargetUrl(
                                             type="button"
                                             :class="[
                                                 'inline-flex cursor-pointer items-center rounded-md border px-2 py-1 text-[11px] font-medium transition-colors',
-                                                expandedDrawings[
-                                                    activity.id
-                                                ] === 'old'
-                                                    ? 'border-primary bg-primary text-primary-foreground'
-                                                    : 'border-border bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                                                drawingToggleBtnClass(
+                                                    expandedDrawings[
+                                                        activity.id
+                                                    ] === 'old',
+                                                ),
                                             ]"
                                             @click="
                                                 toggleDrawing(
@@ -325,11 +342,11 @@ function relationChangeTargetUrl(
                                             type="button"
                                             :class="[
                                                 'inline-flex cursor-pointer items-center rounded-md border px-2 py-1 text-[11px] font-medium transition-colors',
-                                                expandedDrawings[
-                                                    activity.id
-                                                ] === 'new'
-                                                    ? 'border-primary bg-primary text-primary-foreground'
-                                                    : 'border-border bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                                                drawingToggleBtnClass(
+                                                    expandedDrawings[
+                                                        activity.id
+                                                    ] === 'new',
+                                                ),
                                             ]"
                                             @click="
                                                 toggleDrawing(

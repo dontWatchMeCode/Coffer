@@ -12,6 +12,49 @@ use Illuminate\Database\Eloquent\Model;
 class ActivityLogger
 {
     /**
+     * Log block changes on a note.
+     *
+     * @param  array{added?: array<int, array{type: string, position: int, payload?: array<string, mixed>|null}>, updated?: array<int, array{type: string, position: int, old_payload?: array<string, mixed>|null, payload?: array<string, mixed>|null}>, removed?: array<int, array{type: string, position: int, payload?: array<string, mixed>|null}>}  $changes
+     */
+    public static function logBlockChanges(Model $model, array $changes, ?Model $causer = null): void
+    {
+        $added = $changes['added'] ?? [];
+        $updated = $changes['updated'] ?? [];
+        $removed = $changes['removed'] ?? [];
+
+        if ($added === [] && $updated === [] && $removed === []) {
+            return;
+        }
+
+        $parts = [];
+
+        if ($added !== []) {
+            $parts[] = count($added).' added';
+        }
+
+        if ($updated !== []) {
+            $parts[] = count($updated).' updated';
+        }
+
+        if ($removed !== []) {
+            $parts[] = count($removed).' removed';
+        }
+
+        activity()
+            ->performedOn($model)
+            ->causedBy($causer)
+            ->withProperties([
+                'block_changes' => [
+                    'added' => $added,
+                    'updated' => $updated,
+                    'removed' => $removed,
+                ],
+            ])
+            ->event('blocks_updated')
+            ->log('Blocks updated: '.implode(', ', $parts));
+    }
+
+    /**
      * Log a tag attachment on a model.
      */
     public static function logTagAttached(Model $model, Tag $tag, ?Model $causer = null): void

@@ -266,3 +266,94 @@ it('logs link cleanup when a record is deleted', function () {
     expect($bookmarkActivities)->toHaveCount(1)
         ->and($bookmarkActivities->first()->description)->toContain('Deleted note');
 });
+
+it('logs block changes with added blocks', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $note = Note::factory()->create(['team_id' => $team->id]);
+
+    ActivityLogger::logBlockChanges($note, [
+        'added' => [
+            ['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Hello']],
+            ['type' => 'mermaid', 'position' => 1, 'payload' => ['content' => 'graph TD']],
+        ],
+    ], $user);
+
+    $activity = Activity::where('subject_type', $note->getMorphClass())
+        ->where('subject_id', $note->getKey())
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    $added = $activity->properties['block_changes']['added'];
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->description)->toBe('Blocks updated: 2 added')
+        ->and($added)->toHaveCount(2)
+        ->and($added[0]['type'])->toBe('text')
+        ->and($added[0]['payload']['content'])->toBe('Hello')
+        ->and($added[1]['payload']['content'])->toBe('graph TD')
+        ->and($activity->causer_id)->toBe($user->id);
+});
+
+it('logs block changes with all change types', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $note = Note::factory()->create(['team_id' => $team->id]);
+
+    ActivityLogger::logBlockChanges($note, [
+        'added' => [['type' => 'excalidraw', 'position' => 2, 'payload' => ['scene' => ['elements' => []]]]],
+        'updated' => [['type' => 'text', 'position' => 0, 'old_payload' => ['content' => 'Old'], 'payload' => ['content' => 'New']]],
+        'removed' => [['type' => 'mermaid', 'position' => 1, 'payload' => ['content' => 'graph LR']]],
+    ], $user);
+
+    $activity = Activity::where('subject_type', $note->getMorphClass())
+        ->where('subject_id', $note->getKey())
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    $changes = $activity->properties['block_changes'];
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->description)->toBe('Blocks updated: 1 added, 1 updated, 1 removed')
+        ->and($changes['added'])->toHaveCount(1)
+        ->and($changes['added'][0]['payload']['scene'])->toBe(['elements' => []])
+        ->and($changes['updated'])->toHaveCount(1)
+        ->and($changes['updated'][0]['old_payload']['content'])->toBe('Old')
+        ->and($changes['updated'][0]['payload']['content'])->toBe('New')
+        ->and($changes['removed'])->toHaveCount(1)
+        ->and($changes['removed'][0]['payload']['content'])->toBe('graph LR');
+});
+
+it('skips logging block changes when there are none', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $note = Note::factory()->create(['team_id' => $team->id]);
+
+    $countBefore = Activity::where('subject_type', $note->getMorphClass())
+        ->where('subject_id', $note->getKey())
+        ->count();
+
+    ActivityLogger::logBlockChanges($note, [], $user);
+
+    $countAfter = Activity::where('subject_type', $note->getMorphClass())
+        ->where('subject_id', $note->getKey())
+        ->count();
+
+    expect($countAfter)->toBe($countBefore);
+});
+
+it('logs block changes without a causer', function () {
+    $note = Note::factory()->create();
+
+    ActivityLogger::logBlockChanges($note, [
+        'added' => [['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Hello']]],
+    ]);
+
+    $activity = Activity::where('subject_type', $note->getMorphClass())
+        ->where('subject_id', $note->getKey())
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->causer_id)->toBeNull();
+});

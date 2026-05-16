@@ -259,7 +259,35 @@ test('note show page includes activity history', function () {
             ->has('activityHistory.0.changedFields'));
 });
 
-test('syncBlocks creates new blocks', function () {
+test('note show page includes block changes in activity history', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $note = Note::factory()->create(['team_id' => $team->id]);
+
+    actingAs($user)
+        ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
+            'blocks' => [
+                ['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Hello']],
+                ['type' => 'mermaid', 'position' => 1, 'payload' => ['content' => 'graph TD']],
+            ],
+        ]);
+
+    actingAs($user)
+        ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('notes/Show')
+            ->has('activityHistory', 2)
+            ->where('activityHistory.0.event', 'blocks_updated')
+            ->has('activityHistory.0.blockChanges.added', 2)
+            ->where('activityHistory.0.blockChanges.added.0.type', 'text')
+            ->where('activityHistory.0.blockChanges.added.0.payload.content', 'Hello')
+            ->where('activityHistory.0.blockChanges.added.1.type', 'mermaid')
+            ->where('activityHistory.0.blockChanges.added.1.payload.content', 'graph TD'));
+});
+
+test('syncBlocks creates new blocks and logs activity', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -275,9 +303,23 @@ test('syncBlocks creates new blocks', function () {
         ->assertRedirect();
 
     expect(RteBlock::where('blockable_id', $note->id)->count())->toBe(2);
+
+    $activity = $note->activitiesAsSubject()
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    $added = $activity->properties['block_changes']['added'];
+
+    expect($activity)->not->toBeNull()
+        ->and($added)->toHaveCount(2)
+        ->and($added[0]['type'])->toBe('text')
+        ->and($added[0]['payload']['content'])->toBe('First')
+        ->and($added[1]['payload']['content'])->toBe('Second')
+        ->and($activity->properties['block_changes']['updated'])->toBe([])
+        ->and($activity->properties['block_changes']['removed'])->toBe([]);
 });
 
-test('syncBlocks updates existing and removes stale blocks', function () {
+test('syncBlocks updates existing and removes stale blocks and logs activity', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -297,6 +339,120 @@ test('syncBlocks updates existing and removes stale blocks', function () {
     expect($note->blocks)->toHaveCount(1);
     expect($note->blocks->first()->id)->toBe($blockA->id);
     expect($note->blocks->first()->payload['content'])->toBe('Updated');
+
+    $activity = $note->activitiesAsSubject()
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    $updated = $activity->properties['block_changes']['updated'];
+    $removed = $activity->properties['block_changes']['removed'];
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->properties['block_changes']['added'])->toBeEmpty()
+        ->and($updated)->toHaveCount(1)
+        ->and($updated[0]['old_payload']['content'])->toBe('Keep')
+        ->and($updated[0]['payload']['content'])->toBe('Updated')
+        ->and($removed)->toHaveCount(1)
+        ->and($removed[0]['payload']['content'])->toBe('Remove');
+});
+
+test('syncBlocks only logs blocks whose payload changed', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $note = Note::factory()->create(['team_id' => $team->id]);
+    $blockA = $note->blocks()->create(['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Unchanged']]);
+    $blockB = $note->blocks()->create(['type' => 'mermaid', 'position' => 1, 'payload' => ['content' => 'graph TD']]);
+
+    actingAs($user)
+        ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
+            'blocks' => [
+                ['id' => $blockA->id, 'type' => 'text', 'position' => 0, 'payload' => ['content' => 'Unchanged']],
+                ['id' => $blockB->id, 'type' => 'mermaid', 'position' => 1, 'payload' => ['content' => 'graph LR']],
+            ],
+        ])
+        ->assertRedirect();
+
+    $activity = $note->activitiesAsSubject()
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    $updated = $activity->properties['block_changes']['updated'];
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->properties['block_changes']['added'])->toBeEmpty()
+        ->and($activity->properties['block_changes']['removed'])->toBeEmpty()
+        ->and($updated)->toHaveCount(1)
+        ->and($updated[0]['type'])->toBe('mermaid')
+        ->and($updated[0]['old_payload']['content'])->toBe('graph TD')
+        ->and($updated[0]['payload']['content'])->toBe('graph LR');
+});
+
+test('syncBlocks ignores excalidraw viewport-only changes', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $note = Note::factory()->create(['team_id' => $team->id]);
+    $block = $note->blocks()->create([
+        'type' => 'excalidraw',
+        'position' => 0,
+        'payload' => [
+            'scene' => [
+                'type' => 'excalidraw',
+                'elements' => [['id' => 'rect1', 'type' => 'rectangle']],
+                'appState' => ['scrollX' => 0, 'scrollY' => 0, 'zoom' => 1],
+                'files' => [],
+            ],
+        ],
+    ]);
+
+    actingAs($user)
+        ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
+            'blocks' => [
+                [
+                    'id' => $block->id,
+                    'type' => 'excalidraw',
+                    'position' => 0,
+                    'payload' => [
+                        'scene' => [
+                            'type' => 'excalidraw',
+                            'elements' => [['id' => 'rect1', 'type' => 'rectangle']],
+                            'appState' => ['scrollX' => 100, 'scrollY' => 200, 'zoom' => 2],
+                            'files' => [],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->assertRedirect();
+
+    $activity = $note->activitiesAsSubject()
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    expect($activity)->toBeNull();
+});
+
+test('syncBlocks with no changes does not log block activity', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $note = Note::factory()->create(['team_id' => $team->id]);
+    $block = $note->blocks()->create(['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Same']]);
+
+    actingAs($user)
+        ->patch(route('team.notes.update', ['current_team' => $team, 'note' => $note]), [
+            'blocks' => [
+                ['id' => $block->id, 'type' => 'text', 'position' => 0, 'payload' => ['content' => 'Same']],
+            ],
+        ])
+        ->assertRedirect();
+
+    $activity = $note->activitiesAsSubject()
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    expect($activity)->toBeNull();
 });
 
 test('blocks are validated for allowed types', function () {
