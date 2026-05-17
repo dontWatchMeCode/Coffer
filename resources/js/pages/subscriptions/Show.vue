@@ -30,7 +30,7 @@ import {
     index as subscriptionsIndex,
     update as updateSubscription,
 } from '@/routes/team/subscriptions';
-import type { ActivityHistoryItem, SubscriptionItem, Team } from '@/types';
+import type { ActivityHistoryConfig, SubscriptionItem, Team } from '@/types';
 import type { SubscriptionCategory } from '@/types';
 import type {
     LinkContext,
@@ -53,7 +53,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
-    activityHistory?: ActivityHistoryItem[];
+    activityHistory?: ActivityHistoryConfig;
 };
 
 const props = defineProps<Props>();
@@ -238,7 +238,8 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                 <template #sidebar-top>
                     <ActivityHistoryPanel
                         v-if="activityHistory"
-                        :activities="activityHistory"
+                        :config="activityHistory"
+                        :team-slug="currentTeamSlug"
                     />
                 </template>
 

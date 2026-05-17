@@ -18,7 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useSearch } from '@/composables/useSearch';
 import { index, show, edit } from '@/routes/team/tasks/index';
 import type {
-    ActivityHistoryItem,
+    ActivityHistoryConfig,
     PaginatedData,
     TaskItem,
     TaskMember,
@@ -47,7 +47,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
-    activityHistory?: ActivityHistoryItem[];
+    activityHistory?: ActivityHistoryConfig;
 };
 
 const props = defineProps<Props>();
@@ -206,7 +206,8 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
 
                     <ActivityHistoryPanel
                         v-if="activityHistory"
-                        :activities="activityHistory"
+                        :config="activityHistory"
+                        :team-slug="currentTeamSlug"
                     />
 
                     <div>

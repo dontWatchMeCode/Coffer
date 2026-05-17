@@ -13,7 +13,7 @@ import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeTask } from '@/lib/markdown-serializers';
 import { index, show, edit } from '@/routes/team/tasks/index';
 import type {
-    ActivityHistoryItem,
+    ActivityHistoryConfig,
     TaskCommentItem,
     TaskItem,
     TaskMember,
@@ -44,7 +44,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
-    activityHistory?: ActivityHistoryItem[];
+    activityHistory?: ActivityHistoryConfig;
 };
 
 const props = defineProps<Props>();
@@ -179,7 +179,8 @@ function handleCopyAsMarkdown(): void {
                     <div class="space-y-4">
                         <ActivityHistoryPanel
                             v-if="activityHistory"
-                            :activities="activityHistory"
+                            :config="activityHistory"
+                            :team-slug="currentTeamSlug"
                         />
 
                         <TaskSidebar

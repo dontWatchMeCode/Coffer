@@ -25,7 +25,7 @@ import {
     index as collectionsIndex,
     update as updateCollection,
 } from '@/routes/team/collections';
-import type { ActivityHistoryItem, CollectionItem, Team } from '@/types';
+import type { ActivityHistoryConfig, CollectionItem, Team } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -45,7 +45,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
-    activityHistory?: ActivityHistoryItem[];
+    activityHistory?: ActivityHistoryConfig;
 };
 
 const props = defineProps<Props>();
@@ -196,7 +196,8 @@ defineOptions({
                 <template #sidebar-top>
                     <ActivityHistoryPanel
                         v-if="activityHistory"
-                        :activities="activityHistory"
+                        :config="activityHistory"
+                        :team-slug="currentTeamSlug"
                     />
                 </template>
 

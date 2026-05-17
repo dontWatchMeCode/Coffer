@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeNote } from '@/lib/markdown-serializers';
 import { index as notesIndex, update as updateNote } from '@/routes/team/notes';
-import type { ActivityHistoryItem, NoteItem, RteBlock, Team } from '@/types';
+import type { ActivityHistoryConfig, NoteItem, RteBlock, Team } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -35,7 +35,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
-    activityHistory?: ActivityHistoryItem[];
+    activityHistory?: ActivityHistoryConfig;
 };
 
 const props = defineProps<Props>();
@@ -154,7 +154,8 @@ defineOptions({
                 <template #sidebar-top>
                     <ActivityHistoryPanel
                         v-if="activityHistory"
-                        :activities="activityHistory"
+                        :config="activityHistory"
+                        :team-slug="currentTeamSlug"
                     />
                 </template>
 

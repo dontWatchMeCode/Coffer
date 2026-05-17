@@ -69,7 +69,7 @@ class CalendarPageController extends Controller
             'event' => $this->formatEvent($event, includeTimestamps: true),
             'recordLinks' => $this->recordLinksPayload($event, $currentTeam),
             'recordTags' => $this->recordTagsPayload($event, $currentTeam),
-            'activityHistory' => $this->activityHistoryPayload($event),
+            'activityHistory' => $this->activityHistoryConfig($event),
         ]);
     }
 

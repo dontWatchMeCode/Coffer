@@ -215,10 +215,10 @@ test('calendar edit page includes activity history', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('calendar/Edit')
-            ->has('activityHistory', 2)
-            ->where('activityHistory.0.event', 'updated')
-            ->where('activityHistory.0.causerName', $user->name)
-            ->has('activityHistory.0.changedFields'));
+            ->has('activityHistory')
+            ->where('activityHistory.subject_type', 'calendar_event')
+            ->where('activityHistory.subject_id', $event->id)
+            ->whereType('activityHistory.total', 'integer'));
 });
 
 test('a calendar event can be deleted', function () {

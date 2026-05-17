@@ -1,151 +1,128 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import { History } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
-import ExcalidrawEditor from '@/components/excalidraw/ExcalidrawEditor.vue';
+import { ref, computed } from 'vue';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { formatDateTime } from '@/lib/utils';
-import type { ActivityHistoryItem } from '@/types';
-import BlockChangesList from './BlockChangesList.vue';
-import { drawingToggleBtnClass } from './drawing-toggle-button-style';
-import TextDiff from './TextDiff.vue';
+import type {
+    ActivityHistoryConfig,
+    ActivityHistoryItem,
+    ActivityHistoryResponse,
+} from '@/types';
+import ActivityHistoryDialogContent from './ActivityHistoryDialogContent.vue';
 
 type Props = {
-    activities: ActivityHistoryItem[];
+    config?: ActivityHistoryConfig | null;
+    activities?: ActivityHistoryItem[] | null;
     variant?: 'default' | 'compact';
+    teamSlug?: string;
 };
 
 const props = withDefaults(defineProps<Props>(), {
+    config: null,
+    activities: null,
     variant: 'default',
+    teamSlug: '',
 });
+
+const isApiMode = computed(() => !!props.config);
 
 const open = ref(false);
-const expandedDrawings = ref<Record<number, 'old' | 'new' | null>>({});
+const fetchedActivities = ref<ActivityHistoryItem[]>([]);
+const page = ref(1);
+const hasMore = ref(false);
+const loading = ref(false);
+const fetchError = ref(false);
+const total = computed(
+    () => props.config?.total ?? props.activities?.length ?? 0,
+);
+const displayActivities = computed(() =>
+    isApiMode.value ? fetchedActivities.value : (props.activities ?? []),
+);
 
-function toggleDrawing(activityId: number, which: 'old' | 'new'): void {
-    const current = expandedDrawings.value[activityId];
-    expandedDrawings.value[activityId] = current === which ? null : which;
-}
-
-watch(open, (isOpen) => {
-    if (!isOpen) {
-        expandedDrawings.value = {};
-    }
-});
-
-const EVENT_LABELS: Record<string, string> = {
-    blocks_updated: 'Content updated',
-};
-
-function eventLabel(event: string | null): string {
-    if (!event) {
-        return 'Activity';
+function fetchPage(pageNum: number): void {
+    if (!props.config?.subject_type) {
+        return;
     }
 
-    return EVENT_LABELS[event] ?? fieldLabel(event);
+    fetchError.value = false;
+
+    const params = new URLSearchParams({
+        subject_type: props.config.subject_type,
+        subject_id: String(props.config.subject_id),
+        page: String(pageNum),
+    });
+
+    fetch(`/${props.teamSlug}/activity-history?${params}`, {
+        headers: { Accept: 'application/json' },
+    })
+        .then((r) => {
+            if (!r.ok) {
+                throw new Error('Failed to fetch');
+            }
+
+            return r.json();
+        })
+        .then((data: ActivityHistoryResponse) => {
+            if (pageNum === 1) {
+                fetchedActivities.value = data.activities;
+            } else {
+                fetchedActivities.value = [
+                    ...fetchedActivities.value,
+                    ...data.activities,
+                ];
+            }
+
+            hasMore.value = fetchedActivities.value.length < data.total;
+        })
+        .catch(() => {
+            fetchError.value = true;
+            hasMore.value = false;
+        })
+        .finally(() => {
+            loading.value = false;
+        });
 }
 
-function fieldLabel(field: string): string {
-    return field.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+function retry(): void {
+    reset();
+    fetchPage(1);
 }
 
-function stripHtml(html: string): string {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-
-    return tmp.textContent || tmp.innerText || '';
+function reset(): void {
+    fetchedActivities.value = [];
+    page.value = 1;
+    hasMore.value = false;
+    fetchError.value = false;
 }
 
-function getFieldValue(
-    activity: ActivityHistoryItem,
-    field: string,
-    side: 'old' | 'new',
-): string {
-    const raw =
-        side === 'old' ? activity.old?.[field] : activity.attributes?.[field];
+function onOpen(isOpen: boolean): void {
+    open.value = isOpen;
 
-    if (raw === null || raw === undefined) {
-        return '';
-    }
-
-    let text = typeof raw === 'string' ? raw : JSON.stringify(raw);
-
-    if (field === 'body' || field === 'description') {
-        text = stripHtml(text);
-    }
-
-    return text;
-}
-
-function getDiffValue(
-    activity: ActivityHistoryItem,
-    field: string,
-    side: 'old' | 'new',
-): string {
-    const raw =
-        side === 'old' ? activity.old?.[field] : activity.attributes?.[field];
-
-    if (isArrayField(field)) {
-        return raw === null || raw === undefined
-            ? ''
-            : formatEntryList(raw).join('\n');
-    }
-
-    return getFieldValue(activity, field, side);
-}
-
-function isDrawingField(field: string): boolean {
-    return field === 'drawing_data';
-}
-
-function isArrayField(field: string): boolean {
-    return (
-        field === 'phone_numbers' ||
-        field === 'email_addresses' ||
-        field === 'links'
-    );
-}
-
-function formatEntryList(value: unknown): string[] {
-    if (value === null || value === undefined) {
-        return ['None'];
-    }
-
-    if (!Array.isArray(value)) {
-        return [typeof value === 'string' ? value : JSON.stringify(value)];
-    }
-
-    if (value.length === 0) {
-        return ['None'];
-    }
-
-    return value.map((entry) => {
-        if (entry && typeof entry === 'object' && 'value' in entry) {
-            const label = (entry as Record<string, string>).label;
-            const val = (entry as Record<string, string>).value;
-
-            return label ? `${label}: ${val}` : val;
+    if (isOpen && isApiMode.value) {
+        if (!props.config?.subject_type) {
+            return;
         }
 
-        return JSON.stringify(entry);
-    });
+        reset();
+        loading.value = true;
+        fetchPage(1);
+    }
 }
 
-function relationChangeTargetUrl(
-    activity: ActivityHistoryItem,
-): string | undefined {
-    const target = activity.relationChanges?.target;
-
-    if (target && typeof target === 'object' && 'url' in target) {
-        return (target as Record<string, string>).url;
+function loadMore(): void {
+    if (loading.value || !hasMore.value) {
+        return;
     }
 
-    return undefined;
+    const nextPage = page.value + 1;
+    page.value = nextPage;
+    loading.value = true;
+    fetchPage(nextPage);
 }
 </script>
 
@@ -155,15 +132,15 @@ function relationChangeTargetUrl(
             v-if="props.variant === 'default'"
             type="button"
             class="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-            @click="open = true"
+            @click="onOpen(true)"
         >
             <History class="h-4 w-4 text-muted-foreground" />
             <span class="flex-1">Activity History</span>
             <span
-                v-if="props.activities.length > 0"
+                v-if="total > 0"
                 class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
             >
-                {{ props.activities.length }}
+                {{ total }}
             </span>
         </button>
 
@@ -172,18 +149,18 @@ function relationChangeTargetUrl(
             type="button"
             class="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             title="Activity History"
-            @click="open = true"
+            @click="onOpen(true)"
         >
             <History class="h-3.5 w-3.5" />
             <span
-                v-if="props.activities.length > 0"
+                v-if="total > 0"
                 class="inline-flex items-center rounded-full border px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
             >
-                {{ props.activities.length }}
+                {{ total }}
             </span>
         </button>
 
-        <Dialog :open="open" @update:open="open = $event">
+        <Dialog :open="open" @update:open="onOpen">
             <DialogContent
                 class="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-lg"
             >
@@ -192,236 +169,26 @@ function relationChangeTargetUrl(
                 </DialogHeader>
 
                 <div
-                    v-if="props.activities.length === 0"
-                    class="text-sm text-muted-foreground"
+                    v-if="fetchError && fetchedActivities.length === 0"
+                    class="space-y-3 py-4 text-center"
                 >
-                    No activity yet.
+                    <p class="text-sm text-muted-foreground">
+                        Failed to load activity history.
+                    </p>
+                    <Button variant="outline" size="sm" @click="retry">
+                        Retry
+                    </Button>
                 </div>
 
-                <div v-else class="min-w-0 space-y-5">
-                    <div
-                        v-for="activity in props.activities"
-                        :key="activity.id"
-                        class="space-y-2 border-b pb-4 last:border-0"
-                    >
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-sm font-medium">
-                                {{ eventLabel(activity.event) }}
-                            </span>
-                            <span class="text-xs text-muted-foreground">
-                                {{ formatDateTime(activity.createdAt) }}
-                            </span>
-                        </div>
-
-                        <div
-                            v-if="activity.causerName"
-                            class="text-xs text-muted-foreground"
-                        >
-                            by {{ activity.causerName }}
-                        </div>
-
-                        <div
-                            v-if="activity.relationChanges"
-                            class="space-y-1.5"
-                        >
-                            <div class="text-sm">
-                                <Link
-                                    v-if="relationChangeTargetUrl(activity)"
-                                    :href="relationChangeTargetUrl(activity)"
-                                    class="font-medium text-foreground hover:underline"
-                                >
-                                    {{ activity.description }}
-                                </Link>
-                                <span v-else>
-                                    {{ activity.description }}
-                                </span>
-                            </div>
-
-                            <div
-                                v-if="
-                                    activity.relationChanges.action ===
-                                        'sync' &&
-                                    (activity.relationChanges.added?.length ||
-                                        activity.relationChanges.removed
-                                            ?.length)
-                                "
-                                class="space-y-1"
-                            >
-                                <div
-                                    v-if="
-                                        activity.relationChanges.added?.length
-                                    "
-                                    class="flex flex-wrap items-center gap-1"
-                                >
-                                    <span
-                                        class="text-[10px] font-medium text-muted-foreground uppercase"
-                                    >
-                                        Added
-                                    </span>
-                                    <TextDiff
-                                        v-for="name in activity.relationChanges
-                                            .added"
-                                        :key="name"
-                                        old-text=""
-                                        :new-text="name"
-                                    />
-                                </div>
-                                <div
-                                    v-if="
-                                        activity.relationChanges.removed?.length
-                                    "
-                                    class="flex flex-wrap items-center gap-1"
-                                >
-                                    <span
-                                        class="text-[10px] font-medium text-muted-foreground uppercase"
-                                    >
-                                        Removed
-                                    </span>
-                                    <TextDiff
-                                        v-for="name in activity.relationChanges
-                                            .removed"
-                                        :key="name"
-                                        :old-text="name"
-                                        new-text=""
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            v-else-if="activity.blockChanges"
-                            class="space-y-1.5"
-                        >
-                            <div class="text-sm">
-                                {{ activity.description }}
-                            </div>
-
-                            <BlockChangesList
-                                :activity-id="activity.id"
-                                :block-changes="activity.blockChanges"
-                                :dialog-open="open"
-                            />
-                        </div>
-
-                        <div
-                            v-else-if="activity.changedFields.length > 0"
-                            class="space-y-2"
-                        >
-                            <div
-                                v-for="field in activity.changedFields"
-                                :key="field"
-                                class="min-w-0 rounded-md border bg-card p-2"
-                            >
-                                <div
-                                    class="mb-1 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
-                                >
-                                    {{ fieldLabel(field) }}
-                                </div>
-
-                                <div
-                                    v-if="isDrawingField(field)"
-                                    class="space-y-2"
-                                >
-                                    <div class="flex items-center gap-1.5">
-                                        <button
-                                            type="button"
-                                            :class="[
-                                                'inline-flex cursor-pointer items-center rounded-md border px-2 py-1 text-[11px] font-medium transition-colors',
-                                                drawingToggleBtnClass(
-                                                    expandedDrawings[
-                                                        activity.id
-                                                    ] === 'old',
-                                                ),
-                                            ]"
-                                            @click="
-                                                toggleDrawing(
-                                                    activity.id,
-                                                    'old',
-                                                )
-                                            "
-                                        >
-                                            Before
-                                        </button>
-                                        <button
-                                            type="button"
-                                            :class="[
-                                                'inline-flex cursor-pointer items-center rounded-md border px-2 py-1 text-[11px] font-medium transition-colors',
-                                                drawingToggleBtnClass(
-                                                    expandedDrawings[
-                                                        activity.id
-                                                    ] === 'new',
-                                                ),
-                                            ]"
-                                            @click="
-                                                toggleDrawing(
-                                                    activity.id,
-                                                    'new',
-                                                )
-                                            "
-                                        >
-                                            After
-                                        </button>
-                                    </div>
-
-                                    <div
-                                        v-if="
-                                            expandedDrawings[activity.id] ===
-                                            'old'
-                                        "
-                                        class="excalidraw-preview min-w-0 overflow-hidden rounded-lg border"
-                                    >
-                                        <ExcalidrawEditor
-                                            :model-value="
-                                                (activity.old?.[
-                                                    field
-                                                ] as any) ?? null
-                                            "
-                                            :readonly="true"
-                                            name="Before"
-                                            height="150px"
-                                        />
-                                    </div>
-
-                                    <div
-                                        v-if="
-                                            expandedDrawings[activity.id] ===
-                                            'new'
-                                        "
-                                        class="excalidraw-preview min-w-0 overflow-hidden rounded-lg border"
-                                    >
-                                        <ExcalidrawEditor
-                                            :model-value="
-                                                (activity.attributes?.[
-                                                    field
-                                                ] as any) ?? null
-                                            "
-                                            :readonly="true"
-                                            name="After"
-                                            height="150px"
-                                        />
-                                    </div>
-                                </div>
-
-                                <TextDiff
-                                    v-else
-                                    :old-text="
-                                        getDiffValue(activity, field, 'old')
-                                    "
-                                    :new-text="
-                                        getDiffValue(activity, field, 'new')
-                                    "
-                                />
-                            </div>
-                        </div>
-
-                        <div
-                            v-else-if="activity.description"
-                            class="text-sm text-muted-foreground"
-                        >
-                            {{ activity.description }}
-                        </div>
-                    </div>
-                </div>
+                <ActivityHistoryDialogContent
+                    v-else
+                    :activities="displayActivities"
+                    :total="total"
+                    :has-more="isApiMode && hasMore"
+                    :loading="loading"
+                    :dialog-open="open"
+                    @load-more="loadMore"
+                />
             </DialogContent>
         </Dialog>
     </div>

@@ -21,7 +21,7 @@ import {
     update as updateContact,
 } from '@/routes/team/contacts';
 import type {
-    ActivityHistoryItem,
+    ActivityHistoryConfig,
     ContactEntry,
     ContactItem,
     Team,
@@ -45,7 +45,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
-    activityHistory?: ActivityHistoryItem[];
+    activityHistory?: ActivityHistoryConfig;
 };
 
 const props = defineProps<Props>();
@@ -226,7 +226,8 @@ function handleCopyAsMarkdown(): void {
                 <template #sidebar-top>
                     <ActivityHistoryPanel
                         v-if="activityHistory"
-                        :activities="activityHistory"
+                        :config="activityHistory"
+                        :team-slug="currentTeamSlug"
                     />
                 </template>
 

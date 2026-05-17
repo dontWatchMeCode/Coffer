@@ -471,10 +471,10 @@ test('contact show page includes activity history', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('contacts/Show')
-            ->has('activityHistory', 2)
-            ->where('activityHistory.0.event', 'updated')
-            ->where('activityHistory.0.causerName', $user->name)
-            ->has('activityHistory.0.changedFields'));
+            ->has('activityHistory')
+            ->where('activityHistory.subject_type', 'contact')
+            ->where('activityHistory.subject_id', $contact->id)
+            ->whereType('activityHistory.total', 'integer'));
 });
 
 test('contact show page can be rendered', function () {

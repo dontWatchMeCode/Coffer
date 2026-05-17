@@ -92,7 +92,7 @@ class TaskPageController extends Controller
             ], $projects->all())),
             'recordLinks' => $this->recordLinksPayload($task, $currentTeam),
             'recordTags' => $this->recordTagsPayload($task, $currentTeam),
-            'activityHistory' => $this->activityHistoryPayload($task),
+            'activityHistory' => $this->activityHistoryConfig($task),
         ]);
     }
 
@@ -130,7 +130,7 @@ class TaskPageController extends Controller
             'statuses' => $this->dataService->statusPayload(),
             'recordLinks' => $this->recordLinksPayload($project, $currentTeam),
             'recordTags' => $this->recordTagsPayload($project, $currentTeam),
-            'activityHistory' => $this->activityHistoryPayload($project),
+            'activityHistory' => $this->activityHistoryConfig($project),
         ]);
     }
 }

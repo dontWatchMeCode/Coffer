@@ -4,27 +4,31 @@ declare(strict_types=1);
 
 namespace App\Concerns;
 
+use App\Models\RecordLink;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Activity;
 
 trait ProvidesActivityHistory
 {
     /**
-     * Build a reusable activity history payload for Inertia.
+     * Build a paginated activity history payload for JSON responses.
      *
-     * @return array<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}>
+     * @return array{activities: array<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}>, total: int, has_more: bool}
      */
-    protected function activityHistoryPayload(Model $model): array
+    protected function paginatedActivityHistoryPayload(Model $model, int $page = 1, int $perPage = 15): array
     {
-        return Activity::where('subject_type', $model->getMorphClass())
-            ->where('subject_id', $model->getKey())
-            ->with('causer')
-            ->orderByDesc('id')
-            ->get()
-            ->map(fn (Activity $activity): array => $this->buildActivityItem($activity))
-            ->filter(fn (array $item): bool => $this->isSignificantActivity($item))
-            ->values()
-            ->all();
+        $allSignificant = $this->getSignificantActivities($model);
+
+        $total = $allSignificant->count();
+        $offset = ($page - 1) * $perPage;
+        $activities = $allSignificant->slice($offset, $perPage)->values()->all();
+
+        return [
+            'activities' => $activities,
+            'total' => $total,
+            'has_more' => ($offset + $perPage) < $total,
+        ];
     }
 
     /**
@@ -219,5 +223,45 @@ trait ProvidesActivityHistory
         };
 
         return $withoutViewport($old) === $withoutViewport($new);
+    }
+
+    /**
+     * @return array{subject_type: string|null, subject_id: int, total: int}
+     */
+    protected function activityHistoryConfig(Model $model): array
+    {
+        $map = array_flip(RecordLink::linkableMap());
+        $subjectType = $map[$model::class] ?? null;
+
+        if ($subjectType === null) {
+            return [
+                'subject_type' => null,
+                'subject_id' => (int) $model->getKey(),
+                'total' => 0,
+            ];
+        }
+
+        $total = $this->getSignificantActivities($model)->count();
+
+        return [
+            'subject_type' => $subjectType,
+            'subject_id' => (int) $model->getKey(),
+            'total' => $total,
+        ];
+    }
+
+    /**
+     * @return Collection<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}>
+     */
+    protected function getSignificantActivities(Model $model): Collection
+    {
+        return Activity::where('subject_type', $model->getMorphClass())
+            ->where('subject_id', $model->getKey())
+            ->with('causer')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (Activity $activity): array => $this->buildActivityItem($activity))
+            ->filter(fn (array $item): bool => $this->isSignificantActivity($item))
+            ->values();
     }
 }

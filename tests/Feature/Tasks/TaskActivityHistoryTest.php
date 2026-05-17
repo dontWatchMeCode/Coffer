@@ -179,10 +179,10 @@ test('project show page includes activity history', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('tasks/Show')
-            ->has('activityHistory', 2)
-            ->where('activityHistory.0.event', 'updated')
-            ->where('activityHistory.0.causerName', $user->name)
-            ->has('activityHistory.0.changedFields'));
+            ->has('activityHistory')
+            ->where('activityHistory.subject_type', 'project')
+            ->where('activityHistory.subject_id', $project->id)
+            ->whereType('activityHistory.total', 'integer'));
 });
 
 test('task edit page includes activity history', function () {
@@ -207,10 +207,10 @@ test('task edit page includes activity history', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('tasks/Edit')
-            ->has('activityHistory', 2)
-            ->where('activityHistory.0.event', 'updated')
-            ->where('activityHistory.0.causerName', $user->name)
-            ->has('activityHistory.0.changedFields'));
+            ->has('activityHistory')
+            ->where('activityHistory.subject_type', 'task')
+            ->where('activityHistory.subject_id', $task->id)
+            ->whereType('activityHistory.total', 'integer'));
 });
 
 test('task edit page includes comment activity history', function () {

@@ -26,7 +26,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Pulse\Facades\Pulse;
 use Laravel\Telescope\Telescope;
-use Spatie\Activitylog\Facades\Activity;
 
 #[Signature('app:generate-test-records')]
 #[Description('Generate test records for all model types with tags, links, and log entries')]
@@ -59,18 +58,11 @@ class GenerateTestRecords extends Command
     public function handle(): void
     {
         Pulse::ignore(function (): null {
-            $recordingWasEnabled = Telescope::isRecording();
-
             Telescope::stopRecording();
-            Activity::disableLogging();
 
             $result = $this->generateRecords();
 
-            if ($recordingWasEnabled) {
-                Telescope::startRecording();
-            }
-
-            Activity::enableLogging();
+            Telescope::startRecording();
 
             return $result;
         });
@@ -179,10 +171,70 @@ class GenerateTestRecords extends Command
 
         $this->createTags($teams);
         $this->createRecordLinks($teams);
+        $this->createActivityHistory($teams, $allUsers);
 
         $this->info('Done! Generated test records with tags, links, and log entries.');
 
         return null;
+    }
+
+    /**
+     * @param  Collection<int, Team>  $teams
+     * @param  Collection<int, User>  $allUsers
+     */
+    protected function createActivityHistory($teams, $allUsers): void
+    {
+        $this->info('Generating activity history (20 entries per record)...');
+
+        $causerType = $allUsers->first()?->getMorphClass() ?? '';
+        $userIds = $allUsers->pluck('id')->all();
+
+        foreach ($teams as $team) {
+            foreach (self::RECORD_TYPES as $type) {
+                $model = new $type;
+                $morphClass = $model->getMorphClass();
+                $logName = class_basename($type);
+
+                $recordIds = $type::withoutGlobalScopes()
+                    ->where('team_id', $team->id)
+                    ->pluck('id')
+                    ->all();
+
+                if ($recordIds === []) {
+                    continue;
+                }
+
+                $inserts = [];
+                $baseTime = now()->subMinutes(5);
+
+                foreach ($recordIds as $recordId) {
+                    for ($i = 0; $i < 19; $i++) {
+                        $causerId = $userIds[array_rand($userIds)];
+
+                        $inserts[] = [
+                            'log_name' => $logName,
+                            'description' => 'Updated title',
+                            'subject_type' => $morphClass,
+                            'subject_id' => $recordId,
+                            'event' => 'updated',
+                            'causer_type' => $causerType,
+                            'causer_id' => $causerId,
+                            'attribute_changes' => json_encode([
+                                'attributes' => ['title' => fake()->sentence(3)],
+                                'old' => ['title' => fake()->sentence(3)],
+                            ]),
+                            'properties' => json_encode([]),
+                            'created_at' => $baseTime->copy()->addMinutes($i),
+                            'updated_at' => $baseTime->copy()->addMinutes($i),
+                        ];
+                    }
+                }
+
+                foreach (array_chunk($inserts, 500) as $chunk) {
+                    DB::table('activity_log')->insert($chunk);
+                }
+            }
+        }
     }
 
     /**

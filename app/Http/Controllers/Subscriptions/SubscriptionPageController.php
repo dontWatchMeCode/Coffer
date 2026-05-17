@@ -49,7 +49,7 @@ class SubscriptionPageController extends Controller
             'subscription' => $this->formatSubscription($subscription),
             'recordLinks' => $this->recordLinksPayload($subscription, $currentTeam),
             'recordTags' => $this->recordTagsPayload($subscription, $currentTeam),
-            'activityHistory' => $this->activityHistoryPayload($subscription),
+            'activityHistory' => $this->activityHistoryConfig($subscription),
             'categories' => $this->categoriesPayload($currentTeam),
             'categoryCandidatesUrl' => route('team.subscriptions.categories.candidates', $currentTeam),
         ]);

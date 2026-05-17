@@ -253,10 +253,10 @@ test('note show page includes activity history', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('notes/Show')
-            ->has('activityHistory', 2)
-            ->where('activityHistory.0.event', 'updated')
-            ->where('activityHistory.0.causerName', $user->name)
-            ->has('activityHistory.0.changedFields'));
+            ->has('activityHistory')
+            ->where('activityHistory.subject_type', 'note')
+            ->where('activityHistory.subject_id', $note->id)
+            ->whereType('activityHistory.total', 'integer'));
 });
 
 test('note show page includes block changes in activity history', function () {
@@ -278,13 +278,13 @@ test('note show page includes block changes in activity history', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('notes/Show')
-            ->has('activityHistory', 2)
-            ->where('activityHistory.0.event', 'blocks_updated')
-            ->has('activityHistory.0.blockChanges.added', 2)
-            ->where('activityHistory.0.blockChanges.added.0.type', 'text')
-            ->where('activityHistory.0.blockChanges.added.0.payload.content', 'Hello')
-            ->where('activityHistory.0.blockChanges.added.1.type', 'mermaid')
-            ->where('activityHistory.0.blockChanges.added.1.payload.content', 'graph TD'));
+            ->has('activityHistory')
+            ->where('activityHistory.subject_type', 'note'));
+
+    $activity = $note->activitiesAsSubject()
+        ->where('event', 'blocks_updated')
+        ->first();
+    expect($activity)->not->toBeNull();
 });
 
 test('syncBlocks creates new blocks and logs activity', function () {

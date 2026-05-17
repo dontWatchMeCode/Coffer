@@ -45,3 +45,15 @@ export type ActivityHistoryItem = {
     relationChanges: RelationChange | null;
     blockChanges: BlockChanges | null;
 };
+
+export type ActivityHistoryConfig = {
+    subject_type: string | null;
+    subject_id: number;
+    total: number;
+};
+
+export type ActivityHistoryResponse = {
+    activities: ActivityHistoryItem[];
+    total: number;
+    has_more: boolean;
+};

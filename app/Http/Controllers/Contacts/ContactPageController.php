@@ -64,7 +64,7 @@ class ContactPageController extends Controller
             ],
             'recordLinks' => $this->recordLinksPayload($contact, $currentTeam),
             'recordTags' => $this->recordTagsPayload($contact, $currentTeam),
-            'activityHistory' => $this->activityHistoryPayload($contact),
+            'activityHistory' => $this->activityHistoryConfig($contact),
         ]);
     }
 }

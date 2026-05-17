@@ -53,7 +53,7 @@ class CollectionPageController extends Controller
             'collection' => $this->collectionPayload($collection),
             'recordLinks' => $this->recordLinksPayload($collection, $currentTeam, includeDrawingData: true),
             'recordTags' => $this->recordTagsPayload($collection, $currentTeam),
-            'activityHistory' => $this->activityHistoryPayload($collection),
+            'activityHistory' => $this->activityHistoryConfig($collection),
         ]);
     }
 

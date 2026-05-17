@@ -52,7 +52,7 @@ class NotePageController extends Controller
             'note' => $this->notePayload($note),
             'recordLinks' => $this->recordLinksPayload($note, $currentTeam),
             'recordTags' => $this->recordTagsPayload($note, $currentTeam),
-            'activityHistory' => $this->activityHistoryPayload($note),
+            'activityHistory' => $this->activityHistoryConfig($note),
             'startInEditMode' => session()->pull('edit', false),
         ]);
     }

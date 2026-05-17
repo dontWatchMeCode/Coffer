@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityHistory\ActivityHistoryController;
 use App\Http\Controllers\ApiTokens\ApiTokenController;
 use App\Http\Controllers\ApiTokens\ApiTokenPageController;
 use App\Http\Controllers\Bookmarks\BookmarkController;
@@ -48,6 +49,8 @@ Route::prefix('{current_team}')
         Route::post('mcp', [ApiTokenController::class, 'store'])->middleware('throttle:10,1')->name('team.mcp.store');
         Route::patch('mcp/{mcpToken}', [ApiTokenController::class, 'update'])->whereNumber('mcpToken')->name('team.mcp.update');
         Route::delete('mcp/{mcpToken}', [ApiTokenController::class, 'destroy'])->whereNumber('mcpToken')->name('team.mcp.destroy');
+
+        Route::get('activity-history', [ActivityHistoryController::class, 'index'])->middleware('throttle:60,1')->name('team.activity-history.index');
 
         Route::get('links/candidates', [RecordLinkController::class, 'candidates'])->middleware('throttle:30,1')->name('team.links.candidates');
         Route::post('links', [RecordLinkController::class, 'store'])->middleware('throttle:60,1')->name('team.links.store');

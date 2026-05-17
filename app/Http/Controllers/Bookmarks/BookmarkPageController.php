@@ -60,7 +60,7 @@ class BookmarkPageController extends Controller
             ],
             'recordLinks' => $this->recordLinksPayload($bookmark, $currentTeam),
             'recordTags' => $this->recordTagsPayload($bookmark, $currentTeam),
-            'activityHistory' => $this->activityHistoryPayload($bookmark),
+            'activityHistory' => $this->activityHistoryConfig($bookmark),
         ]);
     }
 }

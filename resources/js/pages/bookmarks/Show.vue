@@ -20,7 +20,7 @@ import {
     index as bookmarksIndex,
     update as updateBookmark,
 } from '@/routes/team/bookmarks';
-import type { ActivityHistoryItem, BookmarkItem, Team } from '@/types';
+import type { ActivityHistoryConfig, BookmarkItem, Team } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -40,7 +40,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
-    activityHistory?: ActivityHistoryItem[];
+    activityHistory?: ActivityHistoryConfig;
 };
 
 const props = defineProps<Props>();
@@ -165,7 +165,8 @@ function handleCopyAsMarkdown(): void {
                 <template #sidebar-top>
                     <ActivityHistoryPanel
                         v-if="activityHistory"
-                        :activities="activityHistory"
+                        :config="activityHistory"
+                        :team-slug="currentTeamSlug"
                     />
                 </template>
 

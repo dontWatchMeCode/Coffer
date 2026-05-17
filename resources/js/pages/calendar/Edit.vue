@@ -18,7 +18,7 @@ import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeCalendarEvent } from '@/lib/markdown-serializers';
 import { taskInputLikeClass } from '@/lib/tasks';
 import { index as calendarIndex } from '@/routes/team/calendar';
-import type { ActivityHistoryItem, CalendarEventItem, Team } from '@/types';
+import type { ActivityHistoryConfig, CalendarEventItem, Team } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -38,7 +38,7 @@ type Props = {
         context: TagContext;
         endpoints: TagEndpoints;
     } | null;
-    activityHistory?: ActivityHistoryItem[];
+    activityHistory?: ActivityHistoryConfig;
 };
 
 const props = defineProps<Props>();
@@ -186,7 +186,8 @@ function handleCopyAsMarkdown(): void {
                 <template #sidebar-top>
                     <ActivityHistoryPanel
                         v-if="activityHistory"
-                        :activities="activityHistory"
+                        :config="activityHistory"
+                        :team-slug="currentTeamSlug"
                     />
                 </template>
 
