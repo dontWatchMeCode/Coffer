@@ -357,3 +357,76 @@ it('logs block changes without a causer', function () {
     expect($activity)->not->toBeNull()
         ->and($activity->causer_id)->toBeNull();
 });
+
+it('does not persist activity with only empty field changes', function () {
+    $note = Note::factory()->create();
+
+    activity()
+        ->performedOn($note)
+        ->withChanges([
+            'old' => ['description' => null],
+            'attributes' => ['description' => '<p> </p>'],
+        ])
+        ->event('updated')
+        ->log('Updated note');
+
+    $activity = Activity::where('subject_type', $note->getMorphClass())
+        ->where('subject_id', $note->getKey())
+        ->where('event', 'updated')
+        ->first();
+
+    expect($activity)->toBeNull();
+});
+
+it('does not persist activity with only drawing viewport changes', function () {
+    $note = Note::factory()->create();
+
+    activity()
+        ->performedOn($note)
+        ->withChanges([
+            'old' => [
+                'drawing_data' => [
+                    'elements' => [['id' => 'rect1', 'type' => 'rectangle']],
+                    'appState' => ['scrollX' => 0, 'scrollY' => 0, 'zoom' => 1],
+                    'files' => [],
+                ],
+            ],
+            'attributes' => [
+                'drawing_data' => [
+                    'elements' => [['id' => 'rect1', 'type' => 'rectangle']],
+                    'appState' => ['scrollX' => 100, 'scrollY' => 200, 'zoom' => 2],
+                    'files' => [],
+                ],
+            ],
+        ])
+        ->event('updated')
+        ->log('Updated drawing');
+
+    $activity = Activity::where('subject_type', $note->getMorphClass())
+        ->where('subject_id', $note->getKey())
+        ->where('event', 'updated')
+        ->first();
+
+    expect($activity)->toBeNull();
+});
+
+it('persists activity with significant field changes', function () {
+    $note = Note::factory()->create();
+
+    activity()
+        ->performedOn($note)
+        ->withChanges([
+            'old' => ['title' => 'Old title'],
+            'attributes' => ['title' => 'New title'],
+        ])
+        ->event('updated')
+        ->log('Updated note');
+
+    $activity = Activity::where('subject_type', $note->getMorphClass())
+        ->where('subject_id', $note->getKey())
+        ->where('event', 'updated')
+        ->first();
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->attribute_changes['attributes']['title'])->toBe('New title');
+});

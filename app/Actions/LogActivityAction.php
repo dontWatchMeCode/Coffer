@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Models\McpToken;
+use App\Services\ActivitySignificance;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Spatie\Activitylog\Actions\LogActivityAction as BaseLogActivityAction;
@@ -33,5 +34,23 @@ class LogActivityAction extends BaseLogActivityAction
         }
 
         return parent::execute($activity, $description);
+    }
+
+    protected function save(Model $activity): void
+    {
+        $attributeChanges = $activity->getAttribute('attribute_changes');
+        $properties = $activity->getAttribute('properties');
+
+        $attributeChanges = $attributeChanges instanceof Collection ? $attributeChanges->toArray() : $attributeChanges;
+        $properties = $properties instanceof Collection ? $properties->toArray() : $properties;
+
+        if (! ActivitySignificance::isSignificant(
+            is_array($attributeChanges) ? $attributeChanges : null,
+            is_array($properties) ? $properties : null,
+        )) {
+            return;
+        }
+
+        parent::save($activity);
     }
 }

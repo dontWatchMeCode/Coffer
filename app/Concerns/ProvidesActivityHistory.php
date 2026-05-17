@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Concerns;
 
 use App\Models\RecordLink;
+use App\Services\ActivitySignificance;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Activity;
 
 trait ProvidesActivityHistory
@@ -18,16 +18,18 @@ trait ProvidesActivityHistory
      */
     protected function paginatedActivityHistoryPayload(Model $model, int $page = 1, int $perPage = 15): array
     {
-        $allSignificant = $this->getSignificantActivities($model);
-
-        $total = $allSignificant->count();
-        $offset = ($page - 1) * $perPage;
-        $activities = $allSignificant->slice($offset, $perPage)->values()->all();
+        $paginator = Activity::where('subject_type', $model->getMorphClass())
+            ->where('subject_id', $model->getKey())
+            ->with('causer')
+            ->orderByDesc('id')
+            ->paginate($perPage, ['*'], 'page', $page);
 
         return [
-            'activities' => $activities,
-            'total' => $total,
-            'has_more' => ($offset + $perPage) < $total,
+            'activities' => $paginator->getCollection()
+                ->map(fn (Activity $activity): array => $this->buildActivityItem($activity))
+                ->all(),
+            'total' => $paginator->total(),
+            'has_more' => $paginator->hasMorePages(),
         ];
     }
 
@@ -62,11 +64,7 @@ trait ProvidesActivityHistory
             ->mapToGroups(fn (Activity $activity): array => [
                 (int) $activity->subject_id => $this->buildActivityItem($activity),
             ])
-            ->map(fn ($items) => $items
-                ->filter(fn (array $item): bool => $this->isSignificantActivity($item))
-                ->values()
-                ->all()
-            )
+            ->map(fn ($items) => $items->values()->all())
             ->all();
     }
 
@@ -76,8 +74,7 @@ trait ProvidesActivityHistory
     protected function buildActivityItem(Activity $activity): array
     {
         $changes = $activity->attribute_changes?->toArray() ?? [];
-        $changes = $this->filterDrawingViewportChanges($changes);
-        $changes = $this->filterEmptyFieldChanges($changes);
+        $changes = ActivitySignificance::filterAttributeChanges($changes);
 
         $attributes = is_array($changes['attributes'] ?? null) ? $changes['attributes'] : [];
         $changedFields = array_values(array_filter(array_keys($attributes), is_string(...)));
@@ -108,124 +105,6 @@ trait ProvidesActivityHistory
     }
 
     /**
-     * @param  array{changedFields: array<int, string>, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}  $item
-     */
-    private function isSignificantActivity(array $item): bool
-    {
-        return count($item['changedFields']) > 0 || $item['relationChanges'] !== null || $item['blockChanges'] !== null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $changes
-     * @return array<string, mixed>
-     */
-    protected function filterDrawingViewportChanges(array $changes): array
-    {
-        if (! isset($changes['attributes']['drawing_data'])) {
-            return $changes;
-        }
-
-        $old = $changes['old']['drawing_data'] ?? null;
-        $new = $changes['attributes']['drawing_data'] ?? null;
-
-        if (! is_array($old) || ! is_array($new)) {
-            return $changes;
-        }
-
-        if ($this->drawingDataEqualsIgnoringViewport($old, $new)) {
-            unset($changes['attributes']['drawing_data']);
-            unset($changes['old']['drawing_data']);
-        }
-
-        return $changes;
-    }
-
-    /**
-     * @param  array<string, mixed>  $changes
-     * @return array<string, mixed>
-     */
-    protected function filterEmptyFieldChanges(array $changes): array
-    {
-        if (! is_array($changes['attributes'] ?? null)) {
-            return $changes;
-        }
-
-        foreach (array_keys($changes['attributes']) as $field) {
-            if (! is_string($field)) {
-                continue;
-            }
-
-            $old = $changes['old'][$field] ?? null;
-            $new = $changes['attributes'][$field] ?? null;
-            if (! $this->isEmptyActivityFieldValue($field, $old)) {
-                continue;
-            }
-
-            if (! $this->isEmptyActivityFieldValue($field, $new)) {
-                continue;
-            }
-
-            unset($changes['attributes'][$field]);
-
-            if (isset($changes['old'][$field])) {
-                unset($changes['old'][$field]);
-            }
-        }
-
-        return $changes;
-    }
-
-    protected function isEmptyActivityFieldValue(string $field, mixed $value): bool
-    {
-        if ($value === null) {
-            return true;
-        }
-
-        if (is_string($value)) {
-            $value = in_array($field, ['body', 'description'], true)
-                ? strip_tags($value)
-                : $value;
-
-            return str($value)->squish()->isEmpty();
-        }
-
-        if (! is_array($value)) {
-            return false;
-        }
-
-        if ($field !== 'drawing_data') {
-            return $value === [];
-        }
-
-        $elements = $value['elements'] ?? [];
-        $files = $value['files'] ?? [];
-
-        return is_array($elements) && $elements === []
-            && is_array($files) && $files === [];
-    }
-
-    /**
-     * @param  array<string, mixed>  $old
-     * @param  array<string, mixed>  $new
-     */
-    protected function drawingDataEqualsIgnoringViewport(array $old, array $new): bool
-    {
-        $withoutViewport = function (array $data): array {
-            $data['appState'] ??= [];
-
-            unset(
-                $data['appState']['scrollX'],
-                $data['appState']['scrollY'],
-                $data['appState']['zoom'],
-            );
-
-            return $data;
-        };
-
-        return $withoutViewport($old) === $withoutViewport($new);
-    }
-
-    /**
      * @return array{subject_type: string|null, subject_id: int, total: int}
      */
     protected function activityHistoryConfig(Model $model): array
@@ -241,27 +120,14 @@ trait ProvidesActivityHistory
             ];
         }
 
-        $total = $this->getSignificantActivities($model)->count();
+        $total = Activity::where('subject_type', $model->getMorphClass())
+            ->where('subject_id', $model->getKey())
+            ->count();
 
         return [
             'subject_type' => $subjectType,
             'subject_id' => (int) $model->getKey(),
             'total' => $total,
         ];
-    }
-
-    /**
-     * @return Collection<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}>
-     */
-    protected function getSignificantActivities(Model $model): Collection
-    {
-        return Activity::where('subject_type', $model->getMorphClass())
-            ->where('subject_id', $model->getKey())
-            ->with('causer')
-            ->orderByDesc('id')
-            ->get()
-            ->map(fn (Activity $activity): array => $this->buildActivityItem($activity))
-            ->filter(fn (array $item): bool => $this->isSignificantActivity($item))
-            ->values();
     }
 }
