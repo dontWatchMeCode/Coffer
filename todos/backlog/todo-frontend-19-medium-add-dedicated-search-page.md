@@ -1,7 +1,7 @@
 ---
 id: 19
 section: frontend
-status: planning
+status: todo
 severity: medium
 ---
 
@@ -16,18 +16,18 @@ Add a full search page that is accessible from the current search overlay and by
 - Search results come from `SearchController` and `RecordSearchService` as grouped JSON results.
 - Prefix help already exists in `SearchPrefixTooltip`.
 
-## Planning Work
+## Decisions
 
-1. Decide the route, page name, and whether the full page reuses the existing JSON endpoint or receives Inertia props.
-2. Decide keyboard behavior for `Ctrl+K+K`, e.g. pressing `Ctrl+K` again or pressing `K` while the overlay is already open.
-3. Decide whether the full page should support URL query persistence so searches can be shared/bookmarked.
-4. Decide pagination or result limits before broad searches outgrow the overlay's `limit(10)` behavior.
+1. **Route/page**: Inertia page at a named route, reusing the existing JSON search endpoint.
+2. **Keyboard**: `Ctrl+K` opens overlay; pressing `Ctrl+K` again while overlay is open navigates to the full page.
+3. **URL persistence**: Search query is kept in the URL query string for sharing/bookmarking.
+4. **Pagination**: Full page raises the result limit above the overlay's `limit(10)`.
 
 ## Implementation Plan
 
 1. Add a named route and Inertia page for dedicated search.
 2. Add a button/link in `SearchOverlay.vue` to open the dedicated search page.
-3. Add keyboard handling for the agreed `Ctrl+K+K` behavior.
+3. Add keyboard handling — second `Ctrl+K` while overlay is open navigates to full page.
 4. Reuse search categories, prefix docs, and result row styles from the overlay where practical.
 
 ## Acceptance Criteria
