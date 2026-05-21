@@ -157,7 +157,7 @@ test('a collection can be deleted', function () {
         ->delete(route('team.collections.destroy', ['current_team' => $team, 'collection' => $collection]))
         ->assertRedirect(route('team.collections.index', ['current_team' => $team]));
 
-    expect($collection->fresh())->toBeNull();
+    $this->assertSoftDeleted('record_collections', ['id' => $collection->id]);
 });
 
 test('guests cannot access collections page', function () {

@@ -41,6 +41,32 @@ class BookmarkPageController extends Controller
         ]);
     }
 
+    public function trash(Request $request, Team $currentTeam): Response
+    {
+        $bookmarks = Bookmark::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['title', 'description', 'url']))
+            ->orderByDesc('deleted_at')
+            ->simplePaginate(25);
+
+        return Inertia::render('bookmarks/Trash', [
+            'bookmarks' => Inertia::scroll($bookmarks->through(function (Bookmark $bookmark): array {
+                $deletedAt = $bookmark->getAttribute('deleted_at');
+
+                return [
+                    'id' => $bookmark->id,
+                    'title' => $bookmark->title,
+                    'url' => $bookmark->url,
+                    'description' => $bookmark->description,
+                    'notes' => $bookmark->notes,
+                    'createdAt' => $bookmark->created_at?->format(\DateTimeInterface::ATOM),
+                    'updatedAt' => $bookmark->updated_at?->format(\DateTimeInterface::ATOM),
+                    'deletedAt' => $deletedAt instanceof \DateTimeInterface ? $deletedAt->format(\DateTimeInterface::ATOM) : null,
+                ];
+            })),
+        ]);
+    }
+
     public function show(Request $request, Team $currentTeam, int $bookmark): Response
     {
         $bookmark = Bookmark::query()

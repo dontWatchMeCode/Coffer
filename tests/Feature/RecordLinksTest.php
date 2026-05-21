@@ -441,7 +441,7 @@ test('record links appear on task edit page', function () {
         ->assertInertia(fn ($page) => $page->has('recordLinks'));
 });
 
-test('record links are cleaned up when a linked model is deleted', function () {
+test('record links are cleaned up when a linked model is permanently deleted', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -458,7 +458,7 @@ test('record links are cleaned up when a linked model is deleted', function () {
 
     expect(RecordLink::count())->toBe(1);
 
-    $contact->delete();
+    $contact->forceDelete();
 
     expect(RecordLink::count())->toBe(0);
 });
@@ -544,7 +544,7 @@ test('destroying a link logs activity on both sides', function () {
     expect($contactActivities->first()->description)->toBe('Unlinked from task: '.$task->title);
 });
 
-test('deleting a record logs unlink activity on the surviving side', function () {
+test('permanently deleting a record logs unlink activity on the surviving side', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -559,7 +559,7 @@ test('deleting a record logs unlink activity on the surviving side', function ()
             'to_id' => $contact->id,
         ]);
 
-    $task->delete();
+    $task->forceDelete();
 
     $contactActivities = Activity::where('subject_type', $contact->getMorphClass())
         ->where('subject_id', $contact->id)

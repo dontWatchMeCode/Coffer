@@ -31,6 +31,10 @@ trait HasRecordLinks
                 return;
             }
 
+            if (method_exists($model, 'isForceDeleting') && ! $model->isForceDeleting()) {
+                return;
+            }
+
             $teamId = $model->getAttribute('team_id');
 
             if ($teamId !== null) {

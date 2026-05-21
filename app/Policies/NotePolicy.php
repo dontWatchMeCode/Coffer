@@ -48,4 +48,14 @@ class NotePolicy
     {
         return $note->team !== null && $user->belongsToTeam($note->team);
     }
+
+    public function restore(User $user, Note $note): bool
+    {
+        return $this->delete($user, $note);
+    }
+
+    public function forceDelete(User $user, Note $note): bool
+    {
+        return $this->delete($user, $note);
+    }
 }

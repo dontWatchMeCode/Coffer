@@ -16,6 +16,10 @@ trait HasRecordTags
     {
         static::deleting(function (Model $model): void {
             if (method_exists($model, 'recordTags')) {
+                if (method_exists($model, 'isForceDeleting') && ! $model->isForceDeleting()) {
+                    return;
+                }
+
                 $tagIds = $model->recordTags()->pluck('tags.id')->all();
 
                 $model->recordTags()->detach();

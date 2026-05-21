@@ -480,7 +480,7 @@ test('a note can be deleted', function () {
         ->delete(route('team.notes.destroy', ['current_team' => $team, 'note' => $note]))
         ->assertRedirect(route('team.notes.index', ['current_team' => $team]));
 
-    expect($note->fresh())->toBeNull();
+    $this->assertSoftDeleted('notes', ['id' => $note->id]);
 });
 
 test('guests cannot access notes page', function () {

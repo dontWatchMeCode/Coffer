@@ -43,6 +43,34 @@ class ContactPageController extends Controller
         ]);
     }
 
+    public function trash(Request $request, Team $currentTeam): Response
+    {
+        $contacts = Contact::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['name', 'address', 'additional_info', 'phone_numbers', 'email_addresses', 'links']))
+            ->orderByDesc('deleted_at')
+            ->simplePaginate(25);
+
+        return Inertia::render('contacts/Trash', [
+            'contacts' => Inertia::scroll($contacts->through(function (Contact $contact): array {
+                $deletedAt = $contact->getAttribute('deleted_at');
+
+                return [
+                    'id' => $contact->id,
+                    'name' => $contact->name,
+                    'phoneNumbers' => $contact->phone_numbers,
+                    'emailAddresses' => $contact->email_addresses,
+                    'links' => $contact->links,
+                    'address' => $contact->address,
+                    'additionalInfo' => $contact->additional_info,
+                    'createdAt' => $contact->created_at?->format(\DateTimeInterface::ATOM),
+                    'updatedAt' => $contact->updated_at?->format(\DateTimeInterface::ATOM),
+                    'deletedAt' => $deletedAt instanceof \DateTimeInterface ? $deletedAt->format(\DateTimeInterface::ATOM) : null,
+                ];
+            })),
+        ]);
+    }
+
     public function show(Request $request, Team $currentTeam, int $contact): Response
     {
         $contact = Contact::query()

@@ -6,6 +6,8 @@ The main team pages are Tasks, Calendar, Contacts, Bookmarks, Notes, Log, and Co
 
 Supported records can be tagged and linked to other records. Tags help group records by topic, while links connect related work, knowledge, contacts, events, bookmarks, notes, and collections across the team.
 
+Deleted records move to the trash page for their module. Trash pages let team members review, restore, or permanently delete deleted records.
+
 ## Tasks
 
 Tasks are the team work planning area.
@@ -14,6 +16,7 @@ Pages:
 
 - Project list: choose a project, review project counts, and create projects.
 - Project detail: review a project, create tasks, and update work status.
+- Task trash: view, restore, or permanently delete deleted tasks for a project.
 - Task edit: edit task details and related records.
 
 Features:
@@ -38,6 +41,7 @@ Calendar is the team event area.
 Pages:
 
 - Calendar list/grid: view and create team events.
+- Calendar trash: view, restore, or permanently delete deleted events.
 - Event edit: update event details.
 
 Features:
@@ -61,6 +65,7 @@ Contacts are the team address book.
 Pages:
 
 - Contact list: view and create contacts.
+- Contact trash: view, restore, or permanently delete deleted contacts.
 - Contact detail: review and edit contact details and related records.
 
 Features:
@@ -84,6 +89,7 @@ Bookmarks track useful team links.
 Pages:
 
 - Bookmark list: view and create bookmarks.
+- Bookmark trash: view, restore, or permanently delete deleted bookmarks.
 - Bookmark detail: review and edit bookmark details and related records.
 
 Features:
@@ -106,6 +112,7 @@ Notes capture team knowledge.
 Pages:
 
 - Note list: view and create notes.
+- Note trash: view, restore, or permanently delete deleted notes.
 - Note detail: edit note content and related records.
 
 Features:
@@ -131,6 +138,7 @@ Log is the team quick-notes area.
 Pages:
 
 - Log page: view, create, and delete log entries.
+- Log trash: view, restore, or permanently delete deleted log entries.
 
 Features:
 
@@ -152,6 +160,7 @@ Collections group related team records.
 Pages:
 
 - Collection list: view and create collections.
+- Collection trash: view, restore, or permanently delete deleted collections.
 - Collection detail: review and maintain linked records.
 
 Features:

@@ -48,4 +48,14 @@ class BookmarkPolicy
     {
         return $bookmark->team !== null && $user->belongsToTeam($bookmark->team);
     }
+
+    public function restore(User $user, Bookmark $bookmark): bool
+    {
+        return $this->delete($user, $bookmark);
+    }
+
+    public function forceDelete(User $user, Bookmark $bookmark): bool
+    {
+        return $this->delete($user, $bookmark);
+    }
 }

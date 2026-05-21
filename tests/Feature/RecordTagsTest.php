@@ -143,7 +143,7 @@ test('a detached tag is kept when another record still uses it', function () {
     expect(Tag::query()->whereKey($tag->id)->exists())->toBeTrue();
 });
 
-test('unused tags are cleaned up when a tagged record is deleted', function () {
+test('unused tags are cleaned up when a tagged record is permanently deleted', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
     $project = Project::factory()->create(['team_id' => $team->id]);
@@ -153,7 +153,7 @@ test('unused tags are cleaned up when a tagged record is deleted', function () {
     actingAs($user);
     $task->recordTags()->attach($tag->id);
 
-    $task->delete();
+    $task->forceDelete();
 
     expect(Tag::query()->whereKey($tag->id)->exists())->toBeFalse();
 });

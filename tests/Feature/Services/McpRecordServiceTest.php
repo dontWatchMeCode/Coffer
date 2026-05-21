@@ -77,7 +77,7 @@ it('deletes a subscription through the service', function () {
         'id' => $subscription->id,
     ])->assertOk()->assertSee('deleted');
 
-    expect(Subscription::query()->whereKey($subscription->id)->exists())->toBeFalse();
+    $this->assertSoftDeleted('subscriptions', ['id' => $subscription->id]);
 });
 
 it('rejects creating a subscription with invalid billing cycle', function () {
@@ -287,7 +287,7 @@ it('deletes all 8 record types through the service', function (string $type, str
         'id' => $model->id,
     ])->assertOk()->assertSee('deleted');
 
-    expect($class::query()->whereKey($model->id)->exists())->toBeFalse();
+    $this->assertSoftDeleted($model->getTable(), ['id' => $model->id]);
 })->with([
     'task' => ['task', Task::class],
     'calendar_event' => ['calendar_event', CalendarEvent::class],

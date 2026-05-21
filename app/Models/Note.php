@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -31,10 +32,15 @@ class Note extends Model implements LinkableRecord
     use HasRecordLinks;
     use HasRecordTags;
     use LogsActivity;
+    use SoftDeletes;
 
     protected static function booted(): void
     {
         static::deleting(function (self $note): void {
+            if (! $note->isForceDeleting()) {
+                return;
+            }
+
             $note->blocks()->delete();
         });
     }

@@ -32,6 +32,7 @@ This is a concise feature map of the app.
 
 - Most user data is team-scoped.
 - Records are created, queried, searched, tagged, and linked inside the current team.
+- Deleted records move to their module trash page, where they can be restored or permanently deleted.
 - Team ownership is applied by shared model behavior on configured team models.
 - Team-scoped records cannot be saved or queried without an active team context.
 - Policies and team membership decide who can view or change records.

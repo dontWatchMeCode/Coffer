@@ -151,7 +151,7 @@ test('a bookmark can be deleted', function () {
         )
         ->assertRedirect(route('team.bookmarks.index', ['current_team' => $team]));
 
-    expect($bookmark->fresh())->toBeNull();
+    $this->assertSoftDeleted('bookmarks', ['id' => $bookmark->id]);
 });
 
 test('a non-member cannot create bookmarks', function () {

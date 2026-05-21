@@ -304,7 +304,8 @@ function handleCopyAsMarkdown(): void {
 
         <ConfirmDeleteDialog
             v-model:open="deleteDialogOpen"
-            title="Delete event"
+            title="Move Event to Trash"
+            confirm-label="Move to trash"
             :confirm-icon="Trash2"
             @confirm="confirmDelete"
         >
@@ -314,7 +315,7 @@ function handleCopyAsMarkdown(): void {
                     <span class="font-semibold text-foreground">{{
                         event.title
                     }}</span
-                    >? This action cannot be undone.
+                    >? You can restore it from calendar trash.
                 </DialogDescription>
             </template>
         </ConfirmDeleteDialog>

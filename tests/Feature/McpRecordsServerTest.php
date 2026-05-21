@@ -111,7 +111,7 @@ test('records can be searched read updated and deleted through mcp', function ()
         'id' => $note->id,
     ])->assertOk()->assertSee('deleted');
 
-    expect(Note::query()->whereKey($note->id)->exists())->toBeFalse();
+    $this->assertSoftDeleted('notes', ['id' => $note->id]);
 });
 
 test('note blocks can be created through mcp', function () {

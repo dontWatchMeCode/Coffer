@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, InfiniteScroll, router, usePage } from '@inertiajs/vue3';
-import { ListPlus } from 'lucide-vue-next';
+import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
+import { ListPlus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
@@ -11,7 +11,11 @@ import NoteList from '@/components/pages/notes/NoteList.vue';
 import { Button } from '@/components/ui/button';
 import { useSearch } from '@/composables/useSearch';
 import { useViewMode } from '@/composables/useViewMode';
-import { index as notesIndex, show as showNote } from '@/routes/team/notes';
+import {
+    index as notesIndex,
+    show as showNote,
+    trash as notesTrash,
+} from '@/routes/team/notes';
 import type { NoteItem, PaginatedData, Team } from '@/types';
 
 type Props = {
@@ -79,6 +83,17 @@ defineOptions({
 
             <div class="space-y-4">
                 <div class="flex items-center justify-end gap-2">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        title="Trash"
+                        as-child
+                    >
+                        <Link :href="notesTrash(currentTeamSlug).url">
+                            <Trash2 class="h-4 w-4" />
+                        </Link>
+                    </Button>
+
                     <CreateNoteDialog ref="createDialogRef">
                         <template #trigger>
                             <Button

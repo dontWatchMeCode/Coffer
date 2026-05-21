@@ -42,7 +42,8 @@ defineExpose({ openDeleteDialog, deleteDialogOpen });
 <template>
     <ConfirmDeleteDialog
         v-model:open="deleteDialogOpen"
-        title="Delete Contact"
+        title="Move Contact to Trash"
+        confirm-label="Move to trash"
         :confirm-icon="Trash2"
         @confirm="confirmDelete"
     >
@@ -52,7 +53,7 @@ defineExpose({ openDeleteDialog, deleteDialogOpen });
                 <span class="font-semibold text-foreground">{{
                     deletingContact?.name
                 }}</span
-                >? This action cannot be undone.
+                >? You can restore it from contact trash.
             </DialogDescription>
         </template>
     </ConfirmDeleteDialog>

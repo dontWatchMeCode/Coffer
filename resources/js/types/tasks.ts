@@ -57,5 +57,6 @@ export type TaskItem = {
     updatedAt?: string | null;
     completedAt?: string | null;
     dueAt?: string | null;
+    deletedAt?: string | null;
     commentsCount?: number;
 };

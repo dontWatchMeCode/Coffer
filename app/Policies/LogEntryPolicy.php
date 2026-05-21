@@ -33,4 +33,14 @@ class LogEntryPolicy
     {
         return $logEntry->team !== null && $user->belongsToTeam($logEntry->team);
     }
+
+    public function restore(User $user, LogEntry $logEntry): bool
+    {
+        return $this->delete($user, $logEntry);
+    }
+
+    public function forceDelete(User $user, LogEntry $logEntry): bool
+    {
+        return $this->delete($user, $logEntry);
+    }
 }

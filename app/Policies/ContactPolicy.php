@@ -48,4 +48,14 @@ class ContactPolicy
     {
         return $contact->team !== null && $user->belongsToTeam($contact->team);
     }
+
+    public function restore(User $user, Contact $contact): bool
+    {
+        return $this->delete($user, $contact);
+    }
+
+    public function forceDelete(User $user, Contact $contact): bool
+    {
+        return $this->delete($user, $contact);
+    }
 }

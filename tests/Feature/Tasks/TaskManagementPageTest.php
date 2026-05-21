@@ -632,7 +632,7 @@ test('tasks can be deleted from the task edit page', function () {
         ->delete(route('team.tasks.destroy', ['current_team' => $team, 'task' => $task->id]))
         ->assertRedirect(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]));
 
-    expect(Task::query()->whereKey($task->id)->exists())->toBeFalse();
+    $this->assertSoftDeleted('tasks', ['id' => $task->id]);
 });
 
 test('tasks cannot be deleted by non-team-members', function () {

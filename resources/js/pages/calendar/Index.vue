@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, InfiniteScroll, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import {
     CalendarDays,
     Check,
@@ -8,6 +8,7 @@ import {
     ChevronsUpDown,
     List,
     ListPlus,
+    Trash2,
 } from 'lucide-vue-next';
 import {
     ComboboxAnchor,
@@ -38,7 +39,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useCalendarViewMode } from '@/composables/useCalendarViewMode';
-import { index as calendarIndex } from '@/routes/team/calendar';
+import {
+    index as calendarIndex,
+    trash as calendarTrash,
+} from '@/routes/team/calendar';
 import { edit as editEventRoute } from '@/routes/team/calendar/events';
 import type { CalendarEventItem, PaginatedData, Team } from '@/types';
 
@@ -430,6 +434,17 @@ function openEditDialog(event: CalendarEventItem): void {
                         @click="dialogsRef?.openCreateDialogNoDate()"
                     >
                         <ListPlus class="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        title="Trash"
+                        as-child
+                    >
+                        <Link :href="calendarTrash(currentTeamSlug).url">
+                            <Trash2 class="h-4 w-4" />
+                        </Link>
                     </Button>
 
                     <div

@@ -58,4 +58,34 @@ class ContactController extends Controller
             'current_team' => $currentTeam,
         ]);
     }
+
+    public function restore(Team $currentTeam, int $contact): RedirectResponse
+    {
+        $contact = Contact::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($contact);
+
+        $this->authorize('restore', $contact);
+
+        $contact->restore();
+
+        return to_route('team.contacts.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
+
+    public function forceDestroy(Team $currentTeam, int $contact): RedirectResponse
+    {
+        $contact = Contact::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($contact);
+
+        $this->authorize('forceDelete', $contact);
+
+        $contact->forceDelete();
+
+        return to_route('team.contacts.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
 }

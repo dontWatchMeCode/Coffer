@@ -80,4 +80,34 @@ class SubscriptionController extends Controller
             'current_team' => $currentTeam,
         ]);
     }
+
+    public function restore(Team $currentTeam, int $subscription): RedirectResponse
+    {
+        $subscription = Subscription::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($subscription);
+
+        $this->authorize('restore', $subscription);
+
+        $subscription->restore();
+
+        return to_route('team.subscriptions.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
+
+    public function forceDestroy(Team $currentTeam, int $subscription): RedirectResponse
+    {
+        $subscription = Subscription::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($subscription);
+
+        $this->authorize('forceDelete', $subscription);
+
+        $subscription->forceDelete();
+
+        return to_route('team.subscriptions.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
 }

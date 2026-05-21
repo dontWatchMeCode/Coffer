@@ -42,6 +42,27 @@ class CollectionPageController extends Controller
         ]);
     }
 
+    public function trash(Request $request, Team $currentTeam): Response
+    {
+        $search = $request->string('search')->toString();
+
+        $collections = RecordCollection::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
+            ->when($search, function ($q) use ($search): void {
+                $q->where(function ($q) use ($search): void {
+                    $q->search($search, ['title', 'description'])
+                        ->orWhereHas('recordTags', fn ($q) => $q->where('name', 'like', sprintf('%%%s%%', addcslashes($search, '%_\\'))));
+                });
+            })
+            ->orderByDesc('deleted_at')
+            ->simplePaginate(25);
+
+        return Inertia::render('collections/Trash', [
+            'collections' => Inertia::scroll($collections->through(fn (RecordCollection $collection): array => $this->collectionPayload($collection, includeDeletedAt: true))),
+        ]);
+    }
+
     public function show(Team $currentTeam, int $collection): Response
     {
         $collection = RecordCollection::query()
@@ -58,11 +79,11 @@ class CollectionPageController extends Controller
     }
 
     /**
-     * @return array{id: int, title: string, description: string|null, tags: array<int, array{id: int, name: string, slug: string}>, createdAt: string|null, updatedAt: string|null}
+     * @return array{id: int, title: string, description: string|null, tags: array<int, array{id: int, name: string, slug: string}>, createdAt: string|null, updatedAt: string|null, deletedAt?: string|null}
      */
-    protected function collectionPayload(RecordCollection $collection): array
+    protected function collectionPayload(RecordCollection $collection, bool $includeDeletedAt = false): array
     {
-        return [
+        $payload = [
             'id' => $collection->id,
             'title' => $collection->title,
             'description' => $collection->description,
@@ -70,5 +91,15 @@ class CollectionPageController extends Controller
             'createdAt' => $collection->created_at?->format(DateTimeInterface::ATOM),
             'updatedAt' => $collection->updated_at?->format(DateTimeInterface::ATOM),
         ];
+
+        if ($includeDeletedAt) {
+            $deletedAt = $collection->getAttribute('deleted_at');
+
+            $payload['deletedAt'] = $deletedAt instanceof DateTimeInterface
+                ? $deletedAt->format(DateTimeInterface::ATOM)
+                : null;
+        }
+
+        return $payload;
     }
 }

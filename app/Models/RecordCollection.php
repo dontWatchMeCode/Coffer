@@ -13,6 +13,7 @@ use Database\Factories\RecordCollectionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['team_id', 'title', 'description'])]
 class RecordCollection extends Model implements LinkableRecord
@@ -25,4 +26,5 @@ class RecordCollection extends Model implements LinkableRecord
 
     use HasRecordLinks;
     use HasRecordTags;
+    use SoftDeletes;
 }

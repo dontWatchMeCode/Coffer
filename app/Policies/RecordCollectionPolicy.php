@@ -48,4 +48,14 @@ class RecordCollectionPolicy
     {
         return $collection->team !== null && $user->belongsToTeam($collection->team);
     }
+
+    public function restore(User $user, RecordCollection $collection): bool
+    {
+        return $this->delete($user, $collection);
+    }
+
+    public function forceDelete(User $user, RecordCollection $collection): bool
+    {
+        return $this->delete($user, $collection);
+    }
 }

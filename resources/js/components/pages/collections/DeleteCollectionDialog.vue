@@ -46,8 +46,9 @@ defineExpose({
 <template>
     <ConfirmDeleteDialog
         v-model:open="deleteDialogOpen"
-        title="Delete Collection"
-        description="This removes the collection and its links, but not the linked records."
+        title="Move Collection to Trash"
+        description="This moves the collection to trash. Linked records are not deleted."
+        confirm-label="Move to trash"
         :confirm-icon="Trash2"
         @confirm="confirmDelete"
     >

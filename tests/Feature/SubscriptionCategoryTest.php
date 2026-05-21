@@ -113,7 +113,7 @@ it('does not delete category still used by other subscription', function () {
     expect(SubscriptionCategory::query()->find($category->id))->not->toBeNull();
 });
 
-it('deletes unused category when subscription is deleted', function () {
+it('keeps unused category when subscription is moved to trash', function () {
     $this->actingAs($this->user);
 
     $category = SubscriptionCategory::factory()->create([
@@ -130,7 +130,7 @@ it('deletes unused category when subscription is deleted', function () {
     $this->delete("/{$this->team->slug}/subscriptions/{$subscription->id}")
         ->assertRedirect();
 
-    expect(SubscriptionCategory::query()->find($category->id))->toBeNull();
+    expect(SubscriptionCategory::query()->find($category->id))->not->toBeNull();
 });
 
 it('clears category when null is sent', function () {

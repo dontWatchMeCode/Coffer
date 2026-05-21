@@ -48,4 +48,14 @@ class TaskPolicy
     {
         return $task->team !== null && $user->belongsToTeam($task->team);
     }
+
+    public function restore(User $user, Task $task): bool
+    {
+        return $this->delete($user, $task);
+    }
+
+    public function forceDelete(User $user, Task $task): bool
+    {
+        return $this->delete($user, $task);
+    }
 }

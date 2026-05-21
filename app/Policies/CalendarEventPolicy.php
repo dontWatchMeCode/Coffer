@@ -48,4 +48,14 @@ class CalendarEventPolicy
     {
         return $calendarEvent->team !== null && $user->belongsToTeam($calendarEvent->team);
     }
+
+    public function restore(User $user, CalendarEvent $calendarEvent): bool
+    {
+        return $this->delete($user, $calendarEvent);
+    }
+
+    public function forceDelete(User $user, CalendarEvent $calendarEvent): bool
+    {
+        return $this->delete($user, $calendarEvent);
+    }
 }

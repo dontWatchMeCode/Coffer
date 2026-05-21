@@ -50,4 +50,30 @@ class CalendarEventController extends Controller
 
         return to_route('team.calendar.index', ['current_team' => $currentTeam]);
     }
+
+    public function restore(Team $currentTeam, int $event): RedirectResponse
+    {
+        $event = CalendarEvent::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($event);
+
+        $this->authorize('restore', $event);
+
+        $event->restore();
+
+        return to_route('team.calendar.trash', ['current_team' => $currentTeam]);
+    }
+
+    public function forceDestroy(Team $currentTeam, int $event): RedirectResponse
+    {
+        $event = CalendarEvent::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($event);
+
+        $this->authorize('forceDelete', $event);
+
+        $event->forceDelete();
+
+        return to_route('team.calendar.trash', ['current_team' => $currentTeam]);
+    }
 }

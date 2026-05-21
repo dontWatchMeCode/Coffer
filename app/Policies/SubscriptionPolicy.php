@@ -33,4 +33,14 @@ class SubscriptionPolicy
     {
         return $subscription->team !== null && $user->belongsToTeam($subscription->team);
     }
+
+    public function restore(User $user, Subscription $subscription): bool
+    {
+        return $this->delete($user, $subscription);
+    }
+
+    public function forceDelete(User $user, Subscription $subscription): bool
+    {
+        return $this->delete($user, $subscription);
+    }
 }

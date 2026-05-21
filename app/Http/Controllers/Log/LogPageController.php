@@ -45,4 +45,42 @@ class LogPageController extends Controller
             'categories' => $categories,
         ]);
     }
+
+    public function trash(Request $request, Team $currentTeam): Response
+    {
+        $search = $request->string('search')->toString();
+        $category = $request->string('category')->toString();
+
+        $entries = LogEntry::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->when($search, fn ($q) => $q->search($search, ['body', 'category']))
+            ->when($category, fn ($q) => $q->where('category', $category))
+            ->orderByDesc('deleted_at')
+            ->simplePaginate(25);
+
+        $categories = LogEntry::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->pluck('category')
+            ->sort()
+            ->values()
+            ->all();
+
+        return Inertia::render('log/Trash', [
+            'entries' => Inertia::scroll($entries->through(function (LogEntry $entry): array {
+                $deletedAt = $entry->getAttribute('deleted_at');
+
+                return [
+                    'id' => $entry->id,
+                    'body' => $entry->body,
+                    'category' => $entry->category,
+                    'createdAt' => $entry->created_at?->format(\DateTimeInterface::ATOM),
+                    'deletedAt' => $deletedAt instanceof \DateTimeInterface ? $deletedAt->format(\DateTimeInterface::ATOM) : null,
+                ];
+            })),
+            'categories' => $categories,
+        ]);
+    }
 }

@@ -133,4 +133,31 @@ class TaskPageController extends Controller
             'activityHistory' => $this->activityHistoryConfig($project),
         ]);
     }
+
+    public function trash(Request $request, Team $currentTeam, int $project): Response
+    {
+        $project = $this->dataService->findProject($currentTeam, $project);
+        $search = $request->string('search')->toString();
+
+        $tasks = Task::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->whereBelongsTo($project)
+            ->with(['project:id,name', 'assignee:id,name', 'creator:id,name'])
+            ->withCount('comments')
+            ->when($search, fn ($q) => $q->search($search, ['title', 'description']))
+            ->orderByDesc('deleted_at')
+            ->simplePaginate(25);
+
+        return Inertia::render('tasks/Trash', [
+            'project' => $this->dataService->projectPayload($project),
+            'tasks' => Inertia::scroll($tasks->through(function (Task $task): array {
+                $deletedAt = $task->getAttribute('deleted_at');
+
+                return $this->dataService->taskPayload($task, [
+                    'commentsCount' => $task->comments_count ?? 0,
+                    'deletedAt' => $deletedAt instanceof \DateTimeInterface ? $deletedAt->format(\DateTimeInterface::ATOM) : null,
+                ]);
+            })),
+        ]);
+    }
 }

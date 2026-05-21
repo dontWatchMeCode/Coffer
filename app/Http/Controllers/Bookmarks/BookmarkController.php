@@ -58,4 +58,34 @@ class BookmarkController extends Controller
             'current_team' => $currentTeam,
         ]);
     }
+
+    public function restore(Team $currentTeam, int $bookmark): RedirectResponse
+    {
+        $bookmark = Bookmark::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($bookmark);
+
+        $this->authorize('restore', $bookmark);
+
+        $bookmark->restore();
+
+        return to_route('team.bookmarks.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
+
+    public function forceDestroy(Team $currentTeam, int $bookmark): RedirectResponse
+    {
+        $bookmark = Bookmark::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($bookmark);
+
+        $this->authorize('forceDelete', $bookmark);
+
+        $bookmark->forceDelete();
+
+        return to_route('team.bookmarks.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
 }

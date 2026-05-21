@@ -37,4 +37,34 @@ class LogEntryController extends Controller
 
         return back();
     }
+
+    public function restore(Team $currentTeam, int $logEntry): RedirectResponse
+    {
+        $entry = LogEntry::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($logEntry);
+
+        $this->authorize('restore', $entry);
+
+        $entry->restore();
+
+        return to_route('team.log.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
+
+    public function forceDestroy(Team $currentTeam, int $logEntry): RedirectResponse
+    {
+        $entry = LogEntry::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($logEntry);
+
+        $this->authorize('forceDelete', $entry);
+
+        $entry->forceDelete();
+
+        return to_route('team.log.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
 }

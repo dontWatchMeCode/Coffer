@@ -6,4 +6,5 @@ export type BookmarkItem = {
     notes?: string | null;
     createdAt?: string | null;
     updatedAt?: string | null;
+    deletedAt?: string | null;
 };

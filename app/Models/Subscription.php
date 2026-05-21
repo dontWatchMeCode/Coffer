@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -30,6 +31,7 @@ class Subscription extends Model implements LinkableRecord
     use HasRecordLinks;
     use HasRecordTags;
     use LogsActivity;
+    use SoftDeletes;
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -52,6 +54,10 @@ class Subscription extends Model implements LinkableRecord
     protected static function booted(): void
     {
         static::deleted(function (Subscription $subscription): void {
+            if (! $subscription->isForceDeleting()) {
+                return;
+            }
+
             if ($subscription->subscription_category_id) {
                 SubscriptionCategory::deleteUnused($subscription->team_id);
             }

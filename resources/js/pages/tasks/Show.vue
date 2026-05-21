@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, InfiniteScroll, router, usePage } from '@inertiajs/vue3';
-import { ListPlus, Settings } from 'lucide-vue-next';
+import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
+import { ListPlus, Settings, Trash2 } from 'lucide-vue-next';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, ref } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
@@ -16,7 +16,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useSearch } from '@/composables/useSearch';
-import { index, show, edit } from '@/routes/team/tasks/index';
+import {
+    edit,
+    index,
+    show,
+    trash as tasksTrash,
+} from '@/routes/team/tasks/index';
 import type {
     ActivityHistoryConfig,
     PaginatedData,
@@ -169,6 +174,24 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                     class="order-1 h-fit w-full shrink-0 space-y-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
                 >
                     <div class="flex items-center justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            title="Trash"
+                            as-child
+                        >
+                            <Link
+                                :href="
+                                    tasksTrash({
+                                        current_team: currentTeamSlug,
+                                        project: project.id,
+                                    }).url
+                                "
+                            >
+                                <Trash2 class="h-4 w-4" />
+                            </Link>
+                        </Button>
+
                         <ProjectSettingsDialog :project="project">
                             <template #trigger>
                                 <Button size="icon" title="Project settings">

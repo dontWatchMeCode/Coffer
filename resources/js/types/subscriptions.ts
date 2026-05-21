@@ -19,4 +19,5 @@ export type SubscriptionItem = {
     categoryId?: number | null;
     createdAt?: string | null;
     updatedAt?: string | null;
+    deletedAt?: string | null;
 };

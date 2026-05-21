@@ -237,7 +237,7 @@ test('a calendar event can be deleted', function () {
         )
         ->assertRedirect(route('team.calendar.index', ['current_team' => $team]));
 
-    expect($event->fresh())->toBeNull();
+    $this->assertSoftDeleted('calendar_events', ['id' => $event->id]);
 });
 
 test('a non-member cannot create calendar events', function () {

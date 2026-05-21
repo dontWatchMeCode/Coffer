@@ -115,8 +115,8 @@ test('subscriptions index returns cursor-paginated data with search', function (
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
-    Subscription::factory()->create(['team_id' => $team->id, 'name' => 'Netflix']);
-    Subscription::factory()->create(['team_id' => $team->id, 'name' => 'Spotify']);
+    Subscription::factory()->create(['team_id' => $team->id, 'name' => 'Netflix', 'description' => null, 'category' => null]);
+    Subscription::factory()->create(['team_id' => $team->id, 'name' => 'Spotify', 'description' => null, 'category' => null]);
 
     actingAs($user)
         ->get(route('team.subscriptions.index', ['current_team' => $team, 'search' => 'Net']))

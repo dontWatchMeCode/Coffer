@@ -58,4 +58,34 @@ class CollectionController extends Controller
             'current_team' => $currentTeam,
         ]);
     }
+
+    public function restore(Team $currentTeam, int $collection): RedirectResponse
+    {
+        $collection = RecordCollection::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($collection);
+
+        $this->authorize('restore', $collection);
+
+        $collection->restore();
+
+        return to_route('team.collections.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
+
+    public function forceDestroy(Team $currentTeam, int $collection): RedirectResponse
+    {
+        $collection = RecordCollection::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($collection);
+
+        $this->authorize('forceDelete', $collection);
+
+        $collection->forceDelete();
+
+        return to_route('team.collections.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
 }

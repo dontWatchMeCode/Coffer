@@ -72,4 +72,34 @@ class NoteController extends Controller
             'current_team' => $currentTeam,
         ]);
     }
+
+    public function restore(Team $currentTeam, int $note): RedirectResponse
+    {
+        $note = Note::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($note);
+
+        $this->authorize('restore', $note);
+
+        $note->restore();
+
+        return to_route('team.notes.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
+
+    public function forceDestroy(Team $currentTeam, int $note): RedirectResponse
+    {
+        $note = Note::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($note);
+
+        $this->authorize('forceDelete', $note);
+
+        $note->forceDelete();
+
+        return to_route('team.notes.trash', [
+            'current_team' => $currentTeam,
+        ]);
+    }
 }

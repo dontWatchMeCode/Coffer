@@ -69,4 +69,34 @@ class TaskController extends Controller
 
         return to_route('team.tasks.show', ['current_team' => $currentTeam, 'project' => $projectId]);
     }
+
+    public function restore(Team $currentTeam, int $task): RedirectResponse
+    {
+        $task = Task::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($task);
+
+        $this->authorize('restore', $task);
+
+        $projectId = $task->project_id;
+
+        $task->restore();
+
+        return to_route('team.tasks.trash', ['current_team' => $currentTeam, 'project' => $projectId]);
+    }
+
+    public function forceDestroy(Team $currentTeam, int $task): RedirectResponse
+    {
+        $task = Task::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($task);
+
+        $this->authorize('forceDelete', $task);
+
+        $projectId = $task->project_id;
+
+        $task->forceDelete();
+
+        return to_route('team.tasks.trash', ['current_team' => $currentTeam, 'project' => $projectId]);
+    }
 }

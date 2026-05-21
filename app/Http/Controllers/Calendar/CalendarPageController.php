@@ -58,6 +58,19 @@ class CalendarPageController extends Controller
         ]);
     }
 
+    public function trash(Request $request, Team $currentTeam): Response
+    {
+        $events = CalendarEvent::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['title', 'description']))
+            ->orderByDesc('deleted_at')
+            ->simplePaginate(25);
+
+        return Inertia::render('calendar/Trash', [
+            'events' => Inertia::scroll($events->through(fn (CalendarEvent $event): array => $this->formatEvent($event, includeTimestamps: true, includeDeletedAt: true))),
+        ]);
+    }
+
     public function edit(Request $request, Team $currentTeam, int $event): Response
     {
         $event = CalendarEvent::query()
@@ -74,9 +87,9 @@ class CalendarPageController extends Controller
     }
 
     /**
-     * @return array{id: int, title: string, description: string|null, date: string|null, time: string|null, createdAt?: string|null, updatedAt?: string|null}
+     * @return array{id: int, title: string, description: string|null, date: string|null, time: string|null, createdAt?: string|null, updatedAt?: string|null, deletedAt?: string|null}
      */
-    private function formatEvent(CalendarEvent $event, bool $includeTimestamps = false): array
+    private function formatEvent(CalendarEvent $event, bool $includeTimestamps = false, bool $includeDeletedAt = false): array
     {
         $date = $event->getAttribute('date');
         $data = [
@@ -100,6 +113,14 @@ class CalendarPageController extends Controller
                 : null;
             $data['updatedAt'] = $updatedAt instanceof \DateTimeInterface
                 ? $updatedAt->format(\DateTimeInterface::ATOM)
+                : null;
+        }
+
+        if ($includeDeletedAt) {
+            $deletedAt = $event->getAttribute('deleted_at');
+
+            $data['deletedAt'] = $deletedAt instanceof \DateTimeInterface
+                ? $deletedAt->format(\DateTimeInterface::ATOM)
                 : null;
         }
 

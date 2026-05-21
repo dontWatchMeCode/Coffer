@@ -6,4 +6,5 @@ export type CalendarEventItem = {
     time?: string | null;
     createdAt?: string | null;
     updatedAt?: string | null;
+    deletedAt?: string | null;
 };

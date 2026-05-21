@@ -319,7 +319,7 @@ test('a contact can be deleted', function () {
         )
         ->assertRedirect(route('team.contacts.index', ['current_team' => $team]));
 
-    expect($contact->fresh())->toBeNull();
+    $this->assertSoftDeleted('contacts', ['id' => $contact->id]);
 });
 
 test('a non-member cannot create contacts', function () {

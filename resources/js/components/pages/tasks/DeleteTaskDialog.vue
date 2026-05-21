@@ -18,9 +18,9 @@ const emit = defineEmits<{
 <template>
     <ConfirmDeleteDialog
         :open="open"
-        title="Delete task?"
-        description="This will permanently remove this task and its comments."
-        confirm-label="Delete task"
+        title="Move task to trash?"
+        description="This moves the task to trash. You can restore it from project trash."
+        confirm-label="Move to trash"
         :confirm-icon="Trash2"
         @update:open="emit('update:open', $event)"
         @confirm="emit('confirm')"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, InfiniteScroll, router, usePage } from '@inertiajs/vue3';
-import { ListPlus } from 'lucide-vue-next';
+import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
+import { ListPlus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
@@ -14,6 +14,7 @@ import { useViewMode } from '@/composables/useViewMode';
 import {
     index as bookmarksIndex,
     show as showBookmark,
+    trash as bookmarksTrash,
 } from '@/routes/team/bookmarks';
 import type { BookmarkItem, PaginatedData, Team } from '@/types';
 
@@ -91,6 +92,17 @@ defineOptions({
 
             <div class="space-y-4">
                 <div class="flex items-center justify-end gap-2">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        title="Trash"
+                        as-child
+                    >
+                        <Link :href="bookmarksTrash(currentTeamSlug).url">
+                            <Trash2 class="h-4 w-4" />
+                        </Link>
+                    </Button>
+
                     <CreateBookmarkDialog ref="createDialogRef">
                         <template #trigger>
                             <Button

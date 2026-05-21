@@ -61,6 +61,7 @@ Route::prefix('{current_team}')
         Route::delete('tags', [RecordTagController::class, 'destroy'])->middleware('throttle:60,1')->name('team.tags.destroy');
 
         Route::get('calendar', [CalendarPageController::class, 'index'])->name('team.calendar.index');
+        Route::get('calendar/trash', [CalendarPageController::class, 'trash'])->name('team.calendar.trash');
         Route::get('calendar/events/{event}/edit', [CalendarPageController::class, 'edit'])
             ->whereNumber('event')
             ->name('team.calendar.events.edit');
@@ -71,8 +72,15 @@ Route::prefix('{current_team}')
         Route::delete('calendar/events/{event}', [CalendarEventController::class, 'destroy'])
             ->whereNumber('event')
             ->name('team.calendar.events.destroy');
+        Route::patch('calendar/events/{event}/restore', [CalendarEventController::class, 'restore'])
+            ->whereNumber('event')
+            ->name('team.calendar.events.restore');
+        Route::delete('calendar/events/{event}/force', [CalendarEventController::class, 'forceDestroy'])
+            ->whereNumber('event')
+            ->name('team.calendar.events.force-destroy');
 
         Route::get('contacts', [ContactPageController::class, 'index'])->name('team.contacts.index');
+        Route::get('contacts/trash', [ContactPageController::class, 'trash'])->name('team.contacts.trash');
         Route::get('contacts/{contact}', [ContactPageController::class, 'show'])
             ->whereNumber('contact')
             ->name('team.contacts.show');
@@ -83,8 +91,15 @@ Route::prefix('{current_team}')
         Route::delete('contacts/{contact}', [ContactController::class, 'destroy'])
             ->whereNumber('contact')
             ->name('team.contacts.destroy');
+        Route::patch('contacts/{contact}/restore', [ContactController::class, 'restore'])
+            ->whereNumber('contact')
+            ->name('team.contacts.restore');
+        Route::delete('contacts/{contact}/force', [ContactController::class, 'forceDestroy'])
+            ->whereNumber('contact')
+            ->name('team.contacts.force-destroy');
 
         Route::get('bookmarks', [BookmarkPageController::class, 'index'])->name('team.bookmarks.index');
+        Route::get('bookmarks/trash', [BookmarkPageController::class, 'trash'])->name('team.bookmarks.trash');
         Route::get('bookmarks/{bookmark}', [BookmarkPageController::class, 'show'])
             ->whereNumber('bookmark')
             ->name('team.bookmarks.show');
@@ -95,10 +110,17 @@ Route::prefix('{current_team}')
         Route::delete('bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])
             ->whereNumber('bookmark')
             ->name('team.bookmarks.destroy');
+        Route::patch('bookmarks/{bookmark}/restore', [BookmarkController::class, 'restore'])
+            ->whereNumber('bookmark')
+            ->name('team.bookmarks.restore');
+        Route::delete('bookmarks/{bookmark}/force', [BookmarkController::class, 'forceDestroy'])
+            ->whereNumber('bookmark')
+            ->name('team.bookmarks.force-destroy');
 
         Route::get('subscriptions/categories/candidates', [SubscriptionCategoryController::class, 'candidates'])->middleware('throttle:30,1')->name('team.subscriptions.categories.candidates');
 
         Route::get('subscriptions', [SubscriptionPageController::class, 'index'])->name('team.subscriptions.index');
+        Route::get('subscriptions/trash', [SubscriptionPageController::class, 'trash'])->name('team.subscriptions.trash');
         Route::get('subscriptions/{subscription}', [SubscriptionPageController::class, 'show'])
             ->whereNumber('subscription')
             ->name('team.subscriptions.show');
@@ -109,14 +131,28 @@ Route::prefix('{current_team}')
         Route::delete('subscriptions/{subscription}', [SubscriptionController::class, 'destroy'])
             ->whereNumber('subscription')
             ->name('team.subscriptions.destroy');
+        Route::patch('subscriptions/{subscription}/restore', [SubscriptionController::class, 'restore'])
+            ->whereNumber('subscription')
+            ->name('team.subscriptions.restore');
+        Route::delete('subscriptions/{subscription}/force', [SubscriptionController::class, 'forceDestroy'])
+            ->whereNumber('subscription')
+            ->name('team.subscriptions.force-destroy');
 
         Route::get('log', [LogPageController::class, 'index'])->name('team.log.index');
+        Route::get('log/trash', [LogPageController::class, 'trash'])->name('team.log.trash');
         Route::post('log', [LogEntryController::class, 'store'])->name('team.log.store');
         Route::delete('log/{logEntry}', [LogEntryController::class, 'destroy'])
             ->whereNumber('logEntry')
             ->name('team.log.destroy');
+        Route::patch('log/{logEntry}/restore', [LogEntryController::class, 'restore'])
+            ->whereNumber('logEntry')
+            ->name('team.log.restore');
+        Route::delete('log/{logEntry}/force', [LogEntryController::class, 'forceDestroy'])
+            ->whereNumber('logEntry')
+            ->name('team.log.force-destroy');
 
         Route::get('notes', [NotePageController::class, 'index'])->name('team.notes.index');
+        Route::get('notes/trash', [NotePageController::class, 'trash'])->name('team.notes.trash');
         Route::get('notes/{note}', [NotePageController::class, 'show'])
             ->whereNumber('note')
             ->name('team.notes.show');
@@ -127,8 +163,15 @@ Route::prefix('{current_team}')
         Route::delete('notes/{note}', [NoteController::class, 'destroy'])
             ->whereNumber('note')
             ->name('team.notes.destroy');
+        Route::patch('notes/{note}/restore', [NoteController::class, 'restore'])
+            ->whereNumber('note')
+            ->name('team.notes.restore');
+        Route::delete('notes/{note}/force', [NoteController::class, 'forceDestroy'])
+            ->whereNumber('note')
+            ->name('team.notes.force-destroy');
 
         Route::get('collections', [CollectionPageController::class, 'index'])->name('team.collections.index');
+        Route::get('collections/trash', [CollectionPageController::class, 'trash'])->name('team.collections.trash');
         Route::get('collections/{collection}', [CollectionPageController::class, 'show'])
             ->whereNumber('collection')
             ->name('team.collections.show');
@@ -139,11 +182,20 @@ Route::prefix('{current_team}')
         Route::delete('collections/{collection}', [CollectionController::class, 'destroy'])
             ->whereNumber('collection')
             ->name('team.collections.destroy');
+        Route::patch('collections/{collection}/restore', [CollectionController::class, 'restore'])
+            ->whereNumber('collection')
+            ->name('team.collections.restore');
+        Route::delete('collections/{collection}/force', [CollectionController::class, 'forceDestroy'])
+            ->whereNumber('collection')
+            ->name('team.collections.force-destroy');
 
         Route::get('tasks', [TaskPageController::class, 'index'])->name('team.tasks.index');
         Route::get('tasks/{project}', [TaskPageController::class, 'show'])
             ->whereNumber('project')
             ->name('team.tasks.show');
+        Route::get('tasks/{project}/trash', [TaskPageController::class, 'trash'])
+            ->whereNumber('project')
+            ->name('team.tasks.trash');
         Route::get('tasks/{project}/{task}/edit', [TaskPageController::class, 'edit'])
             ->whereNumber(['project', 'task'])
             ->name('team.tasks.edit');
@@ -167,6 +219,12 @@ Route::prefix('{current_team}')
         Route::delete('tasks/{task}', [TaskController::class, 'destroy'])
             ->whereNumber('task')
             ->name('team.tasks.destroy');
+        Route::patch('tasks/{task}/restore', [TaskController::class, 'restore'])
+            ->whereNumber('task')
+            ->name('team.tasks.restore');
+        Route::delete('tasks/{task}/force', [TaskController::class, 'forceDestroy'])
+            ->whereNumber('task')
+            ->name('team.tasks.force-destroy');
     });
 
 Route::middleware(['auth'])->group(function () {

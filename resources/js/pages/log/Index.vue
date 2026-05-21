@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /* eslint-disable max-lines */
-import { Head, InfiniteScroll, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import {
     CheckIcon,
     Clipboard,
@@ -31,7 +31,11 @@ import {
 } from '@/components/ui/tags-input';
 import { serializeLogEntry } from '@/lib/markdown-serializers';
 import { formatRelativeTime } from '@/lib/tasks';
-import { destroy as deleteEntry, index as logIndex } from '@/routes/team/log';
+import {
+    destroy as deleteEntry,
+    index as logIndex,
+    trash as logTrash,
+} from '@/routes/team/log';
 import type { LogEntryItem, PaginatedData, Team } from '@/types';
 
 type Props = {
@@ -343,7 +347,15 @@ defineOptions({
     <div
         class="flex h-[calc(100svh-4rem-16px)] min-h-0 flex-col overflow-hidden"
     >
-        <PageHeader title="Log" description="Quick notes and thoughts." />
+        <PageHeader title="Log" description="Quick notes and thoughts.">
+            <template #actions>
+                <Button variant="outline" size="icon" title="Trash" as-child>
+                    <Link :href="logTrash(currentTeamSlug).url">
+                        <Trash2 class="h-4 w-4" />
+                    </Link>
+                </Button>
+            </template>
+        </PageHeader>
 
         <div
             ref="scrollContainer"

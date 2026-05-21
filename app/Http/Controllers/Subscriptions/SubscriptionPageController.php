@@ -38,6 +38,20 @@ class SubscriptionPageController extends Controller
         ]);
     }
 
+    public function trash(Request $request, Team $currentTeam): Response
+    {
+        $subscriptions = Subscription::onlyTrashed()
+            ->whereBelongsTo($currentTeam)
+            ->with('subscriptionCategory')
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['name', 'description']))
+            ->orderByDesc('deleted_at')
+            ->simplePaginate(25);
+
+        return Inertia::render('subscriptions/Trash', [
+            'subscriptions' => Inertia::scroll($subscriptions->through(fn (Subscription $subscription): array => $this->formatSubscription($subscription, includeDeletedAt: true))),
+        ]);
+    }
+
     public function show(Request $request, Team $currentTeam, int $subscription): Response
     {
         $subscription = Subscription::query()
@@ -56,15 +70,15 @@ class SubscriptionPageController extends Controller
     }
 
     /**
-     * @return array{id: int, name: string, price?: float|null, currency?: string|null, billingCycle?: string|null, nextBillingDate?: string|null, url?: string|null, description?: string|null, notes?: string|null, isActive: bool, category?: string|null, createdAt?: string|null, updatedAt?: string|null}
+     * @return array{id: int, name: string, price?: float|null, currency?: string|null, billingCycle?: string|null, nextBillingDate?: string|null, url?: string|null, description?: string|null, notes?: string|null, isActive: bool, category?: string|null, createdAt?: string|null, updatedAt?: string|null, deletedAt?: string|null}
      */
-    private function formatSubscription(Subscription $subscription): array
+    private function formatSubscription(Subscription $subscription, bool $includeDeletedAt = false): array
     {
         $createdAt = $subscription->getAttribute('created_at');
         $updatedAt = $subscription->getAttribute('updated_at');
         $nextBillingDate = $subscription->getAttribute('next_billing_date');
 
-        return [
+        $payload = [
             'id' => $subscription->id,
             'name' => $subscription->name,
             'price' => $subscription->price,
@@ -86,6 +100,16 @@ class SubscriptionPageController extends Controller
                 ? $updatedAt->format(\DateTimeInterface::ATOM)
                 : null,
         ];
+
+        if ($includeDeletedAt) {
+            $deletedAt = $subscription->getAttribute('deleted_at');
+
+            $payload['deletedAt'] = $deletedAt instanceof \DateTimeInterface
+                ? $deletedAt->format(\DateTimeInterface::ATOM)
+                : null;
+        }
+
+        return $payload;
     }
 
     /**
