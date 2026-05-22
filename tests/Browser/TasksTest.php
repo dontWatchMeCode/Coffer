@@ -44,7 +44,29 @@ it('task project detail page can be rendered', function () {
 
     $this->actingAs($user);
 
-    visit('/'.$team->slug.'/tasks/'.$project->id)
+    $page = visit('/'.$team->slug.'/tasks/'.$project->id)
+        ->resize(1600, 900)
         ->assertSee('Mobile App')
         ->assertNoJavaScriptErrors();
+
+    $sidebarMetrics = $page->script(<<<'JS'
+        (() => {
+            const sidebar = document.querySelector('[data-testid="editor-sidebar"]');
+
+            if (!sidebar) {
+                return null;
+            }
+
+            const style = window.getComputedStyle(sidebar);
+
+            return {
+                overflowY: style.overflowY,
+                position: style.position,
+            };
+        })()
+    JS);
+
+    expect($sidebarMetrics)->not->toBeNull()
+        ->and($sidebarMetrics['position'])->toBe('sticky')
+        ->and($sidebarMetrics['overflowY'])->toBe('auto');
 });

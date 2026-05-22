@@ -56,6 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const slots = useSlots();
 
+const hasSidebarHeader = computed(() => Boolean(slots['sidebar-header']));
 const hasSidebarTop = computed(() => Boolean(slots['sidebar-top']));
 const hasMeta = computed(() => Boolean(props.createdBy || props.updatedAt));
 const hasActions = computed(() =>
@@ -78,18 +79,21 @@ const hasRecordTags = computed(() => props.recordTags !== null);
 
         <div
             v-if="
+                hasSidebarHeader ||
                 hasSidebarTop ||
                 hasMeta ||
                 hasActions ||
                 hasRecordLinks ||
                 hasRecordTags
             "
-            class="order-1 h-fit w-full shrink-0 overflow-hidden bg-background/60 pl-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
+            data-testid="editor-sidebar"
+            class="order-1 w-full shrink-0 bg-background/60 px-2 select-none xl:sticky xl:top-8 xl:order-2 xl:max-h-[calc(100svh-4rem)] xl:w-[280px] xl:self-start xl:overflow-y-auto xl:[scrollbar-gutter:stable]"
         >
-            <div
-                v-if="hasRecordTags && recordTags"
-                class="border-t py-6 first:border-t-0 first:pt-1"
-            >
+            <div v-if="hasSidebarHeader" class="py-6 first:pt-1">
+                <slot name="sidebar-header" />
+            </div>
+
+            <div v-if="hasRecordTags && recordTags" class="py-6 first:pt-1">
                 <RecordTagsPanel
                     :tags="recordTags.tags"
                     :context="recordTags.context"
@@ -97,10 +101,7 @@ const hasRecordTags = computed(() => props.recordTags !== null);
                 />
             </div>
 
-            <div
-                v-if="hasRecordLinks && recordLinks"
-                class="border-t py-6 first:border-t-0 first:pt-1"
-            >
+            <div v-if="hasRecordLinks && recordLinks" class="py-6 first:pt-1">
                 <RecordLinksPanel
                     :links="recordLinks.links"
                     :context="recordLinks.context"
@@ -111,7 +112,7 @@ const hasRecordTags = computed(() => props.recordTags !== null);
             <div
                 v-if="hasMeta"
                 :class="[
-                    'space-y-2 border-t first:border-t-0 first:pt-1',
+                    'space-y-2 first:pt-1',
                     hasSidebarTop ? 'pt-6 pb-2' : 'py-6',
                 ]"
             >
@@ -136,19 +137,12 @@ const hasRecordTags = computed(() => props.recordTags !== null);
 
             <div
                 v-if="hasSidebarTop"
-                :class="[
-                    'pb-6 first:border-t-0 first:pt-1',
-                    hasMeta ? 'pt-2' : 'py-6',
-                    !hasMeta && 'border-t',
-                ]"
+                :class="['pb-6 first:pt-1', hasMeta ? 'pt-2' : 'py-6']"
             >
                 <slot name="sidebar-top" />
             </div>
 
-            <div
-                v-if="hasActions"
-                class="space-y-2 border-t py-6 first:border-t-0 first:pt-1"
-            >
+            <div v-if="hasActions" class="space-y-2 py-6 first:pt-1">
                 <Button
                     v-if="onSave"
                     size="sm"

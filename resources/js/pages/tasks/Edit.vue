@@ -143,6 +143,7 @@ function handleCopyAsMarkdown(): void {
         <!-- Content -->
         <div class="flex-1 px-4 py-6">
             <EditorSidebarLayout
+                variant="compact"
                 :created-by="task.creatorName"
                 :updated-at="task.updatedAt"
                 :on-delete="() => (deleteDialogOpen = true)"

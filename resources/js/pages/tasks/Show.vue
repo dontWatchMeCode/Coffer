@@ -5,13 +5,12 @@ import type { AcceptableValue } from 'reka-ui';
 import { computed, ref } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
+import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import CreateTaskDialog from '@/components/pages/tasks/CreateTaskDialog.vue';
 import ProjectSettingsDialog from '@/components/pages/tasks/ProjectSettingsDialog.vue';
 import TaskList from '@/components/pages/tasks/TaskList.vue';
-import RecordLinksPanel from '@/components/record-links/RecordLinksPanel.vue';
-import RecordTagsPanel from '@/components/record-tags/RecordTagsPanel.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -141,9 +140,12 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
     </PageHeader>
 
     <div class="flex-1 px-4 py-6">
-        <div class="mx-auto max-w-7xl">
-            <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
-                <div class="order-2 min-w-0 flex-1 flex-col xl:order-1">
+        <EditorSidebarLayout
+            :record-links="recordLinks"
+            :record-tags="recordTags"
+        >
+            <template #main>
+                <div>
                     <div class="mb-4 flex items-center justify-end">
                         <SearchInput
                             v-model="searchQuery"
@@ -169,64 +171,52 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                         />
                     </InfiniteScroll>
                 </div>
+            </template>
 
-                <div
-                    class="order-1 h-fit w-full shrink-0 space-y-4 select-none xl:sticky xl:top-4 xl:order-2 xl:w-[280px]"
-                >
-                    <div class="flex items-center justify-end gap-2">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            title="Trash"
-                            as-child
+            <template #sidebar-header>
+                <div class="flex items-center justify-end gap-2">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        title="Trash"
+                        as-child
+                    >
+                        <Link
+                            :href="
+                                tasksTrash({
+                                    current_team: currentTeamSlug,
+                                    project: project.id,
+                                }).url
+                            "
                         >
-                            <Link
-                                :href="
-                                    tasksTrash({
-                                        current_team: currentTeamSlug,
-                                        project: project.id,
-                                    }).url
-                                "
-                            >
-                                <Trash2 class="h-4 w-4" />
-                            </Link>
-                        </Button>
+                            <Trash2 class="h-4 w-4" />
+                        </Link>
+                    </Button>
 
-                        <ProjectSettingsDialog :project="project">
-                            <template #trigger>
-                                <Button size="icon" title="Project settings">
-                                    <Settings class="h-4 w-4" />
-                                </Button>
-                            </template>
-                        </ProjectSettingsDialog>
+                    <ProjectSettingsDialog :project="project">
+                        <template #trigger>
+                            <Button size="icon" title="Project settings">
+                                <Settings class="h-4 w-4" />
+                            </Button>
+                        </template>
+                    </ProjectSettingsDialog>
 
-                        <CreateTaskDialog
-                            :project="project"
-                            :members="members"
-                            :statuses="statuses"
-                        >
-                            <template #trigger>
-                                <Button size="icon" title="Create task">
-                                    <ListPlus class="h-4 w-4" />
-                                </Button>
-                            </template>
-                        </CreateTaskDialog>
-                    </div>
+                    <CreateTaskDialog
+                        :project="project"
+                        :members="members"
+                        :statuses="statuses"
+                    >
+                        <template #trigger>
+                            <Button size="icon" title="Create task">
+                                <ListPlus class="h-4 w-4" />
+                            </Button>
+                        </template>
+                    </CreateTaskDialog>
+                </div>
+            </template>
 
-                    <RecordTagsPanel
-                        v-if="recordTags"
-                        :tags="recordTags.tags"
-                        :context="recordTags.context"
-                        :endpoints="recordTags.endpoints"
-                    />
-
-                    <RecordLinksPanel
-                        v-if="recordLinks"
-                        :links="recordLinks.links"
-                        :context="recordLinks.context"
-                        :endpoints="recordLinks.endpoints"
-                    />
-
+            <template #sidebar-top>
+                <div class="space-y-4">
                     <ActivityHistoryPanel
                         v-if="activityHistory"
                         :config="activityHistory"
@@ -253,7 +243,7 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </template>
+        </EditorSidebarLayout>
     </div>
 </template>
