@@ -18,6 +18,7 @@ use App\Http\Controllers\Notes\NoteController;
 use App\Http\Controllers\Notes\NotePageController;
 use App\Http\Controllers\RecordLinkController;
 use App\Http\Controllers\RecordTagController;
+use App\Http\Controllers\Search\SearchPageController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Subscriptions\SubscriptionCategoryController;
 use App\Http\Controllers\Subscriptions\SubscriptionController;
@@ -44,6 +45,7 @@ Route::prefix('{current_team}')
     ->group(function () {
         Route::get('dashboard', DashboardController::class)->name('team.dashboard');
         Route::get('search', SearchController::class)->middleware('throttle:30,1')->name('team.search');
+        Route::get('search/page', SearchPageController::class)->middleware('throttle:30,1')->name('team.search.page');
 
         Route::get('mcp', [ApiTokenPageController::class, 'index'])->name('team.mcp.index');
         Route::post('mcp', [ApiTokenController::class, 'store'])->middleware('throttle:10,1')->name('team.mcp.store');

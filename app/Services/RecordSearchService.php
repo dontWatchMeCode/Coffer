@@ -25,7 +25,7 @@ class RecordSearchService
     /**
      * @return array<string, array<int, array{id: int, title: string, subtitle: string|null, url: string}>>
      */
-    public function global(Team $currentTeam, string $rawQuery): array
+    public function global(Team $currentTeam, string $rawQuery, int $limit = 10): array
     {
         [$query, $scopes, $tagSlug] = $this->parseSearchPrefix($rawQuery, RecordSearchRegistry::globalPrefixMap());
 
@@ -41,7 +41,25 @@ class RecordSearchService
             $globalKey = $definition['global'];
 
             if (in_array($globalKey, $scopes, true)) {
-                $results[$globalKey] = $this->globalResultsForDefinition($currentTeam, $definition, $like, $tagSlug);
+                $results[$globalKey] = $this->globalResultsForDefinition($currentTeam, $definition, $like, $tagSlug, $limit);
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * @return array<string, array<int, array{id: int, title: string, subtitle: string|null, url: string}>>
+     */
+    public function browse(Team $currentTeam, string $type, int $limit = 50): array
+    {
+        $results = $this->emptyGlobalResults();
+
+        foreach (RecordSearchRegistry::definitions() as $definition) {
+            if ($definition['global'] === $type) {
+                $results[$type] = $this->globalResultsForDefinition($currentTeam, $definition, null, null, $limit);
+
+                break;
             }
         }
 
@@ -102,10 +120,10 @@ class RecordSearchService
      * @param  array{class: class-string<Model>, columns: list<string>, order: string}  $definition
      * @return array<int, array{id: int, title: string, subtitle: string|null, url: string}>
      */
-    private function globalResultsForDefinition(Team $currentTeam, array $definition, ?string $like, ?string $tagSlug): array
+    private function globalResultsForDefinition(Team $currentTeam, array $definition, ?string $like, ?string $tagSlug, int $limit = 10): array
     {
         return $this->baseSearchQuery($currentTeam, $definition, $like, $tagSlug)
-            ->limit(10)
+            ->limit($limit)
             ->get()
             ->map(fn (Model $model): array => [
                 'id' => (int) $model->getKey(),

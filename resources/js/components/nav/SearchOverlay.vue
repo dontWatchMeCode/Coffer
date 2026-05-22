@@ -7,12 +7,14 @@ import {
     CreditCard,
     FileText,
     FolderGit2,
+    Layers3,
     ListTodo,
     ScrollText,
     Search,
 } from 'lucide-vue-next';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import SearchPrefixTooltip from '@/components/search/SearchPrefixTooltip.vue';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -37,6 +39,7 @@ type SearchResponse = {
     bookmarks: SearchResultItem[];
     subscriptions: SearchResultItem[];
     notes: SearchResultItem[];
+    collections: SearchResultItem[];
     log_entries: SearchResultItem[];
 };
 
@@ -53,6 +56,7 @@ const emptyResults: SearchResponse = {
     bookmarks: [],
     subscriptions: [],
     notes: [],
+    collections: [],
     log_entries: [],
 };
 const results = ref<SearchResponse>({ ...emptyResults });
@@ -89,6 +93,10 @@ const allResults = computed(() => [
         ...item,
         type: 'note' as const,
     })),
+    ...results.value.collections.map((item) => ({
+        ...item,
+        type: 'collection' as const,
+    })),
     ...results.value.log_entries.map((item) => ({
         ...item,
         type: 'log_entry' as const,
@@ -96,6 +104,23 @@ const allResults = computed(() => [
 ]);
 
 const hasResults = computed(() => allResults.value.length > 0);
+
+const searchPageUrl = computed(() => {
+    if (!currentTeamSlug.value) {
+        return '';
+    }
+
+    const q = query.value.trim();
+
+    return q
+        ? `/${currentTeamSlug.value}/search/page?q=${encodeURIComponent(q)}`
+        : `/${currentTeamSlug.value}/search/page`;
+});
+
+function goToSearchPage(): void {
+    open.value = false;
+    router.visit(searchPageUrl.value);
+}
 
 const categories: {
     key: keyof SearchResponse;
@@ -109,6 +134,7 @@ const categories: {
     { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
     { key: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
     { key: 'notes', label: 'Notes', icon: FileText },
+    { key: 'collections', label: 'Collections', icon: Layers3 },
     { key: 'log_entries', label: 'Log', icon: ScrollText },
 ];
 
@@ -144,6 +170,8 @@ watch(query, (newQuery) => {
 
             if (response.ok) {
                 results.value = await response.json();
+            } else {
+                results.value = { ...emptyResults };
             }
         } catch {
             results.value = { ...emptyResults };
@@ -165,7 +193,13 @@ watch(open, (isOpen) => {
 function onGlobalKeyDown(event: KeyboardEvent): void {
     if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
         event.preventDefault();
-        open.value = true;
+
+        if (open.value) {
+            open.value = false;
+            router.visit(searchPageUrl.value);
+        } else {
+            open.value = true;
+        }
     }
 }
 
@@ -379,12 +413,30 @@ function getResultIndex(
                         >
                         to select
                     </span>
+                    <span class="flex items-center gap-1">
+                        <kbd
+                            class="rounded border bg-muted px-1.5 py-0.5 font-mono"
+                            >Ctrl+K</kbd
+                        >
+                        full page
+                    </span>
                 </div>
-                <span v-if="hasResults" class="tabular-nums">
-                    {{ allResults.length }} result{{
-                        allResults.length === 1 ? '' : 's'
-                    }}
-                </span>
+                <div class="flex items-center gap-3">
+                    <Button
+                        v-if="query.trim()"
+                        variant="ghost"
+                        size="sm"
+                        class="h-6 text-xs"
+                        @click="goToSearchPage"
+                    >
+                        View all
+                    </Button>
+                    <span v-if="hasResults" class="tabular-nums">
+                        {{ allResults.length }} result{{
+                            allResults.length === 1 ? '' : 's'
+                        }}
+                    </span>
+                </div>
             </div>
         </DialogContent>
     </Dialog>
