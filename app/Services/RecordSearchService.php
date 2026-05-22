@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Concerns\EscapesLikeWildcards;
+use App\Concerns\HasRecordTags;
 use App\Concerns\ParsesSearchPrefixes;
 use App\Contracts\LinkableRecord;
 use App\Models\CalendarEvent;
@@ -26,21 +27,21 @@ class RecordSearchService
      */
     public function global(Team $currentTeam, string $rawQuery): array
     {
-        [$query, $scopes] = $this->parseSearchPrefix($rawQuery, RecordSearchRegistry::globalPrefixMap());
+        [$query, $scopes, $tagSlug] = $this->parseSearchPrefix($rawQuery, RecordSearchRegistry::globalPrefixMap());
 
         $results = $this->emptyGlobalResults();
 
-        if ($query === '') {
+        if ($query === '' && $tagSlug === null) {
             return $results;
         }
 
-        $like = $this->likePattern($query);
+        $like = $query !== '' ? $this->likePattern($query) : null;
 
         foreach (RecordSearchRegistry::definitions() as $definition) {
             $globalKey = $definition['global'];
 
             if (in_array($globalKey, $scopes, true)) {
-                $results[$globalKey] = $this->globalResultsForDefinition($currentTeam, $definition, $like);
+                $results[$globalKey] = $this->globalResultsForDefinition($currentTeam, $definition, $like, $tagSlug);
             }
         }
 
@@ -52,14 +53,14 @@ class RecordSearchService
      */
     public function linkableCandidates(Team $currentTeam, LinkableRecord $from, string $rawQuery): array
     {
-        [$query, $scopes] = $this->parseSearchPrefix($rawQuery, RecordSearchRegistry::linkablePrefixMap());
+        [$query, $scopes, $tagSlug] = $this->parseSearchPrefix($rawQuery, RecordSearchRegistry::linkablePrefixMap());
 
-        if ($query === '') {
+        if ($query === '' && $tagSlug === null) {
             return [];
         }
 
         $linkedIds = $this->linkedIds($from, $currentTeam->id);
-        $like = $this->likePattern($query);
+        $like = $query !== '' ? $this->likePattern($query) : null;
         $records = [];
 
         foreach (RecordSearchRegistry::definitions() as $alias => $definition) {
@@ -74,7 +75,7 @@ class RecordSearchService
                 $excludeIds[] = (int) $from->getKey();
             }
 
-            $models = $this->baseSearchQuery($currentTeam, $definition, $like)
+            $models = $this->baseSearchQuery($currentTeam, $definition, $like, $tagSlug)
                 ->when($excludeIds !== [], fn (Builder $query) => $query->whereNotIn('id', array_unique($excludeIds)))
                 ->limit(20)
                 ->get();
@@ -101,9 +102,9 @@ class RecordSearchService
      * @param  array{class: class-string<Model>, columns: list<string>, order: string}  $definition
      * @return array<int, array{id: int, title: string, subtitle: string|null, url: string}>
      */
-    private function globalResultsForDefinition(Team $currentTeam, array $definition, string $like): array
+    private function globalResultsForDefinition(Team $currentTeam, array $definition, ?string $like, ?string $tagSlug): array
     {
-        return $this->baseSearchQuery($currentTeam, $definition, $like)
+        return $this->baseSearchQuery($currentTeam, $definition, $like, $tagSlug)
             ->limit(10)
             ->get()
             ->map(fn (Model $model): array => [
@@ -121,18 +122,28 @@ class RecordSearchService
      * @param  array{class: class-string<Model>, columns: list<string>, order: string}  $definition
      * @return Builder<Model>
      */
-    private function baseSearchQuery(Team $currentTeam, array $definition, string $like): Builder
+    private function baseSearchQuery(Team $currentTeam, array $definition, ?string $like, ?string $tagSlug = null): Builder
     {
         $class = $definition['class'];
+        $teamId = $currentTeam->id;
 
         return $class::query()
             ->whereBelongsTo($currentTeam)
             ->when($class === Note::class, fn ($q) => $q->with('blocks'))
-            ->where(function (Builder $query) use ($definition, $like): void {
-                foreach ($definition['columns'] as $index => $column) {
-                    $index === 0
-                        ? $query->where($column, 'like', $like)
-                        : $query->orWhere($column, 'like', $like);
+            ->when($like !== null, function (Builder $query) use ($definition, $like): void {
+                $query->where(function (Builder $query) use ($definition, $like): void {
+                    foreach ($definition['columns'] as $index => $column) {
+                        $index === 0
+                            ? $query->where($column, 'like', $like)
+                            : $query->orWhere($column, 'like', $like);
+                    }
+                });
+            })
+            ->when($tagSlug !== null, function (Builder $query) use ($class, $tagSlug, $teamId): void {
+                if (in_array(HasRecordTags::class, class_uses_recursive($class))) {
+                    $query->whereHas('recordTags', fn (Builder $q) => $q->where('tags.slug', $tagSlug)->where('tags.team_id', $teamId));
+                } else {
+                    $query->whereRaw('1 = 0');
                 }
             })
             ->orderBy($definition['order']);

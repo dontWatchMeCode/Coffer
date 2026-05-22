@@ -34,8 +34,10 @@ trait GeneratesUniqueTeamSlugs
                     return 0;
                 }
 
-                if (preg_match('/^'.preg_quote($defaultSlug, '/').'-(\d+)$/', $slug, $matches)) {
-                    return (int) $matches[1];
+                $suffix = Str::after($slug, $defaultSlug.'-');
+
+                if (str_starts_with($slug, $defaultSlug.'-') && ctype_digit($suffix)) {
+                    return (int) $suffix;
                 }
 
                 return null;

@@ -72,6 +72,14 @@ const props = withDefaults(
                         </kbd>
                         <span>{{ item.label }}</span>
                     </div>
+                    <div class="mt-1 flex items-center gap-2 border-t pt-1">
+                        <kbd
+                            class="rounded border border-current/30 px-1 py-0.5 font-mono"
+                        >
+                            #tag
+                        </kbd>
+                        <span>Filter by tag</span>
+                    </div>
                 </div>
             </TooltipContent>
         </Tooltip>

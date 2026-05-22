@@ -7,6 +7,7 @@ use App\Models\LogEntry;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
+use App\Models\Tag;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
@@ -433,4 +434,153 @@ test('prefix-only empty query returns empty results', function () {
         ->assertJsonCount(0, 'projects')
         ->assertJsonCount(0, 'bookmarks')
         ->assertJsonCount(0, 'collections');
+});
+
+test('tag filter returns records with matching tag', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $tag = Tag::factory()->create(['team_id' => $team->id, 'name' => 'Urgent', 'slug' => 'urgent']);
+
+    $taggedTask = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'Tagged task',
+    ]);
+    $taggedTask->recordTags()->attach($tag);
+
+    $untaggedTask = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'Other task',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => '#urgent']))
+        ->assertOk()
+        ->assertJsonCount(1, 'tasks')
+        ->assertJsonPath('tasks.0.title', 'Tagged task');
+});
+
+test('tag filter works alongside text query', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $tag = Tag::factory()->create(['team_id' => $team->id, 'name' => 'Work', 'slug' => 'work']);
+
+    $matchingTask = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'Deploy project',
+    ]);
+    $matchingTask->recordTags()->attach($tag);
+
+    $nonMatchingTask = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'Deploy something',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'Deploy #work']))
+        ->assertOk()
+        ->assertJsonCount(1, 'tasks')
+        ->assertJsonPath('tasks.0.title', 'Deploy project');
+});
+
+test('tag filter works with prefix search', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $tag = Tag::factory()->create(['team_id' => $team->id, 'name' => 'Bug', 'slug' => 'bug']);
+
+    $taggedTask = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'Fix issue',
+    ]);
+    $taggedTask->recordTags()->attach($tag);
+
+    $taggedBookmark = Bookmark::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Bug report link',
+    ]);
+    $taggedBookmark->recordTags()->attach($tag);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 't: #bug']))
+        ->assertOk()
+        ->assertJsonCount(1, 'tasks')
+        ->assertJsonCount(0, 'bookmarks');
+});
+
+test('tag filter does not return records from other teams', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $otherTeam = Team::factory()->create();
+
+    $otherTag = Tag::factory()->create(['team_id' => $otherTeam->id, 'name' => 'Secret', 'slug' => 'secret']);
+
+    $otherTask = Task::factory()->create([
+        'team_id' => $otherTeam->id,
+        'project_id' => Project::factory()->create(['team_id' => $otherTeam->id]),
+        'title' => 'Secret task',
+    ]);
+    $otherTask->recordTags()->attach($otherTag);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => '#secret']))
+        ->assertOk()
+        ->assertJsonCount(0, 'tasks');
+});
+
+test('tag filter across multiple record types', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $tag = Tag::factory()->create(['team_id' => $team->id, 'name' => 'Important', 'slug' => 'important']);
+
+    $taggedTask = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'Important task',
+    ]);
+    $taggedTask->recordTags()->attach($tag);
+
+    $taggedNote = Note::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Important note',
+    ]);
+    $taggedNote->recordTags()->attach($tag);
+
+    $untaggedTask = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'Regular task',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => '#important']))
+        ->assertOk()
+        ->assertJsonCount(1, 'tasks')
+        ->assertJsonPath('tasks.0.title', 'Important task')
+        ->assertJsonCount(1, 'notes')
+        ->assertJsonPath('notes.0.title', 'Important note');
+});
+
+test('tag filter returns empty for models without tags', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $tag = Tag::factory()->create(['team_id' => $team->id, 'name' => 'Important', 'slug' => 'important']);
+
+    LogEntry::factory()->create([
+        'team_id' => $team->id,
+        'body' => 'Important log entry',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => '#important']))
+        ->assertOk()
+        ->assertJsonCount(0, 'log_entries');
 });

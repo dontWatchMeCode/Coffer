@@ -252,7 +252,7 @@ function getResultIndex(
                     ref="inputRef"
                     data-testid="global-search-input"
                     v-model="query"
-                    placeholder="Search tasks, contacts, events, projects, bookmarks, subscriptions, notes, log..."
+                    placeholder="Search tasks, contacts, events... use #tag to filter by tag"
                     class="h-12 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
                 />
                 <SearchPrefixTooltip class="ml-2 shrink-0" />
