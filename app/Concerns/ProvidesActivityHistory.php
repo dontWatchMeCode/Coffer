@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace App\Concerns;
 
 use App\Models\RecordLink;
+use App\Models\Task;
+use App\Models\User;
 use App\Services\ActivitySignificance;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Models\Activity;
 
 trait ProvidesActivityHistory
 {
+    /** @var list<string> */
+    private const ATTRIBUTE_CHANGE_SIDES = ['old', 'attributes'];
+
     /**
      * Build a paginated activity history payload for JSON responses.
      *
@@ -25,9 +30,7 @@ trait ProvidesActivityHistory
             ->paginate($perPage, ['*'], 'page', $page);
 
         return [
-            'activities' => $paginator->getCollection()
-                ->map(fn (Activity $activity): array => $this->buildActivityItem($activity))
-                ->all(),
+            'activities' => $this->buildActivityItems($paginator->getCollection()),
             'total' => $paginator->total(),
             'has_more' => $paginator->hasMorePages(),
         ];
@@ -61,20 +64,156 @@ trait ProvidesActivityHistory
             ->with('causer')
             ->orderByDesc('id')
             ->get()
-            ->mapToGroups(fn (Activity $activity): array => [
-                (int) $activity->subject_id => $this->buildActivityItem($activity),
-            ])
-            ->map(fn ($items) => $items->values()->all())
+            ->pipe(fn ($activities): array => $this->groupedActivityItemsBySubject($activities));
+    }
+
+    /**
+     * @param  iterable<int, Activity>  $activities
+     * @return array<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}>
+     */
+    protected function buildActivityItems(iterable $activities): array
+    {
+        $activities = collect($activities)->values();
+        $context = $this->taskAssigneeDisplayContext($activities);
+
+        return $activities
+            ->map(fn (Activity $activity): array => $this->buildActivityItem($activity, $context['userNamesById'], $context['taskMorphClass']))
+            ->values()
             ->all();
     }
 
     /**
-     * @return array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}
+     * @param  iterable<int, Activity>  $activities
+     * @return array{taskMorphClass: string, userNamesById: array<int, string>}
      */
-    protected function buildActivityItem(Activity $activity): array
+    protected function taskAssigneeDisplayContext(iterable $activities): array
+    {
+        $taskMorphClass = (new Task)->getMorphClass();
+
+        return [
+            'taskMorphClass' => $taskMorphClass,
+            'userNamesById' => $this->userNamesForTaskAssigneeChanges($activities, $taskMorphClass),
+        ];
+    }
+
+    /**
+     * @param  iterable<int, Activity>  $activities
+     * @return array<int, string>
+     */
+    protected function userNamesForTaskAssigneeChanges(iterable $activities, string $taskMorphClass): array
+    {
+        $userIds = collect($activities)
+            ->filter(fn (Activity $activity): bool => $activity->subject_type === $taskMorphClass)
+            ->flatMap(fn (Activity $activity): array => $this->taskAssigneeChangeUserIds($activity))
+            ->unique()
+            ->values();
+
+        if ($userIds->isEmpty()) {
+            return [];
+        }
+
+        return User::query()
+            ->whereKey($userIds->all())
+            ->pluck('name', 'id')
+            ->mapWithKeys(fn (string $name, int|string $id): array => [(int) $id => $name])
+            ->all();
+    }
+
+    /**
+     * @return list<int>
+     */
+    protected function taskAssigneeChangeUserIds(Activity $activity): array
     {
         $changes = $activity->attribute_changes?->toArray() ?? [];
+        $ids = [];
+
+        foreach (self::ATTRIBUTE_CHANGE_SIDES as $side) {
+            $value = $changes[$side]['assigned_to'] ?? null;
+
+            if (is_int($value) || (is_string($value) && ctype_digit($value))) {
+                $ids[] = (int) $value;
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * @param  array<string, mixed>  $changes
+     * @param  array<int, string>  $userNamesById
+     * @return array<string, mixed>
+     */
+    protected function replaceTaskAssigneeIds(Activity $activity, array $changes, array $userNamesById, string $taskMorphClass): array
+    {
+        if ($activity->subject_type !== $taskMorphClass) {
+            return $changes;
+        }
+
+        foreach (self::ATTRIBUTE_CHANGE_SIDES as $side) {
+            if (! is_array($changes[$side] ?? null)) {
+                continue;
+            }
+
+            if (! array_key_exists('assigned_to', $changes[$side])) {
+                continue;
+            }
+
+            $changes[$side]['assigned_to'] = $this->displayTaskAssignee($changes[$side]['assigned_to'], $userNamesById);
+        }
+
+        return $changes;
+    }
+
+    /**
+     * @param  array<int, string>  $userNamesById
+     */
+    protected function displayTaskAssignee(mixed $value, array $userNamesById): string
+    {
+        if (in_array($value, [null, '', 0, '0'], true)) {
+            return 'Unassigned';
+        }
+
+        if (is_int($value) || (is_string($value) && ctype_digit($value))) {
+            $userId = (int) $value;
+
+            return $userNamesById[$userId] ?? 'User #'.$userId;
+        }
+
+        return is_string($value) ? $value : (json_encode($value) ?: '');
+    }
+
+    /**
+     * @param  iterable<int, Activity>  $activities
+     * @return array<int, array<int, array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}>>
+     */
+    protected function groupedActivityItemsBySubject(iterable $activities): array
+    {
+        $activities = collect($activities)->values();
+        $context = $this->taskAssigneeDisplayContext($activities);
+        $grouped = [];
+
+        foreach ($activities as $activity) {
+            $grouped[(int) $activity->subject_id][] = $this->buildActivityItem($activity, $context['userNamesById'], $context['taskMorphClass']);
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * @param  array<int, string>  $userNamesById
+     * @return array{id: int, event: string|null, description: string, changedFields: array<int, string>, causerName: string|null, createdAt: string, old: array<string, mixed>|null, attributes: array<string, mixed>|null, relationChanges: array<string, mixed>|null, blockChanges: array<string, mixed>|null}
+     */
+    protected function buildActivityItem(Activity $activity, array $userNamesById = [], ?string $taskMorphClass = null): array
+    {
+        if ($taskMorphClass === null) {
+            $context = $this->taskAssigneeDisplayContext([$activity]);
+            $taskMorphClass = $context['taskMorphClass'];
+            $userNamesById = $userNamesById === [] ? $context['userNamesById'] : $userNamesById;
+        }
+
+        $changes = $activity->attribute_changes?->toArray() ?? [];
         $changes = ActivitySignificance::filterAttributeChanges($changes);
+        $changes = $this->replaceTaskAssigneeIds($activity, $changes, $userNamesById, $taskMorphClass);
 
         $attributes = is_array($changes['attributes'] ?? null) ? $changes['attributes'] : [];
         $changedFields = array_values(array_filter(array_keys($attributes), is_string(...)));

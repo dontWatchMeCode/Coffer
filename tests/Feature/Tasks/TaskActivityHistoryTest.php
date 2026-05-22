@@ -78,6 +78,114 @@ test('task field changes are logged', function () {
         ->and($activities->first()->event)->toBe('updated');
 });
 
+test('task assignee changes display user names in activity history', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $oldAssignee = User::factory()->create(['name' => 'Old Assignee']);
+    $newAssignee = User::factory()->create(['name' => 'New Assignee']);
+
+    $team->members()->attach($oldAssignee, ['role' => 'member']);
+    $team->members()->attach($newAssignee, ['role' => 'member']);
+
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->assignedTo($oldAssignee)->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+
+    actingAs($user)
+        ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            'assigned_to' => $newAssignee->id,
+        ])
+        ->assertRedirect();
+
+    actingAs($user)
+        ->getJson(route('team.activity-history.index', [
+            'current_team' => $team,
+            'subject_type' => 'task',
+            'subject_id' => $task->id,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('activities.0.event', 'updated')
+        ->assertJsonPath('activities.0.old.assigned_to', 'Old Assignee')
+        ->assertJsonPath('activities.0.attributes.assigned_to', 'New Assignee');
+});
+
+test('task assignee history displays unassigned before assigning a user', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $assignee = User::factory()->create(['name' => 'Assigned User']);
+
+    $team->members()->attach($assignee, ['role' => 'member']);
+
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'assigned_to' => null,
+    ]);
+
+    actingAs($user)
+        ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            'assigned_to' => $assignee->id,
+        ])
+        ->assertRedirect();
+
+    actingAs($user)
+        ->getJson(route('team.activity-history.index', [
+            'current_team' => $team,
+            'subject_type' => 'task',
+            'subject_id' => $task->id,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('activities.0.old.assigned_to', 'Unassigned')
+        ->assertJsonPath('activities.0.attributes.assigned_to', 'Assigned User');
+});
+
+test('task assignee history falls back when a user no longer exists', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $oldAssignee = User::factory()->create(['name' => 'Old Assignee']);
+    $newAssignee = User::factory()->create(['name' => 'New Assignee']);
+
+    $team->members()->attach($oldAssignee, ['role' => 'member']);
+    $team->members()->attach($newAssignee, ['role' => 'member']);
+
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->assignedTo($oldAssignee)->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+
+    actingAs($user)
+        ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            'assigned_to' => $newAssignee->id,
+        ])
+        ->assertRedirect();
+
+    $missingUserId = User::query()->max('id') + 1000;
+    $activity = $task->activitiesAsSubject()
+        ->where('event', 'updated')
+        ->orderByDesc('id')
+        ->firstOrFail();
+    $changes = $activity->attribute_changes?->toArray() ?? [];
+    $changes['attributes']['assigned_to'] = $missingUserId;
+
+    $activity->update(['attribute_changes' => $changes]);
+
+    actingAs($user)
+        ->getJson(route('team.activity-history.index', [
+            'current_team' => $team,
+            'subject_type' => 'task',
+            'subject_id' => $task->id,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('activities.0.attributes.assigned_to', 'User #'.$missingUserId);
+});
+
 test('task completed_at is not logged separately', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
