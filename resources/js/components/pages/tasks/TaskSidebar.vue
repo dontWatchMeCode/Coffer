@@ -1,14 +1,12 @@
 <script setup lang="ts">
-/* eslint-disable max-lines */
 import { router } from '@inertiajs/vue3';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, ref, watch } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/Tasks/TaskController';
-import DeleteTaskDialog from '@/components/pages/tasks/DeleteTaskDialog.vue';
+import TaskProgressField from '@/components/pages/tasks/TaskProgressField.vue';
+import TaskProjectActions from '@/components/pages/tasks/TaskProjectActions.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -122,33 +120,6 @@ watch(
 );
 
 const statusMeta = computed(() => getTaskStatusMeta(selectedStatus.value));
-
-const progressMarkers = Array.from({ length: 11 }, (_, index) => index * 10);
-
-function progressMarkerPosition(marker: number): string {
-    if (marker === 0) {
-        return '0.1875rem';
-    }
-
-    if (marker === 100) {
-        return 'calc(100% - 0.1875rem)';
-    }
-
-    return `${marker}%`;
-}
-
-function progressFillWidth(progress: number): string {
-    if (progress <= 0) {
-        return '0%';
-    }
-
-    if (progress >= 100) {
-        return '100%';
-    }
-
-    return `calc(${progress}% + 0.1875rem)`;
-}
-
 const taskReloadOnly = ['task'];
 
 const assignee = computed(() => {
@@ -515,58 +486,10 @@ function deleteTask(): void {
 
         <Separator v-if="showCreatorMeta" />
 
-        <div>
-            <h3
-                class="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-            >
-                Progress
-            </h3>
-            <div class="mb-3 flex items-center gap-2">
-                <div
-                    class="group relative h-2 flex-1 overflow-hidden rounded-full bg-muted"
-                >
-                    <div
-                        class="pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                        <div
-                            v-for="marker in progressMarkers"
-                            :key="marker"
-                            class="absolute top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/20"
-                            :style="{ left: progressMarkerPosition(marker) }"
-                        />
-                    </div>
-                    <div
-                        class="absolute inset-y-0 left-0 z-10 rounded-full bg-primary transition-all"
-                        :style="{
-                            width: progressFillWidth(selectedProgress),
-                        }"
-                    />
-                    <input
-                        :value="selectedProgress"
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="10"
-                        class="absolute inset-0 z-20 h-2 w-full cursor-pointer appearance-none bg-transparent opacity-0"
-                        @input="
-                            selectedProgress = Number(
-                                ($event.target as HTMLInputElement).value,
-                            )
-                        "
-                        @change="
-                            updateProgress(
-                                Number(
-                                    ($event.target as HTMLInputElement).value,
-                                ),
-                            )
-                        "
-                    />
-                </div>
-                <span class="w-10 text-right text-sm leading-none"
-                    >{{ selectedProgress }}%</span
-                >
-            </div>
-        </div>
+        <TaskProgressField
+            v-model:selected-progress="selectedProgress"
+            @change="updateProgress"
+        />
 
         <Separator v-if="showCreatorMeta || showActions" />
 
@@ -579,61 +502,16 @@ function deleteTask(): void {
 
         <Separator v-if="showCreatorMeta" />
 
-        <div class="space-y-3">
-            <div class="grid gap-1.5">
-                <Label
-                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-                    >Project</Label
-                >
-                <Select
-                    :model-value="selectedProjectId"
-                    @update:model-value="updateProject"
-                >
-                    <SelectTrigger size="sm" class="h-8 !w-full text-sm">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem
-                            v-for="proj in projects"
-                            :key="proj.id"
-                            :value="proj.id.toString()"
-                        >
-                            {{ proj.name }}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <div class="grid gap-1.5">
-                <Label
-                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-                    >Due date</Label
-                >
-                <Input
-                    type="date"
-                    :model-value="dueDate"
-                    class="h-8 w-full text-sm"
-                    @update:model-value="updateDueDate(String($event))"
-                />
-            </div>
-        </div>
-
-        <Separator v-if="showActions" />
-
-        <div v-if="showActions" class="space-y-2">
-            <Button
-                variant="outline"
-                size="sm"
-                class="w-full cursor-pointer justify-start gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                @click="taskDeleteDialogOpen = true"
-            >
-                Delete task
-            </Button>
-
-            <DeleteTaskDialog
-                v-model:open="taskDeleteDialogOpen"
-                :task-title="task.title"
-                @confirm="deleteTask"
-            />
-        </div>
+        <TaskProjectActions
+            v-model:task-delete-dialog-open="taskDeleteDialogOpen"
+            :selected-project-id="selectedProjectId"
+            :projects="projects"
+            :due-date="dueDate"
+            :show-actions="showActions"
+            :task-title="task.title"
+            @update-project="updateProject"
+            @update-due-date="updateDueDate"
+            @delete-task="deleteTask"
+        />
     </div>
 </template>
