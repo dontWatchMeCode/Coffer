@@ -4,6 +4,7 @@ import {
     Ban,
     Check,
     CircleHelp,
+    Clock,
     Flag,
     MessageCircle,
     Trash2,
@@ -20,7 +21,11 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { getTaskStatusMeta, formatRelativeTime } from '@/lib/tasks';
+import {
+    getTaskStatusMeta,
+    formatRelativeTime,
+    formatTimeEstimate,
+} from '@/lib/tasks';
 import type { TaskItem, TaskProject, TaskStatusOption } from '@/types';
 
 type Props = {
@@ -154,6 +159,14 @@ const statusIcons = {
                 >
                     {{ task.progress }}%
                 </span>
+            </div>
+
+            <div
+                v-if="task.timeEstimate"
+                class="flex shrink-0 items-center gap-1 text-xs text-muted-foreground"
+            >
+                <Clock class="h-3.5 w-3.5" />
+                <span>{{ formatTimeEstimate(task.timeEstimate) }}</span>
             </div>
 
             <div
