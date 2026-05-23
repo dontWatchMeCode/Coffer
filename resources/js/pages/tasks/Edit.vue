@@ -51,7 +51,16 @@ const props = defineProps<Props>();
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const user = computed(() => page.props.auth.user);
-const isEditing = ref(false);
+const isEditing = ref(
+    Boolean(new URLSearchParams(window.location.search).get('edit')),
+);
+
+if (isEditing.value) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('edit');
+    window.history.replaceState(window.history.state, '', url.toString());
+}
+
 const selectedProjectId = ref(props.project.id.toString());
 const deleteDialogOpen = ref(false);
 

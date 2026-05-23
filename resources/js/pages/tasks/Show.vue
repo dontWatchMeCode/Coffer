@@ -201,11 +201,7 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                         </template>
                     </ProjectSettingsDialog>
 
-                    <CreateTaskDialog
-                        :project="project"
-                        :members="members"
-                        :statuses="statuses"
-                    >
+                    <CreateTaskDialog :project="project">
                         <template #trigger>
                             <Button size="icon" title="Create task">
                                 <ListPlus class="h-4 w-4" />

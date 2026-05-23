@@ -1,7 +1,7 @@
 ---
 id: 25
 section: frontend
-status: todo
+status: done
 severity: medium
 ---
 

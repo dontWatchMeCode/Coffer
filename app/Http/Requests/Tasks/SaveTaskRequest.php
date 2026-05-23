@@ -80,6 +80,10 @@ class SaveTaskRequest extends FormRequest
             $data['progress'] = 0;
         }
 
+        if ($this->isMethod('post') && ! $this->has('status')) {
+            $data['status'] = TaskStatus::Planned->value;
+        }
+
         if ($data !== []) {
             $this->merge($data);
         }

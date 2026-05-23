@@ -339,6 +339,28 @@ test('project names must be unique within a team', function () {
         ->assertSessionHasErrors(['name']);
 });
 
+test('task creation defaults to planned status when status is omitted', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+
+    $response = actingAs($user)
+        ->post(route('team.tasks.store', ['current_team' => $team]), [
+            'project_id' => $project->id,
+            'title' => 'Quick task',
+        ]);
+
+    $task = Task::query()
+        ->where('team_id', $team->id)
+        ->where('title', 'Quick task')
+        ->first();
+
+    expect($task)->not->toBeNull();
+    expect($task->status)->toBe(TaskStatus::Planned);
+
+    $response->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task, 'edit' => 'description']));
+});
+
 test('tasks cannot be created with a project from another team', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
@@ -375,7 +397,15 @@ test('tasks can be created from the team tasks page', function () {
             'position' => 0,
         ]);
 
-    $response->assertRedirect(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]));
+    $task = Task::query()
+        ->where('team_id', $team->id)
+        ->where('project_id', $project->id)
+        ->where('title', 'Plan launch checklist')
+        ->first();
+
+    expect($task)->not->toBeNull();
+
+    $response->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task, 'edit' => 'description']));
 
     assertDatabaseHas('tasks', [
         'team_id' => $team->id,

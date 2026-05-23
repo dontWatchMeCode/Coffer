@@ -22,13 +22,13 @@ class TaskController extends Controller
 
         $validated = $request->validated();
 
-        Task::create([
+        $task = Task::create([
             ...$validated,
             'team_id' => $currentTeam->id,
             'created_by' => $request->user()?->id,
         ]);
 
-        return to_route('team.tasks.show', ['current_team' => $currentTeam, 'project' => $validated['project_id']]);
+        return to_route('team.tasks.edit', ['current_team' => $currentTeam, 'project' => $validated['project_id'], 'task' => $task, 'edit' => 'description']);
     }
 
     /**
