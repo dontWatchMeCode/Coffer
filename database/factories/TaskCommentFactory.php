@@ -34,8 +34,23 @@ class TaskCommentFactory extends Factory
 
                 return $user->id;
             },
-            'body' => fake()->paragraph(),
+            'body' => null,
             'source' => 'user',
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (TaskComment $comment): void {
+            if ($comment->blocks()->exists()) {
+                return;
+            }
+
+            $comment->blocks()->create([
+                'type' => 'text',
+                'position' => 0,
+                'payload' => ['content' => fake()->paragraph()],
+            ]);
+        });
     }
 }

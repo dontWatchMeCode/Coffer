@@ -235,12 +235,12 @@ test('task comments can be listed and added through mcp', function () {
         'title' => 'Commented MCP task',
     ]);
 
-    TaskComment::factory()->create([
+    $comment = TaskComment::factory()->create([
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
-        'body' => 'Existing MCP comment',
     ]);
+    $comment->syncBlocks(taskCommentBlocks('Existing MCP comment'));
 
     RecordsServer::actingAs($user)->tool(ListTaskCommentsTool::class, [
         'task_id' => $task->id,
@@ -248,10 +248,11 @@ test('task comments can be listed and added through mcp', function () {
 
     RecordsServer::actingAs($user)->tool(AddTaskCommentTool::class, [
         'task_id' => $task->id,
-        'body' => 'Added MCP comment',
+        'blocks' => taskCommentBlocks('Added MCP comment'),
     ])->assertOk()->assertSee('Added MCP comment');
 
-    expect($task->comments()->pluck('body')->all())->toContain('Existing MCP comment', 'Added MCP comment');
+    expect($task->comments()->with('blocks')->get()->flatMap(fn (TaskComment $comment) => $comment->blocks->pluck('payload'))->pluck('content')->all())
+        ->toContain('Existing MCP comment', 'Added MCP comment');
 });
 
 test('task comments added through mcp store token origin metadata', function () {
@@ -282,7 +283,7 @@ test('task comments added through mcp store token origin metadata', function () 
 
     RecordsServer::actingAs($user)->tool(AddTaskCommentTool::class, [
         'task_id' => $task->id,
-        'body' => 'Added with origin metadata',
+        'blocks' => taskCommentBlocks('Added with origin metadata'),
     ])->assertOk()->assertSee('Claude Desktop');
 
     $comment = $task->comments()->firstOrFail();
@@ -326,7 +327,7 @@ test('task comment tools respect mcp task project scope', function () {
 
     RecordsServer::actingAs($user)->tool(AddTaskCommentTool::class, [
         'task_id' => $blockedTask->id,
-        'body' => 'Denied comment',
+        'blocks' => taskCommentBlocks('Denied comment'),
     ])->assertHasErrors(['Permission denied.']);
 });
 

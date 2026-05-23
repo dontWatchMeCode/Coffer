@@ -580,7 +580,7 @@ class McpRecordService
         Gate::forUser($user)->authorize('view', $task);
 
         $comments = $task->comments()
-            ->with('user:id,name')
+            ->with(['blocks', 'user:id,name'])
             ->oldest()
             ->limit((int) ($validated['limit'] ?? 50))
             ->get()
@@ -605,7 +605,11 @@ class McpRecordService
         $permissions = app(McpTokenPermissionService::class);
         $validated = $request->validate([
             'task_id' => ['required', 'integer', 'min:1'],
-            'body' => ['required', 'string', 'max:5000'],
+            'blocks' => ['required', 'array', 'min:1', 'max:50'],
+            'blocks.*.type' => ['required', 'string', Rule::in(['text', 'excalidraw', 'mermaid'])],
+            'blocks.*.position' => ['required', 'integer', 'min:0'],
+            'blocks.*.payload' => ['sometimes', 'nullable', 'array'],
+            'blocks.*.payload.content' => ['sometimes', 'nullable', 'string', 'max:10000'],
         ]);
 
         $task = $this->resolveTask($team, (int) $validated['task_id']);
@@ -624,13 +628,14 @@ class McpRecordService
         $comment = $task->comments()->create([
             'team_id' => $team->id,
             'user_id' => $user->id,
-            'body' => $validated['body'],
             'source' => 'mcp',
             'mcp_token_id' => $permissions->currentToken()?->id,
             'mcp_token_name' => $permissions->currentToken()?->name,
         ]);
 
-        return Response::structured(['comment' => $this->taskCommentPayload($comment->load('user:id,name'))]);
+        $comment->syncBlocks($validated['blocks']);
+
+        return Response::structured(['comment' => $this->taskCommentPayload($comment->load(['blocks', 'user:id,name']))]);
     }
 
     /**
@@ -676,7 +681,7 @@ class McpRecordService
         return [
             'id' => (int) $comment->id,
             'task_id' => (int) $comment->task_id,
-            'body' => $comment->body,
+            'blocks' => $comment->blocks->map(fn ($block): array => $block->toPayloadArray())->all(),
             'author' => [
                 'id' => (int) $comment->user_id,
                 'name' => $comment->user?->name,

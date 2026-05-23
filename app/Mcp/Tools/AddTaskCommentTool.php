@@ -29,7 +29,7 @@ class AddTaskCommentTool extends Tool
     {
         return [
             'task_id' => $schema->integer()->required(),
-            'body' => $schema->string()->description('Comment body, up to 5000 characters.')->required(),
+            'blocks' => $schema->array()->description('RTE blocks for the comment. Each block requires type, position, and optional payload.')->required(),
         ];
     }
 }

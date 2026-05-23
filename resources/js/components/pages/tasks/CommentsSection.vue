@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router, useForm } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import {
     Check,
     Bot,
@@ -17,9 +17,8 @@ import {
     update as updateTaskComment,
 } from '@/actions/App/Http/Controllers/Tasks/TaskCommentController';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
+import BlockEditor from '@/components/blocks/BlockEditor.vue';
 import InputError from '@/components/form/InputError.vue';
-import RichTextEditor from '@/components/richtext/RichTextEditor.vue';
-import { trimStoredRichText } from '@/components/richtext/storage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +38,7 @@ import {
 import { useRelativeTime } from '@/composables/useRelativeTime';
 import { formatExactDateTime, formatRelativeTime } from '@/lib/tasks';
 import type { TaskCommentItem } from '@/types';
+import type { RteBlock } from '@/types/notes';
 
 type Props = {
     comments: TaskCommentItem[];
@@ -50,15 +50,22 @@ type Props = {
 const props = defineProps<Props>();
 
 const { now } = useRelativeTime();
-const emptyCommentBody = '';
+let nextTemporaryBlockId = -1;
+const emptyCommentBlocks = (): RteBlock[] => [
+    {
+        id: nextTemporaryBlockId--,
+        type: 'text',
+        position: 0,
+        payload: { content: '' },
+    },
+];
 
-const commentForm = useForm(`TaskComment:${props.taskId}`, {
-    body: emptyCommentBody,
-});
-
-const editCommentForm = useForm(`EditTaskComment:${props.taskId}`, {
-    body: emptyCommentBody,
-});
+const commentBlocks = ref<RteBlock[]>(emptyCommentBlocks());
+const editCommentBlocks = ref<RteBlock[]>(emptyCommentBlocks());
+const commentErrors = ref<Record<string, string>>({});
+const editCommentErrors = ref<Record<string, string>>({});
+const isSubmittingComment = ref(false);
+const isUpdatingComment = ref(false);
 
 const isCreatingComment = ref(false);
 const editingCommentId = ref<number | null>(null);
@@ -66,60 +73,66 @@ const commentPendingDeletion = ref<TaskCommentItem | null>(null);
 
 function startCreatingComment(): void {
     isCreatingComment.value = true;
-    commentForm.body = emptyCommentBody;
-    commentForm.clearErrors();
+    commentBlocks.value = emptyCommentBlocks();
+    commentErrors.value = {};
 }
 
 function cancelCreatingComment(): void {
     isCreatingComment.value = false;
-    commentForm.reset();
-    commentForm.clearErrors();
+    commentBlocks.value = emptyCommentBlocks();
+    commentErrors.value = {};
 }
 
 function submitComment(): void {
-    commentForm.body = trimStoredRichText(commentForm.body);
+    isSubmittingComment.value = true;
 
-    commentForm.submit(
+    router.post(
         storeTaskComment({
             current_team: props.currentTeamSlug,
             task: props.taskId,
-        }),
+        }).url,
+        { blocks: commentBlocks.value },
         {
             preserveScroll: true,
             onSuccess: () => {
-                commentForm.reset();
+                commentBlocks.value = emptyCommentBlocks();
                 isCreatingComment.value = false;
             },
+            onError: (errors) => (commentErrors.value = errors),
+            onFinish: () => (isSubmittingComment.value = false),
         },
     );
 }
 
 function startEditingComment(comment: TaskCommentItem): void {
     editingCommentId.value = comment.id;
-    editCommentForm.body = comment.body;
-    editCommentForm.clearErrors();
+    editCommentBlocks.value = JSON.parse(JSON.stringify(comment.blocks));
+    editCommentErrors.value = {};
 }
 
 function cancelEditingComment(): void {
     editingCommentId.value = null;
-    editCommentForm.reset();
-    editCommentForm.clearErrors();
+    editCommentBlocks.value = emptyCommentBlocks();
+    editCommentErrors.value = {};
 }
 
 function updateComment(comment: TaskCommentItem): void {
-    editCommentForm.body = trimStoredRichText(editCommentForm.body);
+    isUpdatingComment.value = true;
 
-    editCommentForm.submit(
+    router.patch(
         updateTaskComment({
             current_team: props.currentTeamSlug,
             task: props.taskId,
             comment: comment.id,
-        }),
+        }).url,
+        { blocks: editCommentBlocks.value },
         {
             preserveScroll: true,
             onSuccess: () => {
                 cancelEditingComment();
             },
+            onError: (errors) => (editCommentErrors.value = errors),
+            onFinish: () => (isUpdatingComment.value = false),
         },
     );
 }
@@ -181,11 +194,8 @@ function deleteComment(comment: TaskCommentItem): void {
             class="space-y-3 rounded-xl border bg-background/70 p-4"
             @submit.prevent="submitComment"
         >
-            <RichTextEditor
-                v-model="commentForm.body"
-                placeholder="Add context, decisions, or blockers..."
-            />
-            <InputError :message="commentForm.errors.body" />
+            <BlockEditor v-model:blocks="commentBlocks" />
+            <InputError :message="commentErrors.blocks" />
 
             <div class="flex justify-end gap-2">
                 <Button
@@ -199,7 +209,7 @@ function deleteComment(comment: TaskCommentItem): void {
                 </Button>
                 <Button
                     type="submit"
-                    :disabled="commentForm.processing"
+                    :disabled="isSubmittingComment"
                     class="gap-2"
                 >
                     <Send class="h-4 w-4" />
@@ -316,7 +326,7 @@ function deleteComment(comment: TaskCommentItem): void {
                                                         size="sm"
                                                         class="h-8 w-8 p-0"
                                                         :disabled="
-                                                            editCommentForm.processing
+                                                            isUpdatingComment
                                                         "
                                                         @click="
                                                             updateComment(
@@ -398,29 +408,21 @@ function deleteComment(comment: TaskCommentItem): void {
                             class="mt-3"
                             @submit.prevent="updateComment(comment)"
                         >
-                            <RichTextEditor
-                                :model-value="editCommentForm.body"
+                            <BlockEditor
+                                v-model:blocks="editCommentBlocks"
                                 :editable="true"
-                                @update:model-value="
-                                    (v) => (editCommentForm.body = v)
-                                "
                             />
                             <InputError
-                                v-if="editCommentForm.errors.body"
+                                v-if="editCommentErrors.blocks"
                                 class="mt-3"
-                                :message="editCommentForm.errors.body"
+                                :message="editCommentErrors.blocks"
                             />
                         </form>
-                        <RichTextEditor
+                        <BlockEditor
                             v-else
                             class="mt-3"
-                            :model-value="comment.body"
+                            :blocks="comment.blocks"
                             :editable="false"
-                            :on-activate="
-                                comment.userId === userId
-                                    ? () => startEditingComment(comment)
-                                    : undefined
-                            "
                         />
                     </div>
                 </div>
@@ -450,8 +452,8 @@ function deleteComment(comment: TaskCommentItem): void {
                     v-if="commentPendingDeletion"
                     class="rounded-lg border bg-muted/40 p-3"
                 >
-                    <RichTextEditor
-                        :model-value="commentPendingDeletion.body"
+                    <BlockEditor
+                        :blocks="commentPendingDeletion.blocks"
                         :editable="false"
                     />
                 </div>

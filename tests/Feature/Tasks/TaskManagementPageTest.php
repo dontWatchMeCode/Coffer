@@ -160,18 +160,18 @@ test('task edit page includes existing comments', function () {
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
-        'body' => 'First task note',
         'created_at' => now()->subMinute(),
     ]);
+    $olderComment->syncBlocks(taskCommentBlocks('First task note'));
     $newerComment = TaskComment::factory()->create([
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
-        'body' => 'Latest task note',
         'source' => 'mcp',
         'mcp_token_name' => 'Claude Desktop',
         'created_at' => now(),
     ]);
+    $newerComment->syncBlocks(taskCommentBlocks('Latest task note'));
 
     actingAs($user)
         ->get(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
@@ -181,14 +181,14 @@ test('task edit page includes existing comments', function () {
             ->where('task.commentsCount', 2)
             ->has('comments', 2)
             ->where('comments.0.id', $newerComment->id)
-            ->where('comments.0.body', 'Latest task note')
+            ->where('comments.0.blocks.0.payload.content', 'Latest task note')
             ->where('comments.0.userId', $user->id)
             ->where('comments.0.userName', $user->name)
             ->where('comments.0.source', 'mcp')
             ->where('comments.0.mcpTokenName', 'Claude Desktop')
             ->where('comments.1.id', $olderComment->id)
             ->where('comments.1.source', 'user')
-            ->where('comments.1.body', 'First task note'),
+            ->where('comments.1.blocks.0.payload.content', 'First task note'),
         );
 });
 
@@ -466,7 +466,7 @@ test('task comments can be created from the task page', function () {
     actingAs($user)
         ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->post(route('team.tasks.comments.store', ['current_team' => $team, 'task' => $task->id]), [
-            'body' => $body,
+            'blocks' => taskCommentBlocks($body),
         ])
         ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]));
 
@@ -474,11 +474,17 @@ test('task comments can be created from the task page', function () {
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
-        'body' => $body,
+        'body' => null,
+    ]);
+
+    assertDatabaseHas('rte_blocks', [
+        'blockable_type' => TaskComment::class,
+        'type' => 'text',
+        'payload' => json_encode(['content' => $body]),
     ]);
 });
 
-test('legacy serialized blocknote comment bodies remain readable', function () {
+test('task comments expose block payloads on the task edit page', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
     $project = Project::factory()->create(['team_id' => $team->id]);
@@ -487,26 +493,13 @@ test('legacy serialized blocknote comment bodies remain readable', function () {
         'project_id' => $project->id,
         'created_by' => $user->id,
     ]);
-    $body = json_encode([
-        [
-            'type' => 'paragraph',
-            'content' => 'Need API contract before frontend handoff.',
-        ],
-    ]);
-
-    actingAs($user)
-        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
-        ->post(route('team.tasks.comments.store', ['current_team' => $team, 'task' => $task->id]), [
-            'body' => $body,
-        ])
-        ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]));
-
-    assertDatabaseHas('task_comments', [
+    $body = 'Need API contract before frontend handoff.';
+    $comment = TaskComment::factory()->create([
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
-        'body' => $body,
     ]);
+    $comment->syncBlocks(taskCommentBlocks($body));
 
     actingAs($user)
         ->get(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
@@ -514,7 +507,7 @@ test('legacy serialized blocknote comment bodies remain readable', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('tasks/Edit')
             ->where('task.commentsCount', 1)
-            ->where('comments.0.body', $body),
+            ->where('comments.0.blocks.0.payload.content', $body),
         );
 });
 
@@ -525,7 +518,7 @@ test('task comments cannot be created from another team route', function () {
 
     actingAs($user)
         ->post(route('team.tasks.comments.store', ['current_team' => $team, 'task' => $task->id]), [
-            'body' => 'Cross-team comment',
+            'blocks' => taskCommentBlocks('Cross-team comment'),
         ])
         ->assertNotFound();
 
@@ -545,21 +538,53 @@ test('task comments can be edited by their creator', function () {
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
-        'body' => 'Original task note',
     ]);
+    $comment->syncBlocks(taskCommentBlocks('Original task note'));
     $body = "## Updated task note\n\n- finish copy\n- ship review";
 
     actingAs($user)
         ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
         ->patch(route('team.tasks.comments.update', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]), [
-            'body' => $body,
+            'blocks' => taskCommentBlocks($body),
         ])
         ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]));
 
-    assertDatabaseHas('task_comments', [
-        'id' => $comment->id,
-        'body' => $body,
+    assertDatabaseHas('rte_blocks', [
+        'blockable_type' => TaskComment::class,
+        'blockable_id' => $comment->id,
+        'payload' => json_encode(['content' => $body]),
     ]);
+});
+
+test('task comment edits update existing blocks with json payloads', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+    ]);
+    $comment = TaskComment::factory()->create([
+        'team_id' => $team->id,
+        'task_id' => $task->id,
+        'user_id' => $user->id,
+    ]);
+    $block = $comment->blocks()->firstOrFail();
+
+    actingAs($user)
+        ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
+        ->patch(route('team.tasks.comments.update', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]), [
+            'blocks' => [[
+                'id' => $block->id,
+                'type' => 'text',
+                'position' => 0,
+                'payload' => ['content' => 'Updated existing block'],
+            ]],
+        ])
+        ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]));
+
+    expect($block->fresh()->payload)->toBe(['content' => 'Updated existing block']);
 });
 
 test('task comments cannot be edited by another team member', function () {
@@ -579,18 +604,19 @@ test('task comments cannot be edited by another team member', function () {
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $owner->id,
-        'body' => 'Owner only',
     ]);
+    $comment->syncBlocks(taskCommentBlocks('Owner only'));
 
     actingAs($editor)
         ->patch(route('team.tasks.comments.update', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]), [
-            'body' => 'Unauthorized edit',
+            'blocks' => taskCommentBlocks('Unauthorized edit'),
         ])
         ->assertNotFound();
 
-    assertDatabaseHas('task_comments', [
-        'id' => $comment->id,
-        'body' => 'Owner only',
+    assertDatabaseHas('rte_blocks', [
+        'blockable_type' => TaskComment::class,
+        'blockable_id' => $comment->id,
+        'payload' => json_encode(['content' => 'Owner only']),
     ]);
 });
 
@@ -607,8 +633,8 @@ test('task comments can be deleted by their creator', function () {
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
-        'body' => 'Remove me',
     ]);
+    $comment->syncBlocks(taskCommentBlocks('Remove me'));
 
     actingAs($user)
         ->from(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
@@ -635,16 +661,17 @@ test('task comments cannot be deleted by another team member', function () {
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $owner->id,
-        'body' => 'Still here',
     ]);
+    $comment->syncBlocks(taskCommentBlocks('Still here'));
 
     actingAs($editor)
         ->delete(route('team.tasks.comments.destroy', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]))
         ->assertNotFound();
 
-    assertDatabaseHas('task_comments', [
-        'id' => $comment->id,
-        'body' => 'Still here',
+    assertDatabaseHas('rte_blocks', [
+        'blockable_type' => TaskComment::class,
+        'blockable_id' => $comment->id,
+        'payload' => json_encode(['content' => 'Still here']),
     ]);
 });
 

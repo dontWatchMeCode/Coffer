@@ -15,7 +15,7 @@ use Laravel\Mcp\Server\Tool;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 
 #[Name('records.task_comments.list')]
-#[Description('List comments for a current-team task. Requires read access to the task.')]
+#[Description('List block-based comments for a current-team task. Requires read access to the task.')]
 #[IsReadOnly]
 class ListTaskCommentsTool extends Tool
 {

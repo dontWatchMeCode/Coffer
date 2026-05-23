@@ -162,7 +162,6 @@ test('comment authors must belong to the task team', function () {
         'team_id' => $task->team_id,
         'task_id' => $task->id,
         'user_id' => $outsider->id,
-        'body' => 'External comment',
     ]))->toThrow(LogicException::class);
 });
 

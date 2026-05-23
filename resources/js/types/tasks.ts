@@ -1,4 +1,5 @@
 import type { ActivityHistoryItem } from './activity-history';
+import type { RteBlock } from './notes';
 
 export type TaskStatusOption = {
     value: string;
@@ -33,7 +34,7 @@ export type TaskCommentItem = {
     taskId: number;
     userId: number;
     userName?: string | null;
-    body: string;
+    blocks: RteBlock[];
     source?: 'user' | 'mcp';
     mcpTokenName?: string | null;
     createdAt?: string | null;

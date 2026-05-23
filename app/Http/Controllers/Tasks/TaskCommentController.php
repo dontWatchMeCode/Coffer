@@ -29,11 +29,12 @@ class TaskCommentController extends Controller
         $user = $request->user();
         abort_if($user === null, 401);
 
-        $task->comments()->create([
+        $comment = $task->comments()->create([
             'team_id' => $currentTeam->id,
             'user_id' => $user->id,
-            'body' => $request->validated()['body'],
         ]);
+
+        $comment->syncBlocks($request->validated()['blocks']);
 
         return back();
     }
@@ -50,9 +51,7 @@ class TaskCommentController extends Controller
 
         $this->authorize('update', $comment);
 
-        $comment->update([
-            'body' => $request->validated()['body'],
-        ]);
+        $comment->syncBlocks($request->validated()['blocks']);
 
         return back();
     }

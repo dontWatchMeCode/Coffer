@@ -3,7 +3,12 @@ import type { CalendarEventItem } from '@/types/calendar';
 import type { CollectionItem } from '@/types/collections';
 import type { ContactEntry, ContactItem } from '@/types/contacts';
 import type { LogEntryItem } from '@/types/log';
-import type { NoteItem } from '@/types/notes';
+import type {
+    MermaidPayload,
+    NoteItem,
+    RteBlock,
+    TextPayload,
+} from '@/types/notes';
 import type { LinkRecord } from '@/types/record-links';
 import type { RecordTag } from '@/types/record-tags';
 import type { SubscriptionItem } from '@/types/subscriptions';
@@ -36,6 +41,23 @@ function stripHtml(html: string): string {
     div.innerHTML = html;
 
     return div.textContent ?? div.innerText ?? '';
+}
+
+function blocksToText(blocks: RteBlock[]): string {
+    return blocks
+        .map((block) => {
+            if (block.type === 'text') {
+                return (block.payload as TextPayload | null)?.content ?? '';
+            }
+
+            if (block.type === 'mermaid') {
+                return (block.payload as MermaidPayload | null)?.content ?? '';
+            }
+
+            return '[Drawing]';
+        })
+        .filter(Boolean)
+        .join('\n\n');
 }
 
 export function serializeBookmark(
@@ -350,7 +372,7 @@ export function serializeTask(
             const date = c.createdAt
                 ? new Date(c.createdAt).toLocaleString()
                 : '';
-            const body = stripHtml(c.body);
+            const body = stripHtml(blocksToText(c.blocks));
             parts.push(`**${author}**${date ? ` — ${date}` : ''}\n> ${body}\n`);
         }
     }

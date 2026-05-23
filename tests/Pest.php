@@ -112,3 +112,12 @@ function waitForBrowserPath(Webpage|AwaitableWebpage $page, string $path, int|fl
 
     return $page;
 }
+
+function taskCommentBlocks(string $content): array
+{
+    return [[
+        'type' => 'text',
+        'position' => 0,
+        'payload' => ['content' => $content],
+    ]];
+}

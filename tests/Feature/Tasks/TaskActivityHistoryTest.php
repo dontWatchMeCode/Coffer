@@ -242,7 +242,7 @@ test('task completed_at null is not logged when reopening', function () {
     expect(array_keys($changes['attributes'] ?? []))->not->toContain('completed_at');
 });
 
-test('comment body changes are logged', function () {
+test('comment block changes are logged', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
     $project = Project::factory()->create(['team_id' => $team->id]);
@@ -255,18 +255,19 @@ test('comment body changes are logged', function () {
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
-        'body' => 'Original body',
     ]);
+    $comment->blocks()->delete();
+    $comment->blocks()->create(taskCommentBlocks('Original body')[0]);
 
     actingAs($user)
         ->patch(route('team.tasks.comments.update', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]), [
-            'body' => 'Updated body',
+            'blocks' => taskCommentBlocks('Updated body'),
         ]);
 
     $activities = $comment->activitiesAsSubject()->orderByDesc('id')->get();
 
     expect($activities)->toHaveCount(2)
-        ->and($activities->first()->event)->toBe('updated');
+        ->and($activities->first()->event)->toBe('blocks_updated');
 });
 
 test('project show page includes activity history', function () {
@@ -334,12 +335,13 @@ test('task edit page includes comment activity history', function () {
         'team_id' => $team->id,
         'task_id' => $task->id,
         'user_id' => $user->id,
-        'body' => 'Original body',
     ]);
+    $comment->blocks()->delete();
+    $comment->blocks()->create(taskCommentBlocks('Original body')[0]);
 
     actingAs($user)
         ->patch(route('team.tasks.comments.update', ['current_team' => $team, 'task' => $task->id, 'comment' => $comment->id]), [
-            'body' => 'Updated body',
+            'blocks' => taskCommentBlocks('Updated body'),
         ]);
 
     actingAs($user)
@@ -349,7 +351,7 @@ test('task edit page includes comment activity history', function () {
             ->component('tasks/Edit')
             ->has('comments', 1)
             ->has('comments.0.activityHistory', 2)
-            ->where('comments.0.activityHistory.0.event', 'updated')
+            ->where('comments.0.activityHistory.0.event', 'blocks_updated')
             ->where('comments.0.activityHistory.0.causerName', $user->name)
             ->has('comments.0.activityHistory.0.changedFields'));
 });

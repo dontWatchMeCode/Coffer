@@ -55,7 +55,7 @@ class TaskPageController extends Controller
                 'creator:id,name',
                 'recordTags' => fn ($query) => $query->orderBy('name'),
                 'comments' => fn ($query) => $query
-                    ->with('user:id,name')
+                    ->with(['blocks', 'user:id,name'])
                     ->latest(),
             ])
             ->withCount('comments')

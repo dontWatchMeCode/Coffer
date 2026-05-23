@@ -168,7 +168,7 @@ class TaskPageDataService
             'taskId' => $comment->task_id,
             'userId' => $comment->user_id,
             'userName' => $comment->user?->name,
-            'body' => $comment->body,
+            'blocks' => $comment->blocks->map(fn ($block): array => $block->toPayloadArray())->all(),
             'source' => $comment->source ?? 'user',
             'mcpTokenName' => $comment->mcp_token_name,
             'createdAt' => $createdAt instanceof DateTimeInterface
