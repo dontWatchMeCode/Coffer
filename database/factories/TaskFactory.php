@@ -40,6 +40,7 @@ class TaskFactory extends Factory
             'description' => fake()->sentence(),
             'status' => TaskStatus::Planned,
             'progress' => 0,
+            'time_estimate' => null,
             'position' => 0,
             'due_at' => null,
             'completed_at' => null,

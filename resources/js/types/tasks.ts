@@ -49,6 +49,7 @@ export type TaskItem = {
     description?: string | null;
     status: string;
     progress: number;
+    timeEstimate?: number | null;
     position: number;
     assigneeId?: number | null;
     assigneeName?: string | null;

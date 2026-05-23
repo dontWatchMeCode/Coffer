@@ -1,7 +1,7 @@
 ---
 id: 28
 section: frontend
-status: todo
+status: done
 severity: medium
 ---
 
@@ -17,16 +17,16 @@ Add a configurable time estimate field to tasks, displayed above the progress sl
 
 ## Acceptance Criteria
 
-- [ ] Add migration: add nullable `time_estimate` integer column to `tasks` table (stores minutes)
-- [ ] Update `Task` model fillable/casts
-- [ ] Update `TaskFactory` to include `time_estimate`
-- [ ] Update `TaskController::store`/`update` validation to accept `time_estimate`
-- [ ] Update `TaskPageDataService` to include `time_estimate` in task payload
-- [ ] Update `TaskItem` type to include `timeEstimate?: number | null`
-- [ ] Add time estimate input (e.g. hours/minutes picker or plain number input) in `TaskSidebar.vue` above the progress slider section
-- [ ] Display formatted time estimate when not editing (e.g. "2h 30m" or "45m")
-- [ ] Update task edit form/sidebar to persist `time_estimate` on change
-- [ ] Update tests
+- [x] Add migration: add nullable `time_estimate` integer column to `tasks` table (stores minutes)
+- [x] Update `Task` model fillable/casts
+- [x] Update `TaskFactory` to include `time_estimate`
+- [x] Update `TaskController::store`/`update` validation to accept `time_estimate`
+- [x] Update `TaskPageDataService` to include `time_estimate` in task payload
+- [x] Update `TaskItem` type to include `timeEstimate?: number | null`
+- [x] Add time estimate input (e.g. hours/minutes picker or plain number input) in `TaskSidebar.vue` above the progress slider section
+- [x] Display formatted time estimate when not editing (e.g. "2h 30m" or "45m")
+- [x] Update task edit form/sidebar to persist `time_estimate` on change
+- [x] Update tests
 
 ## Files
 

@@ -850,6 +850,85 @@ test('task update from list view redirects back to project page', function () {
     expect($task->fresh()->status)->toBe(TaskStatus::Completed);
 });
 
+test('task time estimate patch persists and appears in payload', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'time_estimate' => null,
+    ]);
+
+    actingAs($user)
+        ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            '_return_to_edit' => true,
+            'time_estimate' => 150,
+        ])
+        ->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task]));
+
+    assertDatabaseHas('tasks', [
+        'id' => $task->id,
+        'time_estimate' => 150,
+    ]);
+
+    actingAs($user)
+        ->get(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task->id]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tasks/Edit')
+            ->where('task.timeEstimate', 150),
+        );
+});
+
+test('task time estimate can be cleared by sending null', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'time_estimate' => 120,
+    ]);
+
+    actingAs($user)
+        ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            '_return_to_edit' => true,
+            'time_estimate' => null,
+        ]);
+
+    assertDatabaseHas('tasks', [
+        'id' => $task->id,
+        'time_estimate' => null,
+    ]);
+});
+
+test('task time estimate rejects negative values', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'time_estimate' => 60,
+    ]);
+
+    actingAs($user)
+        ->patch(route('team.tasks.update', ['current_team' => $team, 'task' => $task->id]), [
+            '_return_to_edit' => true,
+            'time_estimate' => -5,
+        ])
+        ->assertSessionHasErrors(['time_estimate']);
+
+    assertDatabaseHas('tasks', [
+        'id' => $task->id,
+        'time_estimate' => 60,
+    ]);
+});
+
 test('multi team members can view another team project routes after switching context', function () {
     $user = User::factory()->create();
     $primaryTeam = $user->currentTeam;

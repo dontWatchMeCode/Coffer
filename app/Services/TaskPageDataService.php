@@ -133,6 +133,7 @@ class TaskPageDataService
             'description' => $task->description,
             'status' => (string) $task->getRawOriginal('status'),
             'progress' => $task->progress,
+            'timeEstimate' => $task->time_estimate,
             'position' => $task->position,
             'assigneeId' => $task->assigned_to,
             'assigneeName' => $task->assignee?->name,

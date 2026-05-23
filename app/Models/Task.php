@@ -21,7 +21,7 @@ use LogicException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-#[Fillable(['team_id', 'project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'position', 'due_at'])]
+#[Fillable(['team_id', 'project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'time_estimate', 'position', 'due_at'])]
 class Task extends Model implements LinkableRecord
 {
     use BelongsToTeam;
@@ -39,7 +39,7 @@ class Task extends Model implements LinkableRecord
     {
         return LogOptions::defaults()
             ->useLogName('tasks')
-            ->logOnly(['project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'position', 'due_at'])
+            ->logOnly(['project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'time_estimate', 'position', 'due_at'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }

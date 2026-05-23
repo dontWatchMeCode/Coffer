@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/* eslint-disable max-lines */
 import { router } from '@inertiajs/vue3';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, ref, watch } from 'vue';
@@ -26,6 +27,7 @@ type Props = {
         title: string;
         status: string;
         progress: number;
+        timeEstimate?: number | null;
         assigneeId?: number | null;
         dueAt?: string | null;
         creatorName?: string | null;
@@ -59,6 +61,13 @@ const selectedAssignee = ref(
 const selectedStatus = ref(props.task.status);
 const selectedProgress = ref(props.task.progress);
 const dueDate = ref(props.task.dueAt ? props.task.dueAt.slice(0, 10) : '');
+function formatMinutes(totalMinutes: number): string {
+    return `${Math.floor(totalMinutes / 60)}:${String(totalMinutes % 60).padStart(2, '0')}`;
+}
+
+const timeEstimateDisplay = ref(
+    props.task.timeEstimate ? formatMinutes(props.task.timeEstimate) : '',
+);
 const selectedProjectId = ref(
     props.selectedProjectId ?? props.project.id.toString(),
 );
@@ -91,6 +100,15 @@ watch(
     () => props.task.dueAt,
     (dueAt) => {
         dueDate.value = dueAt ? dueAt.slice(0, 10) : '';
+    },
+);
+
+watch(
+    () => props.task.timeEstimate,
+    (timeEstimate) => {
+        timeEstimateDisplay.value = timeEstimate
+            ? formatMinutes(timeEstimate)
+            : '';
     },
 );
 
@@ -219,6 +237,89 @@ function updateProgress(progress: number): void {
             only: taskReloadOnly,
             onError: () => {
                 selectedProgress.value = props.task.progress;
+            },
+        },
+    );
+}
+
+function parseTimeEstimate(input: string): number | null {
+    const trimmed = input.trim();
+
+    if (!trimmed) {
+        return null;
+    }
+
+    const colonMatch = trimmed.match(/^(\d+):(\d{1,2})$/);
+
+    if (colonMatch) {
+        const minutes = Number(colonMatch[2]);
+
+        if (minutes > 59) {
+            return null;
+        }
+
+        return Number(colonMatch[1]) * 60 + minutes;
+    }
+
+    const hmMatch = trimmed.match(/^(\d+)h(\d{1,2})m?$/i);
+
+    if (hmMatch) {
+        const minutes = Number(hmMatch[2]);
+
+        if (minutes > 59) {
+            return null;
+        }
+
+        return Number(hmMatch[1]) * 60 + minutes;
+    }
+
+    const hoursOnly = trimmed.match(/^(\d+)h$/i);
+
+    if (hoursOnly) {
+        return Number(hoursOnly[1]) * 60;
+    }
+
+    const minutesOnly = trimmed.match(/^(\d+)m?$/i);
+
+    if (minutesOnly) {
+        return Number(minutesOnly[1]);
+    }
+
+    return null;
+}
+
+function updateTimeEstimate(): void {
+    const parsed = parseTimeEstimate(timeEstimateDisplay.value);
+
+    if (parsed === null && timeEstimateDisplay.value.trim() !== '') {
+        timeEstimateDisplay.value = props.task.timeEstimate
+            ? formatMinutes(props.task.timeEstimate)
+            : '';
+
+        return;
+    }
+
+    const value = parsed !== null && parsed > 0 ? parsed : null;
+
+    router.patch(
+        TaskController.update.url({
+            current_team: props.currentTeamSlug,
+            task: props.task.id,
+        }),
+        {
+            time_estimate: value,
+            _return_to_edit: true,
+        },
+        {
+            preserveScroll: true,
+            only: taskReloadOnly,
+            onSuccess: () => {
+                timeEstimateDisplay.value = value ? formatMinutes(value) : '';
+            },
+            onError: () => {
+                timeEstimateDisplay.value = props.task.timeEstimate
+                    ? formatMinutes(props.task.timeEstimate)
+                    : '';
             },
         },
     );
@@ -394,6 +495,22 @@ function deleteTask(): void {
                     </SelectItem>
                 </SelectContent>
             </Select>
+        </div>
+
+        <Separator v-if="showCreatorMeta" />
+
+        <div>
+            <h3
+                class="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+            >
+                Time Estimate
+            </h3>
+            <Input
+                v-model="timeEstimateDisplay"
+                placeholder="1:30"
+                class="h-8 w-full text-sm"
+                @change="updateTimeEstimate"
+            />
         </div>
 
         <Separator v-if="showCreatorMeta" />

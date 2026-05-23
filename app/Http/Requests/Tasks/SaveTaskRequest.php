@@ -52,6 +52,7 @@ class SaveTaskRequest extends FormRequest
             'description' => [...$this->optionalOnPatchRule(), 'nullable', 'string'],
             'status' => [...$this->requiredRule(), Rule::enum(TaskStatus::class)],
             'progress' => [...$this->optionalOnPatchRule(), 'sometimes', 'integer', 'between:0,100'],
+            'time_estimate' => [...$this->optionalOnPatchRule(), 'nullable', 'integer', 'min:0'],
             'position' => [...$this->optionalOnPatchRule(), 'nullable', 'integer', 'min:0'],
             'due_at' => [...$this->optionalOnPatchRule(), 'nullable', 'date'],
         ];
@@ -70,6 +71,10 @@ class SaveTaskRequest extends FormRequest
 
         if ($this->has('due_at')) {
             $data['due_at'] = blank($this->input('due_at')) ? null : $this->input('due_at');
+        }
+
+        if ($this->has('time_estimate')) {
+            $data['time_estimate'] = blank($this->input('time_estimate')) ? null : $this->input('time_estimate');
         }
 
         if ($this->isMethod('post') && ! $this->has('position')) {
