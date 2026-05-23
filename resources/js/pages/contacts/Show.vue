@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Pencil, Plus, X } from 'lucide-vue-next';
+import { Plus, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import InputError from '@/components/form/InputError.vue';
@@ -91,6 +91,7 @@ const editLinks = ref<ContactEntry[]>(
 const editAddress = ref(props.contact.address ?? '');
 const editAdditionalInfo = ref(props.contact.additionalInfo ?? '');
 const isSubmitting = ref(false);
+const editFormRef = ref<HTMLFormElement | null>(null);
 
 watch(
     () => props.contact,
@@ -214,6 +215,11 @@ function handleCopyAsMarkdown(): void {
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="contact.updatedAt"
+                :on-edit="isEditing ? null : () => (isEditing = true)"
+                :on-save="isEditing ? () => editFormRef?.requestSubmit() : null"
+                :save-disabled="isSubmitting"
+                :on-cancel="isEditing ? cancelEdit : null"
+                :cancel-disabled="isSubmitting"
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(contact)"
                 delete-label="Delete contact"
                 :delete-disabled="isSubmitting"
@@ -232,22 +238,16 @@ function handleCopyAsMarkdown(): void {
                 </template>
 
                 <template #main>
-                    <div v-if="!isEditing" class="space-y-4">
+                    <div v-if="!isEditing">
                         <ContactReadOnlyDetails :contact="contact" />
-
-                        <div class="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                @click="isEditing = true"
-                            >
-                                <Pencil class="mr-1.5 h-4 w-4" />
-                                Edit
-                            </Button>
-                        </div>
                     </div>
 
-                    <form v-else class="space-y-5" @submit.prevent="submitEdit">
+                    <form
+                        v-else
+                        ref="editFormRef"
+                        class="space-y-5"
+                        @submit.prevent="submitEdit"
+                    >
                         <div class="grid gap-2">
                             <Label for="edit-contact-name">Name</Label>
                             <Input
@@ -431,20 +431,6 @@ function handleCopyAsMarkdown(): void {
                                 placeholder="Notes, context, or anything helpful for the team"
                             />
                             <InputError :message="errors.additional_info" />
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                type="button"
-                                :disabled="isSubmitting"
-                                @click="cancelEdit"
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="submit" :disabled="isSubmitting">
-                                Save changes
-                            </Button>
                         </div>
                     </form>
                 </template>

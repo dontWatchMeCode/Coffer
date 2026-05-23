@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ExternalLink, Pencil } from 'lucide-vue-next';
+import { ExternalLink } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import InputError from '@/components/form/InputError.vue';
@@ -10,7 +10,6 @@ import DetailLinkRow from '@/components/page/DetailLinkRow.vue';
 import DetailSection from '@/components/page/DetailSection.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import DeleteBookmarkDialog from '@/components/pages/bookmarks/DeleteBookmarkDialog.vue';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
@@ -72,6 +71,7 @@ const editUrl = ref(props.bookmark.url);
 const editDescription = ref(props.bookmark.description ?? '');
 const editNotes = ref(props.bookmark.notes ?? '');
 const isSubmitting = ref(false);
+const editFormRef = ref<HTMLFormElement | null>(null);
 
 watch(
     () => props.bookmark,
@@ -153,6 +153,11 @@ function handleCopyAsMarkdown(): void {
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="bookmark.updatedAt"
+                :on-edit="isEditing ? null : () => (isEditing = true)"
+                :on-save="isEditing ? () => editFormRef?.requestSubmit() : null"
+                :save-disabled="isSubmitting"
+                :on-cancel="isEditing ? cancelEdit : null"
+                :cancel-disabled="isSubmitting"
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(bookmark)"
                 delete-label="Delete bookmark"
                 :delete-disabled="isSubmitting"
@@ -205,20 +210,14 @@ function handleCopyAsMarkdown(): void {
                                 {{ bookmark.notes }}
                             </p>
                         </DetailSection>
-
-                        <div class="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                @click="isEditing = true"
-                            >
-                                <Pencil class="mr-1.5 h-4 w-4" />
-                                Edit
-                            </Button>
-                        </div>
                     </div>
 
-                    <form v-else class="space-y-5" @submit.prevent="submitEdit">
+                    <form
+                        v-else
+                        ref="editFormRef"
+                        class="space-y-5"
+                        @submit.prevent="submitEdit"
+                    >
                         <div class="grid gap-2">
                             <Label for="edit-bookmark-title">Title</Label>
                             <Input
@@ -262,20 +261,6 @@ function handleCopyAsMarkdown(): void {
                                 placeholder="Additional notes about this link..."
                             />
                             <InputError :message="errors.notes" />
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                type="button"
-                                :disabled="isSubmitting"
-                                @click="cancelEdit"
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="submit" :disabled="isSubmitting">
-                                Save changes
-                            </Button>
                         </div>
                     </form>
                 </template>

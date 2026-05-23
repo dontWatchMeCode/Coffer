@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ExternalLink, Pencil, PowerOff } from 'lucide-vue-next';
+import { ExternalLink, PowerOff } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import InputError from '@/components/form/InputError.vue';
@@ -12,7 +12,6 @@ import PageHeader from '@/components/page/PageHeader.vue';
 import DeleteSubscriptionDialog from '@/components/pages/subscriptions/DeleteSubscriptionDialog.vue';
 import SubscriptionCategorySelect from '@/components/pages/subscriptions/SubscriptionCategorySelect.vue';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -93,6 +92,7 @@ const editNotes = ref(props.subscription.notes ?? '');
 const editIsActive = ref(props.subscription.isActive);
 const editCategory = ref(props.subscription.category ?? '');
 const isSubmitting = ref(false);
+const editFormRef = ref<HTMLFormElement | null>(null);
 
 watch(
     () => props.subscription,
@@ -224,6 +224,11 @@ function formatBillingCycle(cycle: string | null | undefined): string {
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="subscription.updatedAt"
+                :on-edit="isEditing ? null : () => (isEditing = true)"
+                :on-save="isEditing ? () => editFormRef?.requestSubmit() : null"
+                :save-disabled="isSubmitting"
+                :on-cancel="isEditing ? cancelEdit : null"
+                :cancel-disabled="isSubmitting"
                 :on-delete="
                     () => deleteDialogRef?.openDeleteDialog(subscription)
                 "
@@ -325,20 +330,14 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                                 {{ subscription.notes }}
                             </p>
                         </DetailSection>
-
-                        <div class="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                @click="isEditing = true"
-                            >
-                                <Pencil class="mr-1.5 h-4 w-4" />
-                                Edit
-                            </Button>
-                        </div>
                     </div>
 
-                    <form v-else class="space-y-5" @submit.prevent="submitEdit">
+                    <form
+                        v-else
+                        ref="editFormRef"
+                        class="space-y-5"
+                        @submit.prevent="submitEdit"
+                    >
                         <div class="grid gap-2">
                             <Label for="edit-subscription-name">Name</Label>
                             <Input
@@ -480,20 +479,6 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                             >
                                 Active
                             </Label>
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                type="button"
-                                :disabled="isSubmitting"
-                                @click="cancelEdit"
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="submit" :disabled="isSubmitting">
-                                Save changes
-                            </Button>
                         </div>
                     </form>
                 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, Clipboard, Save, Trash2 } from 'lucide-vue-next';
+import { Check, Clipboard, Pencil, Save, Trash2, X } from 'lucide-vue-next';
 import { computed, useSlots } from 'vue';
 import RecordLinksPanel from '@/components/record-links/RecordLinksPanel.vue';
 import RecordTagsPanel from '@/components/record-tags/RecordTagsPanel.vue';
@@ -17,14 +17,20 @@ type Props = {
     createdBy?: string | null;
     updatedAt?: string | null;
     onDelete?: (() => void) | null;
+    onEdit?: (() => void) | null;
     onSave?: (() => void) | null;
+    onCancel?: (() => void) | null;
     onCopyAsMarkdown?: (() => void) | null;
     copyAsMarkdownCopied?: boolean;
     copyAsMarkdownError?: boolean;
+    editLabel?: string;
     deleteLabel?: string;
     saveLabel?: string;
+    cancelLabel?: string;
+    editDisabled?: boolean;
     deleteDisabled?: boolean;
     saveDisabled?: boolean;
+    cancelDisabled?: boolean;
     recordLinks?: {
         links: LinkRecord[];
         context: LinkContext;
@@ -42,14 +48,20 @@ const props = withDefaults(defineProps<Props>(), {
     createdBy: null,
     updatedAt: null,
     onDelete: null,
+    onEdit: null,
     onSave: null,
+    onCancel: null,
     onCopyAsMarkdown: null,
     copyAsMarkdownCopied: false,
     copyAsMarkdownError: false,
+    editLabel: 'Edit',
     deleteLabel: 'Delete',
-    saveLabel: 'Save',
+    saveLabel: 'Save changes',
+    cancelLabel: 'Cancel',
+    editDisabled: false,
     deleteDisabled: false,
     saveDisabled: false,
+    cancelDisabled: false,
     recordLinks: null,
     recordTags: null,
 });
@@ -60,7 +72,13 @@ const hasSidebarHeader = computed(() => Boolean(slots['sidebar-header']));
 const hasSidebarTop = computed(() => Boolean(slots['sidebar-top']));
 const hasMeta = computed(() => Boolean(props.createdBy || props.updatedAt));
 const hasActions = computed(() =>
-    Boolean(props.onDelete || props.onSave || props.onCopyAsMarkdown),
+    Boolean(
+        props.onEdit ||
+        props.onDelete ||
+        props.onSave ||
+        props.onCancel ||
+        props.onCopyAsMarkdown,
+    ),
 );
 const hasRecordLinks = computed(() => props.recordLinks !== null);
 const hasRecordTags = computed(() => props.recordTags !== null);
@@ -144,6 +162,17 @@ const hasRecordTags = computed(() => props.recordTags !== null);
 
             <div v-if="hasActions" class="space-y-2 py-6 first:pt-1">
                 <Button
+                    v-if="onEdit"
+                    size="sm"
+                    class="w-full justify-start gap-2"
+                    :disabled="editDisabled"
+                    @click="onEdit()"
+                >
+                    <Pencil class="h-4 w-4" />
+                    {{ editLabel }}
+                </Button>
+
+                <Button
                     v-if="onSave"
                     size="sm"
                     class="w-full justify-start gap-2"
@@ -152,6 +181,18 @@ const hasRecordTags = computed(() => props.recordTags !== null);
                 >
                     <Save class="h-4 w-4" />
                     {{ saveLabel }}
+                </Button>
+
+                <Button
+                    v-if="onCancel"
+                    variant="ghost"
+                    size="sm"
+                    class="w-full justify-start gap-2"
+                    :disabled="cancelDisabled"
+                    @click="onCancel()"
+                >
+                    <X class="h-4 w-4" />
+                    {{ cancelLabel }}
                 </Button>
 
                 <Button

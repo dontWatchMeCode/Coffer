@@ -8,7 +8,6 @@ import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import DeleteNoteDialog from '@/components/pages/notes/DeleteNoteDialog.vue';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
@@ -51,6 +50,7 @@ const editBlocks = ref<RteBlock[]>(
 );
 const isSubmitting = ref(false);
 const deleteDialogRef = ref<InstanceType<typeof DeleteNoteDialog> | null>(null);
+const editFormRef = ref<HTMLFormElement | null>(null);
 
 const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
 
@@ -142,6 +142,11 @@ defineOptions({
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="note.updatedAt"
+                :on-edit="isEditing ? null : () => (isEditing = true)"
+                :on-save="isEditing ? () => editFormRef?.requestSubmit() : null"
+                :save-disabled="isSubmitting"
+                :on-cancel="isEditing ? cancelEdit : null"
+                :cancel-disabled="isSubmitting"
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(note)"
                 delete-label="Delete note"
                 :delete-disabled="isSubmitting"
@@ -160,21 +165,16 @@ defineOptions({
                 </template>
 
                 <template #main>
-                    <div v-if="!isEditing" class="space-y-4">
+                    <div v-if="!isEditing">
                         <BlockEditor :blocks="note.blocks" :editable="false" />
-
-                        <div class="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                @click="isEditing = true"
-                            >
-                                Edit
-                            </Button>
-                        </div>
                     </div>
 
-                    <form v-else class="space-y-4" @submit.prevent="submitEdit">
+                    <form
+                        v-else
+                        ref="editFormRef"
+                        class="space-y-4"
+                        @submit.prevent="submitEdit"
+                    >
                         <div class="space-y-4">
                             <div class="grid gap-2">
                                 <Label for="edit-note-title">Title</Label>
@@ -194,19 +194,6 @@ defineOptions({
                                 />
                                 <InputError :message="errors.blocks" />
                             </div>
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                type="button"
-                                @click="cancelEdit"
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="submit" :disabled="isSubmitting">
-                                Save changes
-                            </Button>
                         </div>
                     </form>
                 </template>

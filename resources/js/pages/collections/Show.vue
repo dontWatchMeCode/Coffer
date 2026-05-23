@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ExternalLink, Layers3, Pencil } from 'lucide-vue-next';
+import { ExternalLink, Layers3 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import ExcalidrawEditor from '@/components/excalidraw/ExcalidrawEditor.vue';
@@ -58,6 +58,7 @@ const isEditing = ref(false);
 const editTitle = ref(props.collection.title);
 const editDescription = ref(props.collection.description ?? '');
 const isSubmitting = ref(false);
+const editFormRef = ref<HTMLFormElement | null>(null);
 const deleteDialogRef = ref<InstanceType<typeof DeleteCollectionDialog> | null>(
     null,
 );
@@ -184,6 +185,11 @@ defineOptions({
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="collection.updatedAt"
+                :on-edit="isEditing ? null : () => (isEditing = true)"
+                :on-save="isEditing ? () => editFormRef?.requestSubmit() : null"
+                :save-disabled="isSubmitting"
+                :on-cancel="isEditing ? cancelEdit : null"
+                :cancel-disabled="isSubmitting"
                 :on-delete="() => deleteDialogRef?.openDeleteDialog(collection)"
                 delete-label="Delete collection"
                 :delete-disabled="isSubmitting"
@@ -218,21 +224,11 @@ defineOptions({
                                     No description yet.
                                 </p>
                             </div>
-
-                            <div class="flex justify-end gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    @click="isEditing = true"
-                                >
-                                    <Pencil class="mr-1.5 h-4 w-4" />
-                                    Edit
-                                </Button>
-                            </div>
                         </div>
 
                         <form
                             v-else
+                            ref="editFormRef"
                             class="w-full space-y-4"
                             @submit.prevent="submitEdit"
                         >
@@ -256,19 +252,6 @@ defineOptions({
                                     rows="5"
                                 />
                                 <InputError :message="errors.description" />
-                            </div>
-                            <div class="flex justify-end gap-2">
-                                <Button
-                                    variant="outline"
-                                    type="button"
-                                    :disabled="isSubmitting"
-                                    @click="cancelEdit"
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" :disabled="isSubmitting">
-                                    Save changes
-                                </Button>
                             </div>
                         </form>
 
