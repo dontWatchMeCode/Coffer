@@ -61,6 +61,7 @@ function openDeleteDialog(contact: ContactItem): void {
 const { viewMode } = useViewMode('contacts');
 
 defineOptions({
+    inheritAttrs: false,
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

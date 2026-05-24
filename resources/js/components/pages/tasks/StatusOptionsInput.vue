@@ -172,136 +172,140 @@ function handleFocusOut(event: FocusEvent): void {
 </script>
 
 <template>
-    <ListboxRoot
-        :model-value="selectedLabels"
-        highlight-on-hover
-        multiple
-        @update:model-value="handleSelectedValues"
-    >
-        <input type="hidden" :name="`${name}_present`" value="1" />
-
-        <div ref="picker" class="relative" @focusout="handleFocusOut">
-            <TagsInput
-                :model-value="[]"
-                class="min-h-10 w-full border-input bg-transparent shadow-sm"
-            >
-                <ListboxFilter v-model="searchTerm" as-child>
-                    <TagsInputInput
-                        placeholder="Add status..."
-                        @focus="open = true"
-                        @keydown.enter.stop.prevent="createOption"
-                        @keydown.down="open = true"
-                    />
-                </ListboxFilter>
-            </TagsInput>
-
-            <div
-                v-if="open"
-                class="absolute z-50 mt-1 w-full rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
-            >
-                <ListboxContent
-                    class="max-h-[220px] scroll-py-1 overflow-x-hidden overflow-y-auto"
-                    tabindex="0"
-                >
-                    <ListboxItem
-                        v-for="option in candidates"
-                        :key="option.value"
-                        class="relative flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
-                        :value="option.label"
-                    >
-                        <span class="truncate">{{ option.label }}</span>
-                        <ListboxItemIndicator
-                            class="ml-auto inline-flex items-center justify-center"
-                        >
-                            <CheckIcon class="h-4 w-4" />
-                        </ListboxItemIndicator>
-                    </ListboxItem>
-
-                    <button
-                        v-if="canCreate"
-                        type="button"
-                        class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                        @click="createOption"
-                    >
-                        <Plus class="h-3.5 w-3.5" />
-                        Create "{{ trimmedSearch }}"
-                    </button>
-
-                    <div
-                        v-if="!canCreate && candidates.length === 0"
-                        class="px-2 py-1.5 text-xs text-muted-foreground"
-                    >
-                        No statuses found.
-                    </div>
-                </ListboxContent>
-            </div>
-        </div>
-    </ListboxRoot>
-
-    <VueDraggable
-        v-model="model"
-        :animation="150"
-        handle=".drag-handle"
-        class="mt-3 flex flex-col gap-2"
-        role="list"
-        aria-roledescription="Sortable status list"
-    >
-        <div
-            v-for="(option, index) in model"
-            :key="option.value"
-            role="listitem"
-            class="group flex items-center gap-2 rounded-md border bg-background px-2.5 py-2 text-sm shadow-xs"
+    <div>
+        <ListboxRoot
+            :model-value="selectedLabels"
+            highlight-on-hover
+            multiple
+            @update:model-value="handleSelectedValues"
         >
-            <input
-                type="hidden"
-                :name="`${name}[${index}][value]`"
-                :value="option.value"
-            />
-            <input
-                type="hidden"
-                :name="`${name}[${index}][label]`"
-                :value="option.label"
-            />
+            <input type="hidden" :name="`${name}_present`" value="1" />
 
-            <div
-                class="drag-handle -my-2 flex cursor-grab items-center py-2 pl-1 active:cursor-grabbing"
-                tabindex="0"
-                role="button"
-                :aria-label="`Reorder ${option.label}`"
-                @keydown.up.prevent="moveOption(index, -1)"
-                @keydown.down.prevent="moveOption(index, 1)"
-            >
-                <GripVertical class="h-4 w-4 shrink-0 text-muted-foreground/60" />
-            </div>
-            <component
-                :is="
-                    statusIcons[
-                        getTaskStatusMeta(option.value)
-                            .icon as keyof typeof statusIcons
-                    ]
-                "
-                class="h-4 w-4 shrink-0"
-                :class="getTaskStatusMeta(option.value).badgeColor"
-            />
-            <span class="min-w-0 flex-1 truncate font-medium">
-                {{ option.label }}
-            </span>
-            <code class="hidden text-xs text-muted-foreground sm:inline">
-                {{ option.value }}
-            </code>
-            <div
-                class="ml-auto flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100"
-            >
-                <button
-                    type="button"
-                    class="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
-                    :disabled="model.length <= 1"
-                    aria-label="Remove status"
-                    @click="removeOption(index)"
+            <div ref="picker" class="relative" @focusout="handleFocusOut">
+                <TagsInput
+                    :model-value="[]"
+                    class="min-h-10 w-full border-input bg-transparent shadow-sm"
                 >
-                    <X class="h-3.5 w-3.5" />
-                </button>
+                    <ListboxFilter v-model="searchTerm" as-child>
+                        <TagsInputInput
+                            placeholder="Add status..."
+                            @focus="open = true"
+                            @keydown.enter.stop.prevent="createOption"
+                            @keydown.down="open = true"
+                        />
+                    </ListboxFilter>
+                </TagsInput>
+
+                <div
+                    v-if="open"
+                    class="absolute z-50 mt-1 w-full rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
+                >
+                    <ListboxContent
+                        class="max-h-[220px] scroll-py-1 overflow-x-hidden overflow-y-auto"
+                        tabindex="0"
+                    >
+                        <ListboxItem
+                            v-for="option in candidates"
+                            :key="option.value"
+                            class="relative flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                            :value="option.label"
+                        >
+                            <span class="truncate">{{ option.label }}</span>
+                            <ListboxItemIndicator
+                                class="ml-auto inline-flex items-center justify-center"
+                            >
+                                <CheckIcon class="h-4 w-4" />
+                            </ListboxItemIndicator>
+                        </ListboxItem>
+
+                        <button
+                            v-if="canCreate"
+                            type="button"
+                            class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                            @click="createOption"
+                        >
+                            <Plus class="h-3.5 w-3.5" />
+                            Create "{{ trimmedSearch }}"
+                        </button>
+
+                        <div
+                            v-if="!canCreate && candidates.length === 0"
+                            class="px-2 py-1.5 text-xs text-muted-foreground"
+                        >
+                            No statuses found.
+                        </div>
+                    </ListboxContent>
+                </div>
             </div>
-        </div>
-    </VueDraggable>
+        </ListboxRoot>
+
+        <VueDraggable
+            v-model="model"
+            :animation="150"
+            handle=".drag-handle"
+            class="mt-3 flex flex-col gap-2"
+            role="list"
+            aria-roledescription="Sortable status list"
+        >
+            <div
+                v-for="(option, index) in model"
+                :key="option.value"
+                role="listitem"
+                class="group flex items-center gap-2 rounded-md border bg-background px-2.5 py-2 text-sm shadow-xs"
+            >
+                <input
+                    type="hidden"
+                    :name="`${name}[${index}][value]`"
+                    :value="option.value"
+                />
+                <input
+                    type="hidden"
+                    :name="`${name}[${index}][label]`"
+                    :value="option.label"
+                />
+
+                <div
+                    class="drag-handle -my-2 flex cursor-grab items-center py-2 pl-1 active:cursor-grabbing"
+                    tabindex="0"
+                    role="button"
+                    :aria-label="`Reorder ${option.label}`"
+                    @keydown.up.prevent="moveOption(index, -1)"
+                    @keydown.down.prevent="moveOption(index, 1)"
+                >
+                    <GripVertical
+                        class="h-4 w-4 shrink-0 text-muted-foreground/60"
+                    />
+                </div>
+                <component
+                    :is="
+                        statusIcons[
+                            getTaskStatusMeta(option.value)
+                                .icon as keyof typeof statusIcons
+                        ]
+                    "
+                    class="h-4 w-4 shrink-0"
+                    :class="getTaskStatusMeta(option.value).badgeColor"
+                />
+                <span class="min-w-0 flex-1 truncate font-medium">
+                    {{ option.label }}
+                </span>
+                <code class="hidden text-xs text-muted-foreground sm:inline">
+                    {{ option.value }}
+                </code>
+                <div
+                    class="ml-auto flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100"
+                >
+                    <button
+                        type="button"
+                        class="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
+                        :disabled="model.length <= 1"
+                        aria-label="Remove status"
+                        @click="removeOption(index)"
+                    >
+                        <X class="h-3.5 w-3.5" />
+                    </button>
+                </div>
+            </div>
+        </VueDraggable>
+    </div>
 </template>

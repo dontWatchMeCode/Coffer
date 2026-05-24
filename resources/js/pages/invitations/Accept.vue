@@ -17,6 +17,7 @@ type Props = {
 defineProps<Props>();
 
 defineOptions({
+    inheritAttrs: false,
     layout: {
         title: 'Team invitation',
         description: 'You have been invited to join a team.',

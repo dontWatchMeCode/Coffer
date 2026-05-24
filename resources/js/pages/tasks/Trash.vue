@@ -31,6 +31,7 @@ const records = computed<TrashRecord[]>(() =>
 );
 
 defineOptions({
+    inheritAttrs: false,
     layout: (props: {
         currentTeam?: { slug: string } | null;
         project?: { id: number; name: string };

@@ -46,6 +46,7 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
 };
 
 const code = ref<string>('');
+defineOptions({ inheritAttrs: false });
 </script>
 
 <template>

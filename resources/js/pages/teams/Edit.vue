@@ -32,6 +32,7 @@ type Props = {
 const props = defineProps<Props>();
 
 defineOptions({
+    inheritAttrs: false,
     layout: (props: { team: Team }) => ({
         breadcrumbs: [
             {

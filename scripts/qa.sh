@@ -12,6 +12,29 @@ run_step() {
     fi
 }
 
+check_pages_have_inherit_attrs() {
+    local matches
+    local status
+
+    matches=$(grep -RL \
+        --include='*.vue' \
+        --exclude='TokenDialog.vue' \
+        'inheritAttrs' \
+        resources/js/pages/ 2>/dev/null) || status=$?
+
+    if [[ ${status:-0} -gt 1 ]]; then
+        echo 'Unable to check for inheritAttrs in page components.'
+        echo "$matches"
+        return 1
+    fi
+
+    if [[ -n $matches ]]; then
+        echo 'Inertia page components must have inheritAttrs: false:'
+        echo "$matches"
+        return 1
+    fi
+}
+
 check_no_eslint_disable() {
     local matches
     local status
@@ -44,6 +67,7 @@ run_step "wayfinder:generate" php artisan wayfinder:generate --ansi --with-form
 run_step "npm build" npm run build
 run_step "npm format" npm run format
 run_step "eslint-disable check" check_no_eslint_disable
+run_step "inheritAttrs check" check_pages_have_inherit_attrs
 run_step "npm lint" npm run lint
 run_step "npm types:check" npm run types:check
 run_step "analyse" composer run-script analyse

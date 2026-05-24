@@ -28,6 +28,7 @@ withDefaults(defineProps<Props>(), {
 });
 
 defineOptions({
+    inheritAttrs: false,
     layout: {
         breadcrumbs: [
             {

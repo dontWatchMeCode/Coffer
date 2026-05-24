@@ -128,6 +128,7 @@ function formatStatus(status: string): string {
 }
 
 defineOptions({
+    inheritAttrs: false,
     layout: (layoutProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

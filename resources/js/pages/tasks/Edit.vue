@@ -68,6 +68,7 @@ const selectedProjectId = ref(props.project.id.toString());
 const deleteDialogOpen = ref(false);
 
 defineOptions({
+    inheritAttrs: false,
     layout: (layoutProps: {
         currentTeam?: { slug: string } | null;
         project?: { id: number; name: string };

@@ -7,6 +7,7 @@ import { logout } from '@/routes';
 import { send } from '@/routes/verification';
 
 defineOptions({
+    inheritAttrs: false,
     layout: {
         title: 'Verify email',
         description:

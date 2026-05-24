@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { update } from '@/routes/password';
 
 defineOptions({
+    inheritAttrs: false,
     layout: {
         title: 'Reset password',
         description: 'Please enter your new password below',

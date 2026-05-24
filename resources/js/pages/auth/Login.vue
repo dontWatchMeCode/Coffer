@@ -13,6 +13,7 @@ import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
 defineOptions({
+    inheritAttrs: false,
     layout: {
         title: 'Log in to your account',
         description: 'Enter your email and password below to log in',

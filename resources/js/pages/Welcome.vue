@@ -19,6 +19,7 @@ const dashboardUrl = computed(() =>
         ? teamDashboard(page.props.currentTeam.slug).url
         : dashboard().url,
 );
+defineOptions({ inheritAttrs: false });
 </script>
 
 <template>

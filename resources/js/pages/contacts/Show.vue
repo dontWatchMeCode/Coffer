@@ -56,6 +56,7 @@ const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const isEditing = ref(false);
 
 defineOptions({
+    inheritAttrs: false,
     layout: (layoutProps: {
         currentTeam?: Team | null;
         contact?: { id: number; name: string };

@@ -29,6 +29,7 @@ const records = computed<TrashRecord[]>(() =>
 );
 
 defineOptions({
+    inheritAttrs: false,
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

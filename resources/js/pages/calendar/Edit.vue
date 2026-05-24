@@ -55,6 +55,7 @@ const editDate = ref(props.event.date ?? '');
 const editTime = ref(props.event.time ?? '');
 
 defineOptions({
+    inheritAttrs: false,
     layout: (layoutProps: {
         currentTeam?: Team | null;
         event?: { id: number; title: string };

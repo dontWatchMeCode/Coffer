@@ -56,6 +56,7 @@ function navigateToCollection(collection: CollectionItem): void {
 }
 
 defineOptions({
+    inheritAttrs: false,
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

@@ -110,6 +110,7 @@ function submitEdit(): void {
 }
 
 defineOptions({
+    inheritAttrs: false,
     layout: (layoutProps: {
         currentTeam?: Team | null;
         note?: { id: number; title: string };

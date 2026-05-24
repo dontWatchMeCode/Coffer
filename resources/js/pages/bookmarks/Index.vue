@@ -61,6 +61,7 @@ function openDeleteDialog(bookmark: BookmarkItem): void {
 const { viewMode } = useViewMode('bookmarks');
 
 defineOptions({
+    inheritAttrs: false,
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

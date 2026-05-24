@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/password/confirm';
 
 defineOptions({
+    inheritAttrs: false,
     layout: {
         title: 'Confirm your password',
         description:

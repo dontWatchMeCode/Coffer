@@ -52,6 +52,7 @@ function navigateToNote(note: NoteItem): void {
 const { viewMode } = useViewMode('notes');
 
 defineOptions({
+    inheritAttrs: false,
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

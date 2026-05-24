@@ -118,6 +118,7 @@ onUnmounted(() => {
 });
 
 defineOptions({
+    inheritAttrs: false,
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

@@ -269,6 +269,7 @@ function clearFilters(): void {
 }
 
 defineOptions({
+    inheritAttrs: false,
     layout: (layoutProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

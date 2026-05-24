@@ -53,6 +53,7 @@ const visibleProjects = computed(() =>
 );
 
 defineOptions({
+    inheritAttrs: false,
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

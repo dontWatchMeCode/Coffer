@@ -197,6 +197,7 @@ function formatDate(value: string | null): string {
 }
 
 defineOptions({
+    inheritAttrs: false,
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

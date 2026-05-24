@@ -68,6 +68,7 @@ function openDeleteDialog(subscription: SubscriptionItem): void {
 const { viewMode } = useViewMode('subscriptions');
 
 defineOptions({
+    inheritAttrs: false,
     layout: (pageProps: { currentTeam?: Team | null }) => ({
         breadcrumbs: [
             {

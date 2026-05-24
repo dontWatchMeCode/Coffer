@@ -153,6 +153,7 @@ function recordTypeBadge(type: string): string {
 }
 
 defineOptions({
+    inheritAttrs: false,
     layout: (layoutProps: {
         currentTeam?: Team | null;
         collection?: { id: number; title: string };

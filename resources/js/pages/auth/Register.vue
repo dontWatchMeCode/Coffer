@@ -11,6 +11,7 @@ import { login } from '@/routes';
 import { store } from '@/routes/register';
 
 defineOptions({
+    inheritAttrs: false,
     layout: {
         title: 'Create an account',
         description: 'Enter your details below to create your account',
