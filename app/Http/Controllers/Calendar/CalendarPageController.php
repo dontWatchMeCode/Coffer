@@ -31,13 +31,18 @@ class CalendarPageController extends Controller
         $start = $base->copy()->subMonth()->startOfMonth()->toDateString();
         $end = $base->copy()->addMonth()->endOfMonth()->toDateString();
 
-        $calendarEvents = CalendarEvent::query()
+        $calendarEventsQuery = CalendarEvent::query()
             ->whereBelongsTo($currentTeam)
-            ->when($search, fn ($q) => $q->search($search, ['title', 'description']))
             ->whereBetween('date', [$start, $end])
             ->orderBy('date')
             ->orderBy('time')
-            ->orderByDesc('updated_at')
+            ->orderByDesc('updated_at');
+
+        $searchMatchIds = $search
+            ? (clone $calendarEventsQuery)->search($search, ['title', 'description'])->pluck('id')->all()
+            : null;
+
+        $calendarEvents = (clone $calendarEventsQuery)
             ->get()
             ->map(fn (CalendarEvent $event): array => $this->formatEvent($event, includeTimestamps: true))
             ->values()
@@ -54,6 +59,7 @@ class CalendarPageController extends Controller
 
         return Inertia::render('calendar/Index', [
             'calendarEvents' => $calendarEvents,
+            'searchMatchIds' => $searchMatchIds,
             'events' => Inertia::scroll($paginatedEvents->through(fn (CalendarEvent $event): array => $this->formatEvent($event, includeTimestamps: true))),
         ]);
     }

@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import type { CalendarEventItem } from '@/types';
 
+type DayEvent = {
+    event: CalendarEventItem;
+    matchesSearch: boolean;
+};
+
 type Props = {
     calendarDays: (number | null)[];
     daysOfWeek: string[];
     today: string;
     currentYear: number;
     currentMonth: number;
-    eventsForDay: (day: number | null) => CalendarEventItem[];
+    dayEventsMap: Map<number, DayEvent[]>;
     formatDateStr: (year: number, month: number, day: number) => string;
     months: string[];
     openCreateDialog: (day: number) => void;
@@ -15,6 +20,11 @@ type Props = {
 };
 
 defineProps<Props>();
+
+function getDayEvents(day: number, map: Map<number, DayEvent[]>): DayEvent[] {
+    return map.get(day) ?? [];
+}
+
 </script>
 
 <template>
@@ -60,14 +70,19 @@ defineProps<Props>();
                 </div>
 
                 <div
-                    v-if="eventsForDay(day).length > 0"
+                    v-if="getDayEvents(day, dayEventsMap).length > 0"
                     class="mt-1 space-y-0.5"
                 >
                     <button
-                        v-for="event in eventsForDay(day).slice(0, 3)"
+                        v-for="{ event, matchesSearch } in getDayEvents(day, dayEventsMap).slice(0, 3)"
                         :key="event.id"
                         type="button"
-                        class="flex w-full cursor-pointer items-center gap-1 truncate rounded-md bg-primary/10 px-1.5 py-0.5 text-left text-xs text-primary transition-colors hover:bg-primary/20"
+                        class="flex w-full cursor-pointer items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-left text-xs transition-colors"
+                        :class="
+                            matchesSearch
+                                ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                                : 'bg-muted/50 text-muted-foreground hover:bg-muted/70'
+                        "
                         @click="openEditDialog(event)"
                     >
                         <span v-if="event.time" class="shrink-0 opacity-70">
@@ -78,10 +93,10 @@ defineProps<Props>();
                         </span>
                     </button>
                     <span
-                        v-if="eventsForDay(day).length > 3"
+                        v-if="getDayEvents(day, dayEventsMap).length > 3"
                         class="block px-1.5 text-[10px] text-muted-foreground"
                     >
-                        +{{ eventsForDay(day).length - 3 }} more
+                        +{{ getDayEvents(day, dayEventsMap).length - 3 }} more
                     </span>
                 </div>
             </div>

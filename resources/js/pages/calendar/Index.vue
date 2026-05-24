@@ -49,6 +49,7 @@ import type { CalendarEventItem, PaginatedData, Team } from '@/types';
 type Props = {
     calendarEvents: CalendarEventItem[];
     events: PaginatedData<CalendarEventItem>;
+    searchMatchIds: number[] | null;
 };
 
 const props = defineProps<Props>();
@@ -84,7 +85,7 @@ function reloadCalendar(): void {
             month: currentMonth.value + 1,
             year: currentYear.value,
         },
-        only: ['calendarEvents', 'events'],
+        only: ['calendarEvents', 'events', 'searchMatchIds'],
         reset: ['events'],
         preserveScroll: true,
         preserveState: true,
@@ -238,15 +239,29 @@ const today = computed(() => {
     return `${y}-${m}-${d}`;
 });
 
-function eventsForDay(day: number | null): CalendarEventItem[] {
-    if (day === null) {
-        return [];
+const dayEventsMap = computed(() => {
+    const map = new Map<number, { event: CalendarEventItem; matchesSearch: boolean }[]>();
+    const yearMonth = `${currentYear.value}-${String(currentMonth.value + 1).padStart(2, '0')}`;
+
+    for (const event of props.calendarEvents) {
+        if (!event.date || !event.date.startsWith(yearMonth)) {
+            continue;
+        }
+
+        const day = Number.parseInt(event.date.split('-')[2], 10);
+
+        if (!map.has(day)) {
+            map.set(day, []);
+        }
+
+        map.get(day)!.push({
+            event,
+            matchesSearch: props.searchMatchIds === null || props.searchMatchIds.includes(event.id),
+        });
     }
 
-    const dateStr = formatDateStr(currentYear.value, currentMonth.value, day);
-
-    return props.calendarEvents.filter((e) => e.date === dateStr);
-}
+    return map;
+});
 
 function prevMonth(): void {
     if (currentMonth.value === 0 && currentYear.value === minYear) {
@@ -303,204 +318,207 @@ function openEditDialog(event: CalendarEventItem): void {
 
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
-            <div class="mb-4 flex items-center justify-between">
-                <div
-                    v-if="viewMode === 'calendar'"
-                    class="flex items-center gap-2"
-                >
-                    <div
-                        class="flex items-center rounded-md border bg-muted p-0.5"
-                    >
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            class="cursor-pointer hover:bg-background!"
-                            @click="prevMonth"
-                        >
-                            <ChevronLeft class="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            class="h-7 cursor-pointer hover:bg-background!"
-                            @click="goToday"
-                        >
-                            Today
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            class="cursor-pointer hover:bg-background!"
-                            @click="nextMonth"
-                        >
-                            <ChevronRight class="h-3.5 w-3.5" />
-                        </Button>
-                    </div>
-                    <Select
-                        :model-value="String(currentMonth)"
-                        @update:model-value="currentMonth = Number($event)"
-                    >
-                        <SelectTrigger
-                            class="ml-1 h-7 w-auto gap-4 border-none bg-transparent px-1 text-sm font-semibold shadow-none hover:bg-transparent focus:ring-0 dark:bg-transparent dark:hover:bg-transparent"
-                        >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem
-                                v-for="(month, idx) in months"
-                                :key="idx"
-                                :value="String(idx)"
-                            >
-                                {{ month }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <ComboboxRoot
-                        :model-value="currentYear"
-                        @update:model-value="updateCurrentYear"
-                        :open="isYearPickerOpen"
-                        @update:open="updateYearPickerOpen"
-                        :ignore-filter="true"
-                        open-on-focus
-                        class="min-w-0"
-                    >
-                        <ComboboxAnchor
-                            class="flex h-7 items-center gap-1 rounded-md border-none bg-transparent px-1 text-sm font-semibold shadow-none"
-                        >
-                            <ComboboxInput
-                                v-model="yearSearch"
-                                :display-value="displayYearValue"
-                                placeholder="Year"
-                                class="h-full w-14 bg-transparent text-center outline-none placeholder:text-foreground"
-                            />
-                            <ComboboxTrigger class="cursor-pointer">
-                                <ChevronsUpDown
-                                    class="size-3.5 shrink-0 opacity-50"
-                                />
-                            </ComboboxTrigger>
-                        </ComboboxAnchor>
-
-                        <ComboboxPortal>
-                            <ComboboxContent
-                                position="popper"
-                                class="z-50 max-h-64 min-w-[var(--reka-combobox-trigger-width)] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
-                                :side-offset="4"
-                            >
-                                <ComboboxViewport class="h-56 p-1">
-                                    <ComboboxEmpty
-                                        class="px-2 py-3 text-sm text-muted-foreground"
-                                    >
-                                        No years found.
-                                    </ComboboxEmpty>
-
-                                    <ComboboxVirtualizer
-                                        v-slot="{ option }"
-                                        :options="filteredYears"
-                                        :text-content="(value) => String(value)"
-                                        :estimate-size="30"
-                                    >
-                                        <ComboboxItem
-                                            :value="option"
-                                            class="relative flex w-full items-center rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
-                                        >
-                                            {{ option }}
-
-                                            <span
-                                                class="absolute right-2 flex size-3.5 items-center justify-center"
-                                            >
-                                                <ComboboxItemIndicator>
-                                                    <Check class="size-4" />
-                                                </ComboboxItemIndicator>
-                                            </span>
-                                        </ComboboxItem>
-                                    </ComboboxVirtualizer>
-                                </ComboboxViewport>
-                            </ComboboxContent>
-                        </ComboboxPortal>
-                    </ComboboxRoot>
-                </div>
-
-                <div class="ml-auto flex items-center gap-2">
-                    <SearchInput
-                        v-if="viewMode === 'list'"
-                        v-model="searchQuery"
-                        data-testid="calendar-search-input"
-                        placeholder="Search events..."
-                    />
-
-                    <Button
-                        size="icon"
-                        title="Create event"
-                        class="cursor-pointer"
-                        @click="dialogsRef?.openCreateDialogNoDate()"
-                    >
-                        <ListPlus class="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        title="Trash"
-                        as-child
-                    >
-                        <Link :href="calendarTrash(currentTeamSlug).url">
-                            <Trash2 class="h-4 w-4" />
-                        </Link>
-                    </Button>
-
-                    <div
-                        class="flex items-center gap-1 rounded-lg border bg-muted p-0.5"
-                    >
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            :class="{
-                                'bg-background': viewMode === 'calendar',
-                            }"
-                            class="cursor-pointer hover:bg-background!"
-                            @click="viewMode = 'calendar'"
-                        >
-                            <CalendarDays class="mr-1.5 h-3.5 w-3.5" />
-                            Calendar
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            :class="{
-                                'bg-background': viewMode === 'list',
-                            }"
-                            class="cursor-pointer hover:bg-background!"
-                            @click="viewMode = 'list'"
-                        >
-                            <List class="mr-1.5 h-3.5 w-3.5" />
-                            List
-                        </Button>
-                    </div>
-                </div>
+            <div class="mb-4 flex items-center justify-end gap-3">
+                <SearchInput
+                    v-model="searchQuery"
+                    data-testid="calendar-search-input"
+                    placeholder="Search events..."
+                />
             </div>
 
-            <CalendarGrid
-                v-if="viewMode === 'calendar'"
-                :calendar-days="calendarDays"
-                :days-of-week="daysOfWeek"
-                :today="today"
-                :current-year="currentYear"
-                :current-month="currentMonth"
-                :events-for-day="eventsForDay"
-                :format-date-str="formatDateStr"
-                :months="months"
-                :open-create-dialog="openCreateDialog"
-                :open-edit-dialog="openEditDialog"
-            />
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div
+                        v-if="viewMode === 'calendar'"
+                        class="flex items-center gap-2"
+                    >
+                        <div
+                            class="flex items-center rounded-md border bg-muted p-0.5"
+                        >
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                class="cursor-pointer hover:bg-background!"
+                                @click="prevMonth"
+                            >
+                                <ChevronLeft class="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                class="h-7 cursor-pointer hover:bg-background!"
+                                @click="goToday"
+                            >
+                                Today
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                class="cursor-pointer hover:bg-background!"
+                                @click="nextMonth"
+                            >
+                                <ChevronRight class="h-3.5 w-3.5" />
+                            </Button>
+                        </div>
+                        <Select
+                            :model-value="String(currentMonth)"
+                            @update:model-value="currentMonth = Number($event)"
+                        >
+                            <SelectTrigger
+                                class="ml-1 h-7 w-auto gap-4 border-none bg-transparent px-1 text-sm font-semibold shadow-none hover:bg-transparent focus:ring-0 dark:bg-transparent dark:hover:bg-transparent"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="(month, idx) in months"
+                                    :key="idx"
+                                    :value="String(idx)"
+                                >
+                                    {{ month }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <ComboboxRoot
+                            :model-value="currentYear"
+                            @update:model-value="updateCurrentYear"
+                            :open="isYearPickerOpen"
+                            @update:open="updateYearPickerOpen"
+                            :ignore-filter="true"
+                            open-on-focus
+                            class="min-w-0"
+                        >
+                            <ComboboxAnchor
+                                class="flex h-7 items-center gap-1 rounded-md border-none bg-transparent px-1 text-sm font-semibold shadow-none"
+                            >
+                                <ComboboxInput
+                                    v-model="yearSearch"
+                                    :display-value="displayYearValue"
+                                    placeholder="Year"
+                                    class="h-full w-14 bg-transparent text-center outline-none placeholder:text-foreground"
+                                />
+                                <ComboboxTrigger class="cursor-pointer">
+                                    <ChevronsUpDown
+                                        class="size-3.5 shrink-0 opacity-50"
+                                    />
+                                </ComboboxTrigger>
+                            </ComboboxAnchor>
 
-            <InfiniteScroll v-if="viewMode === 'list'" data="events">
-                <CalendarList
-                    :events="props.events.data"
+                            <ComboboxPortal>
+                                <ComboboxContent
+                                    position="popper"
+                                    class="z-50 max-h-64 min-w-[var(--reka-combobox-trigger-width)] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+                                    :side-offset="4"
+                                >
+                                    <ComboboxViewport class="h-56 p-1">
+                                        <ComboboxEmpty
+                                            class="px-2 py-3 text-sm text-muted-foreground"
+                                        >
+                                            No years found.
+                                        </ComboboxEmpty>
+
+                                        <ComboboxVirtualizer
+                                            v-slot="{ option }"
+                                            :options="filteredYears"
+                                            :text-content="(value) => String(value)"
+                                            :estimate-size="30"
+                                        >
+                                            <ComboboxItem
+                                                :value="option"
+                                                class="relative flex w-full items-center rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                                            >
+                                                {{ option }}
+
+                                                <span
+                                                    class="absolute right-2 flex size-3.5 items-center justify-center"
+                                                >
+                                                    <ComboboxItemIndicator>
+                                                        <Check class="size-4" />
+                                                    </ComboboxItemIndicator>
+                                                </span>
+                                            </ComboboxItem>
+                                        </ComboboxVirtualizer>
+                                    </ComboboxViewport>
+                                </ComboboxContent>
+                            </ComboboxPortal>
+                        </ComboboxRoot>
+                    </div>
+
+                    <div class="ml-auto flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            title="Trash"
+                            as-child
+                        >
+                            <Link :href="calendarTrash(currentTeamSlug).url">
+                                <Trash2 class="h-4 w-4" />
+                            </Link>
+                        </Button>
+
+                        <Button
+                            size="icon"
+                            title="Create event"
+                            class="cursor-pointer"
+                            @click="dialogsRef?.openCreateDialogNoDate()"
+                        >
+                            <ListPlus class="h-4 w-4" />
+                        </Button>
+
+                        <div
+                            class="flex items-center gap-1 rounded-lg border bg-muted p-0.5"
+                        >
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                :class="{
+                                    'bg-background': viewMode === 'calendar',
+                                }"
+                                class="cursor-pointer hover:bg-background!"
+                                @click="viewMode = 'calendar'"
+                            >
+                                <CalendarDays class="mr-1.5 h-3.5 w-3.5" />
+                                Calendar
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                :class="{
+                                    'bg-background': viewMode === 'list',
+                                }"
+                                class="cursor-pointer hover:bg-background!"
+                                @click="viewMode = 'list'"
+                            >
+                                <List class="mr-1.5 h-3.5 w-3.5" />
+                                List
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <CalendarGrid
+                    v-if="viewMode === 'calendar'"
+                    :calendar-days="calendarDays"
+                    :days-of-week="daysOfWeek"
                     :today="today"
+                    :current-year="currentYear"
+                    :current-month="currentMonth"
+                    :day-events-map="dayEventsMap"
+                    :format-date-str="formatDateStr"
                     :months="months"
+                    :open-create-dialog="openCreateDialog"
                     :open-edit-dialog="openEditDialog"
                 />
-            </InfiniteScroll>
+
+                <InfiniteScroll v-if="viewMode === 'list'" data="events">
+                    <CalendarList
+                        :events="props.events.data"
+                        :today="today"
+                        :months="months"
+                        :open-edit-dialog="openEditDialog"
+                    />
+                </InfiniteScroll>
+            </div>
         </div>
     </div>
 
