@@ -85,7 +85,7 @@ class TaskPageController extends Controller
                 $comments,
             ),
             'members' => $this->dataService->memberPayload($members),
-            'statuses' => $this->dataService->statusPayload(),
+            'statuses' => $this->dataService->statusPayload($project),
             'projects' => array_values(array_map(fn (Project $p): array => [
                 'id' => $p->id,
                 'name' => $p->name,
@@ -127,7 +127,7 @@ class TaskPageController extends Controller
                 'commentsCount' => $task->comments_count ?? 0,
             ]))),
             'members' => $this->dataService->memberPayload($members),
-            'statuses' => $this->dataService->statusPayload(),
+            'statuses' => $this->dataService->statusPayload($project),
             'recordLinks' => $this->recordLinksPayload($project, $currentTeam),
             'recordTags' => $this->recordTagsPayload($project, $currentTeam),
             'activityHistory' => $this->activityHistoryConfig($project),

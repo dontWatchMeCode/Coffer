@@ -177,7 +177,7 @@ class McpRecordService
 
         $data = Validator::validate(
             $validated['data'],
-            McpRecordValidator::rulesFor($validated['type'], false, $team),
+            McpRecordValidator::rulesFor($validated['type'], false, $team, $validated['data']),
             McpRecordValidator::messagesFor($validated['type']),
         );
 
@@ -244,7 +244,7 @@ class McpRecordService
 
         $data = Validator::validate(
             $validated['data'],
-            McpRecordValidator::rulesFor($validated['type'], true, $team),
+            McpRecordValidator::rulesFor($validated['type'], true, $team, $validated['data'], $model),
             McpRecordValidator::messagesFor($validated['type']),
         );
 

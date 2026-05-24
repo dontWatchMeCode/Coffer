@@ -8,6 +8,7 @@ export type Team = {
     role?: TeamRole;
     roleLabel?: string;
     isCurrent?: boolean;
+    defaultTaskStatusOptions?: { value: string; label: string }[];
 };
 
 export type TeamMember = {

@@ -28,7 +28,10 @@ import type {
 import type { RecordTag, TagContext, TagEndpoints } from '@/types/record-tags';
 
 type Props = {
-    project: Pick<TaskProject, 'id' | 'name' | 'description' | 'isArchived'>;
+    project: Pick<
+        TaskProject,
+        'id' | 'name' | 'description' | 'isArchived' | 'statusOptions'
+    >;
     task: TaskItem;
     comments: TaskCommentItem[];
     members: TaskMember[];

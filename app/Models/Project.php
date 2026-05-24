@@ -8,6 +8,7 @@ use App\Concerns\BelongsToTeam;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
+use App\Enums\TaskStatus;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-#[Fillable(['team_id', 'name', 'description', 'archived'])]
+#[Fillable(['team_id', 'name', 'description', 'archived', 'status_options'])]
 class Project extends Model implements LinkableRecord
 {
     use BelongsToTeam;
@@ -56,6 +57,41 @@ class Project extends Model implements LinkableRecord
     {
         return [
             'archived' => 'boolean',
+            'status_options' => 'array',
         ];
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public function taskStatusOptions(): array
+    {
+        $statusOptions = $this->getAttribute('status_options');
+
+        if (is_array($statusOptions) && $statusOptions !== []) {
+            return TaskStatus::normalizeOptions($statusOptions);
+        }
+
+        return $this->team?->taskStatusDefaults() ?: TaskStatus::options();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function taskStatusValuesFor(Team $team, mixed $projectId): array
+    {
+        if ($projectId === null) {
+            return TaskStatus::values();
+        }
+
+        $project = self::withoutGlobalScopes()
+            ->whereBelongsTo($team)
+            ->find($projectId);
+
+        if (! $project instanceof self) {
+            return TaskStatus::values();
+        }
+
+        return array_column($project->taskStatusOptions(), 'value');
     }
 }

@@ -12,7 +12,6 @@ use App\Models\Team;
 use App\Models\User;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Str;
 
 class TaskPageDataService
 {
@@ -96,6 +95,7 @@ class TaskPageDataService
             'name' => $project->name,
             'description' => $project->description,
             'isArchived' => (bool) $project->getAttribute('archived'),
+            'statusOptions' => $project->taskStatusOptions(),
         ];
 
         if ($project->offsetExists('tasks_count')) {
@@ -201,11 +201,8 @@ class TaskPageDataService
      *
      * @return list<array{value: string, label: string}>
      */
-    public function statusPayload(): array
+    public function statusPayload(?Project $project = null): array
     {
-        return array_map(fn (TaskStatus $status): array => [
-            'value' => $status->value,
-            'label' => Str::headline($status->value),
-        ], TaskStatus::cases());
+        return $project?->taskStatusOptions() ?: TaskStatus::options();
     }
 }

@@ -6,6 +6,8 @@ namespace App\Http\Requests\Tasks;
 
 use App\Enums\TaskStatus;
 use App\Http\Requests\Concerns\AuthorizesTeamResource;
+use App\Models\Project;
+use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -36,6 +38,8 @@ class SaveTaskRequest extends FormRequest
             abort(404);
         }
 
+        $statusValues = $this->projectStatusValues($team);
+
         return [
             'project_id' => [
                 ...$this->requiredRule(),
@@ -50,7 +54,7 @@ class SaveTaskRequest extends FormRequest
             ],
             'title' => [...$this->requiredRule(), 'string', 'max:255'],
             'description' => [...$this->optionalOnPatchRule(), 'nullable', 'string'],
-            'status' => [...$this->requiredRule(), Rule::enum(TaskStatus::class)],
+            'status' => [...$this->requiredRule(), Rule::in($statusValues)],
             'progress' => [...$this->optionalOnPatchRule(), 'sometimes', 'integer', 'between:0,100'],
             'time_estimate' => [...$this->optionalOnPatchRule(), 'nullable', 'integer', 'min:0'],
             'position' => [...$this->optionalOnPatchRule(), 'nullable', 'integer', 'min:0'],
@@ -86,7 +90,11 @@ class SaveTaskRequest extends FormRequest
         }
 
         if ($this->isMethod('post') && ! $this->has('status')) {
-            $data['status'] = TaskStatus::Planned->value;
+            $team = $this->route('current_team');
+
+            if ($team instanceof Team) {
+                $data['status'] = $this->projectStatusValues($team)[0] ?? TaskStatus::Planned->value;
+            }
         }
 
         if ($data !== []) {
@@ -112,5 +120,25 @@ class SaveTaskRequest extends FormRequest
     protected function optionalOnPatchRule(): array
     {
         return $this->isMethod('patch') ? ['sometimes'] : [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function projectStatusValues(Team $team): array
+    {
+        $projectId = $this->input('project_id');
+
+        if ($projectId === null && $this->route('task') !== null) {
+            $task = Task::query()
+                ->whereBelongsTo($team)
+                ->find($this->route('task'));
+
+            if ($task instanceof Task) {
+                $projectId = $task->project_id;
+            }
+        }
+
+        return Project::taskStatusValuesFor($team, $projectId);
     }
 }

@@ -106,9 +106,7 @@ class Task extends Model implements LinkableRecord
         }
 
         $newStatus = $task->getAttributes()['status'] ?? $task->getRawOriginal('status');
-        $status = is_string($newStatus) ? TaskStatus::tryFrom($newStatus) : null;
-
-        if ($status === TaskStatus::Completed) {
+        if ($newStatus === TaskStatus::Completed->value) {
             $task->completed_at ??= now()->toDateTimeString();
 
             return;
@@ -157,6 +155,11 @@ class Task extends Model implements LinkableRecord
         return $this->hasMany(TaskComment::class);
     }
 
+    public function setStatusAttribute(TaskStatus|string $value): void
+    {
+        $this->attributes['status'] = $value instanceof TaskStatus ? $value->value : $value;
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -165,7 +168,6 @@ class Task extends Model implements LinkableRecord
     protected function casts(): array
     {
         return [
-            'status' => TaskStatus::class,
             'completed_at' => 'datetime',
             'due_at' => 'datetime',
         ];

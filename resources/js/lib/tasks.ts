@@ -50,7 +50,10 @@ export const taskStatusMeta: Record<string, TaskStatusMeta> = {
 export function getTaskStatusMeta(status: string): TaskStatusMeta {
     return (
         taskStatusMeta[status] ?? {
-            label: 'Unknown',
+            label: status
+                .split('_')
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' '),
             triggerColor: 'bg-gray-500',
             badgeColor: 'text-gray-500',
             icon: 'flag',

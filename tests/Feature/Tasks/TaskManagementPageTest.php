@@ -356,7 +356,7 @@ test('task creation defaults to planned status when status is omitted', function
         ->first();
 
     expect($task)->not->toBeNull();
-    expect($task->status)->toBe(TaskStatus::Planned);
+    expect($task->status)->toBe(TaskStatus::Planned->value);
 
     $response->assertRedirect(route('team.tasks.edit', ['current_team' => $team, 'project' => $project->id, 'task' => $task, 'edit' => 'description']));
 });
@@ -874,7 +874,7 @@ test('task update from list view redirects back to project page', function () {
         ])
         ->assertRedirect(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]));
 
-    expect($task->fresh()->status)->toBe(TaskStatus::Completed);
+    expect($task->fresh()->status)->toBe(TaskStatus::Completed->value);
 });
 
 test('task time estimate patch persists and appears in payload', function () {

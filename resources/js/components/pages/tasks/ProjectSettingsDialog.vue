@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Form, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import ProjectController from '@/actions/App/Http/Controllers/Tasks/ProjectController';
 import InputError from '@/components/form/InputError.vue';
+import StatusOptionsInput from '@/components/pages/tasks/StatusOptionsInput.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -19,16 +20,26 @@ import { taskInputLikeClass } from '@/lib/tasks';
 import type { TaskProject } from '@/types';
 
 type Props = {
-    project: Pick<TaskProject, 'id' | 'name' | 'description' | 'isArchived'>;
+    project: Pick<
+        TaskProject,
+        'id' | 'name' | 'description' | 'isArchived' | 'statusOptions'
+    >;
 };
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 
 const projectSettingsOpen = ref(false);
 const projectSettingsFormKey = ref(0);
+const statusOptions = ref([...props.project.statusOptions]);
+
+watch(projectSettingsOpen, (open) => {
+    if (open) {
+        statusOptions.value = [...props.project.statusOptions];
+    }
+});
 
 defineExpose({
     projectSettingsOpen,
@@ -97,6 +108,23 @@ defineExpose({
                     />
                     <span class="text-sm">Archived</span>
                 </label>
+
+                <div class="grid gap-2">
+                    <Label for="selected-project-status-options"
+                        >Statuses</Label
+                    >
+                    <StatusOptionsInput
+                        id="selected-project-status-options"
+                        v-model="statusOptions"
+                        name="status_options"
+                        :options="statusOptions"
+                    />
+                    <p class="text-xs text-muted-foreground">
+                        Pick existing statuses or create new ones. Tasks can
+                        only use these statuses.
+                    </p>
+                    <InputError :message="errors.status_options" />
+                </div>
 
                 <div class="flex justify-end">
                     <Button type="submit" :disabled="processing"

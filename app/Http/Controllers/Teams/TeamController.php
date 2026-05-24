@@ -70,6 +70,7 @@ class TeamController extends Controller
                 'name' => $team->name,
                 'slug' => $team->slug,
                 'isPersonal' => $team->is_personal,
+                'defaultTaskStatusOptions' => $team->taskStatusDefaults(),
             ],
             'members' => $team->members()->get()->map(fn (User $member): array => [
                 'id' => $member->id,
@@ -104,7 +105,7 @@ class TeamController extends Controller
         $team = DB::transaction(function () use ($request, $team) {
             $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
 
-            $team->update(['name' => $request->validated('name')]);
+            $team->update($request->safe()->only(['name', 'default_task_status_options']));
 
             return $team;
         });

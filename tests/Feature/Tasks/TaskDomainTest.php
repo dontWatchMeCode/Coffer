@@ -39,10 +39,54 @@ test('project task and comment relationships are defined', function () {
 test('task status is cast and defaults are applied', function () {
     $task = Task::factory()->create();
 
-    expect($task->status)->toBe(TaskStatus::Planned)
+    expect($task->status)->toBe(TaskStatus::Planned->value)
         ->and($task->progress)->toBe(0)
         ->and($task->position)->toBe(0)
         ->and($task->completed_at)->toBeNull();
+});
+
+test('projects copy team task status defaults', function () {
+    $team = Team::factory()->create([
+        'default_task_status_options' => [
+            ['value' => 'backlog', 'label' => 'Backlog'],
+            ['value' => 'done', 'label' => 'Done'],
+        ],
+    ]);
+    $user = User::factory()->create();
+    $team->members()->attach($user, ['role' => 'owner']);
+    $user->switchTeam($team);
+
+    actingAs($user)
+        ->post(route('team.tasks.projects.store', ['current_team' => $team]), [
+            'name' => 'Custom workflow',
+        ])
+        ->assertRedirect();
+
+    $project = Project::withoutGlobalScopes()->where('name', 'Custom workflow')->firstOrFail();
+
+    expect($project->status_options)->toBe([
+        ['value' => 'backlog', 'label' => 'Backlog'],
+        ['value' => 'done', 'label' => 'Done'],
+    ]);
+});
+
+test('tasks reject statuses outside their project options', function () {
+    $user = User::factory()->create();
+    $project = Project::factory()->create([
+        'team_id' => $user->current_team_id,
+        'status_options' => [
+            ['value' => 'backlog', 'label' => 'Backlog'],
+            ['value' => 'done', 'label' => 'Done'],
+        ],
+    ]);
+
+    actingAs($user)
+        ->post(route('team.tasks.store', ['current_team' => $user->currentTeam]), [
+            'project_id' => $project->id,
+            'title' => 'Invalid status',
+            'status' => TaskStatus::Planned->value,
+        ])
+        ->assertSessionHasErrors('status');
 });
 
 test('projects are unique by team and name', function () {

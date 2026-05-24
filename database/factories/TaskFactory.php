@@ -38,7 +38,7 @@ class TaskFactory extends Factory
             },
             'title' => fake()->sentence(4),
             'description' => fake()->sentence(),
-            'status' => TaskStatus::Planned,
+            'status' => TaskStatus::Planned->value,
             'progress' => 0,
             'time_estimate' => null,
             'position' => 0,

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Enums\TaskStatus;
+use App\Models\Project;
+use App\Models\Task;
 use App\Models\Team;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
 
 class McpRecordValidator
@@ -60,9 +62,10 @@ class McpRecordValidator
     }
 
     /**
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    public static function rulesFor(string $type, bool $updating, Team $team): array
+    public static function rulesFor(string $type, bool $updating, Team $team, array $data = [], ?Model $model = null): array
     {
         $required = fn (string $rule): array => $updating ? ['sometimes', $rule] : [$rule];
         $optional = fn (): array => $updating ? ['sometimes'] : [];
@@ -73,7 +76,7 @@ class McpRecordValidator
                 'assigned_to' => [...$optional(), 'nullable', 'integer', Rule::exists('team_members', 'user_id')->where(fn ($query) => $query->where('team_id', $team->id))],
                 'title' => [...$required('required'), 'string', 'max:255'],
                 'description' => [...$optional(), 'nullable', 'string'],
-                'status' => [...$required('required'), Rule::enum(TaskStatus::class)],
+                'status' => [...$required('required'), Rule::in(self::taskStatusValues($team, $data, $model))],
                 'progress' => [...$optional(), 'integer', 'between:0,100'],
                 'position' => [...$optional(), 'nullable', 'integer', 'min:0'],
                 'due_at' => [...$optional(), 'nullable', 'date'],
@@ -133,6 +136,25 @@ class McpRecordValidator
             ],
             default => [],
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<string>
+     */
+    private static function taskStatusValues(Team $team, array $data, ?Model $model): array
+    {
+        $projectId = $data['project_id'] ?? null;
+
+        if ($projectId === null && $model instanceof Task) {
+            $projectId = $model->project_id;
+        }
+
+        if ($projectId === null) {
+            return Project::taskStatusValuesFor($team, null);
+        }
+
+        return Project::taskStatusValuesFor($team, $projectId);
     }
 
     /**

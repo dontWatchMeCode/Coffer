@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\GeneratesUniqueTeamSlugs;
+use App\Enums\TaskStatus;
 use App\Enums\TeamRole;
 use Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'slug', 'is_personal'])]
+#[Fillable(['name', 'slug', 'is_personal', 'default_task_status_options'])]
 class Team extends Model
 {
     use GeneratesUniqueTeamSlugs;
@@ -96,6 +97,7 @@ class Team extends Model
     {
         return [
             'is_personal' => 'boolean',
+            'default_task_status_options' => 'array',
         ];
     }
 
@@ -105,5 +107,19 @@ class Team extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public function taskStatusDefaults(): array
+    {
+        $statusOptions = $this->getAttribute('default_task_status_options');
+
+        if (is_array($statusOptions) && $statusOptions !== []) {
+            return TaskStatus::normalizeOptions($statusOptions);
+        }
+
+        return TaskStatus::options();
     }
 }

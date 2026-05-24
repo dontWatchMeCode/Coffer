@@ -43,6 +43,9 @@ class SaveProjectRequest extends FormRequest
             ],
             'description' => ['nullable', 'string'],
             'archived' => ['nullable', 'boolean'],
+            'status_options' => ['nullable', 'array'],
+            'status_options.*.value' => ['required', 'string', 'regex:/^[a-z0-9_]+$/', 'distinct'],
+            'status_options.*.label' => ['required', 'string', 'max:40'],
         ];
     }
 
@@ -51,12 +54,22 @@ class SaveProjectRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if (! $this->has('archived')) {
-            return;
+        $data = [];
+
+        if ($this->has('archived')) {
+            $data['archived'] = $this->boolean('archived');
         }
 
-        $this->merge([
-            'archived' => $this->boolean('archived'),
-        ]);
+        if ($this->has('status_options_present') && ! $this->has('status_options')) {
+            $data['status_options'] = [];
+        } elseif ($this->isMethod('post') && $team = $this->route('current_team')) {
+            if ($team instanceof Team) {
+                $data['status_options'] = $team->taskStatusDefaults();
+            }
+        }
+
+        if ($data !== []) {
+            $this->merge($data);
+        }
     }
 }

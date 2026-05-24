@@ -21,6 +21,7 @@ export type TaskProject = {
     tasksCount: number;
     openTasksCount: number;
     closedTasksCount?: number;
+    statusOptions: TaskStatusOption[];
 };
 
 export type TaskMember = {

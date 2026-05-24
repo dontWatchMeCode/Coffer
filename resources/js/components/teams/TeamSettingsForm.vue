@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import InputError from '@/components/form/InputError.vue';
+import StatusOptionsInput from '@/components/pages/tasks/StatusOptionsInput.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +13,8 @@ type Props = {
     team: Team;
 };
 
-defineProps<Props>();
+const props = defineProps<Props>();
+const statusOptions = ref([...(props.team.defaultTaskStatusOptions ?? [])]);
 </script>
 
 <template>
@@ -30,6 +33,23 @@ defineProps<Props>();
                 required
             />
             <InputError :message="errors.name" />
+        </div>
+
+        <div class="grid gap-2">
+            <Label for="default-task-status-options"
+                >Default task statuses</Label
+            >
+            <StatusOptionsInput
+                id="default-task-status-options"
+                v-model="statusOptions"
+                name="default_task_status_options"
+                :options="statusOptions"
+            />
+            <p class="text-xs text-muted-foreground">
+                Pick existing statuses or create new ones. New projects copy
+                this list.
+            </p>
+            <InputError :message="errors.default_task_status_options" />
         </div>
 
         <div class="flex items-center gap-4">
