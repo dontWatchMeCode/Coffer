@@ -49,7 +49,7 @@ class SearchPageController extends Controller
                 'name' => $tag->name,
                 'slug' => $tag->slug,
             ], $tags),
-            'types' => collect(RecordSearchRegistry::definitions())
+            'types' => collect(RecordSearchRegistry::enabledDefinitions($currentTeam))
                 ->map(fn (array $def, string $alias): array => [
                     'value' => $def['global'],
                     'label' => ucfirst(str_replace('_', ' ', $def['global'] === 'log_entries' ? 'log' : $def['global'])),

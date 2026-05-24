@@ -47,6 +47,10 @@ const dashboardUrl = computed(() =>
         : dashboard().url,
 );
 
+function featureEnabled(feature: string): boolean {
+    return page.props.currentTeam?.featureSettings?.[feature] ?? true;
+}
+
 const mainNavItems = computed<NavItem[]>(() => [
     {
         title: 'Dashboard',
@@ -59,43 +63,53 @@ const mainNavItems = computed<NavItem[]>(() => [
                   title: 'Tasks',
                   href: teamTasks(page.props.currentTeam.slug).url,
                   icon: ListTodo,
+                  feature: 'tasks',
               },
               {
                   title: 'Calendar',
                   href: teamCalendar(page.props.currentTeam.slug).url,
                   icon: CalendarDays,
+                  feature: 'calendar',
               },
               {
                   title: 'Contacts',
                   href: teamContacts(page.props.currentTeam.slug).url,
                   icon: Contact,
+                  feature: 'contacts',
               },
               {
                   title: 'Bookmarks',
                   href: teamBookmarks(page.props.currentTeam.slug).url,
                   icon: Bookmark,
+                  feature: 'bookmarks',
               },
               {
                   title: 'Subscriptions',
                   href: teamSubscriptions(page.props.currentTeam.slug).url,
                   icon: CreditCard,
+                  feature: 'subscriptions',
               },
               {
                   title: 'Notes',
                   href: teamNotes(page.props.currentTeam.slug).url,
                   icon: FileText,
+                  feature: 'notes',
               },
               {
                   title: 'Log',
                   href: teamLog(page.props.currentTeam.slug).url,
                   icon: MessageSquareText,
+                  feature: 'log',
               },
               {
                   title: 'Collections',
                   href: teamCollections(page.props.currentTeam.slug).url,
                   icon: Layers3,
+                  feature: 'collections',
               },
-          ]
+          ].filter(
+              (item) => !('feature' in item) || featureEnabled(item.feature),
+          )
         : []),
 ]);
 

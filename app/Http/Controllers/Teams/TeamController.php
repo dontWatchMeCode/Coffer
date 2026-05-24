@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Teams;
 
 use App\Actions\Teams\CreateTeam;
+use App\Enums\TeamFeature;
 use App\Enums\TeamRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teams\DeleteTeamRequest;
@@ -71,7 +72,9 @@ class TeamController extends Controller
                 'slug' => $team->slug,
                 'isPersonal' => $team->is_personal,
                 'defaultTaskStatusOptions' => $team->taskStatusDefaults(),
+                'featureSettings' => $team->featureSettings(),
             ],
+            'teamFeatures' => TeamFeature::options(),
             'members' => $team->members()->get()->map(fn (User $member): array => [
                 'id' => $member->id,
                 'name' => $member->name,
@@ -105,7 +108,7 @@ class TeamController extends Controller
         $team = DB::transaction(function () use ($request, $team) {
             $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
 
-            $team->update($request->safe()->only(['name', 'default_task_status_options']));
+            $team->update($request->safe()->only(['name', 'default_task_status_options', 'feature_settings']));
 
             return $team;
         });

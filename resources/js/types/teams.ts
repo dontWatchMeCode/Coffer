@@ -9,6 +9,12 @@ export type Team = {
     roleLabel?: string;
     isCurrent?: boolean;
     defaultTaskStatusOptions?: { value: string; label: string }[];
+    featureSettings?: Record<string, boolean>;
+};
+
+export type TeamFeatureOption = {
+    value: string;
+    label: string;
 };
 
 export type TeamMember = {

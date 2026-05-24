@@ -24,6 +24,7 @@ class TeamFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name),
             'is_personal' => false,
+            'feature_settings' => null,
         ];
     }
 

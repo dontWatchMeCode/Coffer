@@ -78,6 +78,24 @@ it('filters readable types based on token abilities', function () {
         ->and($readable)->not->toContain('bookmark', 'contact', 'calendar_event', 'collection', 'log_entry');
 });
 
+it('filters readable types based on team features', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $team->update(['feature_settings' => array_replace($team->featureSettings(), ['contacts' => false])]);
+
+    $token = McpToken::createToken($user, $team, 'Test', [
+        'contacts' => 'read',
+        'tasks' => 'read',
+    ])[0];
+
+    app()->instance(McpToken::class, $token);
+
+    $service = app(McpTokenPermissionService::class);
+
+    expect($service->readableTypes())->toContain('task')
+        ->not->toContain('contact');
+});
+
 it('returns all types as writable when no token is bound', function () {
     $service = app(McpTokenPermissionService::class);
 

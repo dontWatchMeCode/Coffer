@@ -37,7 +37,7 @@ class RecordSearchService
 
         $like = $query !== '' ? $this->likePattern($query) : null;
 
-        foreach (RecordSearchRegistry::definitions() as $definition) {
+        foreach (RecordSearchRegistry::enabledDefinitions($currentTeam) as $definition) {
             $globalKey = $definition['global'];
 
             if (in_array($globalKey, $scopes, true)) {
@@ -55,7 +55,7 @@ class RecordSearchService
     {
         $results = $this->emptyGlobalResults();
 
-        foreach (RecordSearchRegistry::definitions() as $definition) {
+        foreach (RecordSearchRegistry::enabledDefinitions($currentTeam) as $definition) {
             if ($definition['global'] === $type) {
                 $results[$type] = $this->globalResultsForDefinition($currentTeam, $definition, null, null, $limit);
 
@@ -81,7 +81,7 @@ class RecordSearchService
         $like = $query !== '' ? $this->likePattern($query) : null;
         $records = [];
 
-        foreach (RecordSearchRegistry::definitions() as $alias => $definition) {
+        foreach (RecordSearchRegistry::enabledDefinitions($currentTeam) as $alias => $definition) {
             if (! in_array($alias, $scopes, true)) {
                 continue;
             }

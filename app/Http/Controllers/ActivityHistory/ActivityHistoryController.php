@@ -8,6 +8,7 @@ use App\Concerns\ProvidesActivityHistory;
 use App\Http\Controllers\Controller;
 use App\Models\RecordLink;
 use App\Models\Team;
+use App\Services\RecordSearchRegistry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -25,7 +26,7 @@ class ActivityHistoryController extends Controller
 
         $class = RecordLink::linkableMap()[$validated['subject_type']] ?? null;
 
-        if ($class === null || ! class_exists($class)) {
+        if ($class === null || ! class_exists($class) || ! RecordSearchRegistry::teamAllowsType($currentTeam, (string) $validated['subject_type'])) {
             return response()->json(['activities' => [], 'total' => 0, 'has_more' => false]);
         }
 

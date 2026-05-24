@@ -7,6 +7,7 @@ namespace App\Concerns;
 use App\Contracts\LinkableRecord;
 use App\Models\RecordLink;
 use App\Models\Team;
+use App\Services\RecordSearchRegistry;
 use Illuminate\Database\Eloquent\Model;
 
 trait ResolvesLinkableRecord
@@ -16,6 +17,10 @@ trait ResolvesLinkableRecord
         $class = RecordLink::linkableMap()[$type] ?? null;
 
         if ($class === null) {
+            return null;
+        }
+
+        if (! RecordSearchRegistry::teamAllowsType($currentTeam, $type)) {
             return null;
         }
 

@@ -137,6 +137,11 @@ class McpRecordService
         [$user, $team] = $context;
         $permissions = app(McpTokenPermissionService::class);
         $validated = McpRecordResolver::validateTypeAndId($request);
+
+        if (! RecordSearchRegistry::teamAllowsType($team, $validated['type'])) {
+            return Response::error('Record not found.');
+        }
+
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 
         if (! $model instanceof Model) {
@@ -171,6 +176,10 @@ class McpRecordService
 
         if ($class === null) {
             return Response::error('Invalid record type.');
+        }
+
+        if (! RecordSearchRegistry::teamAllowsType($team, $validated['type'])) {
+            return Response::error('Record not found.');
         }
 
         Gate::forUser($user)->authorize('create', $class);
@@ -238,6 +247,10 @@ class McpRecordService
 
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 
+        if (! RecordSearchRegistry::teamAllowsType($team, $validated['type'])) {
+            return Response::error('Record not found.');
+        }
+
         if (! $model instanceof Model) {
             return Response::error('Record not found.');
         }
@@ -297,6 +310,10 @@ class McpRecordService
         $validated = McpRecordResolver::validateTypeAndId($request);
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 
+        if (! RecordSearchRegistry::teamAllowsType($team, $validated['type'])) {
+            return Response::error('Record not found.');
+        }
+
         if (! $model instanceof Model) {
             return Response::error('Record not found.');
         }
@@ -325,6 +342,10 @@ class McpRecordService
         [$from, $to] = $this->linkedPair($request, $team);
 
         if (! $from instanceof LinkableRecord || ! $to instanceof LinkableRecord) {
+            return Response::error('Record not found.');
+        }
+
+        if (! RecordSearchRegistry::teamAllowsType($team, McpRecordResolver::typeForClass($from::class)) || ! RecordSearchRegistry::teamAllowsType($team, McpRecordResolver::typeForClass($to::class))) {
             return Response::error('Record not found.');
         }
 
@@ -389,6 +410,10 @@ class McpRecordService
             return Response::error('Record not found.');
         }
 
+        if (! RecordSearchRegistry::teamAllowsType($team, McpRecordResolver::typeForClass($from::class)) || ! RecordSearchRegistry::teamAllowsType($team, McpRecordResolver::typeForClass($to::class))) {
+            return Response::error('Record not found.');
+        }
+
         if (! $this->canLink($permissions, $from, $to)) {
             return Response::error('Permission denied.');
         }
@@ -429,6 +454,10 @@ class McpRecordService
         $validated = McpRecordResolver::validateTypeAndId($request);
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 
+        if (! RecordSearchRegistry::teamAllowsType($team, $validated['type'])) {
+            return Response::error('Record not found.');
+        }
+
         if (! $model instanceof Model || ! $model instanceof LinkableRecord) {
             return Response::error('Record not found.');
         }
@@ -463,6 +492,10 @@ class McpRecordService
         [$model, $tags] = $tagResult;
 
         if (! $model instanceof Model || ! $model instanceof LinkableRecord || ! method_exists($model, 'recordTags')) {
+            return Response::error('Record not found.');
+        }
+
+        if (! RecordSearchRegistry::teamAllowsType($team, McpRecordResolver::typeForClass($model::class))) {
             return Response::error('Record not found.');
         }
 
@@ -510,6 +543,10 @@ class McpRecordService
             return Response::error('Record not found.');
         }
 
+        if (! RecordSearchRegistry::teamAllowsType($team, McpRecordResolver::typeForClass($model::class))) {
+            return Response::error('Record not found.');
+        }
+
         $slugs = collect($tags)->map(fn (string $name): string => Tag::slugFor($name))->all();
         $tagModels = Tag::query()->whereBelongsTo($team)->whereIn('slug', $slugs)->get();
 
@@ -538,6 +575,10 @@ class McpRecordService
         $permissions = app(McpTokenPermissionService::class);
         $validated = McpRecordResolver::validateTypeAndId($request);
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
+
+        if (! RecordSearchRegistry::teamAllowsType($team, $validated['type'])) {
+            return Response::error('Record not found.');
+        }
 
         if (! $model instanceof Model || ! $model instanceof LinkableRecord || ! method_exists($model, 'recordTags')) {
             return Response::error('Record not found.');
@@ -568,6 +609,10 @@ class McpRecordService
         ]);
 
         $task = $this->resolveTask($team, (int) $validated['task_id']);
+
+        if (! RecordSearchRegistry::teamAllowsType($team, 'task')) {
+            return Response::error('Task not found.');
+        }
 
         if (! $task instanceof Task) {
             return Response::error('Task not found.');
@@ -613,6 +658,10 @@ class McpRecordService
         ]);
 
         $task = $this->resolveTask($team, (int) $validated['task_id']);
+
+        if (! RecordSearchRegistry::teamAllowsType($team, 'task')) {
+            return Response::error('Task not found.');
+        }
 
         if (! $task instanceof Task) {
             return Response::error('Task not found.');

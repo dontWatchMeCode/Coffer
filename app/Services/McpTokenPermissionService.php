@@ -41,10 +41,12 @@ class McpTokenPermissionService
             return array_keys(McpToken::RECORD_TYPES);
         }
 
+        $team = $token->team;
+
         /** @var list<string> $types */
         $types = collect(McpToken::RECORD_TYPES)
             ->keys()
-            ->filter(fn (string $type): bool => $this->tokenAllowsTypeLevel($token, $type, 'read'))
+            ->filter(fn (string $type): bool => $this->tokenAllowsTypeLevel($token, $type, 'read') && (! $team instanceof Team || RecordSearchRegistry::teamAllowsType($team, $type)))
             ->values()
             ->all();
 
@@ -62,10 +64,12 @@ class McpTokenPermissionService
             return array_keys(McpToken::RECORD_TYPES);
         }
 
+        $team = $token->team;
+
         /** @var list<string> $types */
         $types = collect(McpToken::RECORD_TYPES)
             ->keys()
-            ->filter(fn (string $type): bool => $this->tokenAllowsTypeLevel($token, $type, 'write'))
+            ->filter(fn (string $type): bool => $this->tokenAllowsTypeLevel($token, $type, 'write') && (! $team instanceof Team || RecordSearchRegistry::teamAllowsType($team, $type)))
             ->values()
             ->all();
 
@@ -103,7 +107,7 @@ class McpTokenPermissionService
                     ? McpRecordResolver::resolveRecord($team, $type, $id)
                     : null;
 
-                return $model instanceof Model && $this->can($type, 'read', $model);
+                return $model instanceof Model && RecordSearchRegistry::teamAllowsType($team, $type) && $this->can($type, 'read', $model);
             })
             ->values()
             ->all();

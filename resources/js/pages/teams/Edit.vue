@@ -14,6 +14,7 @@ import { edit, index } from '@/routes/teams';
 import type {
     RoleOption,
     Team,
+    TeamFeatureOption,
     TeamInvitation,
     TeamMember,
     TeamPermissions,
@@ -25,6 +26,7 @@ type Props = {
     invitations: TeamInvitation[];
     permissions: TeamPermissions;
     availableRoles: RoleOption[];
+    teamFeatures: TeamFeatureOption[];
 };
 
 const props = defineProps<Props>();
@@ -71,7 +73,7 @@ const pageTitle = computed(() =>
                 description="Update your team name and settings"
             />
 
-            <TeamSettingsForm :team="team" />
+            <TeamSettingsForm :team="team" :team-features="teamFeatures" />
         </div>
 
         <div v-else class="space-y-6">

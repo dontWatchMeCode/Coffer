@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\GeneratesUniqueTeamSlugs;
 use App\Enums\TaskStatus;
+use App\Enums\TeamFeature;
 use App\Enums\TeamRole;
 use Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'slug', 'is_personal', 'default_task_status_options'])]
+#[Fillable(['name', 'slug', 'is_personal', 'default_task_status_options', 'feature_settings'])]
 class Team extends Model
 {
     use GeneratesUniqueTeamSlugs;
@@ -98,6 +99,7 @@ class Team extends Model
         return [
             'is_personal' => 'boolean',
             'default_task_status_options' => 'array',
+            'feature_settings' => 'array',
         ];
     }
 
@@ -121,5 +123,25 @@ class Team extends Model
         }
 
         return TaskStatus::options();
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public function featureSettings(): array
+    {
+        $settings = $this->getAttribute('feature_settings');
+
+        return array_replace(
+            TeamFeature::defaults(),
+            is_array($settings) ? array_intersect_key($settings, TeamFeature::defaults()) : [],
+        );
+    }
+
+    public function hasFeature(TeamFeature|string $feature): bool
+    {
+        $value = $feature instanceof TeamFeature ? $feature->value : $feature;
+
+        return $this->featureSettings()[$value] ?? true;
     }
 }

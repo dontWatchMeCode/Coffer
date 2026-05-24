@@ -13,6 +13,8 @@ readonly class UserTeam
         public bool $isPersonal,
         public ?string $role,
         public ?string $roleLabel,
+        /** @var array<string, bool> */
+        public array $featureSettings,
         public ?bool $isCurrent = null,
     ) {
         //
