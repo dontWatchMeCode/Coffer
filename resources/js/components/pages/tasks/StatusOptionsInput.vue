@@ -4,8 +4,6 @@ import {
     Ban,
     Check,
     CheckIcon,
-    ChevronDown,
-    ChevronUp,
     CircleHelp,
     Flag,
     GripVertical,
@@ -22,6 +20,7 @@ import {
 } from 'reka-ui';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, ref } from 'vue';
+import { VueDraggable } from 'vue-draggable-plus';
 import { TagsInput, TagsInputInput } from '@/components/ui/tags-input';
 import { getTaskStatusMeta } from '@/lib/tasks';
 import type { TaskStatusOption } from '@/types';
@@ -76,6 +75,7 @@ const candidates = computed(() => {
 const canCreate = computed(
     () =>
         trimmedSearch.value !== '' &&
+        slugStatus(trimmedSearch.value) !== '' &&
         !model.value.some(
             (option) => option.value === slugStatus(trimmedSearch.value),
         ) &&
@@ -139,6 +139,14 @@ function handleSelectedValues(nextValues: AcceptableValue): void {
     }
 }
 
+function removeOption(index: number): void {
+    if (model.value.length <= 1) {
+        return;
+    }
+
+    model.value = model.value.filter((_, optionIndex) => optionIndex !== index);
+}
+
 function moveOption(index: number, offset: -1 | 1): void {
     const targetIndex = index + offset;
 
@@ -150,14 +158,6 @@ function moveOption(index: number, offset: -1 | 1): void {
     const [option] = reordered.splice(index, 1);
     reordered.splice(targetIndex, 0, option);
     model.value = reordered;
-}
-
-function removeOption(index: number): void {
-    if (model.value.length <= 1) {
-        return;
-    }
-
-    model.value = model.value.filter((_, optionIndex) => optionIndex !== index);
 }
 
 function handleFocusOut(event: FocusEvent): void {
@@ -189,7 +189,7 @@ function handleFocusOut(event: FocusEvent): void {
                     <TagsInputInput
                         placeholder="Add status..."
                         @focus="open = true"
-                        @keydown.enter.prevent="createOption"
+                        @keydown.enter.stop.prevent="createOption"
                         @keydown.down="open = true"
                     />
                 </ListboxFilter>
@@ -238,10 +238,18 @@ function handleFocusOut(event: FocusEvent): void {
         </div>
     </ListboxRoot>
 
-    <div class="mt-3 space-y-2">
+    <VueDraggable
+        v-model="model"
+        :animation="150"
+        handle=".drag-handle"
+        class="mt-3 flex flex-col gap-2"
+        role="list"
+        aria-roledescription="Sortable status list"
+    >
         <div
             v-for="(option, index) in model"
             :key="option.value"
+            role="listitem"
             class="group flex items-center gap-2 rounded-md border bg-background px-2.5 py-2 text-sm shadow-xs"
         >
             <input
@@ -255,7 +263,16 @@ function handleFocusOut(event: FocusEvent): void {
                 :value="option.label"
             />
 
-            <GripVertical class="h-4 w-4 shrink-0 text-muted-foreground/60" />
+            <div
+                class="drag-handle -my-2 flex cursor-grab items-center py-2 pl-1 active:cursor-grabbing"
+                tabindex="0"
+                role="button"
+                :aria-label="`Reorder ${option.label}`"
+                @keydown.up.prevent="moveOption(index, -1)"
+                @keydown.down.prevent="moveOption(index, 1)"
+            >
+                <GripVertical class="h-4 w-4 shrink-0 text-muted-foreground/60" />
+            </div>
             <component
                 :is="
                     statusIcons[
@@ -277,24 +294,6 @@ function handleFocusOut(event: FocusEvent): void {
             >
                 <button
                     type="button"
-                    class="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-                    :disabled="index === 0"
-                    aria-label="Move status earlier"
-                    @click="moveOption(index, -1)"
-                >
-                    <ChevronUp class="h-3.5 w-3.5" />
-                </button>
-                <button
-                    type="button"
-                    class="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-                    :disabled="index === model.length - 1"
-                    aria-label="Move status later"
-                    @click="moveOption(index, 1)"
-                >
-                    <ChevronDown class="h-3.5 w-3.5" />
-                </button>
-                <button
-                    type="button"
                     class="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
                     :disabled="model.length <= 1"
                     aria-label="Remove status"
@@ -304,5 +303,5 @@ function handleFocusOut(event: FocusEvent): void {
                 </button>
             </div>
         </div>
-    </div>
+    </VueDraggable>
 </template>
