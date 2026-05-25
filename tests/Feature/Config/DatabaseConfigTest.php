@@ -4,13 +4,15 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+$skipUnlessSqlite = fn (): bool => DB::connection()->getDriverName() !== 'sqlite';
+
 test('sqlite uses wal-oriented defaults', function () {
     expect(config('database.connections.sqlite'))->toMatchArray([
         'busy_timeout' => 5000,
         'journal_mode' => 'wal',
         'synchronous' => 'normal',
     ]);
-});
+})->skip($skipUnlessSqlite, 'SQLite strict-mode tests only run on SQLite.');
 
 test('sqlite tables are rebuilt in strict mode', function () {
     $tables = collect(DB::select("SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name"))
@@ -24,7 +26,7 @@ test('sqlite tables are rebuilt in strict mode', function () {
             ->toBeString()
             ->toEndWith('STRICT');
     });
-});
+})->skip($skipUnlessSqlite, 'SQLite strict-mode tests only run on SQLite.');
 
 test('sqlite schema builder creates strict compatible columns', function () {
     Schema::dropIfExists('strict_schema_test');
@@ -49,7 +51,7 @@ test('sqlite schema builder creates strict compatible columns', function () {
         ->toEndWith('STRICT');
 
     Schema::dropIfExists('strict_schema_test');
-});
+})->skip($skipUnlessSqlite, 'SQLite strict-mode tests only run on SQLite.');
 
 test('sqlite schema builder rebuilds altered tables in strict mode', function () {
     Schema::dropIfExists('strict_alter_test');
@@ -72,4 +74,4 @@ test('sqlite schema builder rebuilds altered tables in strict mode', function ()
         ->toEndWith('STRICT');
 
     Schema::dropIfExists('strict_alter_test');
-});
+})->skip($skipUnlessSqlite, 'SQLite strict-mode tests only run on SQLite.');
