@@ -118,7 +118,7 @@ const groupedEvents = computed<GroupedEvents[]>(() => {
                     :key="item.event.id"
                     @click="openEditDialog(item.event)"
                 >
-                    <div class="flex items-center gap-4">
+                    <div class="flex min-w-0 items-center gap-4 overflow-hidden">
                         <ListItemIcon
                             :class="{
                                 'bg-primary text-primary-foreground':
@@ -139,8 +139,10 @@ const groupedEvents = computed<GroupedEvents[]>(() => {
                         </ListItemIcon>
 
                         <div class="min-w-0 flex-1">
-                            <div class="flex items-baseline gap-2">
-                                <p class="min-w-0 flex-1 truncate font-medium">
+                            <div class="flex min-w-0 flex-wrap items-baseline gap-2">
+                                <p
+                                    class="min-w-0 flex-1 font-medium [overflow-wrap:anywhere]"
+                                >
                                     {{ item.event.title }}
                                 </p>
                                 <span
@@ -152,7 +154,7 @@ const groupedEvents = computed<GroupedEvents[]>(() => {
                             </div>
                             <p
                                 v-if="item.event.description"
-                                class="truncate text-sm text-muted-foreground"
+                                class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
                             >
                                 {{ item.event.description }}
                             </p>

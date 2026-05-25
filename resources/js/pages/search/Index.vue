@@ -291,8 +291,8 @@ defineOptions({
         description="Search across all your team records."
     />
 
-    <div class="flex-1 px-4 py-6">
-        <div class="mx-auto max-w-7xl">
+    <div class="min-w-0 flex-1 px-4 py-6">
+        <div class="mx-auto w-full max-w-7xl">
             <div class="mb-4 flex items-center gap-2">
                 <div class="relative flex-1">
                     <Search
@@ -416,19 +416,19 @@ defineOptions({
                                         ]"
                                         :key="item.id"
                                         :href="item.url"
-                                        class="flex items-start gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-accent/50"
+                                        class="flex min-w-0 items-start gap-3 overflow-hidden rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-accent/50"
                                     >
                                         <component
                                             :is="typeIconMap[category]"
                                             class="mt-0.5 h-4 w-4 shrink-0 opacity-60"
                                         />
                                         <div class="min-w-0 flex-1">
-                                            <p class="truncate font-medium">
+                                            <p class="font-medium [overflow-wrap:anywhere]">
                                                 {{ item.title }}
                                             </p>
                                             <p
                                                 v-if="item.subtitle"
-                                                class="truncate text-xs text-muted-foreground"
+                                                class="text-xs text-muted-foreground [overflow-wrap:anywhere]"
                                             >
                                                 {{ item.subtitle }}
                                             </p>

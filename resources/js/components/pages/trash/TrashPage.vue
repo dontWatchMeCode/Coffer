@@ -32,8 +32,8 @@ const searchQuery = defineModel<string>('searchQuery', { required: true });
         :back-label="backLabel"
     />
 
-    <div class="flex-1 px-4 py-6">
-        <div class="mx-auto max-w-7xl space-y-4">
+    <div class="min-w-0 flex-1 px-4 py-6">
+        <div class="mx-auto w-full max-w-7xl space-y-4">
             <div class="flex items-center justify-end">
                 <SearchInput
                     v-model="searchQuery"

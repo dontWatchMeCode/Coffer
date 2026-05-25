@@ -79,22 +79,24 @@ defineProps<Props>();
                 </div>
             </div>
 
-            <div v-else class="flex items-center gap-4">
+            <div v-else class="flex min-w-0 items-center gap-4 overflow-hidden">
                 <ListItemIcon>
                     <FileText class="h-5 w-5 text-muted-foreground" />
                 </ListItemIcon>
 
                 <div class="min-w-0 flex-1">
-                    <p class="truncate font-medium">{{ note.title }}</p>
+                    <p class="font-medium [overflow-wrap:anywhere]">
+                        {{ note.title }}
+                    </p>
                     <p
                         v-if="note.excerpt"
-                        class="truncate text-sm text-muted-foreground"
+                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
                     >
                         {{ note.excerpt }}
                     </p>
                     <p
                         v-else
-                        class="truncate text-sm text-muted-foreground italic"
+                        class="text-sm text-muted-foreground italic [overflow-wrap:anywhere]"
                     >
                         No body yet.
                     </p>

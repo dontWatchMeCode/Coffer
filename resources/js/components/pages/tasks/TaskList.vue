@@ -125,8 +125,8 @@ const statusIcons = {
             </Tooltip>
 
             <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
-                    <span class="truncate text-sm font-medium">{{
+                <div class="flex min-w-0 items-center gap-2 overflow-hidden">
+                    <span class="min-w-0 text-sm font-medium [overflow-wrap:anywhere]">{{
                         task.title
                     }}</span>
                 </div>

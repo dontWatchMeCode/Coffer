@@ -78,8 +78,8 @@ defineOptions({
 
     <PageHeader title="Contacts" description="Manage your team address book." />
 
-    <div class="flex-1 px-4 py-6">
-        <div class="mx-auto max-w-7xl">
+    <div class="min-w-0 flex-1 px-4 py-6">
+        <div class="mx-auto w-full max-w-7xl">
             <div class="mb-4 flex items-center justify-end gap-3">
                 <SearchInput
                     v-model="searchQuery"
@@ -88,7 +88,7 @@ defineOptions({
                 />
             </div>
 
-            <div class="space-y-4">
+            <div class="min-w-0 space-y-4">
                 <div class="flex items-center justify-end gap-2">
                     <Button
                         variant="outline"

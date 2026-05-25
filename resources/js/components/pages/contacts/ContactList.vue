@@ -112,30 +112,32 @@ const contactsWithDisplay = computed(() =>
                 </p>
             </div>
 
-            <div v-else class="flex items-center gap-4">
+            <div v-else class="flex min-w-0 items-center gap-4 overflow-hidden">
                 <ContactAvatar :name="item.contact.name ?? ''" size="sm" />
 
                 <div class="min-w-0 flex-1">
-                    <p class="truncate font-medium">{{ item.contact.name }}</p>
+                    <p class="font-medium [overflow-wrap:anywhere]">
+                        {{ item.contact.name }}
+                    </p>
                     <p
                         v-if="
                             item.primaryEmail ||
                             item.primaryPhone ||
                             item.primaryLink
                         "
-                        class="truncate text-sm text-muted-foreground"
+                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
                     >
                         {{ buildContactInfo(item) }}
                     </p>
                     <p
                         v-else-if="item.contact.address"
-                        class="truncate text-sm text-muted-foreground"
+                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
                     >
                         {{ item.contact.address }}
                     </p>
                     <p
                         v-else
-                        class="truncate text-sm text-muted-foreground italic"
+                        class="text-sm text-muted-foreground italic [overflow-wrap:anywhere]"
                     >
                         No contact info yet.
                     </p>

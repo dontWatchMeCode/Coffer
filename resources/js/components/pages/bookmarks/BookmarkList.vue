@@ -75,20 +75,25 @@ defineProps<Props>();
                 </p>
             </div>
 
-            <div v-else class="flex items-center gap-4">
+            <div v-else class="flex min-w-0 items-center gap-4 overflow-hidden">
                 <ListItemIcon>
                     <Bookmark class="h-5 w-5 text-muted-foreground" />
                 </ListItemIcon>
 
                 <div class="min-w-0 flex-1">
-                    <p class="truncate font-medium">{{ bookmark.title }}</p>
+                    <p class="font-medium [overflow-wrap:anywhere]">
+                        {{ bookmark.title }}
+                    </p>
                     <p
                         v-if="bookmark.description"
-                        class="truncate text-sm text-muted-foreground"
+                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
                     >
                         {{ bookmark.description }}
                     </p>
-                    <p v-else class="truncate text-sm text-muted-foreground">
+                    <p
+                        v-else
+                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
+                    >
                         {{ bookmark.url }}
                     </p>
                 </div>

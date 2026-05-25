@@ -147,14 +147,16 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                 </div>
             </div>
 
-            <div v-else class="flex items-center gap-4">
+            <div v-else class="flex min-w-0 items-center gap-4 overflow-hidden">
                 <ListItemIcon>
                     <CreditCard class="h-5 w-5 text-muted-foreground" />
                 </ListItemIcon>
 
                 <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-2">
-                        <p class="truncate font-medium">
+                    <div class="flex min-w-0 flex-wrap items-center gap-2">
+                        <p
+                            class="min-w-0 flex-1 font-medium [overflow-wrap:anywhere]"
+                        >
                             {{ subscription.name }}
                         </p>
                         <Badge
@@ -166,7 +168,7 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                         </Badge>
                     </div>
                     <div
-                        class="flex items-center gap-2 text-sm text-muted-foreground"
+                        class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
                     >
                         <span class="font-semibold text-foreground">
                             {{

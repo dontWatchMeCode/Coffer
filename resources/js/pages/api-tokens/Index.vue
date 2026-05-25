@@ -217,8 +217,8 @@ defineOptions({
         description="Create team-scoped MCP bearer tokens for external clients."
     />
 
-    <div class="flex-1 px-4 py-6">
-        <div class="mx-auto max-w-7xl space-y-4">
+    <div class="min-w-0 flex-1 px-4 py-6">
+        <div class="mx-auto w-full max-w-7xl space-y-4">
             <div class="flex justify-end gap-2">
                 <Button
                     variant="outline"
@@ -256,16 +256,18 @@ defineOptions({
                     :key="token.id"
                     :clickable="false"
                 >
-                    <div class="flex items-center gap-4">
+                    <div class="flex min-w-0 items-center gap-4 overflow-hidden">
                         <ListItemIcon size="sm">
                             <KeyRound class="h-4 w-4 text-muted-foreground" />
                         </ListItemIcon>
 
                         <div class="min-w-0 flex-1">
-                            <p class="truncate font-medium">
+                            <p class="font-medium [overflow-wrap:anywhere]">
                                 {{ token.name }}
                             </p>
-                            <p class="truncate text-xs text-muted-foreground">
+                            <p
+                                class="text-xs text-muted-foreground [overflow-wrap:anywhere]"
+                            >
                                 Created by {{ token.created_by ?? 'Unknown' }}
                                 · Last used
                                 {{ formatDate(token.last_used_at) }}
