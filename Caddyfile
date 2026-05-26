@@ -1,0 +1,9 @@
+{
+    # TLS is terminated by the external reverse proxy.
+    auto_https off
+}
+
+:80 {
+    root * public
+    php_server
+}
