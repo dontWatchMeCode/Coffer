@@ -12,6 +12,7 @@ use App\Http\Requests\RecordTags\StoreRecordTagRequest;
 use App\Models\Tag;
 use App\Models\Team;
 use App\Services\ActivityLogger;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 
@@ -41,9 +42,10 @@ class RecordTagController extends Controller
         $tags = Tag::query()
             ->whereBelongsTo($currentTeam)
             ->when($attachedIds !== [], fn ($tagQuery) => $tagQuery->whereNotIn('id', $attachedIds))
-            ->where(fn ($tagQuery) => $tagQuery
-                ->where('name', 'like', $like)
-                ->orWhere('slug', 'like', $like))
+            ->where(function (Builder $tagQuery) use ($like): void {
+                $this->whereLikeEscaped($tagQuery, 'name', $like);
+                $this->whereLikeEscaped($tagQuery, 'slug', $like, 'or');
+            })
             ->orderBy('name')
             ->limit(20)
             ->get(['id', 'name', 'slug'])

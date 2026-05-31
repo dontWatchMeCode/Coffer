@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 trait Filterable
 {
+    use EscapesLikeWildcards;
+
     /**
      * Apply a search query filter across the given columns.
      *
@@ -20,13 +22,13 @@ trait Filterable
             return;
         }
 
-        $like = sprintf('%%%s%%', addcslashes($search, '%_\\'));
+        $like = $this->likePattern($search);
 
         $query->where(function (Builder $query) use ($columns, $like): void {
             foreach ($columns as $index => $column) {
                 $index === 0
-                    ? $query->where($column, 'like', $like)
-                    : $query->orWhere($column, 'like', $like);
+                    ? $this->whereLikeEscaped($query, $column, $like)
+                    : $this->whereLikeEscaped($query, $column, $like, 'or');
             }
         });
     }

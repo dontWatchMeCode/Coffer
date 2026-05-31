@@ -152,8 +152,8 @@ class RecordSearchService
                 $query->where(function (Builder $query) use ($definition, $like): void {
                     foreach ($definition['columns'] as $index => $column) {
                         $index === 0
-                            ? $query->where($column, 'like', $like)
-                            : $query->orWhere($column, 'like', $like);
+                            ? $this->whereLikeEscaped($query, $column, $like)
+                            : $this->whereLikeEscaped($query, $column, $like, 'or');
                     }
                 });
             })

@@ -8,6 +8,7 @@ use App\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Models\SubscriptionCategory;
 use App\Models\Team;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -35,9 +36,10 @@ class SubscriptionCategoryController extends Controller
 
         $categories = SubscriptionCategory::query()
             ->whereBelongsTo($currentTeam)
-            ->where(fn ($q) => $q
-                ->where('name', 'like', $like)
-                ->orWhere('slug', 'like', $like))
+            ->where(function (Builder $query) use ($like): void {
+                $this->whereLikeEscaped($query, 'name', $like);
+                $this->whereLikeEscaped($query, 'slug', $like, 'or');
+            })
             ->orderBy('name')
             ->limit(20)
             ->get(['id', 'name', 'slug']);

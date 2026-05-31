@@ -146,6 +146,47 @@ test('search returns empty results for blank query', function () {
         ->assertJsonCount(0, 'log_entries');
 });
 
+test('search treats sql wildcard characters literally', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'Save 100% now',
+    ]);
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'Save 100 points now',
+    ]);
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'release_candidate',
+    ]);
+
+    Task::factory()->create([
+        'team_id' => $team->id,
+        'project_id' => Project::factory()->create(['team_id' => $team->id]),
+        'title' => 'release candidate',
+    ]);
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => '100%']))
+        ->assertOk()
+        ->assertJsonCount(1, 'tasks')
+        ->assertJsonPath('tasks.0.title', 'Save 100% now');
+
+    actingAs($user)
+        ->getJson(route('team.search', ['current_team' => $team, 'q' => 'release_']))
+        ->assertOk()
+        ->assertJsonCount(1, 'tasks')
+        ->assertJsonPath('tasks.0.title', 'release_candidate');
+});
+
 test('search requires team membership', function () {
     $user = User::factory()->create();
     $otherTeam = Team::factory()->create();

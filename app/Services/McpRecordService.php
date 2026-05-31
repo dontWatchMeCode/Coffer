@@ -15,6 +15,7 @@ use App\Models\Task;
 use App\Models\TaskComment;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
@@ -77,7 +78,10 @@ class McpRecordService
         $query = trim((string) $validated['query']);
         $limit = (int) ($validated['limit'] ?? 20);
         $types = isset($validated['type']) ? [$validated['type']] : McpRecordResolver::RECORD_TYPES;
-        $readableTypes = $permissions->readableTypes();
+        $readableTypes = array_values(array_filter(
+            $permissions->readableTypes(),
+            fn (string $type): bool => RecordSearchRegistry::teamAllowsType($team, $type),
+        ));
 
         if (isset($validated['type']) && ! in_array($validated['type'], $readableTypes, true)) {
             return Response::error('Permission denied.');
@@ -103,11 +107,11 @@ class McpRecordService
                     $type === 'task' && $permissions->currentToken()?->taskProjectIds() !== null,
                     fn ($recordQuery) => $recordQuery->whereIn('project_id', $permissions->currentToken()?->taskProjectIds() ?? []),
                 )
-                ->where(function ($recordQuery) use ($definition, $like): void {
+                ->where(function (Builder $recordQuery) use ($definition, $like): void {
                     foreach ($definition['columns'] as $index => $column) {
                         $index === 0
-                            ? $recordQuery->where($column, 'like', $like)
-                            : $recordQuery->orWhere($column, 'like', $like);
+                            ? $this->whereLikeEscaped($recordQuery, $column, $like)
+                            : $this->whereLikeEscaped($recordQuery, $column, $like, 'or');
                     }
                 })
                 ->orderBy($definition['order'])

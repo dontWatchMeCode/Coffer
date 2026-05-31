@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Notes;
 
+use App\Concerns\EscapesLikeWildcards;
 use App\Concerns\ProvidesActivityHistory;
 use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\Note;
 use App\Models\Team;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class NotePageController extends Controller
 {
+    use EscapesLikeWildcards;
     use ProvidesActivityHistory;
     use ProvidesRecordLinks;
     use ProvidesRecordTags;
@@ -30,7 +33,9 @@ class NotePageController extends Controller
             ->when($search, function ($q) use ($search): void {
                 $q->where(function ($q) use ($search): void {
                     $q->search($search, ['title'])
-                        ->orWhereHas('recordTags', fn ($q) => $q->where('name', 'like', sprintf('%%%s%%', addcslashes($search, '%_\\'))));
+                        ->orWhereHas('recordTags', function (Builder $query) use ($search): void {
+                            $this->whereLikeEscaped($query, 'name', $this->likePattern($search));
+                        });
                 });
             })
             ->orderByDesc('updated_at')
@@ -51,7 +56,9 @@ class NotePageController extends Controller
             ->when($search, function ($q) use ($search): void {
                 $q->where(function ($q) use ($search): void {
                     $q->search($search, ['title'])
-                        ->orWhereHas('recordTags', fn ($q) => $q->where('name', 'like', sprintf('%%%s%%', addcslashes($search, '%_\\'))));
+                        ->orWhereHas('recordTags', function (Builder $query) use ($search): void {
+                            $this->whereLikeEscaped($query, 'name', $this->likePattern($search));
+                        });
                 });
             })
             ->orderByDesc('deleted_at')

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Collections;
 
+use App\Concerns\EscapesLikeWildcards;
 use App\Concerns\ProvidesActivityHistory;
 use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
@@ -11,12 +12,14 @@ use App\Http\Controllers\Controller;
 use App\Models\RecordCollection;
 use App\Models\Team;
 use DateTimeInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CollectionPageController extends Controller
 {
+    use EscapesLikeWildcards;
     use ProvidesActivityHistory;
     use ProvidesRecordLinks;
     use ProvidesRecordTags;
@@ -31,7 +34,9 @@ class CollectionPageController extends Controller
             ->when($search, function ($q) use ($search): void {
                 $q->where(function ($q) use ($search): void {
                     $q->search($search, ['title', 'description'])
-                        ->orWhereHas('recordTags', fn ($q) => $q->where('name', 'like', sprintf('%%%s%%', addcslashes($search, '%_\\'))));
+                        ->orWhereHas('recordTags', function (Builder $query) use ($search): void {
+                            $this->whereLikeEscaped($query, 'name', $this->likePattern($search));
+                        });
                 });
             })
             ->orderByDesc('updated_at')
@@ -52,7 +57,9 @@ class CollectionPageController extends Controller
             ->when($search, function ($q) use ($search): void {
                 $q->where(function ($q) use ($search): void {
                     $q->search($search, ['title', 'description'])
-                        ->orWhereHas('recordTags', fn ($q) => $q->where('name', 'like', sprintf('%%%s%%', addcslashes($search, '%_\\'))));
+                        ->orWhereHas('recordTags', function (Builder $query) use ($search): void {
+                            $this->whereLikeEscaped($query, 'name', $this->likePattern($search));
+                        });
                 });
             })
             ->orderByDesc('deleted_at')

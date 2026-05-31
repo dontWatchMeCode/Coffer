@@ -114,6 +114,24 @@ test('records can be searched read updated and deleted through mcp', function ()
     $this->assertSoftDeleted('notes', ['id' => $note->id]);
 });
 
+test('mcp search excludes records for disabled team features', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $team->forceFill([
+        'feature_settings' => array_merge($team->featureSettings(), ['notes' => false]),
+    ])->save();
+
+    Note::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Hidden Disabled Note',
+    ]);
+
+    RecordsServer::actingAs($user)->tool(SearchRecordsTool::class, [
+        'query' => 'Hidden Disabled',
+    ])->assertOk()->assertDontSee('Hidden Disabled Note');
+});
+
 test('note blocks can be created through mcp', function () {
     $user = User::factory()->create();
 
