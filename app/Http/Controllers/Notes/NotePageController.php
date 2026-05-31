@@ -9,10 +9,7 @@ use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\Note;
-use App\Models\Tag;
 use App\Models\Team;
-use App\Services\ScoutRecordSearch;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,10 +27,10 @@ class NotePageController extends Controller
         $notes = Note::query()
             ->whereBelongsTo($currentTeam)
             ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
-            ->when($search, function ($q) use ($currentTeam, $search): void {
-                $q->where(function (Builder $q) use ($currentTeam, $search): void {
-                    ScoutRecordSearch::constrain($q, Note::class, $currentTeam, $search)
-                        ->orWhereHas('recordTags', fn (Builder $q): Builder => ScoutRecordSearch::constrain($q, Tag::class, $currentTeam, $search));
+            ->when($search, function ($q) use ($search): void {
+                $q->where(function ($q) use ($search): void {
+                    $q->search($search, ['title'])
+                        ->orWhereHas('recordTags', fn ($q) => $q->where('name', 'like', sprintf('%%%s%%', addcslashes($search, '%_\\'))));
                 });
             })
             ->orderByDesc('updated_at')
@@ -51,10 +48,10 @@ class NotePageController extends Controller
         $notes = Note::onlyTrashed()
             ->whereBelongsTo($currentTeam)
             ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
-            ->when($search, function ($q) use ($currentTeam, $search): void {
-                $q->where(function (Builder $q) use ($currentTeam, $search): void {
-                    ScoutRecordSearch::constrain($q, Note::class, $currentTeam, $search, onlyTrashed: true)
-                        ->orWhereHas('recordTags', fn (Builder $q): Builder => ScoutRecordSearch::constrain($q, Tag::class, $currentTeam, $search));
+            ->when($search, function ($q) use ($search): void {
+                $q->where(function ($q) use ($search): void {
+                    $q->search($search, ['title'])
+                        ->orWhereHas('recordTags', fn ($q) => $q->where('name', 'like', sprintf('%%%s%%', addcslashes($search, '%_\\'))));
                 });
             })
             ->orderByDesc('deleted_at')

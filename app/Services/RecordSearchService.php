@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Concerns\EscapesLikeWildcards;
 use App\Concerns\HasRecordTags;
 use App\Concerns\ParsesSearchPrefixes;
 use App\Contracts\LinkableRecord;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class RecordSearchService
 {
+    use EscapesLikeWildcards;
     use ParsesSearchPrefixes;
 
     /**
@@ -33,13 +35,13 @@ class RecordSearchService
             return $results;
         }
 
-        $search = $query !== '' ? $query : null;
+        $like = $query !== '' ? $this->likePattern($query) : null;
 
         foreach (RecordSearchRegistry::enabledDefinitions($currentTeam) as $definition) {
             $globalKey = $definition['global'];
 
             if (in_array($globalKey, $scopes, true)) {
-                $results[$globalKey] = $this->globalResultsForDefinition($currentTeam, $definition, $search, $tagSlug, $limit);
+                $results[$globalKey] = $this->globalResultsForDefinition($currentTeam, $definition, $like, $tagSlug, $limit);
             }
         }
 
@@ -76,7 +78,7 @@ class RecordSearchService
         }
 
         $linkedIds = $this->linkedIds($from, $currentTeam->id);
-        $search = $query !== '' ? $query : null;
+        $like = $query !== '' ? $this->likePattern($query) : null;
         $records = [];
 
         foreach (RecordSearchRegistry::enabledDefinitions($currentTeam) as $alias => $definition) {
@@ -91,7 +93,7 @@ class RecordSearchService
                 $excludeIds[] = (int) $from->getKey();
             }
 
-            $models = $this->baseSearchQuery($currentTeam, $definition, $search, $tagSlug)
+            $models = $this->baseSearchQuery($currentTeam, $definition, $like, $tagSlug)
                 ->when($excludeIds !== [], fn (Builder $query) => $query->whereNotIn('id', array_unique($excludeIds)))
                 ->limit(20)
                 ->get();
@@ -118,9 +120,9 @@ class RecordSearchService
      * @param  array{class: class-string<Model>, columns: list<string>, order: string}  $definition
      * @return array<int, array{id: int, title: string, subtitle: string|null, url: string}>
      */
-    private function globalResultsForDefinition(Team $currentTeam, array $definition, ?string $search, ?string $tagSlug, int $limit = 10): array
+    private function globalResultsForDefinition(Team $currentTeam, array $definition, ?string $like, ?string $tagSlug, int $limit = 10): array
     {
-        return $this->baseSearchQuery($currentTeam, $definition, $search, $tagSlug)
+        return $this->baseSearchQuery($currentTeam, $definition, $like, $tagSlug)
             ->limit($limit)
             ->get()
             ->map(fn (Model $model): array => [
@@ -138,14 +140,23 @@ class RecordSearchService
      * @param  array{class: class-string<Model>, columns: list<string>, order: string}  $definition
      * @return Builder<Model>
      */
-    private function baseSearchQuery(Team $currentTeam, array $definition, ?string $search, ?string $tagSlug = null): Builder
+    private function baseSearchQuery(Team $currentTeam, array $definition, ?string $like, ?string $tagSlug = null): Builder
     {
         $class = $definition['class'];
         $teamId = $currentTeam->id;
 
-        $query = $class::query()
+        return $class::query()
             ->whereBelongsTo($currentTeam)
             ->when($class === Note::class, fn ($q) => $q->with('blocks'))
+            ->when($like !== null, function (Builder $query) use ($definition, $like): void {
+                $query->where(function (Builder $query) use ($definition, $like): void {
+                    foreach ($definition['columns'] as $index => $column) {
+                        $index === 0
+                            ? $query->where($column, 'like', $like)
+                            : $query->orWhere($column, 'like', $like);
+                    }
+                });
+            })
             ->when($tagSlug !== null, function (Builder $query) use ($class, $tagSlug, $teamId): void {
                 if (in_array(HasRecordTags::class, class_uses_recursive($class))) {
                     $query->whereHas('recordTags', fn (Builder $q) => $q->where('tags.slug', $tagSlug)->where('tags.team_id', $teamId));
@@ -154,12 +165,6 @@ class RecordSearchService
                 }
             })
             ->orderBy($definition['order']);
-
-        if ($search !== null) {
-            return ScoutRecordSearch::constrain($query, $class, $currentTeam, $search);
-        }
-
-        return $query;
     }
 
     private function subtitleForGlobalResult(Model $model): ?string

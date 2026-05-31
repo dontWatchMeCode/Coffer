@@ -33,11 +33,9 @@ use App\Policies\TagPolicy;
 use App\Policies\TaskCommentPolicy;
 use App\Policies\TaskPolicy;
 use App\Policies\TeamPolicy;
-use App\Scout\DatabaseLikeFallbackEngine;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
-use Laravel\Scout\EngineManager;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -59,8 +57,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        resolve(EngineManager::class)->extend('database_like_fallback', fn (): DatabaseLikeFallbackEngine => new DatabaseLikeFallbackEngine);
-
         Gate::policy(Bookmark::class, BookmarkPolicy::class);
         Gate::policy(CalendarEvent::class, CalendarEventPolicy::class);
         Gate::policy(Contact::class, ContactPolicy::class);

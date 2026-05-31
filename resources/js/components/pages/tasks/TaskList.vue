@@ -126,10 +126,9 @@ const statusIcons = {
 
             <div class="min-w-0 flex-1">
                 <div class="flex min-w-0 items-center gap-2 overflow-hidden">
-                    <span
-                        class="min-w-0 text-sm font-medium [overflow-wrap:anywhere]"
-                        >{{ task.title }}</span
-                    >
+                    <span class="min-w-0 text-sm font-medium [overflow-wrap:anywhere]">{{
+                        task.title
+                    }}</span>
                 </div>
                 <div
                     class="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"

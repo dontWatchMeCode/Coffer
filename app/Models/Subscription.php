@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
+use App\Concerns\Filterable;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
@@ -15,8 +16,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Laravel\Scout\Attributes\SearchUsingFullText;
-use Laravel\Scout\Searchable;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -24,6 +23,7 @@ use Spatie\Activitylog\Support\LogOptions;
 class Subscription extends Model implements LinkableRecord
 {
     use BelongsToTeam;
+    use Filterable;
 
     /** @use HasFactory<SubscriptionFactory> */
     use HasFactory;
@@ -31,23 +31,7 @@ class Subscription extends Model implements LinkableRecord
     use HasRecordLinks;
     use HasRecordTags;
     use LogsActivity;
-    use Searchable;
     use SoftDeletes;
-
-    /**
-     * @return array<string, mixed>
-     */
-    #[SearchUsingFullText(['name', 'category', 'description'])]
-    public function toSearchableArray(): array
-    {
-        return [
-            'id' => (int) $this->id,
-            'team_id' => (int) $this->team_id,
-            'name' => $this->name,
-            'category' => $this->getRawOriginal('category'),
-            'description' => $this->description,
-        ];
-    }
 
     public function getActivitylogOptions(): LogOptions
     {

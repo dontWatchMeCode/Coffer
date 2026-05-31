@@ -1,7 +1,7 @@
 ---
 id: 204
 section: backend
-status: done
+status: todo
 severity: high
 ---
 
@@ -28,42 +28,32 @@ Current search uses `Filterable` trait and inline `LIKE '%query%'` queries acros
 
 ## Steps
 
-- [x] Install `laravel/scout`
-- [x] Pick driver: database (MySQL full-text, no extra infra) or MeiliSearch (true relevance, no stopword/min-length issues)
-- [x] Add `Searchable` trait to all searchable models
-- [x] Define `toSearchableArray()` on each model, serializing JSON/searchable fields appropriately
-- [x] Define full-text indexes in migrations (after `toSearchableArray` determines which columns need indexing; note: JSON columns like contacts' `phone_numbers`, `email_addresses`, `links` need serialization in `toSearchableArray`)
-- [x] Configure Scout queueing for the selected driver
-- [x] Confirm `php artisan scout:import` is not required for the selected database driver
-- [x] Refactor `RecordSearchService::baseSearchQuery()` to use Scout instead of inline LIKE
-- [x] Replace `Filterable::scopeSearch` usage with Scout's `search()` API across all controllers
-- [x] Replace `EscapesLikeWildcards` usage in `McpRecordService`, `SubscriptionCategoryController`, `RecordTagController` with Scout
-- [x] Decide `RecordSearchRegistry` fate — retire, adapt, or keep alongside Scout
-- [x] Remove `Filterable` and `EscapesLikeWildcards` traits if no longer needed
-- [x] Write new tests for Scout search behavior (no existing tests cover `scopeSearch`)
-- [x] Update `RecordSearchRegistry` docs/registration entries
-- [x] Remove `Filterable.php` and `EscapesLikeWildcards.php` references in todos/docs
-
-## Implementation Notes
-
-- Chose a custom Scout database engine that keeps PostgreSQL/MySQL full-text behavior and falls back to SQL `LIKE` on SQLite.
-- Left `SCOUT_DRIVER` unset in `.env.example` so the custom database engine is used automatically.
-- Set `SCOUT_QUEUE=false` because Scout's database and collection engines search database rows directly and do not need indexing jobs.
-- Database driver searches tables directly, so `scout:import` is not required for that driver.
-- Kept `RecordSearchRegistry` for type/prefix/feature metadata; searchable columns now live on model `toSearchableArray()` methods.
+- [ ] Install `laravel/scout`
+- [ ] Pick driver: database (MySQL full-text, no extra infra) or MeiliSearch (true relevance, no stopword/min-length issues)
+- [ ] Add `Searchable` trait to all searchable models
+- [ ] Define `toSearchableArray()` on each model, serializing JSON/searchable fields appropriately
+- [ ] Define full-text indexes in migrations (after `toSearchableArray` determines which columns need indexing; note: JSON columns like contacts' `phone_numbers`, `email_addresses`, `links` need serialization in `toSearchableArray`)
+- [ ] Configure `SCOUT_QUEUE=true` for async indexing on large tables
+- [ ] Run `php artisan scout:import` to index existing records
+- [ ] Refactor `RecordSearchService::baseSearchQuery()` to use Scout instead of inline LIKE
+- [ ] Replace `Filterable::scopeSearch` usage with Scout's `search()` API across all controllers
+- [ ] Replace `EscapesLikeWildcards` usage in `McpRecordService`, `SubscriptionCategoryController`, `RecordTagController` with Scout
+- [ ] Decide `RecordSearchRegistry` fate — retire, adapt, or keep alongside Scout
+- [ ] Remove `Filterable` and `EscapesLikeWildcards` traits if no longer needed
+- [ ] Write new tests for Scout search behavior (no existing tests cover `scopeSearch`)
+- [ ] Update `RecordSearchRegistry` docs/registration entries
+- [ ] Remove `Filterable.php` and `EscapesLikeWildcards.php` references in todos/docs
 
 ## Models to Make Searchable
 
 - Task
 - Subscription
-- SubscriptionCategory (added for candidate search)
 - RecordCollection (not "Collection")
 - Note
 - Contact
 - CalendarEvent
 - LogEntry
 - Bookmark
-- Tag (added for candidate search)
 - Project (already in `RecordSearchRegistry`; needs `Searchable` too if Scout replaces global search)
 
 ## Controllers Using Search (all need updates)

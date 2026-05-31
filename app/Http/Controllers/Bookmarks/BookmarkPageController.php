@@ -10,8 +10,6 @@ use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\Bookmark;
 use App\Models\Team;
-use App\Services\ScoutRecordSearch;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -26,7 +24,7 @@ class BookmarkPageController extends Controller
     {
         $bookmarks = Bookmark::query()
             ->whereBelongsTo($currentTeam)
-            ->when($request->string('search')->toString(), fn (Builder $q, string $search): Builder => ScoutRecordSearch::constrain($q, Bookmark::class, $currentTeam, $search))
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['title', 'description', 'url']))
             ->orderByDesc('created_at')
             ->simplePaginate(25);
 
@@ -47,7 +45,7 @@ class BookmarkPageController extends Controller
     {
         $bookmarks = Bookmark::onlyTrashed()
             ->whereBelongsTo($currentTeam)
-            ->when($request->string('search')->toString(), fn (Builder $q, string $search): Builder => ScoutRecordSearch::constrain($q, Bookmark::class, $currentTeam, $search, onlyTrashed: true))
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['title', 'description', 'url']))
             ->orderByDesc('deleted_at')
             ->simplePaginate(25);
 

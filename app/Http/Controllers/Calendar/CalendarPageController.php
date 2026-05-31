@@ -10,9 +10,7 @@ use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\CalendarEvent;
 use App\Models\Team;
-use App\Services\ScoutRecordSearch;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -41,7 +39,7 @@ class CalendarPageController extends Controller
             ->orderByDesc('updated_at');
 
         $searchMatchIds = $search
-            ? ScoutRecordSearch::constrain(clone $calendarEventsQuery, CalendarEvent::class, $currentTeam, $search)->pluck('id')->all()
+            ? (clone $calendarEventsQuery)->search($search, ['title', 'description'])->pluck('id')->all()
             : null;
 
         $calendarEvents = (clone $calendarEventsQuery)
@@ -52,7 +50,7 @@ class CalendarPageController extends Controller
 
         $paginatedEvents = CalendarEvent::query()
             ->whereBelongsTo($currentTeam)
-            ->when($search, fn (Builder $q): Builder => ScoutRecordSearch::constrain($q, CalendarEvent::class, $currentTeam, $search))
+            ->when($search, fn ($q) => $q->search($search, ['title', 'description']))
             ->where('date', '>=', now()->toDateString())
             ->orderBy('date')
             ->orderBy('time')
@@ -70,7 +68,7 @@ class CalendarPageController extends Controller
     {
         $events = CalendarEvent::onlyTrashed()
             ->whereBelongsTo($currentTeam)
-            ->when($request->string('search')->toString(), fn (Builder $q, string $search): Builder => ScoutRecordSearch::constrain($q, CalendarEvent::class, $currentTeam, $search, onlyTrashed: true))
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['title', 'description']))
             ->orderByDesc('deleted_at')
             ->simplePaginate(25);
 

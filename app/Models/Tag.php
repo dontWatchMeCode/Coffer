@@ -11,30 +11,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Str;
-use Laravel\Scout\Attributes\SearchUsingFullText;
-use Laravel\Scout\Searchable;
 
 #[Fillable(['team_id', 'name', 'slug'])]
 class Tag extends Model
 {
     /** @use HasFactory<TagFactory> */
     use HasFactory;
-
-    use Searchable;
-
-    /**
-     * @return array<string, mixed>
-     */
-    #[SearchUsingFullText(['name', 'slug'])]
-    public function toSearchableArray(): array
-    {
-        return [
-            'id' => (int) $this->id,
-            'team_id' => (int) $this->team_id,
-            'name' => $this->name,
-            'slug' => $this->slug,
-        ];
-    }
 
     public static function slugFor(string $name): string
     {

@@ -11,8 +11,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Subscription;
 use App\Models\SubscriptionCategory;
 use App\Models\Team;
-use App\Services\ScoutRecordSearch;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -28,7 +26,7 @@ class SubscriptionPageController extends Controller
         $subscriptions = Subscription::query()
             ->whereBelongsTo($currentTeam)
             ->with('subscriptionCategory')
-            ->when($request->string('search')->toString(), fn (Builder $q, string $search): Builder => ScoutRecordSearch::constrain($q, Subscription::class, $currentTeam, $search))
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['name', 'description']))
             ->orderByDesc('is_active')
             ->orderBy('name')
             ->simplePaginate(25);
@@ -45,7 +43,7 @@ class SubscriptionPageController extends Controller
         $subscriptions = Subscription::onlyTrashed()
             ->whereBelongsTo($currentTeam)
             ->with('subscriptionCategory')
-            ->when($request->string('search')->toString(), fn (Builder $q, string $search): Builder => ScoutRecordSearch::constrain($q, Subscription::class, $currentTeam, $search, onlyTrashed: true))
+            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['name', 'description']))
             ->orderByDesc('deleted_at')
             ->simplePaginate(25);
 

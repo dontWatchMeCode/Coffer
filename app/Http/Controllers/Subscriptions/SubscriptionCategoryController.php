@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Subscriptions;
 
+use App\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Models\SubscriptionCategory;
 use App\Models\Team;
-use App\Services\ScoutRecordSearch;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SubscriptionCategoryController extends Controller
 {
+    use EscapesLikeWildcards;
+
     public function candidates(Request $request, Team $currentTeam): JsonResponse
     {
         $query = $request->string('q')->trim()->toString();
@@ -30,11 +31,13 @@ class SubscriptionCategoryController extends Controller
             ]);
         }
 
-        $categoriesQuery = SubscriptionCategory::query()
-            ->whereBelongsTo($currentTeam)
-            ->tap(fn (Builder $categoryQuery): Builder => ScoutRecordSearch::constrain($categoryQuery, SubscriptionCategory::class, $currentTeam, $query));
+        $like = $this->likePattern($query);
 
-        $categories = $categoriesQuery
+        $categories = SubscriptionCategory::query()
+            ->whereBelongsTo($currentTeam)
+            ->where(fn ($q) => $q
+                ->where('name', 'like', $like)
+                ->orWhere('slug', 'like', $like))
             ->orderBy('name')
             ->limit(20)
             ->get(['id', 'name', 'slug']);

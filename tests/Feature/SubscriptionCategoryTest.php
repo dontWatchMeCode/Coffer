@@ -33,8 +33,7 @@ it('creates a category when storing a subscription with a new category name', fu
 
     $subscription = Subscription::query()->whereBelongsTo($this->team)->first();
     expect($subscription->subscription_category_id)->toBe($category->id)
-        ->and($subscription->category)->toBe('Entertainment')
-        ->and($subscription->getRawOriginal('category'))->toBe('Entertainment');
+        ->and($subscription->category)->toBe('Entertainment');
 });
 
 it('reuses existing category when storing subscription with same category name', function () {
@@ -84,10 +83,7 @@ it('updates subscription category and cleans up unused', function () {
         ->first();
 
     expect($newCategory)->not->toBeNull();
-    $subscription->refresh();
-
-    expect($subscription->subscription_category_id)->toBe($newCategory->id)
-        ->and($subscription->getRawOriginal('category'))->toBe('New Category');
+    expect($subscription->fresh()->subscription_category_id)->toBe($newCategory->id);
 });
 
 it('does not delete category still used by other subscription', function () {

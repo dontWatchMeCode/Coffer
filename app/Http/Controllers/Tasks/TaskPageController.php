@@ -12,9 +12,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\TaskComment;
 use App\Models\Team;
-use App\Services\ScoutRecordSearch;
 use App\Services\TaskPageDataService;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -113,7 +111,7 @@ class TaskPageController extends Controller
             ->whereBelongsTo($project)
             ->with(['project:id,name', 'assignee:id,name', 'creator:id,name'])
             ->withCount('comments')
-            ->when($search, fn (Builder $q): Builder => ScoutRecordSearch::constrain($q, Task::class, $currentTeam, $search))
+            ->when($search, fn ($q) => $q->search($search, ['title', 'description']))
             ->orderBy('status')
             ->orderBy('position')
             ->orderByDesc('updated_at')
@@ -146,7 +144,7 @@ class TaskPageController extends Controller
             ->whereBelongsTo($project)
             ->with(['project:id,name', 'assignee:id,name', 'creator:id,name'])
             ->withCount('comments')
-            ->when($search, fn (Builder $q): Builder => ScoutRecordSearch::constrain($q, Task::class, $currentTeam, $search, onlyTrashed: true))
+            ->when($search, fn ($q) => $q->search($search, ['title', 'description']))
             ->orderByDesc('deleted_at')
             ->simplePaginate(25);
 

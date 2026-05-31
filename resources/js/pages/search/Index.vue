@@ -423,14 +423,12 @@ defineOptions({
                                             class="mt-0.5 h-4 w-4 shrink-0 opacity-60"
                                         />
                                         <div class="min-w-0 flex-1">
-                                            <p
-                                                class="font-medium [overflow-wrap:anywhere]"
-                                            >
+                                            <p class="font-medium [overflow-wrap:anywhere]">
                                                 {{ item.title }}
                                             </p>
                                             <p
                                                 v-if="item.subtitle"
-                                                class="text-xs [overflow-wrap:anywhere] text-muted-foreground"
+                                                class="text-xs text-muted-foreground [overflow-wrap:anywhere]"
                                             >
                                                 {{ item.subtitle }}
                                             </p>
