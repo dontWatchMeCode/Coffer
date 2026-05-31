@@ -69,14 +69,14 @@ function forceDelete(): void {
 <template>
     <ListContainer v-if="records.length > 0" layout="list">
         <ListItem v-for="record in records" :key="record.id">
-            <div class="flex min-w-0 w-full items-center gap-4 overflow-hidden">
+            <div class="flex w-full min-w-0 items-center gap-4 overflow-hidden">
                 <div class="min-w-0 flex-1">
                     <p class="font-medium [overflow-wrap:anywhere]">
                         {{ record.title }}
                     </p>
                     <p
                         v-if="record.subtitle"
-                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
+                        class="text-sm [overflow-wrap:anywhere] text-muted-foreground"
                     >
                         {{ record.subtitle }}
                     </p>

@@ -31,14 +31,14 @@ class RecordSearchRegistry
     {
         return self::$definitions ??= [
             'task' => ['prefix' => 't', 'global' => 'tasks', 'feature' => 'tasks', 'class' => Task::class, 'columns' => ['title', 'description'], 'order' => 'title'],
-            'contact' => ['prefix' => 'c', 'global' => 'contacts', 'feature' => 'contacts', 'class' => Contact::class, 'columns' => ['name', 'address', 'additional_info'], 'order' => 'name'],
+            'contact' => ['prefix' => 'c', 'global' => 'contacts', 'feature' => 'contacts', 'class' => Contact::class, 'columns' => ['name', 'address', 'additional_info', 'phone_numbers', 'email_addresses', 'links'], 'order' => 'name'],
             'calendar_event' => ['prefix' => 'e', 'global' => 'events', 'feature' => 'calendar', 'class' => CalendarEvent::class, 'columns' => ['title', 'description'], 'order' => 'date'],
             'project' => ['prefix' => 'p', 'global' => 'projects', 'feature' => 'tasks', 'class' => Project::class, 'columns' => ['name', 'description'], 'order' => 'name'],
             'bookmark' => ['prefix' => 'b', 'global' => 'bookmarks', 'feature' => 'bookmarks', 'class' => Bookmark::class, 'columns' => ['title', 'description', 'url'], 'order' => 'title'],
             'subscription' => ['prefix' => 's', 'global' => 'subscriptions', 'feature' => 'subscriptions', 'class' => Subscription::class, 'columns' => ['name', 'category', 'description'], 'order' => 'name'],
             'note' => ['prefix' => 'n', 'global' => 'notes', 'feature' => 'notes', 'class' => Note::class, 'columns' => ['title'], 'order' => 'title'],
             'collection' => ['prefix' => 'l', 'global' => 'collections', 'feature' => 'collections', 'class' => RecordCollection::class, 'columns' => ['title', 'description'], 'order' => 'title'],
-            'log_entry' => ['prefix' => 'g', 'global' => 'log_entries', 'feature' => 'log', 'class' => LogEntry::class, 'columns' => ['body'], 'order' => 'created_at'],
+            'log_entry' => ['prefix' => 'g', 'global' => 'log_entries', 'feature' => 'log', 'class' => LogEntry::class, 'columns' => ['body', 'category'], 'order' => 'created_at'],
         ];
     }
 

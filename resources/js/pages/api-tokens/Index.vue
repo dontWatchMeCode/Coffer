@@ -256,7 +256,9 @@ defineOptions({
                     :key="token.id"
                     :clickable="false"
                 >
-                    <div class="flex min-w-0 items-center gap-4 overflow-hidden">
+                    <div
+                        class="flex min-w-0 items-center gap-4 overflow-hidden"
+                    >
                         <ListItemIcon size="sm">
                             <KeyRound class="h-4 w-4 text-muted-foreground" />
                         </ListItemIcon>
@@ -266,7 +268,7 @@ defineOptions({
                                 {{ token.name }}
                             </p>
                             <p
-                                class="text-xs text-muted-foreground [overflow-wrap:anywhere]"
+                                class="text-xs [overflow-wrap:anywhere] text-muted-foreground"
                             >
                                 Created by {{ token.created_by ?? 'Unknown' }}
                                 · Last used

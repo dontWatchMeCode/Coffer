@@ -10,6 +10,9 @@ use App\Models\RteBlock;
 use App\Models\Task;
 use App\Services\RecordLinkHelper;
 use Illuminate\Database\Eloquent\Collection;
+use Tests\TestCase;
+
+uses(TestCase::class);
 
 it('extracts titles from models', function (string $modelClass, string $attribute, string $value) {
     $model = new $modelClass;

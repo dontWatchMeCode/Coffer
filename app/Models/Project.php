@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Scout\Attributes\SearchUsingFullText;
+use Laravel\Scout\Searchable;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -28,6 +30,21 @@ class Project extends Model implements LinkableRecord
     use HasRecordLinks;
     use HasRecordTags;
     use LogsActivity;
+    use Searchable;
+
+    /**
+     * @return array<string, mixed>
+     */
+    #[SearchUsingFullText(['name', 'description'])]
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => (int) $this->id,
+            'team_id' => (int) $this->team_id,
+            'name' => $this->name,
+            'description' => $this->description,
+        ];
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

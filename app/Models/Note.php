@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
-use App\Concerns\Filterable;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
@@ -17,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Laravel\Scout\Attributes\SearchUsingFullText;
+use Laravel\Scout\Searchable;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -24,7 +25,6 @@ use Spatie\Activitylog\Support\LogOptions;
 class Note extends Model implements LinkableRecord
 {
     use BelongsToTeam;
-    use Filterable;
 
     /** @use HasFactory<NoteFactory> */
     use HasFactory;
@@ -32,7 +32,21 @@ class Note extends Model implements LinkableRecord
     use HasRecordLinks;
     use HasRecordTags;
     use LogsActivity;
+    use Searchable;
     use SoftDeletes;
+
+    /**
+     * @return array<string, mixed>
+     */
+    #[SearchUsingFullText(['title'])]
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => (int) $this->id,
+            'team_id' => (int) $this->team_id,
+            'title' => $this->title,
+        ];
+    }
 
     protected static function booted(): void
     {

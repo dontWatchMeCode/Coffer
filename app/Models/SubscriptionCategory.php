@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Laravel\Scout\Attributes\SearchUsingFullText;
+use Laravel\Scout\Searchable;
 
 #[Fillable(['team_id', 'name', 'slug'])]
 class SubscriptionCategory extends Model
@@ -19,6 +21,22 @@ class SubscriptionCategory extends Model
 
     /** @use HasFactory<SubscriptionCategoryFactory> */
     use HasFactory;
+
+    use Searchable;
+
+    /**
+     * @return array<string, mixed>
+     */
+    #[SearchUsingFullText(['name', 'slug'])]
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => (int) $this->id,
+            'team_id' => (int) $this->team_id,
+            'name' => $this->name,
+            'slug' => $this->slug,
+        ];
+    }
 
     public static function slugFor(string $name): string
     {

@@ -19,7 +19,7 @@ class SubscriptionController extends Controller
         $this->authorize('create', Subscription::class);
 
         $validated = $request->validated();
-        $categoryName = $validated['category'] ?? null;
+        $categoryName = filled($validated['category'] ?? null) ? trim((string) $validated['category']) : null;
         $categoryId = SubscriptionCategory::resolveIdForTeam($categoryName, $currentTeam);
 
         unset($validated['category']);
@@ -28,7 +28,10 @@ class SubscriptionController extends Controller
             ...$validated,
             'team_id' => $currentTeam->id,
         ]);
-        $subscription->subscription_category_id = $categoryId;
+        $subscription->forceFill([
+            'category' => $categoryName,
+            'subscription_category_id' => $categoryId,
+        ]);
         $subscription->save();
 
         return to_route('team.subscriptions.show', [
@@ -47,13 +50,16 @@ class SubscriptionController extends Controller
 
         $validated = $request->validated();
         $oldCategoryId = $subscription->subscription_category_id;
-        $categoryName = $validated['category'] ?? null;
+        $categoryName = filled($validated['category'] ?? null) ? trim((string) $validated['category']) : null;
         $categoryId = SubscriptionCategory::resolveIdForTeam($categoryName, $currentTeam);
 
         unset($validated['category']);
 
         $subscription->update($validated);
-        $subscription->subscription_category_id = $categoryId;
+        $subscription->forceFill([
+            'category' => $categoryName,
+            'subscription_category_id' => $categoryId,
+        ]);
         $subscription->save();
 
         if ($oldCategoryId !== $categoryId && $oldCategoryId) {

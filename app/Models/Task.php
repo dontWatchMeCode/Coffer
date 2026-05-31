@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
-use App\Concerns\Filterable;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
@@ -17,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Attributes\SearchUsingFullText;
+use Laravel\Scout\Searchable;
 use LogicException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -25,7 +26,6 @@ use Spatie\Activitylog\Support\LogOptions;
 class Task extends Model implements LinkableRecord
 {
     use BelongsToTeam;
-    use Filterable;
 
     /** @use HasFactory<TaskFactory> */
     use HasFactory;
@@ -33,7 +33,24 @@ class Task extends Model implements LinkableRecord
     use HasRecordLinks;
     use HasRecordTags;
     use LogsActivity;
+    use Searchable;
     use SoftDeletes;
+
+    /**
+     * @return array<string, mixed>
+     */
+    #[SearchUsingFullText(['title', 'description'])]
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => (int) $this->id,
+            'team_id' => (int) $this->team_id,
+            'project_id' => (int) $this->project_id,
+            'title' => $this->title,
+            'description' => $this->description,
+            'status' => $this->status,
+        ];
+    }
 
     public function getActivitylogOptions(): LogOptions
     {

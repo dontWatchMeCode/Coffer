@@ -240,7 +240,10 @@ const today = computed(() => {
 });
 
 const dayEventsMap = computed(() => {
-    const map = new Map<number, { event: CalendarEventItem; matchesSearch: boolean }[]>();
+    const map = new Map<
+        number,
+        { event: CalendarEventItem; matchesSearch: boolean }[]
+    >();
     const yearMonth = `${currentYear.value}-${String(currentMonth.value + 1).padStart(2, '0')}`;
 
     for (const event of props.calendarEvents) {
@@ -256,7 +259,9 @@ const dayEventsMap = computed(() => {
 
         map.get(day)!.push({
             event,
-            matchesSearch: props.searchMatchIds === null || props.searchMatchIds.includes(event.id),
+            matchesSearch:
+                props.searchMatchIds === null ||
+                props.searchMatchIds.includes(event.id),
         });
     }
 
@@ -420,7 +425,9 @@ function openEditDialog(event: CalendarEventItem): void {
                                         <ComboboxVirtualizer
                                             v-slot="{ option }"
                                             :options="filteredYears"
-                                            :text-content="(value) => String(value)"
+                                            :text-content="
+                                                (value) => String(value)
+                                            "
                                             :estimate-size="30"
                                         >
                                             <ComboboxItem

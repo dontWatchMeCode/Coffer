@@ -94,13 +94,13 @@ defineProps<Props>();
                     </p>
                     <p
                         v-if="collection.description"
-                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
+                        class="text-sm [overflow-wrap:anywhere] text-muted-foreground"
                     >
                         {{ collection.description }}
                     </p>
                     <p
                         v-else
-                        class="text-sm text-muted-foreground italic [overflow-wrap:anywhere]"
+                        class="text-sm [overflow-wrap:anywhere] text-muted-foreground italic"
                     >
                         No description yet.
                     </p>

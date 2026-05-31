@@ -86,13 +86,13 @@ defineProps<Props>();
                     </p>
                     <p
                         v-if="bookmark.description"
-                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
+                        class="text-sm [overflow-wrap:anywhere] text-muted-foreground"
                     >
                         {{ bookmark.description }}
                     </p>
                     <p
                         v-else
-                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
+                        class="text-sm [overflow-wrap:anywhere] text-muted-foreground"
                     >
                         {{ bookmark.url }}
                     </p>

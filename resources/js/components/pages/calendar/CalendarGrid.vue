@@ -24,7 +24,6 @@ defineProps<Props>();
 function getDayEvents(day: number, map: Map<number, DayEvent[]>): DayEvent[] {
     return map.get(day) ?? [];
 }
-
 </script>
 
 <template>
@@ -74,7 +73,10 @@ function getDayEvents(day: number, map: Map<number, DayEvent[]>): DayEvent[] {
                     class="mt-1 space-y-0.5"
                 >
                     <button
-                        v-for="{ event, matchesSearch } in getDayEvents(day, dayEventsMap).slice(0, 3)"
+                        v-for="{ event, matchesSearch } in getDayEvents(
+                            day,
+                            dayEventsMap,
+                        ).slice(0, 3)"
                         :key="event.id"
                         type="button"
                         class="flex w-full cursor-pointer items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-left text-xs transition-colors"

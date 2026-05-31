@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Concerns\EscapesLikeWildcards;
 use App\Contracts\LinkableRecord;
 use App\Models\Note;
 use App\Models\RecordLink;
@@ -15,6 +14,7 @@ use App\Models\Task;
 use App\Models\TaskComment;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
@@ -26,8 +26,6 @@ use Laravel\Mcp\ResponseFactory;
 
 class McpRecordService
 {
-    use EscapesLikeWildcards;
-
     public function schema(): ResponseFactory
     {
         $permissions = app(McpTokenPermissionService::class);
@@ -89,7 +87,6 @@ class McpRecordService
             return Response::structured(['records' => []]);
         }
 
-        $like = $this->likePattern($query);
         $records = [];
         $perTypeLimit = count($types) > 1 ? (int) ceil($limit / count($types)) : $limit;
 
@@ -103,13 +100,7 @@ class McpRecordService
                     $type === 'task' && $permissions->currentToken()?->taskProjectIds() !== null,
                     fn ($recordQuery) => $recordQuery->whereIn('project_id', $permissions->currentToken()?->taskProjectIds() ?? []),
                 )
-                ->where(function ($recordQuery) use ($definition, $like): void {
-                    foreach ($definition['columns'] as $index => $column) {
-                        $index === 0
-                            ? $recordQuery->where($column, 'like', $like)
-                            : $recordQuery->orWhere($column, 'like', $like);
-                    }
-                })
+                ->tap(fn (Builder $recordQuery): Builder => ScoutRecordSearch::constrain($recordQuery, $class, $team, $query))
                 ->orderBy($definition['order'])
                 ->limit($perTypeLimit)
                 ->get();
@@ -207,8 +198,12 @@ class McpRecordService
             $data['position'] ??= 0;
         }
 
+        $hasSubscriptionCategoryInput = false;
+
         if ($validated['type'] === 'subscription' && isset($data['category'])) {
-            $subscriptionCategoryId = SubscriptionCategory::resolveIdForTeam($data['category'], $team);
+            $hasSubscriptionCategoryInput = true;
+            $subscriptionCategoryName = filled($data['category']) ? trim((string) $data['category']) : null;
+            $subscriptionCategoryId = SubscriptionCategory::resolveIdForTeam($subscriptionCategoryName, $team);
             unset($data['category']);
         }
 
@@ -220,9 +215,12 @@ class McpRecordService
             $model->syncBlocks($blocks);
         }
 
-        if ($validated['type'] === 'subscription' && isset($subscriptionCategoryId)) {
+        if ($validated['type'] === 'subscription' && $hasSubscriptionCategoryInput) {
             assert($model instanceof Subscription);
-            $model->subscription_category_id = $subscriptionCategoryId;
+            $model->forceFill([
+                'category' => $subscriptionCategoryName ?? null,
+                'subscription_category_id' => $subscriptionCategoryId,
+            ]);
             $model->save();
         }
 
@@ -274,13 +272,25 @@ class McpRecordService
             unset($data['blocks']);
         }
 
-        $model->fill($data);
+        $subscriptionCategoryName = null;
+        $subscriptionCategoryId = null;
 
         if ($validated['type'] === 'subscription' && array_key_exists('category', $data)) {
             assert($model instanceof Subscription);
             $oldCategoryId = $model->subscription_category_id;
-            $model->subscription_category_id = SubscriptionCategory::resolveIdForTeam($data['category'], $team);
+            $subscriptionCategoryName = filled($data['category']) ? trim((string) $data['category']) : null;
+            $subscriptionCategoryId = SubscriptionCategory::resolveIdForTeam($subscriptionCategoryName, $team);
             unset($data['category']);
+        }
+
+        $model->fill($data);
+
+        if ($validated['type'] === 'subscription' && isset($oldCategoryId)) {
+            assert($model instanceof Subscription);
+            $model->forceFill([
+                'category' => $subscriptionCategoryName,
+                'subscription_category_id' => $subscriptionCategoryId,
+            ]);
         }
 
         $model->save();

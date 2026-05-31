@@ -1,6 +1,5 @@
 <?php
 
-use App\Concerns\EscapesLikeWildcards;
 use App\Concerns\ParsesSearchPrefixes;
 
 class SearchPrefixTester
@@ -17,16 +16,6 @@ class SearchPrefixTester
     }
 }
 
-class LikePatternTester
-{
-    use EscapesLikeWildcards;
-
-    public function test(string $value): string
-    {
-        return $this->likePattern($value);
-    }
-}
-
 it('parses prefixed search queries', function (string $query, array $expected) {
     $prefixMap = ['t' => 'tasks', 'c' => 'contacts'];
     $result = (new SearchPrefixTester)->test($query, $prefixMap);
@@ -39,17 +28,6 @@ it('parses prefixed search queries', function (string $query, array $expected) {
     ['', ['', [], null]],
     ['x: hello', ['x: hello', ['tasks', 'contacts'], null]],
     ['T: Hello', ['Hello', ['tasks'], null]],
-]);
-
-it('escapes like wildcards', function (string $input, string $expected) {
-    $result = (new LikePatternTester)->test($input);
-
-    expect($result)->toBe($expected);
-})->with([
-    ['hello', '%hello%'],
-    ['he%lo', '%he\\%lo%'],
-    ['he_lo', '%he\\_lo%'],
-    ['he\\lo', '%he\\\\lo%'],
 ]);
 
 it('parses tag from search query', function (string $query, array $expected) {

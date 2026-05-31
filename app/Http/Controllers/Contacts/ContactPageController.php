@@ -10,6 +10,8 @@ use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\Contact;
 use App\Models\Team;
+use App\Services\ScoutRecordSearch;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,7 +26,7 @@ class ContactPageController extends Controller
     {
         $contacts = Contact::query()
             ->whereBelongsTo($currentTeam)
-            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['name', 'address', 'additional_info', 'phone_numbers', 'email_addresses', 'links']))
+            ->when($request->string('search')->toString(), fn (Builder $q, string $search): Builder => ScoutRecordSearch::constrain($q, Contact::class, $currentTeam, $search))
             ->orderBy('name')
             ->simplePaginate(25);
 
@@ -47,7 +49,7 @@ class ContactPageController extends Controller
     {
         $contacts = Contact::onlyTrashed()
             ->whereBelongsTo($currentTeam)
-            ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['name', 'address', 'additional_info', 'phone_numbers', 'email_addresses', 'links']))
+            ->when($request->string('search')->toString(), fn (Builder $q, string $search): Builder => ScoutRecordSearch::constrain($q, Contact::class, $currentTeam, $search, onlyTrashed: true))
             ->orderByDesc('deleted_at')
             ->simplePaginate(25);
 

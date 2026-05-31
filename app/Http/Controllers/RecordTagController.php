@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Concerns\EscapesLikeWildcards;
 use App\Concerns\ResolvesLinkableRecord;
 use App\Http\Requests\RecordTags\DeleteRecordTagRequest;
 use App\Http\Requests\RecordTags\RecordTagCandidatesRequest;
@@ -12,12 +11,13 @@ use App\Http\Requests\RecordTags\StoreRecordTagRequest;
 use App\Models\Tag;
 use App\Models\Team;
 use App\Services\ActivityLogger;
+use App\Services\ScoutRecordSearch;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 
 class RecordTagController extends Controller
 {
-    use EscapesLikeWildcards;
     use ResolvesLinkableRecord;
 
     public function candidates(RecordTagCandidatesRequest $request, Team $currentTeam): JsonResponse
@@ -36,14 +36,13 @@ class RecordTagController extends Controller
         }
 
         $attachedIds = $from->recordTags()->pluck('tags.id')->all();
-        $like = $this->likePattern($query);
 
-        $tags = Tag::query()
+        $tagsQuery = Tag::query()
             ->whereBelongsTo($currentTeam)
             ->when($attachedIds !== [], fn ($tagQuery) => $tagQuery->whereNotIn('id', $attachedIds))
-            ->where(fn ($tagQuery) => $tagQuery
-                ->where('name', 'like', $like)
-                ->orWhere('slug', 'like', $like))
+            ->tap(fn (Builder $tagQuery): Builder => ScoutRecordSearch::constrain($tagQuery, Tag::class, $currentTeam, $query));
+
+        $tags = $tagsQuery
             ->orderBy('name')
             ->limit(20)
             ->get(['id', 'name', 'slug'])

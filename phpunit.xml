@@ -27,6 +27,8 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="SCOUT_DRIVER" value="database_like_fallback"/>
+        <env name="SCOUT_QUEUE" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <ini name="memory_limit" value="-1"/>
     </php>

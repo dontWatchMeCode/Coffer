@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Log;
 use App\Http\Controllers\Controller;
 use App\Models\LogEntry;
 use App\Models\Team;
+use App\Services\ScoutRecordSearch;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,7 +22,7 @@ class LogPageController extends Controller
 
         $entries = LogEntry::query()
             ->whereBelongsTo($currentTeam)
-            ->when($search, fn ($q) => $q->search($search, ['body', 'category']))
+            ->when($search, fn (Builder $q): Builder => ScoutRecordSearch::constrain($q, LogEntry::class, $currentTeam, $search))
             ->when($category, fn ($q) => $q->where('category', $category))
             ->orderBy('created_at')
             ->simplePaginate(25);
@@ -53,7 +55,7 @@ class LogPageController extends Controller
 
         $entries = LogEntry::onlyTrashed()
             ->whereBelongsTo($currentTeam)
-            ->when($search, fn ($q) => $q->search($search, ['body', 'category']))
+            ->when($search, fn (Builder $q): Builder => ScoutRecordSearch::constrain($q, LogEntry::class, $currentTeam, $search, onlyTrashed: true))
             ->when($category, fn ($q) => $q->where('category', $category))
             ->orderByDesc('deleted_at')
             ->simplePaginate(25);
