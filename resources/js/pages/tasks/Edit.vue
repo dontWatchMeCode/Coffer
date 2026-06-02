@@ -8,7 +8,6 @@ import PageHeader from '@/components/page/PageHeader.vue';
 import CommentsSection from '@/components/pages/tasks/CommentsSection.vue';
 import DeleteTaskDialog from '@/components/pages/tasks/DeleteTaskDialog.vue';
 import TaskEditForm from '@/components/pages/tasks/TaskEditForm.vue';
-import TaskSidebar from '@/components/pages/tasks/TaskSidebar.vue';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeTask } from '@/lib/markdown-serializers';
 import { index, show, edit } from '@/routes/team/tasks/index';
@@ -66,6 +65,8 @@ if (isEditing.value) {
 
 const selectedProjectId = ref(props.project.id.toString());
 const deleteDialogOpen = ref(false);
+const taskEditFormRef = ref<InstanceType<typeof TaskEditForm> | null>(null);
+const isSubmitting = ref(false);
 
 defineOptions({
     inheritAttrs: false,
@@ -159,8 +160,14 @@ function handleCopyAsMarkdown(): void {
                 variant="compact"
                 :created-by="task.creatorName"
                 :updated-at="task.updatedAt"
+                :on-edit="isEditing ? null : () => (isEditing = true)"
+                :on-save="isEditing ? () => taskEditFormRef?.submit() : null"
+                :save-disabled="isSubmitting"
+                :on-cancel="isEditing ? () => taskEditFormRef?.cancel() : null"
+                :cancel-disabled="isSubmitting"
                 :on-delete="() => (deleteDialogOpen = true)"
                 delete-label="Delete task"
+                :delete-disabled="isSubmitting"
                 :on-copy-as-markdown="handleCopyAsMarkdown"
                 :copy-as-markdown-copied="copied"
                 :copy-as-markdown-error="copyError"
@@ -169,7 +176,13 @@ function handleCopyAsMarkdown(): void {
             >
                 <template #main>
                     <TaskEditForm
+                        ref="taskEditFormRef"
                         :task="task"
+                        :project="project"
+                        :members="members"
+                        :statuses="statuses"
+                        :projects="projects"
+                        :selected-project-id="selectedProjectId"
                         :is-editing="isEditing"
                         :update-form-action="
                             TaskController.update.form({
@@ -178,6 +191,8 @@ function handleCopyAsMarkdown(): void {
                             })
                         "
                         @update:is-editing="isEditing = $event"
+                        @update:selected-project-id="selectedProjectId = $event"
+                        @processing="isSubmitting = $event"
                         @edit-success="handleEditSuccess"
                     />
 
@@ -190,28 +205,11 @@ function handleCopyAsMarkdown(): void {
                 </template>
 
                 <template #sidebar-top>
-                    <div class="space-y-4">
-                        <ActivityHistoryPanel
-                            v-if="activityHistory"
-                            :config="activityHistory"
-                            :team-slug="currentTeamSlug"
-                        />
-
-                        <TaskSidebar
-                            :task="task"
-                            :project="project"
-                            :members="members"
-                            :statuses="statuses"
-                            :projects="projects"
-                            :current-team-slug="currentTeamSlug"
-                            :selected-project-id="selectedProjectId"
-                            :show-creator-meta="false"
-                            :show-actions="false"
-                            @update:selected-project-id="
-                                selectedProjectId = $event
-                            "
-                        />
-                    </div>
+                    <ActivityHistoryPanel
+                        v-if="activityHistory"
+                        :config="activityHistory"
+                        :team-slug="currentTeamSlug"
+                    />
                 </template>
             </EditorSidebarLayout>
         </div>

@@ -1,11 +1,13 @@
 ---
 id: 204
 section: backend
-status: todo
+status: not planned
 severity: high
 ---
 
-# Switch to Laravel Scout
+# Switch to Laravel Scout (Not Planned)
+
+This is not currently planned. The project reverted the Scout implementation and kept SQL-backed record search with escaped `LIKE` filters.
 
 Current search uses `Filterable` trait and inline `LIKE '%query%'` queries across the codebase. Replace with Laravel Scout for proper full-text search.
 

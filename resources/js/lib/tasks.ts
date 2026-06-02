@@ -123,3 +123,51 @@ export function formatTimeEstimate(minutes: number | null | undefined): string {
 
     return `${h}h ${m}m`;
 }
+
+export function formatTimeEstimateInput(
+    minutes: number | null | undefined,
+): string {
+    if (minutes === null || minutes === undefined) {
+        return '';
+    }
+
+    return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
+}
+
+export function parseTimeEstimate(input: string): number | null {
+    const trimmed = input.trim();
+
+    if (!trimmed) {
+        return null;
+    }
+
+    const colonMatch = trimmed.match(/^(\d+):(\d{1,2})$/);
+
+    if (colonMatch) {
+        const minutes = Number(colonMatch[2]);
+
+        return minutes > 59 ? null : Number(colonMatch[1]) * 60 + minutes;
+    }
+
+    const hmMatch = trimmed.match(/^(\d+)h(\d{1,2})m?$/i);
+
+    if (hmMatch) {
+        const minutes = Number(hmMatch[2]);
+
+        return minutes > 59 ? null : Number(hmMatch[1]) * 60 + minutes;
+    }
+
+    const hoursOnly = trimmed.match(/^(\d+)h$/i);
+
+    if (hoursOnly) {
+        return Number(hoursOnly[1]) * 60;
+    }
+
+    const minutesOnly = trimmed.match(/^(\d+)m?$/i);
+
+    if (minutesOnly) {
+        return Number(minutesOnly[1]);
+    }
+
+    return null;
+}
