@@ -90,13 +90,13 @@ defineProps<Props>();
                     </p>
                     <p
                         v-if="note.excerpt"
-                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
+                        class="text-sm [overflow-wrap:anywhere] text-muted-foreground"
                     >
                         {{ note.excerpt }}
                     </p>
                     <p
                         v-else
-                        class="text-sm text-muted-foreground italic [overflow-wrap:anywhere]"
+                        class="text-sm [overflow-wrap:anywhere] text-muted-foreground italic"
                     >
                         No body yet.
                     </p>

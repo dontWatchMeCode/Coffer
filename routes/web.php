@@ -3,32 +3,12 @@
 use App\Http\Controllers\ActivityHistory\ActivityHistoryController;
 use App\Http\Controllers\ApiTokens\ApiTokenController;
 use App\Http\Controllers\ApiTokens\ApiTokenPageController;
-use App\Http\Controllers\Bookmarks\BookmarkController;
-use App\Http\Controllers\Bookmarks\BookmarkPageController;
-use App\Http\Controllers\Calendar\CalendarEventController;
-use App\Http\Controllers\Calendar\CalendarPageController;
-use App\Http\Controllers\Collections\CollectionController;
-use App\Http\Controllers\Collections\CollectionPageController;
-use App\Http\Controllers\Contacts\ContactController;
-use App\Http\Controllers\Contacts\ContactPageController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\Log\LogEntryController;
-use App\Http\Controllers\Log\LogPageController;
-use App\Http\Controllers\Notes\NoteController;
-use App\Http\Controllers\Notes\NotePageController;
 use App\Http\Controllers\RecordLinkController;
 use App\Http\Controllers\RecordTagController;
 use App\Http\Controllers\Search\SearchPageController;
 use App\Http\Controllers\SearchController;
-use App\Http\Controllers\Subscriptions\SubscriptionCategoryController;
-use App\Http\Controllers\Subscriptions\SubscriptionController;
-use App\Http\Controllers\Subscriptions\SubscriptionPageController;
-use App\Http\Controllers\Tasks\ProjectController;
-use App\Http\Controllers\Tasks\TaskCommentController;
-use App\Http\Controllers\Tasks\TaskController;
-use App\Http\Controllers\Tasks\TaskPageController;
 use App\Http\Controllers\Teams\TeamInvitationController;
-use App\Http\Middleware\EnsureTeamFeatureEnabled;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -63,187 +43,14 @@ Route::prefix('{current_team}')
         Route::post('tags', [RecordTagController::class, 'store'])->middleware('throttle:60,1')->name('team.tags.store');
         Route::delete('tags', [RecordTagController::class, 'destroy'])->middleware('throttle:60,1')->name('team.tags.destroy');
 
-        Route::middleware(EnsureTeamFeatureEnabled::class.':calendar')->group(function () {
-            Route::get('calendar', [CalendarPageController::class, 'index'])->name('team.calendar.index');
-            Route::get('calendar/trash', [CalendarPageController::class, 'trash'])->name('team.calendar.trash');
-            Route::get('calendar/events/{event}/edit', [CalendarPageController::class, 'edit'])
-                ->whereNumber('event')
-                ->name('team.calendar.events.edit');
-            Route::post('calendar/events', [CalendarEventController::class, 'store'])->name('team.calendar.events.store');
-            Route::patch('calendar/events/{event}', [CalendarEventController::class, 'update'])
-                ->whereNumber('event')
-                ->name('team.calendar.events.update');
-            Route::delete('calendar/events/{event}', [CalendarEventController::class, 'destroy'])
-                ->whereNumber('event')
-                ->name('team.calendar.events.destroy');
-            Route::patch('calendar/events/{event}/restore', [CalendarEventController::class, 'restore'])
-                ->whereNumber('event')
-                ->name('team.calendar.events.restore');
-            Route::delete('calendar/events/{event}/force', [CalendarEventController::class, 'forceDestroy'])
-                ->whereNumber('event')
-                ->name('team.calendar.events.force-destroy');
-        });
-
-        Route::middleware(EnsureTeamFeatureEnabled::class.':contacts')->group(function () {
-            Route::get('contacts', [ContactPageController::class, 'index'])->name('team.contacts.index');
-            Route::get('contacts/trash', [ContactPageController::class, 'trash'])->name('team.contacts.trash');
-            Route::get('contacts/{contact}', [ContactPageController::class, 'show'])
-                ->whereNumber('contact')
-                ->name('team.contacts.show');
-            Route::post('contacts', [ContactController::class, 'store'])->name('team.contacts.store');
-            Route::patch('contacts/{contact}', [ContactController::class, 'update'])
-                ->whereNumber('contact')
-                ->name('team.contacts.update');
-            Route::delete('contacts/{contact}', [ContactController::class, 'destroy'])
-                ->whereNumber('contact')
-                ->name('team.contacts.destroy');
-            Route::patch('contacts/{contact}/restore', [ContactController::class, 'restore'])
-                ->whereNumber('contact')
-                ->name('team.contacts.restore');
-            Route::delete('contacts/{contact}/force', [ContactController::class, 'forceDestroy'])
-                ->whereNumber('contact')
-                ->name('team.contacts.force-destroy');
-        });
-
-        Route::middleware(EnsureTeamFeatureEnabled::class.':bookmarks')->group(function () {
-            Route::get('bookmarks', [BookmarkPageController::class, 'index'])->name('team.bookmarks.index');
-            Route::get('bookmarks/trash', [BookmarkPageController::class, 'trash'])->name('team.bookmarks.trash');
-            Route::get('bookmarks/{bookmark}', [BookmarkPageController::class, 'show'])
-                ->whereNumber('bookmark')
-                ->name('team.bookmarks.show');
-            Route::post('bookmarks', [BookmarkController::class, 'store'])->name('team.bookmarks.store');
-            Route::patch('bookmarks/{bookmark}', [BookmarkController::class, 'update'])
-                ->whereNumber('bookmark')
-                ->name('team.bookmarks.update');
-            Route::delete('bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])
-                ->whereNumber('bookmark')
-                ->name('team.bookmarks.destroy');
-            Route::patch('bookmarks/{bookmark}/restore', [BookmarkController::class, 'restore'])
-                ->whereNumber('bookmark')
-                ->name('team.bookmarks.restore');
-            Route::delete('bookmarks/{bookmark}/force', [BookmarkController::class, 'forceDestroy'])
-                ->whereNumber('bookmark')
-                ->name('team.bookmarks.force-destroy');
-        });
-
-        Route::middleware(EnsureTeamFeatureEnabled::class.':subscriptions')->group(function () {
-            Route::get('subscriptions/categories/candidates', [SubscriptionCategoryController::class, 'candidates'])->middleware('throttle:30,1')->name('team.subscriptions.categories.candidates');
-
-            Route::get('subscriptions', [SubscriptionPageController::class, 'index'])->name('team.subscriptions.index');
-            Route::get('subscriptions/trash', [SubscriptionPageController::class, 'trash'])->name('team.subscriptions.trash');
-            Route::get('subscriptions/{subscription}', [SubscriptionPageController::class, 'show'])
-                ->whereNumber('subscription')
-                ->name('team.subscriptions.show');
-            Route::post('subscriptions', [SubscriptionController::class, 'store'])->name('team.subscriptions.store');
-            Route::patch('subscriptions/{subscription}', [SubscriptionController::class, 'update'])
-                ->whereNumber('subscription')
-                ->name('team.subscriptions.update');
-            Route::delete('subscriptions/{subscription}', [SubscriptionController::class, 'destroy'])
-                ->whereNumber('subscription')
-                ->name('team.subscriptions.destroy');
-            Route::patch('subscriptions/{subscription}/restore', [SubscriptionController::class, 'restore'])
-                ->whereNumber('subscription')
-                ->name('team.subscriptions.restore');
-            Route::delete('subscriptions/{subscription}/force', [SubscriptionController::class, 'forceDestroy'])
-                ->whereNumber('subscription')
-                ->name('team.subscriptions.force-destroy');
-        });
-
-        Route::middleware(EnsureTeamFeatureEnabled::class.':log')->group(function () {
-            Route::get('log', [LogPageController::class, 'index'])->name('team.log.index');
-            Route::get('log/trash', [LogPageController::class, 'trash'])->name('team.log.trash');
-            Route::post('log', [LogEntryController::class, 'store'])->name('team.log.store');
-            Route::delete('log/{logEntry}', [LogEntryController::class, 'destroy'])
-                ->whereNumber('logEntry')
-                ->name('team.log.destroy');
-            Route::patch('log/{logEntry}/restore', [LogEntryController::class, 'restore'])
-                ->whereNumber('logEntry')
-                ->name('team.log.restore');
-            Route::delete('log/{logEntry}/force', [LogEntryController::class, 'forceDestroy'])
-                ->whereNumber('logEntry')
-                ->name('team.log.force-destroy');
-        });
-
-        Route::middleware(EnsureTeamFeatureEnabled::class.':notes')->group(function () {
-            Route::get('notes', [NotePageController::class, 'index'])->name('team.notes.index');
-            Route::get('notes/trash', [NotePageController::class, 'trash'])->name('team.notes.trash');
-            Route::get('notes/{note}', [NotePageController::class, 'show'])
-                ->whereNumber('note')
-                ->name('team.notes.show');
-            Route::post('notes', [NoteController::class, 'store'])->name('team.notes.store');
-            Route::patch('notes/{note}', [NoteController::class, 'update'])
-                ->whereNumber('note')
-                ->name('team.notes.update');
-            Route::delete('notes/{note}', [NoteController::class, 'destroy'])
-                ->whereNumber('note')
-                ->name('team.notes.destroy');
-            Route::patch('notes/{note}/restore', [NoteController::class, 'restore'])
-                ->whereNumber('note')
-                ->name('team.notes.restore');
-            Route::delete('notes/{note}/force', [NoteController::class, 'forceDestroy'])
-                ->whereNumber('note')
-                ->name('team.notes.force-destroy');
-        });
-
-        Route::middleware(EnsureTeamFeatureEnabled::class.':collections')->group(function () {
-            Route::get('collections', [CollectionPageController::class, 'index'])->name('team.collections.index');
-            Route::get('collections/trash', [CollectionPageController::class, 'trash'])->name('team.collections.trash');
-            Route::get('collections/{collection}', [CollectionPageController::class, 'show'])
-                ->whereNumber('collection')
-                ->name('team.collections.show');
-            Route::post('collections', [CollectionController::class, 'store'])->name('team.collections.store');
-            Route::patch('collections/{collection}', [CollectionController::class, 'update'])
-                ->whereNumber('collection')
-                ->name('team.collections.update');
-            Route::delete('collections/{collection}', [CollectionController::class, 'destroy'])
-                ->whereNumber('collection')
-                ->name('team.collections.destroy');
-            Route::patch('collections/{collection}/restore', [CollectionController::class, 'restore'])
-                ->whereNumber('collection')
-                ->name('team.collections.restore');
-            Route::delete('collections/{collection}/force', [CollectionController::class, 'forceDestroy'])
-                ->whereNumber('collection')
-                ->name('team.collections.force-destroy');
-        });
-
-        Route::middleware(EnsureTeamFeatureEnabled::class.':tasks')->group(function () {
-            Route::get('tasks', [TaskPageController::class, 'index'])->name('team.tasks.index');
-            Route::get('tasks/{project}', [TaskPageController::class, 'show'])
-                ->whereNumber('project')
-                ->name('team.tasks.show');
-            Route::get('tasks/{project}/trash', [TaskPageController::class, 'trash'])
-                ->whereNumber('project')
-                ->name('team.tasks.trash');
-            Route::get('tasks/{project}/{task}/edit', [TaskPageController::class, 'edit'])
-                ->whereNumber(['project', 'task'])
-                ->name('team.tasks.edit');
-            Route::post('tasks/projects', [ProjectController::class, 'store'])->name('team.tasks.projects.store');
-            Route::patch('tasks/projects/{project}', [ProjectController::class, 'update'])
-                ->whereNumber('project')
-                ->name('team.tasks.projects.update');
-            Route::post('tasks', [TaskController::class, 'store'])->name('team.tasks.store');
-            Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store'])
-                ->whereNumber('task')
-                ->name('team.tasks.comments.store');
-            Route::patch('tasks/{task}/comments/{comment}', [TaskCommentController::class, 'update'])
-                ->whereNumber(['task', 'comment'])
-                ->name('team.tasks.comments.update');
-            Route::delete('tasks/{task}/comments/{comment}', [TaskCommentController::class, 'destroy'])
-                ->whereNumber(['task', 'comment'])
-                ->name('team.tasks.comments.destroy');
-            Route::patch('tasks/{task}', [TaskController::class, 'update'])
-                ->whereNumber('task')
-                ->name('team.tasks.update');
-            Route::delete('tasks/{task}', [TaskController::class, 'destroy'])
-                ->whereNumber('task')
-                ->name('team.tasks.destroy');
-            Route::patch('tasks/{task}/restore', [TaskController::class, 'restore'])
-                ->whereNumber('task')
-                ->name('team.tasks.restore');
-            Route::delete('tasks/{task}/force', [TaskController::class, 'forceDestroy'])
-                ->whereNumber('task')
-                ->name('team.tasks.force-destroy');
-        });
+        require __DIR__.'/features/calendar.php';
+        require __DIR__.'/features/contacts.php';
+        require __DIR__.'/features/bookmarks.php';
+        require __DIR__.'/features/subscriptions.php';
+        require __DIR__.'/features/log.php';
+        require __DIR__.'/features/notes.php';
+        require __DIR__.'/features/collections.php';
+        require __DIR__.'/features/tasks.php';
     });
 
 Route::middleware(['auth'])->group(function () {

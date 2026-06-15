@@ -125,19 +125,19 @@ const contactsWithDisplay = computed(() =>
                             item.primaryPhone ||
                             item.primaryLink
                         "
-                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
+                        class="text-sm [overflow-wrap:anywhere] text-muted-foreground"
                     >
                         {{ buildContactInfo(item) }}
                     </p>
                     <p
                         v-else-if="item.contact.address"
-                        class="text-sm text-muted-foreground [overflow-wrap:anywhere]"
+                        class="text-sm [overflow-wrap:anywhere] text-muted-foreground"
                     >
                         {{ item.contact.address }}
                     </p>
                     <p
                         v-else
-                        class="text-sm text-muted-foreground italic [overflow-wrap:anywhere]"
+                        class="text-sm [overflow-wrap:anywhere] text-muted-foreground italic"
                     >
                         No contact info yet.
                     </p>

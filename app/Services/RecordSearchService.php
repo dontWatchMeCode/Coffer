@@ -145,26 +145,31 @@ class RecordSearchService
         $class = $definition['class'];
         $teamId = $currentTeam->id;
 
-        return $class::query()
+        $query = $class::query()
             ->whereBelongsTo($currentTeam)
-            ->when($class === Note::class, fn ($q) => $q->with('blocks'))
-            ->when($like !== null, function (Builder $query) use ($definition, $like): void {
-                $query->where(function (Builder $query) use ($definition, $like): void {
-                    foreach ($definition['columns'] as $index => $column) {
-                        $index === 0
-                            ? $this->whereLikeEscaped($query, $column, $like)
-                            : $this->whereLikeEscaped($query, $column, $like, 'or');
-                    }
-                });
-            })
-            ->when($tagSlug !== null, function (Builder $query) use ($class, $tagSlug, $teamId): void {
+            ->when($class === Note::class, fn (Builder $query) => $query->with('blocks'));
+
+        if ($like !== null) {
+            $query->where(function (Builder $query) use ($definition, $like): void {
+                foreach ($definition['columns'] as $index => $column) {
+                    $index === 0
+                        ? $this->whereLikeEscaped($query, $column, $like)
+                        : $this->whereLikeEscaped($query, $column, $like, 'or');
+                }
+            });
+        }
+
+        if ($tagSlug !== null) {
+            $query->where(function (Builder $query) use ($class, $tagSlug, $teamId): void {
                 if (in_array(HasRecordTags::class, class_uses_recursive($class))) {
                     $query->whereHas('recordTags', fn (Builder $q) => $q->where('tags.slug', $tagSlug)->where('tags.team_id', $teamId));
                 } else {
                     $query->whereRaw('1 = 0');
                 }
-            })
-            ->orderBy($definition['order']);
+            });
+        }
+
+        return $query->orderBy($definition['order']);
     }
 
     private function subtitleForGlobalResult(Model $model): ?string

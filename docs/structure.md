@@ -30,7 +30,8 @@ This is a high-level map of where code lives in the app.
 
 ## Routes
 
-- `routes/web.php`: public, dashboard, team workspace, and record routes.
+- `routes/web.php`: public, dashboard, team workspace, and shared record management routes. Per-feature routes are in `routes/features/`.
+- `routes/features/`: per-feature route files (calendar, contacts, bookmarks, subscriptions, log, notes, collections, tasks) required from inside the `{current_team}` group.
 - `routes/settings.php`: profile, security, appearance, and team settings routes.
 - `routes/ai.php`: MCP route registration.
 - `routes/console.php`: console routes.
@@ -51,7 +52,7 @@ This is a high-level map of where code lives in the app.
 
 ## Where to Add Things
 
-- New backend page: add a controller in `app/Http/Controllers`, a page in `resources/js/pages`, and a route in `routes/web.php` or `routes/settings.php`.
+- New backend page: add a controller in `app/Http/Controllers`, a page in `resources/js/pages`, and a route in `routes/web.php`, `routes/features/`, or `routes/settings.php`.
 - New form action: add a request class in `app/Http/Requests`, a controller method, and a route.
 - New shared UI: add it under `resources/js/components`; base primitives belong under `resources/js/components/ui`.
 - New record type: add the model, migration, policy, requests, pages, routes, search registration, and shared record behavior if it should support tags, links, activity, or MCP.

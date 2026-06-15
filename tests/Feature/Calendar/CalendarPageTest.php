@@ -3,10 +3,19 @@
 use App\Models\CalendarEvent;
 use App\Models\Team;
 use App\Models\User;
+use Carbon\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
+
+beforeEach(function () {
+    Carbon::setTestNow('2026-04-15 12:00:00');
+});
+
+afterEach(function () {
+    Carbon::setTestNow();
+});
 
 test('calendar page can be rendered', function () {
     $user = User::factory()->create();
