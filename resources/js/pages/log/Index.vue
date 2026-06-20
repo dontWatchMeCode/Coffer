@@ -1,19 +1,17 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
+import ConfirmDeleteDialog from '@/components/dialogs/ConfirmDeleteDialog.vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import LogCategoryFilter from '@/components/pages/log/LogCategoryFilter.vue';
 import LogEntryComposer from '@/components/pages/log/LogEntryComposer.vue';
 import LogEntryTimeline from '@/components/pages/log/LogEntryTimeline.vue';
+import LogTrashButton from '@/components/pages/log/LogTrashButton.vue';
 import { Button } from '@/components/ui/button';
 import { serializeLogEntry } from '@/lib/markdown-serializers';
-import {
-    destroy as deleteEntry,
-    index as logIndex,
-    trash as logTrash,
-} from '@/routes/team/log';
+import { destroy as deleteEntry, index as logIndex } from '@/routes/team/log';
 import type {
     LogEntryItem,
     LogTimelineItem,
@@ -89,6 +87,8 @@ onUnmounted(() => {
 });
 
 const copiedEntryId = ref<number | null>(null);
+const deleteDialogOpen = ref(false);
+const deletingEntry = ref<LogEntryItem | null>(null);
 
 async function copyLogEntry(entry: LogEntryItem): Promise<void> {
     try {
@@ -116,7 +116,19 @@ watch(categoryOptions, (options) => {
     }
 });
 
-function deleteEntryItem(entry: LogEntryItem): void {
+function openDeleteDialog(entry: LogEntryItem): void {
+    deletingEntry.value = entry;
+    deleteDialogOpen.value = true;
+}
+
+function confirmDeleteEntry(): void {
+    if (!deletingEntry.value) {
+        return;
+    }
+
+    const entry = deletingEntry.value;
+    deleteDialogOpen.value = false;
+
     router.delete(
         deleteEntry({
             current_team: currentTeamSlug.value,
@@ -213,11 +225,10 @@ defineOptions({
     <div class="flex min-h-[calc(100svh-4rem-16px)] flex-col">
         <PageHeader title="Log" description="Quick notes and thoughts.">
             <template #actions>
-                <Button variant="outline" size="icon" title="Trash" as-child>
-                    <Link :href="logTrash(currentTeamSlug).url">
-                        <Trash2 class="h-4 w-4" />
-                    </Link>
-                </Button>
+                <LogTrashButton
+                    :team-slug="currentTeamSlug"
+                    class="lg:hidden"
+                />
             </template>
         </PageHeader>
 
@@ -240,12 +251,16 @@ defineOptions({
                             :team-slug="currentTeamSlug"
                             :categories="categoryOptions"
                             @copy="copyLogEntry"
-                            @delete="deleteEntryItem"
+                            @delete="openDeleteDialog"
                         />
                     </section>
                 </main>
 
                 <aside class="space-y-6 lg:sticky lg:top-20 lg:self-start">
+                    <div class="hidden justify-end lg:flex">
+                        <LogTrashButton :team-slug="currentTeamSlug" />
+                    </div>
+
                     <div>
                         <div class="mb-3">
                             <h2 class="text-sm font-semibold">Find entries</h2>
@@ -283,5 +298,24 @@ defineOptions({
                 </aside>
             </div>
         </div>
+
+        <ConfirmDeleteDialog
+            v-model:open="deleteDialogOpen"
+            title="Move Log Entry to Trash"
+            confirm-label="Move to trash"
+            :confirm-icon="Trash2"
+            @confirm="confirmDeleteEntry"
+        >
+            <p v-if="deletingEntry" class="text-sm text-muted-foreground">
+                This moves the log entry to trash. You can restore it from log
+                trash.
+            </p>
+            <blockquote
+                v-if="deletingEntry"
+                class="mt-3 max-h-32 overflow-y-auto rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap"
+            >
+                {{ deletingEntry.body }}
+            </blockquote>
+        </ConfirmDeleteDialog>
     </div>
 </template>

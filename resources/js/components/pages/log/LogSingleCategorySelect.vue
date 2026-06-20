@@ -133,7 +133,7 @@ function handleCreate(): void {
         <div ref="picker" class="relative" @focusout="handleFocusOut">
             <TagsInput
                 :model-value="selectedValues"
-                class="min-h-9 w-full border-input bg-transparent shadow-sm"
+                class="min-h-[44px] w-full border-input bg-transparent shadow-sm"
                 @update:model-value="handleModelUpdate"
             >
                 <TagsInputItem
