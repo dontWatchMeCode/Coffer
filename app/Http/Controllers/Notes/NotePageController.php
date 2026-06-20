@@ -10,6 +10,7 @@ use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
 use App\Models\Note;
+use App\Models\RteBlock;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -94,7 +95,7 @@ class NotePageController extends Controller
             'id' => $note->id,
             'title' => $note->title,
             'blocks' => $includeBlocks
-                ? $note->blocks->map(fn ($block): array => $block->toPayloadArray())->all()
+                ? $note->blocks->map(fn (RteBlock $block): array => $block->toPayloadArray())->all()
                 : [],
             'excerpt' => $includeBlocks ? $this->excerptFromBlocks($note) : null,
             'tags' => $note->formattedRecordTags(),

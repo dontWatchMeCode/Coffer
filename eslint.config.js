@@ -1,6 +1,7 @@
 import stylistic from '@stylistic/eslint-plugin';
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript';
 import prettier from 'eslint-config-prettier/flat';
+import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
 import importPlugin from 'eslint-plugin-import';
 import vue from 'eslint-plugin-vue';
 
@@ -26,9 +27,13 @@ export default defineConfigWithVueTs(
     vueTsConfigs.recommended,
     {
         plugins: {
+            'better-tailwindcss': betterTailwindcss,
             import: importPlugin,
         },
         settings: {
+            'better-tailwindcss': {
+                entryPoint: 'resources/css/app.css',
+            },
             'import/resolver': {
                 typescript: {
                     alwaysTryTypes: true,
@@ -39,6 +44,7 @@ export default defineConfigWithVueTs(
         },
         rules: {
             'max-lines': ['error', { max: 475, skipBlankLines: true, skipComments: true }],
+            'better-tailwindcss/no-conflicting-classes': 'error',
             'vue/multi-word-component-names': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/consistent-type-imports': [

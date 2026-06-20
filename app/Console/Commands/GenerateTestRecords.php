@@ -329,8 +329,17 @@ class GenerateTestRecords extends Command
             foreach ($idsByType as $leftType => $leftIds) {
                 $otherTypes = array_values(array_filter($typesWithRecords, fn (string $t): bool => $t !== $leftType));
 
+                if ($otherTypes === []) {
+                    continue;
+                }
+
                 foreach ($leftIds as $leftId) {
                     $rightType = $otherTypes[array_rand($otherTypes)];
+
+                    if (! isset($idsByType[$rightType])) {
+                        continue;
+                    }
+
                     $rightIds = $idsByType[$rightType];
                     $rightId = $rightIds[array_rand($rightIds)];
 

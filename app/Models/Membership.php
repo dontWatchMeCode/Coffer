@@ -6,7 +6,7 @@ namespace App\Models;
 
 use App\Enums\TeamRole;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @property TeamRole|null $role
  */
 #[Fillable(['team_id', 'user_id', 'role'])]
+#[Table(name: 'team_members')]
 class Membership extends Pivot
 {
     /**
@@ -27,14 +28,6 @@ class Membership extends Pivot
             ->whereHas('team')
             ->exists();
     }
-
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    #[\Override]
-    protected $table = 'team_members';
 
     /**
      * Indicates if the IDs are auto-incrementing.

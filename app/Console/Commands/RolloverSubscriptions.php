@@ -7,16 +7,14 @@ namespace App\Console\Commands;
 use App\Models\Subscription;
 use App\Models\Team;
 use Carbon\CarbonImmutable;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
+#[Description('Advance next_billing_date for active subscriptions that have passed their billing date.')]
+#[Signature('subscriptions:rollover')]
 class RolloverSubscriptions extends Command
 {
-    #[\Override]
-    protected $signature = 'subscriptions:rollover';
-
-    #[\Override]
-    protected $description = 'Advance next_billing_date for active subscriptions that have passed their billing date.';
-
     public function handle(): int
     {
         $teams = Team::all();
