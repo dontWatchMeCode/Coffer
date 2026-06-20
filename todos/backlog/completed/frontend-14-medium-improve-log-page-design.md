@@ -1,7 +1,7 @@
 ---
 id: 14
 section: frontend
-status: todo
+status: done
 severity: medium
 ---
 
@@ -64,9 +64,9 @@ Move toward a sidebar filter/search layout consistent with other record areas (c
 
 ## Acceptance Criteria
 
-- [ ] Redesign Log page with sidebar for category filtering and search
-- [ ] Add edit/update functionality for log entries (new controller method + route)
-- [ ] Add `LogsActivity` trait to `LogEntry` model (log `body` and `category` changes)
-- [ ] Add activity history panel to Log page
-- [ ] Maintain the quick-entry composer (add entry inline)
-- [ ] Ensure responsive design matches other record pages
+- [x] Redesign Log page with sidebar for category filtering and search
+- [x] Add edit/update functionality for log entries (new controller method + route)
+- [x] Add `LogsActivity` trait to `LogEntry` model (log `body` and `category` changes)
+- [x] Add activity history panel to Log page
+- [x] Maintain the quick-entry composer (add entry inline)
+- [x] Ensure responsive design matches other record pages

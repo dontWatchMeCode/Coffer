@@ -72,7 +72,7 @@ Full server-side search + cursor pagination using Laravel 13's built-in `cursorP
 
 ### Dependencies
 
-- Unblocks: todo-14 (log page redesign)
+- Unblocked: todo-14 (log page redesign — completed)
 
 ## Acceptance Criteria
 

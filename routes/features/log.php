@@ -9,6 +9,9 @@ Route::middleware(EnsureTeamFeatureEnabled::class.':log')->group(function () {
     Route::get('log', [LogPageController::class, 'index'])->name('team.log.index');
     Route::get('log/trash', [LogPageController::class, 'trash'])->name('team.log.trash');
     Route::post('log', [LogEntryController::class, 'store'])->name('team.log.store');
+    Route::patch('log/{logEntry}', [LogEntryController::class, 'update'])
+        ->whereNumber('logEntry')
+        ->name('team.log.update');
     Route::delete('log/{logEntry}', [LogEntryController::class, 'destroy'])
         ->whereNumber('logEntry')
         ->name('team.log.destroy');

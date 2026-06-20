@@ -25,6 +25,19 @@ class LogEntryController extends Controller
         return back();
     }
 
+    public function update(SaveLogEntryRequest $request, Team $currentTeam, int $logEntry): RedirectResponse
+    {
+        $entry = LogEntry::query()
+            ->whereBelongsTo($currentTeam)
+            ->findOrFail($logEntry);
+
+        $this->authorize('update', $entry);
+
+        $entry->update($request->validated());
+
+        return back();
+    }
+
     public function destroy(DeleteLogEntryRequest $request, Team $currentTeam, int $logEntry): RedirectResponse
     {
         $entry = LogEntry::query()

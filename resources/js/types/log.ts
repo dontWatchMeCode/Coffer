@@ -1,9 +1,12 @@
+import type { ActivityHistoryConfig } from './activity-history';
+
 export type LogEntryItem = {
     id: number;
     body: string;
     category?: string | null;
     createdAt?: string | null;
     deletedAt?: string | null;
+    activityHistory?: ActivityHistoryConfig | null;
 };
 
 export type LogSeparatorItem = {

@@ -137,15 +137,17 @@ Log is the team quick-notes area.
 
 Pages:
 
-- Log page: view, create, and delete log entries.
+- Log page: view, create, edit, and delete log entries.
 - Log trash: view, restore, or permanently delete deleted log entries.
 
 Features:
 
 - Log entries support body text and an optional category.
-- Entries are ordered by creation date.
+- Entries are ordered newest first.
 - Entries belong to the active team.
-- Log entries do not support tags, related-record links, or activity history.
+- The Log page includes right-side search and multi-category filtering.
+- Log entry body and category changes are available through activity history.
+- Log entries do not support tags or related-record links.
 
 Search and MCP:
 
