@@ -19,6 +19,19 @@ it('redirects guests to the login page', function () {
 });
 
 it('renders the tasks insights for authenticated users', function () {
+    Project::factory()->create([
+        'team_id' => $this->team->id,
+        'name' => 'Alpha Project',
+    ]);
+
+    $otherUser = User::factory()->create();
+    Project::factory()->create([
+        'team_id' => $otherUser->currentTeam->id,
+        'name' => 'Other Team Project',
+    ]);
+
+    $this->project->update(['name' => 'Zulu Project']);
+
     $this->actingAs($this->user)
         ->get(route('team.tasks.insights', ['current_team' => $this->team]))
         ->assertOk()
@@ -29,6 +42,11 @@ it('renders the tasks insights for authenticated users', function () {
             ->has('insights.assignmentDistribution')
             ->has('insights.createdTrend')
             ->where('range', InsightsTimeRange::Last3Months->value)
+            ->where('selectedProjectId', null)
+            ->has('projectOptions', 2)
+            ->where('projectOptions.0.name', 'Alpha Project')
+            ->where('projectOptions.1.id', $this->project->id)
+            ->where('projectOptions.1.name', 'Zulu Project')
             ->has('rangeOptions'));
 });
 
@@ -175,6 +193,92 @@ it('filters tasks created within the selected range', function () {
             ->has('insights.createdTrend', 1)
             ->where('insights.createdTrend.0.created', 1));
 });
+
+it('filters insights by the selected project', function () {
+    $otherProject = Project::factory()->create(['team_id' => $this->team->id]);
+
+    Task::factory()->create([
+        'team_id' => $this->team->id,
+        'project_id' => $this->project->id,
+        'created_by' => $this->user->id,
+        'status' => TaskStatus::Planned->value,
+        'due_at' => now()->subDay(),
+    ]);
+
+    Task::factory()->create([
+        'team_id' => $this->team->id,
+        'project_id' => $this->project->id,
+        'created_by' => $this->user->id,
+        'status' => TaskStatus::Completed->value,
+        'created_at' => now()->subYear(),
+    ]);
+
+    Task::factory()->create([
+        'team_id' => $this->team->id,
+        'project_id' => $otherProject->id,
+        'created_by' => $this->user->id,
+        'status' => TaskStatus::Planned->value,
+    ]);
+
+    Task::factory()->create([
+        'team_id' => $this->team->id,
+        'project_id' => $otherProject->id,
+        'created_by' => $this->user->id,
+        'status' => TaskStatus::InProgress->value,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('team.tasks.insights', ['current_team' => $this->team]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('selectedProjectId', null)
+            ->where('insights.kpis.completionRate', 25)
+            ->where('insights.kpis.overdue', 1)
+            ->where('insights.kpis.totalOpen', 3)
+            ->where('insights.statusDistribution.0.count', 2)
+            ->where('insights.statusDistribution.2.count', 1)
+            ->where('insights.statusDistribution.4.count', 0));
+
+    $this->actingAs($this->user)
+        ->get(route('team.tasks.insights', ['current_team' => $this->team, 'project' => $this->project->id]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('selectedProjectId', $this->project->id)
+            ->where('insights.kpis.completionRate', 50)
+            ->where('insights.kpis.overdue', 1)
+            ->where('insights.kpis.totalOpen', 1)
+            ->where('insights.statusDistribution.0.count', 1)
+            ->where('insights.statusDistribution.2.count', 0)
+            ->where('insights.statusDistribution.4.count', 0));
+
+    $this->actingAs($this->user)
+        ->get(route('team.tasks.insights', [
+            'current_team' => $this->team,
+            'project' => $this->project->id,
+            'range' => InsightsTimeRange::ThisMonth->value,
+        ]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('range', InsightsTimeRange::ThisMonth->value)
+            ->where('selectedProjectId', $this->project->id)
+            ->has('insights.createdTrend', 1)
+            ->where('insights.createdTrend.0.created', 1));
+});
+
+it('rejects project filters outside the current team', function () {
+    $otherUser = User::factory()->create();
+    $otherProject = Project::factory()->create(['team_id' => $otherUser->currentTeam->id]);
+
+    $this->actingAs($this->user)
+        ->get(route('team.tasks.insights', ['current_team' => $this->team, 'project' => $otherProject->id]))
+        ->assertNotFound();
+});
+
+it('rejects invalid project filters', function (string $project) {
+    $this->actingAs($this->user)
+        ->get(route('team.tasks.insights', ['current_team' => $this->team, 'project' => $project]))
+        ->assertNotFound();
+})->with([
+    'missing project' => ['999999'],
+    'non-numeric project' => ['abc'],
+]);
 
 it('returns 404 when the tasks feature is disabled', function () {
     $this->team->forceFill(['feature_settings' => ['tasks' => false]])->save();

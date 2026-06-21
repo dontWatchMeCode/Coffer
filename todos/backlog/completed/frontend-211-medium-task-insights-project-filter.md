@@ -1,7 +1,7 @@
 ---
 id: 211
 section: frontend
-status: todo
+status: done
 severity: medium
 ---
 
@@ -19,8 +19,8 @@ Allow Task Insights to be filtered by a selected project.
 
 ## Acceptance Criteria
 
-- [ ] Task Insights has a project select control.
-- [ ] Selecting a project refreshes Insights data without leaving the page.
-- [ ] Charts, status breakdown, assignment distribution, and KPIs reflect the selected project.
-- [ ] Team scoping and feature gating remain enforced.
-- [ ] Feature tests cover all-project and project-filtered results.
+- [x] Task Insights has a project select control.
+- [x] Selecting a project refreshes Insights data without leaving the page.
+- [x] Charts, status breakdown, assignment distribution, and KPIs reflect the selected project.
+- [x] Team scoping and feature gating remain enforced.
+- [x] Feature tests cover all-project and project-filtered results.

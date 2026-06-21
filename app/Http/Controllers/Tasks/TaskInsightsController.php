@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Tasks;
 use App\Enums\InsightsTimeRange;
 use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Project;
 use App\Models\Task;
 use App\Models\Team;
 use Carbon\CarbonImmutable;
@@ -26,19 +27,32 @@ class TaskInsightsController extends Controller
         $today = CarbonImmutable::today();
 
         $window = $range->window($today);
+        $project = $request->filled('project')
+            ? Project::query()
+                ->whereBelongsTo($currentTeam)
+                ->findOrFail($request->integer('project'))
+            : null;
 
         /** @var EloquentCollection<int, Task> $tasks */
-        $tasks = Task::query()
-            ->whereBelongsTo($currentTeam)
+        $tasks = $this->scopedTasksQuery($currentTeam, $project)
             ->whereBetween('created_at', [$window['start']->startOfDay()->toDateTimeString(), $window['end']->endOfDay()->toDateTimeString()])
             ->with('assignee:id,name')
             ->get();
 
-        $overall = $this->overallKpis($currentTeam, $today);
+        $overall = $this->overallKpis($currentTeam, $today, $project);
+        $projects = Project::query()
+            ->whereBelongsTo($currentTeam)
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return Inertia::render('tasks/Insights', [
             'range' => $range->value,
             'rangeOptions' => InsightsTimeRange::options(),
+            'selectedProjectId' => $project?->id,
+            'projectOptions' => $projects->map(fn (Project $project): array => [
+                'id' => $project->id,
+                'name' => $project->name,
+            ])->values()->all(),
             'insights' => [
                 'kpis' => $overall,
                 'statusDistribution' => $this->statusDistribution($tasks),
@@ -51,16 +65,16 @@ class TaskInsightsController extends Controller
     /**
      * @return array{completionRate: float, overdue: int, totalOpen: int}
      */
-    private function overallKpis(Team $team, CarbonImmutable $today): array
+    private function overallKpis(Team $team, CarbonImmutable $today, ?Project $project): array
     {
-        $total = Task::query()->whereBelongsTo($team)->count();
-        $completed = Task::query()
-            ->whereBelongsTo($team)
+        $total = $this->scopedTasksQuery($team, $project)
+            ->count();
+        $completed = $this->scopedTasksQuery($team, $project)
             ->where('status', TaskStatus::Completed->value)
             ->count();
 
-        $open = $this->openTasksQuery($team)->count();
-        $overdue = $this->openTasksQuery($team)
+        $open = $this->openTasksQuery($team, $project)->count();
+        $overdue = $this->openTasksQuery($team, $project)
             ->whereNotNull('due_at')
             ->whereDate('due_at', '<', $today)
             ->count();
@@ -155,10 +169,23 @@ class TaskInsightsController extends Controller
     /**
      * @return Builder<Task>
      */
-    private function openTasksQuery(Team $team): Builder
+    private function openTasksQuery(Team $team, ?Project $project): Builder
     {
-        return Task::query()
-            ->whereBelongsTo($team)
+        return $this->scopedTasksQuery($team, $project)
             ->whereNotIn('status', [TaskStatus::Completed->value, TaskStatus::Dropped->value]);
+    }
+
+    /**
+     * @return Builder<Task>
+     */
+    private function scopedTasksQuery(Team $team, ?Project $project): Builder
+    {
+        $query = Task::query()->whereBelongsTo($team);
+
+        if ($project instanceof Project) {
+            $query->whereBelongsTo($project);
+        }
+
+        return $query;
     }
 }

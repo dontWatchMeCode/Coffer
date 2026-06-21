@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { VisAxis, VisGroupedBar, VisXYContainer } from '@unovis/vue';
 import { CheckCircle2, Clock4, ListTodo } from 'lucide-vue-next';
+import type { AcceptableValue } from 'reka-ui';
 import { computed } from 'vue';
 import DashboardCard from '@/components/dashboard/DashboardCard.vue';
 import KpiCard from '@/components/dashboard/KpiCard.vue';
@@ -16,6 +17,13 @@ import {
     ChartTooltipContent,
     componentToString,
 } from '@/components/ui/chart';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { formatChartMonth } from '@/lib/chart';
 import {
     insights as tasksInsightsRoute,
@@ -39,11 +47,14 @@ type InsightsData = {
 };
 
 type RangeOption = { value: string; label: string };
+type ProjectOption = { id: number; name: string };
 
 const props = defineProps<{
     insights: InsightsData;
     range: string;
     rangeOptions: RangeOption[];
+    selectedProjectId: number | null;
+    projectOptions: ProjectOption[];
     currentTeam?: Team | null;
 }>();
 
@@ -123,10 +134,34 @@ const totalAssigned = computed(() =>
     ),
 );
 
+const selectedProjectValue = computed(() =>
+    props.selectedProjectId === null ? 'all' : String(props.selectedProjectId),
+);
+
 function formatStatus(value: number | Date | string): string {
     const index = Number(value);
 
     return statusData.value[index]?.label ?? '';
+}
+
+function onProjectChange(value: AcceptableValue): void {
+    if (typeof value !== 'string') {
+        return;
+    }
+
+    const url = new URL(window.location.href);
+
+    if (value === 'all') {
+        url.searchParams.delete('project');
+    } else {
+        url.searchParams.set('project', value);
+    }
+
+    router.visit(url.pathname + url.search + url.hash, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['insights', 'selectedProjectId', 'projectOptions'],
+    });
 }
 
 defineOptions({
@@ -173,6 +208,32 @@ defineOptions({
 
     <div class="flex-1 px-4 py-6">
         <div class="mx-auto max-w-7xl">
+            <div
+                class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end"
+            >
+                <span class="text-sm font-medium text-muted-foreground">
+                    Project
+                </span>
+                <Select
+                    :model-value="selectedProjectValue"
+                    @update:model-value="onProjectChange"
+                >
+                    <SelectTrigger size="sm" class="w-full sm:w-[220px]">
+                        <SelectValue placeholder="Select project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All projects</SelectItem>
+                        <SelectItem
+                            v-for="project in projectOptions"
+                            :key="project.id"
+                            :value="String(project.id)"
+                        >
+                            {{ project.name }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
             <div class="grid gap-4 md:grid-cols-3">
                 <KpiCard
                     label="Completion rate"
