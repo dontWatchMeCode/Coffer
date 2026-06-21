@@ -1,7 +1,7 @@
 ---
 id: 212
 section: backend
-status: todo
+status: done
 severity: medium
 ---
 
@@ -18,8 +18,8 @@ Track the first billing date for each subscription.
 
 ## Acceptance Criteria
 
-- [ ] Subscriptions store `first_billing_date`.
-- [ ] Create and edit forms include First Billing Date.
-- [ ] Validation accepts empty values and valid dates only.
-- [ ] Subscription detail views display First Billing Date when present.
-- [ ] Tests cover creating and updating the field.
+- [x] Subscriptions store `first_billing_date`.
+- [x] Create and edit forms include First Billing Date.
+- [x] Validation accepts empty values and valid dates only.
+- [x] Subscription detail views display First Billing Date when present.
+- [x] Tests cover creating and updating the field.

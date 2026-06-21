@@ -98,6 +98,47 @@ it('rejects creating a subscription with negative price', function () {
     ])->assertHasErrors();
 });
 
+it('rejects creating a subscription when first billing date is after next billing date', function () {
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'subscription',
+        'data' => [
+            'name' => 'Test',
+            'first_billing_date' => '2026-06-15',
+            'next_billing_date' => '2026-01-15',
+        ],
+    ])->assertHasErrors();
+});
+
+it('accepts creating a subscription when first billing date is before next billing date', function () {
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'subscription',
+        'data' => [
+            'name' => 'Test',
+            'first_billing_date' => '2026-01-15',
+            'next_billing_date' => '2026-06-15',
+        ],
+    ])->assertOk();
+});
+
+it('rejects updating a subscription when first billing date is after next billing date', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $subscription = Subscription::factory()->create(['team_id' => $team->id]);
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'subscription',
+        'id' => $subscription->id,
+        'data' => [
+            'first_billing_date' => '2026-06-15',
+            'next_billing_date' => '2026-01-15',
+        ],
+    ])->assertHasErrors();
+});
+
 it('rejects creating a bookmark without a url', function () {
     $user = User::factory()->create();
 

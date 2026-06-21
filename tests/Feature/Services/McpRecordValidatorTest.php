@@ -14,7 +14,7 @@ it('returns fields for each record type', function (string $type, array $expecte
     'calendar_event' => ['calendar_event', ['title', 'description', 'date', 'time']],
     'contact' => ['contact', ['name', 'phone_numbers', 'email_addresses', 'links', 'address', 'additional_info']],
     'bookmark' => ['bookmark', ['title', 'url', 'description', 'notes']],
-    'subscription' => ['subscription', ['name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'url', 'description', 'notes', 'is_active', 'category']],
+    'subscription' => ['subscription', ['name', 'price', 'currency', 'billing_cycle', 'first_billing_date', 'next_billing_date', 'url', 'description', 'notes', 'is_active', 'category']],
     'note' => ['note', ['title', 'blocks']],
     'collection' => ['collection', ['title', 'description']],
     'log_entry' => ['log_entry', ['body', 'category']],

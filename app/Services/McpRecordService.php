@@ -188,11 +188,15 @@ class McpRecordService
 
         Gate::forUser($user)->authorize('create', $class);
 
-        $data = Validator::validate(
+        $validator = Validator::make(
             $validated['data'],
             McpRecordValidator::rulesFor($validated['type'], false, $team, $validated['data']),
             McpRecordValidator::messagesFor($validated['type']),
         );
+
+        McpRecordValidator::applyConditionalRules($validator, $validated['type']);
+
+        $data = $validator->validate();
 
         if (! $permissions->can($validated['type'], 'write', data: $data)) {
             return Response::error('Permission denied.');
@@ -259,11 +263,15 @@ class McpRecordService
             return Response::error('Record not found.');
         }
 
-        $data = Validator::validate(
+        $validator = Validator::make(
             $validated['data'],
             McpRecordValidator::rulesFor($validated['type'], true, $team, $validated['data'], $model),
             McpRecordValidator::messagesFor($validated['type']),
         );
+
+        McpRecordValidator::applyConditionalRules($validator, $validated['type']);
+
+        $data = $validator->validate();
 
         if (! $permissions->can($validated['type'], 'write', $model, $data)) {
             return Response::error('Permission denied.');

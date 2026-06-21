@@ -6,6 +6,7 @@ namespace App\Http\Requests\Subscriptions;
 
 use App\Http\Requests\Concerns\AuthorizesTeamResource;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class SaveSubscriptionRequest extends FormRequest
 {
@@ -39,6 +40,9 @@ class SaveSubscriptionRequest extends FormRequest
             'next_billing_date' => $sometimes
                 ? ['sometimes', 'nullable', 'date']
                 : ['nullable', 'date'],
+            'first_billing_date' => $sometimes
+                ? ['sometimes', 'nullable', 'date']
+                : ['nullable', 'date'],
             'url' => $sometimes
                 ? ['sometimes', 'nullable', 'string', 'url', 'max:2048']
                 : ['nullable', 'string', 'url', 'max:2048'],
@@ -64,5 +68,11 @@ class SaveSubscriptionRequest extends FormRequest
                 'is_active' => $this->boolean('is_active'),
             ]);
         }
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->sometimes('first_billing_date', 'before:next_billing_date', fn ($input): bool => $input->first_billing_date !== null
+            && $input->next_billing_date !== null);
     }
 }

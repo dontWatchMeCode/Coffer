@@ -87,6 +87,9 @@ const editBillingCycle = ref(props.subscription.billingCycle ?? 'monthly');
 const editNextBillingDate = ref(
     props.subscription.nextBillingDate?.split('T')[0] ?? '',
 );
+const editFirstBillingDate = ref(
+    props.subscription.firstBillingDate?.split('T')[0] ?? '',
+);
 const editUrl = ref(props.subscription.url ?? '');
 const editDescription = ref(props.subscription.description ?? '');
 const editNotes = ref(props.subscription.notes ?? '');
@@ -111,6 +114,8 @@ function resetEditFields(subscription: SubscriptionItem): void {
     editBillingCycle.value = subscription.billingCycle ?? 'monthly';
     editNextBillingDate.value =
         subscription.nextBillingDate?.split('T')[0] ?? '';
+    editFirstBillingDate.value =
+        subscription.firstBillingDate?.split('T')[0] ?? '';
     editUrl.value = subscription.url ?? '';
     editDescription.value = subscription.description ?? '';
     editNotes.value = subscription.notes ?? '';
@@ -137,6 +142,7 @@ function submitEdit(): void {
             currency: editCurrency.value || null,
             billing_cycle: editBillingCycle.value || null,
             next_billing_date: editNextBillingDate.value || null,
+            first_billing_date: editFirstBillingDate.value || null,
             url: editUrl.value || null,
             description: editDescription.value || null,
             notes: editNotes.value || null,
@@ -290,6 +296,15 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                         </div>
 
                         <DetailSection
+                            v-if="subscription.firstBillingDate"
+                            title="First Billing Date"
+                        >
+                            <p class="text-sm">
+                                {{ formatDate(subscription.firstBillingDate) }}
+                            </p>
+                        </DetailSection>
+
+                        <DetailSection
                             v-if="subscription.nextBillingDate"
                             title="Next Billing Date"
                         >
@@ -408,6 +423,20 @@ function formatBillingCycle(cycle: string | null | undefined): string {
 
                         <div class="grid grid-cols-2 gap-3">
                             <div class="grid gap-2">
+                                <Label for="edit-subscription-first-date"
+                                    >First Billing Date</Label
+                                >
+                                <Input
+                                    id="edit-subscription-first-date"
+                                    v-model="editFirstBillingDate"
+                                    type="date"
+                                />
+                                <InputError
+                                    :message="errors.first_billing_date"
+                                />
+                            </div>
+
+                            <div class="grid gap-2">
                                 <Label for="edit-subscription-next-date"
                                     >Next Billing Date</Label
                                 >
@@ -420,19 +449,19 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                                     :message="errors.next_billing_date"
                                 />
                             </div>
+                        </div>
 
-                            <div class="grid gap-2">
-                                <Label>Category</Label>
-                                <SubscriptionCategorySelect
-                                    v-model="editCategory"
-                                    :categories="props.categories ?? []"
-                                    :candidates-url="
-                                        props.categoryCandidatesUrl ?? ''
-                                    "
-                                    placeholder="e.g. Entertainment"
-                                />
-                                <InputError :message="errors.category" />
-                            </div>
+                        <div class="grid gap-2">
+                            <Label>Category</Label>
+                            <SubscriptionCategorySelect
+                                v-model="editCategory"
+                                :categories="props.categories ?? []"
+                                :candidates-url="
+                                    props.categoryCandidatesUrl ?? ''
+                                "
+                                placeholder="e.g. Entertainment"
+                            />
+                            <InputError :message="errors.category" />
                         </div>
 
                         <div class="grid gap-2">

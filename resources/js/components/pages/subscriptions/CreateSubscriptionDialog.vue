@@ -38,6 +38,7 @@ const createPrice = ref('');
 const createCurrency = ref('USD');
 const createBillingCycle = ref('monthly');
 const createNextBillingDate = ref('');
+const createFirstBillingDate = ref('');
 const createUrl = ref('');
 const createDescription = ref('');
 const createNotes = ref('');
@@ -49,6 +50,7 @@ function resetCreateForm(): void {
     createCurrency.value = 'USD';
     createBillingCycle.value = 'monthly';
     createNextBillingDate.value = '';
+    createFirstBillingDate.value = '';
     createUrl.value = '';
     createDescription.value = '';
     createNotes.value = '';
@@ -72,6 +74,7 @@ function submitCreate(): void {
             currency: createCurrency.value || null,
             billing_cycle: createBillingCycle.value || null,
             next_billing_date: createNextBillingDate.value || null,
+            first_billing_date: createFirstBillingDate.value || null,
             url: createUrl.value || null,
             description: createDescription.value || null,
             notes: createNotes.value || null,
@@ -165,6 +168,18 @@ defineExpose({
 
         <div class="grid grid-cols-2 gap-3">
             <div class="grid gap-2">
+                <Label for="create-subscription-first-date"
+                    >First Billing Date</Label
+                >
+                <Input
+                    id="create-subscription-first-date"
+                    v-model="createFirstBillingDate"
+                    type="date"
+                />
+                <InputError :message="errors.first_billing_date" />
+            </div>
+
+            <div class="grid gap-2">
                 <Label for="create-subscription-next-date"
                     >Next Billing Date</Label
                 >
@@ -175,17 +190,17 @@ defineExpose({
                 />
                 <InputError :message="errors.next_billing_date" />
             </div>
+        </div>
 
-            <div class="grid gap-2">
-                <Label for="create-subscription-category">Category</Label>
-                <SubscriptionCategorySelect
-                    v-model="createCategory"
-                    :categories="props.categories"
-                    :candidates-url="props.categoryCandidatesUrl"
-                    placeholder="e.g. Entertainment"
-                />
-                <InputError :message="errors.category" />
-            </div>
+        <div class="grid gap-2">
+            <Label for="create-subscription-category">Category</Label>
+            <SubscriptionCategorySelect
+                v-model="createCategory"
+                :categories="props.categories"
+                :candidates-url="props.categoryCandidatesUrl"
+                placeholder="e.g. Entertainment"
+            />
+            <InputError :message="errors.category" />
         </div>
 
         <div class="grid gap-2">

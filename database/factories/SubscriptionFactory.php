@@ -28,6 +28,7 @@ class SubscriptionFactory extends Factory
             'currency' => fake()->randomElement(['USD', 'EUR', 'GBP']),
             'billing_cycle' => fake()->randomElement($cycles),
             'next_billing_date' => fake()->dateTimeBetween('now', '+1 month')->format('Y-m-d'),
+            'first_billing_date' => fake()->boolean(50) ? fake()->dateTimeBetween('-6 months', 'now')->format('Y-m-d') : null,
             'url' => fake()->optional(0.7)->url(),
             'description' => fake()->optional(0.5)->sentence(),
             'notes' => fake()->optional(0.3)->paragraph(),

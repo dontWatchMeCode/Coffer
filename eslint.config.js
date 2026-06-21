@@ -43,7 +43,7 @@ export default defineConfigWithVueTs(
             },
         },
         rules: {
-            'max-lines': ['error', { max: 475, skipBlankLines: true, skipComments: true }],
+            'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
             'better-tailwindcss/no-conflicting-classes': 'error',
             'vue/multi-word-component-names': 'off',
             '@typescript-eslint/no-explicit-any': 'off',

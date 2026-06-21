@@ -9,6 +9,7 @@ use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class McpRecordValidator
 {
@@ -22,7 +23,7 @@ class McpRecordValidator
             'calendar_event' => ['title', 'description', 'date', 'time'],
             'contact' => ['name', 'phone_numbers', 'email_addresses', 'links', 'address', 'additional_info'],
             'bookmark' => ['title', 'url', 'description', 'notes'],
-            'subscription' => ['name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'url', 'description', 'notes', 'is_active', 'category'],
+            'subscription' => ['name', 'price', 'currency', 'billing_cycle', 'first_billing_date', 'next_billing_date', 'url', 'description', 'notes', 'is_active', 'category'],
             'note' => ['title', 'blocks'],
             'collection' => ['title', 'description'],
             'log_entry' => ['body', 'category'],
@@ -113,6 +114,7 @@ class McpRecordValidator
                 'currency' => [...$optional(), 'nullable', 'string', 'max:3'],
                 'billing_cycle' => [...$optional(), 'nullable', 'string', Rule::in(['weekly', 'monthly', 'yearly'])],
                 'next_billing_date' => [...$optional(), 'nullable', 'date'],
+                'first_billing_date' => [...$optional(), 'nullable', 'date'],
                 'url' => [...$optional(), 'nullable', 'string', 'url', 'max:2048'],
                 'description' => [...$optional(), 'nullable', 'string', 'max:500'],
                 'notes' => [...$optional(), 'nullable', 'string'],
@@ -136,6 +138,14 @@ class McpRecordValidator
             ],
             default => [],
         };
+    }
+
+    public static function applyConditionalRules(Validator $validator, string $type): void
+    {
+        if ($type === 'subscription') {
+            $validator->sometimes('first_billing_date', 'before:next_billing_date', fn ($input): bool => $input->first_billing_date !== null
+                && $input->next_billing_date !== null);
+        }
     }
 
     /**

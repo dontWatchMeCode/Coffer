@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-#[Fillable(['team_id', 'name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'url', 'description', 'notes', 'is_active'])]
+#[Fillable(['team_id', 'name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'first_billing_date', 'url', 'description', 'notes', 'is_active'])]
 class Subscription extends Model implements LinkableRecord
 {
     use BelongsToTeam;
@@ -37,7 +37,7 @@ class Subscription extends Model implements LinkableRecord
     {
         return LogOptions::defaults()
             ->useLogName('subscriptions')
-            ->logOnly(['name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'url', 'description', 'notes', 'is_active', 'subscription_category_id'])
+            ->logOnly(['name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'first_billing_date', 'url', 'description', 'notes', 'is_active', 'subscription_category_id'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
@@ -47,6 +47,7 @@ class Subscription extends Model implements LinkableRecord
         return [
             'price' => 'decimal:2',
             'next_billing_date' => 'date',
+            'first_billing_date' => 'date',
             'is_active' => 'boolean',
         ];
     }

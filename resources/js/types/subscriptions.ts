@@ -11,6 +11,7 @@ export type SubscriptionItem = {
     currency?: string | null;
     billingCycle?: string | null;
     nextBillingDate?: string | null;
+    firstBillingDate?: string | null;
     url?: string | null;
     description?: string | null;
     notes?: string | null;

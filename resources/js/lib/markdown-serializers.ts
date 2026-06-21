@@ -215,6 +215,12 @@ export function serializeSubscription(
         parts.push(`\n**Category:** ${subscription.category}`);
     }
 
+    if (subscription.firstBillingDate) {
+        parts.push(
+            `\n**First Billing:** ${new Date(subscription.firstBillingDate).toLocaleDateString()}`,
+        );
+    }
+
     if (subscription.nextBillingDate) {
         parts.push(
             `\n**Next Billing:** ${new Date(subscription.nextBillingDate).toLocaleDateString()}`,

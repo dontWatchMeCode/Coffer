@@ -70,13 +70,14 @@ class SubscriptionPageController extends Controller
     }
 
     /**
-     * @return array{id: int, name: string, price?: float|null, currency?: string|null, billingCycle?: string|null, nextBillingDate?: string|null, url?: string|null, description?: string|null, notes?: string|null, isActive: bool, category?: string|null, createdAt?: string|null, updatedAt?: string|null, deletedAt?: string|null}
+     * @return array{id: int, name: string, price?: float|null, currency?: string|null, billingCycle?: string|null, nextBillingDate?: string|null, firstBillingDate?: string|null, url?: string|null, description?: string|null, notes?: string|null, isActive: bool, category?: string|null, categoryId?: int|null, createdAt?: string|null, updatedAt?: string|null, deletedAt?: string|null}
      */
     private function formatSubscription(Subscription $subscription, bool $includeDeletedAt = false): array
     {
         $createdAt = $subscription->getAttribute('created_at');
         $updatedAt = $subscription->getAttribute('updated_at');
         $nextBillingDate = $subscription->getAttribute('next_billing_date');
+        $firstBillingDate = $subscription->getAttribute('first_billing_date');
 
         $payload = [
             'id' => $subscription->id,
@@ -86,6 +87,9 @@ class SubscriptionPageController extends Controller
             'billingCycle' => $subscription->billing_cycle,
             'nextBillingDate' => $nextBillingDate instanceof \DateTimeInterface
                 ? $nextBillingDate->format(\DateTimeInterface::ATOM)
+                : null,
+            'firstBillingDate' => $firstBillingDate instanceof \DateTimeInterface
+                ? $firstBillingDate->format(\DateTimeInterface::ATOM)
                 : null,
             'url' => $subscription->url,
             'description' => $subscription->description,
