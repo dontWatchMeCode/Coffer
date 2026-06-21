@@ -27,17 +27,21 @@ class SubscriptionInsightsController extends Controller
         /** @var EloquentCollection<int, Subscription> $subscriptions */
         $subscriptions = Subscription::query()
             ->whereBelongsTo($currentTeam)
-            ->where('is_active', true)
             ->with('subscriptionCategory:id,name')
             ->get();
+
+        /** @var EloquentCollection<int, Subscription> $activeSubscriptions */
+        $activeSubscriptions = $subscriptions
+            ->filter(fn (Subscription $subscription): bool => $subscription->is_active)
+            ->values();
 
         return Inertia::render('subscriptions/Insights', [
             'range' => $range->value,
             'rangeOptions' => InsightsTimeRange::options(),
             'insights' => [
-                'kpis' => $this->kpis($subscriptions, $today),
+                'kpis' => $this->kpis($activeSubscriptions, $today),
                 'spendTrend' => $this->spendTrend($subscriptions, $window),
-                'categoryBreakdown' => $this->categoryBreakdown($subscriptions),
+                'categoryBreakdown' => $this->categoryBreakdown($activeSubscriptions),
             ],
         ]);
     }
@@ -74,21 +78,39 @@ class SubscriptionInsightsController extends Controller
      */
     private function spendTrend(EloquentCollection $subscriptions, array $window): array
     {
-        $monthlySpend = round($subscriptions->sum(fn (Subscription $subscription): float => $this->monthlyPrice($subscription)), 2);
+        $buckets = InsightsTimeRange::monthBuckets($window);
 
-        /** @var array<string, array{month: string, spend: float}> $byMonth */
-        $byMonth = array_map(
-            fn (array $row): array => ['month' => $row['month'], 'spend' => $monthlySpend],
-            InsightsTimeRange::monthBuckets($window),
-        );
+        foreach ($buckets as $monthKey => &$bucket) {
+            $monthEnd = CarbonImmutable::parse($monthKey.'-01')->endOfMonth();
 
-        return array_map(
-            fn (array $row): array => [
-                'month' => $row['month'],
-                'spend' => (float) $row['spend'],
-            ],
-            array_values($byMonth),
-        );
+            $monthStart = $monthEnd->startOfMonth();
+
+            $spend = $subscriptions
+                ->filter(function (Subscription $subscription) use ($monthEnd, $monthStart): bool {
+                    $firstBillingDate = $subscription->getAttribute('first_billing_date');
+                    $nextBillingDate = $subscription->getAttribute('next_billing_date');
+                    $createdAt = $subscription->getAttribute('created_at');
+                    $startDate = $firstBillingDate instanceof CarbonInterface
+                        ? $firstBillingDate
+                        : ($subscription->is_active ? $createdAt : $nextBillingDate);
+
+                    $hasStarted = $startDate instanceof CarbonInterface
+                        && $startDate->lessThanOrEqualTo($monthEnd);
+
+                    if (! $hasStarted) {
+                        return false;
+                    }
+
+                    return $subscription->is_active
+                        || ($nextBillingDate instanceof CarbonInterface
+                            && $nextBillingDate->greaterThanOrEqualTo($monthStart));
+                })
+                ->sum(fn (Subscription $subscription): float => $this->monthlyPrice($subscription));
+
+            $bucket['spend'] = round($spend, 2);
+        }
+
+        return array_values($buckets);
     }
 
     /**

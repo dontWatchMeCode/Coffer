@@ -122,6 +122,22 @@ test('tasks have a random user as creator', function () {
     expect($creators)->toBeGreaterThan(1);
 });
 
+test('subscriptions include inactive records and varied first billing dates', function () {
+    artisan('app:generate-test-records')->assertSuccessful();
+
+    $subscriptions = Subscription::withoutGlobalScopes()->get(['is_active', 'first_billing_date']);
+
+    $firstBillingMonths = $subscriptions
+        ->pluck('first_billing_date')
+        ->filter()
+        ->map(fn ($date): string => $date->format('Y-m'))
+        ->unique();
+
+    expect($subscriptions->where('is_active', false)->count())->toBeGreaterThan(0);
+    expect($subscriptions->where('is_active', true)->count())->toBeGreaterThan(0);
+    expect($firstBillingMonths->count())->toBeGreaterThan(1);
+});
+
 test('can be run idempotently without errors', function () {
     artisan('app:generate-test-records')->assertSuccessful();
     artisan('app:generate-test-records')->assertSuccessful();

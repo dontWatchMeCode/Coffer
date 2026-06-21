@@ -8,6 +8,7 @@ import ListItemIcon from '@/components/list/ListItemIcon.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { ViewMode } from '@/composables/useViewMode';
+import { billingDateLabel } from '@/lib/subscriptions';
 import type { SubscriptionItem } from '@/types';
 
 type Props = {
@@ -138,13 +139,15 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                     <Badge variant="outline" class="text-xs">
                         {{ subscription.category }}
                     </Badge>
-                    <span
-                        v-if="subscription.nextBillingDate"
-                        class="text-xs text-muted-foreground"
-                    >
-                        Next: {{ formatDate(subscription.nextBillingDate) }}
-                    </span>
                 </div>
+
+                <span
+                    v-if="subscription.nextBillingDate"
+                    class="text-xs text-muted-foreground"
+                >
+                    {{ billingDateLabel(subscription.isActive) }}:
+                    {{ formatDate(subscription.nextBillingDate) }}
+                </span>
             </div>
 
             <div v-else class="flex min-w-0 items-center gap-4 overflow-hidden">
@@ -198,6 +201,7 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                     v-if="subscription.nextBillingDate"
                     class="hidden shrink-0 text-sm text-muted-foreground md:block"
                 >
+                    {{ billingDateLabel(subscription.isActive) }}:
                     {{ formatDate(subscription.nextBillingDate) }}
                 </div>
 

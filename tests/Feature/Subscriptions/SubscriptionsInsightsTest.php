@@ -150,6 +150,7 @@ it('honors the range query parameter for spend trend', function () {
         'price' => 50,
         'billing_cycle' => 'monthly',
         'next_billing_date' => now()->startOfYear()->addMonths(2)->toDateString(),
+        'first_billing_date' => now()->startOfYear()->subYear()->toDateString(),
         'is_active' => true,
     ]);
 
@@ -158,6 +159,7 @@ it('honors the range query parameter for spend trend', function () {
         'price' => 30,
         'billing_cycle' => 'monthly',
         'next_billing_date' => now()->startOfYear()->toDateString(),
+        'first_billing_date' => now()->startOfYear()->subYear()->toDateString(),
         'is_active' => true,
     ]);
 
@@ -168,6 +170,76 @@ it('honors the range query parameter for spend trend', function () {
             ->has('insights.spendTrend', 12)
             ->where('insights.spendTrend.0.spend', 80)
             ->where('insights.spendTrend.11.spend', 80));
+});
+
+it('uses inactive subscriptions as historical spend until their next billing date', function () {
+    $yearStart = now()->startOfYear();
+
+    Subscription::factory()->create([
+        'team_id' => $this->team->id,
+        'price' => 50,
+        'billing_cycle' => 'monthly',
+        'first_billing_date' => $yearStart->toDateString(),
+        'next_billing_date' => $yearStart->copy()->addMonths(3)->toDateString(),
+        'is_active' => false,
+    ]);
+
+    Subscription::factory()->create([
+        'team_id' => $this->team->id,
+        'price' => 20,
+        'billing_cycle' => 'monthly',
+        'first_billing_date' => $yearStart->copy()->addMonths(2)->toDateString(),
+        'next_billing_date' => $yearStart->copy()->addMonths(6)->toDateString(),
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('team.subscriptions.insights', ['current_team' => $this->team, 'range' => InsightsTimeRange::ThisYear->value]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('insights.kpis.activeCount', 1)
+            ->where('insights.kpis.monthlySpend', '20.00')
+            ->where('insights.spendTrend.0.spend', 50)
+            ->where('insights.spendTrend.2.spend', 70)
+            ->where('insights.spendTrend.3.spend', 70)
+            ->where('insights.spendTrend.4.spend', 20)
+            ->where('insights.spendTrend.11.spend', 20));
+});
+
+it('includes inactive subscriptions without first billing date in their last billed month', function () {
+    $yearStart = now()->startOfYear();
+
+    Subscription::factory()->create([
+        'team_id' => $this->team->id,
+        'price' => 40,
+        'billing_cycle' => 'monthly',
+        'first_billing_date' => null,
+        'next_billing_date' => $yearStart->copy()->addMonth()->toDateString(),
+        'is_active' => false,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('team.subscriptions.insights', ['current_team' => $this->team, 'range' => InsightsTimeRange::ThisYear->value]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('insights.spendTrend.0.spend', 0)
+            ->where('insights.spendTrend.1.spend', 40)
+            ->where('insights.spendTrend.2.spend', 0));
+});
+
+it('returns a single spend trend bucket for this month range', function () {
+    Subscription::factory()->create([
+        'team_id' => $this->team->id,
+        'price' => 15,
+        'billing_cycle' => 'monthly',
+        'first_billing_date' => now()->subMonth()->toDateString(),
+        'next_billing_date' => now()->addWeek()->toDateString(),
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('team.subscriptions.insights', ['current_team' => $this->team, 'range' => InsightsTimeRange::ThisMonth->value]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('insights.spendTrend', 1)
+            ->where('insights.spendTrend.0.spend', 15));
 });
 
 it('normalizes weekly and yearly billing cycles to monthly', function () {

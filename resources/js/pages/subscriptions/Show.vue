@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeSubscription } from '@/lib/markdown-serializers';
+import { billingDateLabel } from '@/lib/subscriptions';
 import { taskInputLikeClass } from '@/lib/tasks';
 import {
     index as subscriptionsIndex,
@@ -97,6 +98,12 @@ const editIsActive = ref(props.subscription.isActive);
 const editCategory = ref(props.subscription.category ?? '');
 const isSubmitting = ref(false);
 const editFormRef = ref<HTMLFormElement | null>(null);
+const displayBillingDateLabel = computed(() =>
+    billingDateLabel(props.subscription.isActive),
+);
+const editBillingDateLabel = computed(() =>
+    billingDateLabel(editIsActive.value),
+);
 
 watch(
     () => props.subscription,
@@ -306,7 +313,7 @@ function formatBillingCycle(cycle: string | null | undefined): string {
 
                         <DetailSection
                             v-if="subscription.nextBillingDate"
-                            title="Next Billing Date"
+                            :title="displayBillingDateLabel"
                         >
                             <p class="text-sm">
                                 {{ formatDate(subscription.nextBillingDate) }}
@@ -437,9 +444,9 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                             </div>
 
                             <div class="grid gap-2">
-                                <Label for="edit-subscription-next-date"
-                                    >Next Billing Date</Label
-                                >
+                                <Label for="edit-subscription-next-date">
+                                    {{ editBillingDateLabel }}
+                                </Label>
                                 <Input
                                     id="edit-subscription-next-date"
                                     v-model="editNextBillingDate"

@@ -18,6 +18,7 @@ use App\Models\Tag;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -25,6 +26,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Pulse\Facades\Pulse;
+use Laravel\Telescope\Contracts\EntriesRepository;
 use Laravel\Telescope\Telescope;
 
 #[Signature('app:generate-test-records')]
@@ -62,7 +64,9 @@ class GenerateTestRecords extends Command
 
             $result = $this->generateRecords();
 
-            Telescope::startRecording();
+            if (app()->bound(EntriesRepository::class)) {
+                Telescope::startRecording();
+            }
 
             return $result;
         });
@@ -161,7 +165,11 @@ class GenerateTestRecords extends Command
 
         $this->info('Generating 1,000 Subscriptions...');
         for ($i = 0; $i < $batches; $i++) {
-            Subscription::factory()->count(self::BATCH_SIZE)->recycle($teams)->create();
+            Subscription::factory()
+                ->count(self::BATCH_SIZE)
+                ->recycle($teams)
+                ->state(fn (): array => self::subscriptionState())
+                ->create();
         }
 
         $this->info('Generating 1,000 Log Entries...');
@@ -176,6 +184,28 @@ class GenerateTestRecords extends Command
         $this->info('Done! Generated test records with tags, links, and log entries.');
 
         return null;
+    }
+
+    /**
+     * @return array{is_active: bool, first_billing_date: string|null, next_billing_date: string|null}
+     */
+    protected static function subscriptionState(): array
+    {
+        $isActive = fake()->boolean(70);
+        $nextBillingDate = CarbonImmutable::instance(fake()->dateTimeBetween(
+            $isActive ? 'now' : '-3 months',
+            $isActive ? '+1 month' : 'now',
+        ));
+
+        return [
+            'is_active' => $isActive,
+            'first_billing_date' => fake()->boolean(90)
+                ? $nextBillingDate->subMonths(random_int(1, 12))->subDays(random_int(0, 27))->toDateString()
+                : null,
+            'next_billing_date' => fake()->boolean($isActive ? 100 : 70)
+                ? $nextBillingDate->toDateString()
+                : null,
+        ];
     }
 
     /**

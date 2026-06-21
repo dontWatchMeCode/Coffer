@@ -55,11 +55,28 @@ const monthlySpend = computed(() =>
     Number.parseFloat(props.insights.kpis.monthlySpend),
 );
 
-const areaData = computed(() =>
-    props.insights.spendTrend.map((point): { date: Date; spend: number } => ({
-        date: new Date(`${point.month}-01T00:00:00`),
-        spend: point.spend,
-    })),
+const areaData = computed(() => {
+    const points = props.insights.spendTrend.map(
+        (point): { date: Date; spend: number } => ({
+            date: new Date(`${point.month}-01T00:00:00`),
+            spend: point.spend,
+        }),
+    );
+
+    if (points.length !== 1) {
+        return points;
+    }
+
+    const monthEnd = new Date(points[0].date);
+    monthEnd.setMonth(monthEnd.getMonth() + 1, 0);
+
+    return [points[0], { date: monthEnd, spend: points[0].spend }];
+});
+
+const areaTickValues = computed(() =>
+    props.insights.spendTrend.map(
+        (point): Date => new Date(`${point.month}-01T00:00:00`),
+    ),
 );
 
 const areaConfig = {
@@ -191,7 +208,7 @@ defineOptions({
                                 :domain-line="false"
                                 :grid-line="false"
                                 :tick-format="formatChartMonth"
-                                :tick-values="areaData.map((d) => d.date)"
+                                :tick-values="areaTickValues"
                             />
                             <VisAxis
                                 type="y"

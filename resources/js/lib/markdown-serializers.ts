@@ -13,6 +13,7 @@ import type { LinkRecord } from '@/types/record-links';
 import type { RecordTag } from '@/types/record-tags';
 import type { SubscriptionItem } from '@/types/subscriptions';
 import type { TaskCommentItem, TaskItem } from '@/types/tasks';
+import { billingDateLabel } from './subscriptions';
 
 function formatTagList(tags: RecordTag[]): string {
     if (!tags.length) {
@@ -223,7 +224,7 @@ export function serializeSubscription(
 
     if (subscription.nextBillingDate) {
         parts.push(
-            `\n**Next Billing:** ${new Date(subscription.nextBillingDate).toLocaleDateString()}`,
+            `\n**${billingDateLabel(subscription.isActive)}:** ${new Date(subscription.nextBillingDate).toLocaleDateString()}`,
         );
     }
 
