@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Subscriptions\SubscriptionCategoryController;
 use App\Http\Controllers\Subscriptions\SubscriptionController;
+use App\Http\Controllers\Subscriptions\SubscriptionInsightsController;
 use App\Http\Controllers\Subscriptions\SubscriptionPageController;
 use App\Http\Middleware\EnsureTeamFeatureEnabled;
 use Illuminate\Support\Facades\Route;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(EnsureTeamFeatureEnabled::class.':subscriptions')->group(function () {
     Route::get('subscriptions/categories/candidates', [SubscriptionCategoryController::class, 'candidates'])->middleware('throttle:30,1')->name('team.subscriptions.categories.candidates');
 
+    Route::get('subscriptions/insights', [SubscriptionInsightsController::class, 'index'])->name('team.subscriptions.insights');
     Route::get('subscriptions', [SubscriptionPageController::class, 'index'])->name('team.subscriptions.index');
     Route::get('subscriptions/trash', [SubscriptionPageController::class, 'trash'])->name('team.subscriptions.trash');
     Route::get('subscriptions/{subscription}', [SubscriptionPageController::class, 'show'])

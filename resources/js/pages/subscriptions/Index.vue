@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
-import { ListPlus, Trash2 } from 'lucide-vue-next';
+import { ListPlus, PieChart, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
@@ -15,6 +15,7 @@ import {
     index as subscriptionsIndex,
     show as showSubscription,
     trash as subscriptionsTrash,
+    insights as subscriptionsInsights,
 } from '@/routes/team/subscriptions';
 import type {
     PaginatedData,
@@ -86,7 +87,22 @@ defineOptions({
     <PageHeader
         title="Subscriptions"
         description="Track recurring subscriptions and services."
-    />
+    >
+        <template #actions>
+            <Button
+                variant="outline"
+                size="sm"
+                title="Insights"
+                as-child
+                class="cursor-pointer gap-1.5"
+            >
+                <Link :href="subscriptionsInsights(currentTeamSlug).url">
+                    <PieChart class="h-3.5 w-3.5" />
+                    Insights
+                </Link>
+            </Button>
+        </template>
+    </PageHeader>
 
     <div class="min-w-0 flex-1 px-4 py-6">
         <div class="mx-auto w-full max-w-7xl">

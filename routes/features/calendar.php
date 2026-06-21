@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\Calendar\CalendarEventController;
+use App\Http\Controllers\Calendar\CalendarInsightsController;
 use App\Http\Controllers\Calendar\CalendarPageController;
 use App\Http\Middleware\EnsureTeamFeatureEnabled;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(EnsureTeamFeatureEnabled::class.':calendar')->group(function () {
+    Route::get('calendar/insights', [CalendarInsightsController::class, 'index'])->name('team.calendar.insights');
     Route::get('calendar', [CalendarPageController::class, 'index'])->name('team.calendar.index');
     Route::get('calendar/trash', [CalendarPageController::class, 'trash'])->name('team.calendar.trash');
     Route::get('calendar/events/{event}/edit', [CalendarPageController::class, 'edit'])

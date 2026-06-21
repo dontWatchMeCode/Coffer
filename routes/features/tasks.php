@@ -3,11 +3,13 @@
 use App\Http\Controllers\Tasks\ProjectController;
 use App\Http\Controllers\Tasks\TaskCommentController;
 use App\Http\Controllers\Tasks\TaskController;
+use App\Http\Controllers\Tasks\TaskInsightsController;
 use App\Http\Controllers\Tasks\TaskPageController;
 use App\Http\Middleware\EnsureTeamFeatureEnabled;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(EnsureTeamFeatureEnabled::class.':tasks')->group(function () {
+    Route::get('tasks/insights', [TaskInsightsController::class, 'index'])->name('team.tasks.insights');
     Route::get('tasks', [TaskPageController::class, 'index'])->name('team.tasks.index');
     Route::get('tasks/{project}', [TaskPageController::class, 'show'])
         ->whereNumber('project')

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, usePage, Link } from '@inertiajs/vue3';
-import { Archive, FolderPlus } from 'lucide-vue-next';
+import { Archive, FolderPlus, PieChart } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ProjectController from '@/actions/App/Http/Controllers/Tasks/ProjectController';
 import InputError from '@/components/form/InputError.vue';
@@ -24,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
-import { index, show } from '@/routes/team/tasks/index';
+import { insights as tasksInsights, index, show } from '@/routes/team/tasks';
 import type { TaskProject, TaskStats, Team } from '@/types';
 
 type Props = {
@@ -80,7 +80,22 @@ function handleCreateProjectModal(value: boolean): void {
         <PageHeader
             title="Tasks"
             description="Choose a project to work on or create a new one."
-        />
+        >
+            <template #actions>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    title="Insights"
+                    as-child
+                    class="cursor-pointer gap-1.5"
+                >
+                    <Link :href="tasksInsights(currentTeamSlug).url">
+                        <PieChart class="h-3.5 w-3.5" />
+                        Insights
+                    </Link>
+                </Button>
+            </template>
+        </PageHeader>
 
         <div class="min-w-0 flex-1 px-4 py-6">
             <div class="mx-auto w-full max-w-7xl space-y-4">

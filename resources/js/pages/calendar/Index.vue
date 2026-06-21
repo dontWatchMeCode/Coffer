@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import {
-    CalendarDays,
     Check,
     ChevronLeft,
     ChevronRight,
     ChevronsUpDown,
-    List,
     ListPlus,
+    PieChart,
     Trash2,
 } from 'lucide-vue-next';
 import {
@@ -30,6 +29,7 @@ import PageHeader from '@/components/page/PageHeader.vue';
 import CalendarEventDialogs from '@/components/pages/calendar/CalendarEventDialogs.vue';
 import CalendarGrid from '@/components/pages/calendar/CalendarGrid.vue';
 import CalendarList from '@/components/pages/calendar/CalendarList.vue';
+import CalendarViewToggle from '@/components/pages/calendar/CalendarViewToggle.vue';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -42,6 +42,7 @@ import { useCalendarViewMode } from '@/composables/useCalendarViewMode';
 import {
     index as calendarIndex,
     trash as calendarTrash,
+    insights as calendarInsights,
 } from '@/routes/team/calendar';
 import { edit as editEventRoute } from '@/routes/team/calendar/events';
 import type { CalendarEventItem, PaginatedData, Team } from '@/types';
@@ -319,7 +320,22 @@ function openEditDialog(event: CalendarEventItem): void {
 <template>
     <Head title="Calendar" />
 
-    <PageHeader title="Calendar" description="View and manage team events." />
+    <PageHeader title="Calendar" description="View and manage team events.">
+        <template #actions>
+            <Button
+                variant="outline"
+                size="sm"
+                title="Insights"
+                as-child
+                class="cursor-pointer gap-1.5"
+            >
+                <Link :href="calendarInsights(currentTeamSlug).url">
+                    <PieChart class="h-3.5 w-3.5" />
+                    Insights
+                </Link>
+            </Button>
+        </template>
+    </PageHeader>
 
     <div class="min-w-0 flex-1 px-4 py-6">
         <div class="mx-auto w-full max-w-7xl">
@@ -472,34 +488,7 @@ function openEditDialog(event: CalendarEventItem): void {
                             <ListPlus class="h-4 w-4" />
                         </Button>
 
-                        <div
-                            class="flex items-center gap-1 rounded-lg border bg-muted p-0.5"
-                        >
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                :class="{
-                                    'bg-background': viewMode === 'calendar',
-                                }"
-                                class="cursor-pointer hover:bg-background!"
-                                @click="viewMode = 'calendar'"
-                            >
-                                <CalendarDays class="mr-1.5 h-3.5 w-3.5" />
-                                Calendar
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                :class="{
-                                    'bg-background': viewMode === 'list',
-                                }"
-                                class="cursor-pointer hover:bg-background!"
-                                @click="viewMode = 'list'"
-                            >
-                                <List class="mr-1.5 h-3.5 w-3.5" />
-                                List
-                            </Button>
-                        </div>
+                        <CalendarViewToggle />
                     </div>
                 </div>
 
