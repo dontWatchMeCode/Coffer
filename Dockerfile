@@ -50,6 +50,8 @@ RUN install-php-extensions \
     pdo_pgsql \
     zip
 
+RUN printf 'upload_max_filesize=100M\npost_max_size=105M\n' > /usr/local/etc/php/conf.d/uploads.ini
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 COPY composer.json composer.lock ./

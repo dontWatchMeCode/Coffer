@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Files;
+
+use App\Http\Requests\Concerns\AuthorizesTeamResource;
+use Illuminate\Foundation\Http\FormRequest;
+
+class SaveFileRequest extends FormRequest
+{
+    use AuthorizesTeamResource;
+
+    public const MAX_UPLOAD_KILOBYTES = 102_400;
+
+    public const MAX_UPLOAD_MEGABYTES = 100;
+
+    public const ACCEPTED_IMAGE_MIME_TYPES = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+    ];
+
+    public const ACCEPTED_IMAGE_EXTENSIONS = [
+        'jpg',
+        'jpeg',
+        'png',
+        'gif',
+        'webp',
+    ];
+
+    public function authorize(): bool
+    {
+        return $this->isTeamMember();
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    public function rules(): array
+    {
+        $sometimes = $this->isMethod('patch');
+
+        return [
+            'title' => $sometimes
+                ? ['sometimes', 'required', 'string', 'max:255']
+                : ['required', 'string', 'max:255'],
+            'description' => $sometimes
+                ? ['sometimes', 'nullable', 'string']
+                : ['nullable', 'string'],
+            'file' => $sometimes
+                ? ['prohibited']
+                : [
+                    'required',
+                    'file',
+                    'max:'.self::MAX_UPLOAD_KILOBYTES,
+                    'mimes:'.implode(',', self::ACCEPTED_IMAGE_EXTENSIONS),
+                    'mimetypes:'.implode(',', self::ACCEPTED_IMAGE_MIME_TYPES),
+                ],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'file.uploaded' => 'The image could not be uploaded. Current server upload limit: '.$this->serverUploadLimit().'.',
+            'file.max' => 'The image must be '.self::MAX_UPLOAD_MEGABYTES.' MB or smaller.',
+            'file.mimes' => 'The image must be a JPEG, PNG, GIF, or WebP file.',
+            'file.mimetypes' => 'The image must be a JPEG, PNG, GIF, or WebP file.',
+        ];
+    }
+
+    private function serverUploadLimit(): string
+    {
+        $limit = ini_get('upload_max_filesize');
+
+        return is_string($limit) && $limit !== '' ? $limit : 'unknown';
+    }
+}

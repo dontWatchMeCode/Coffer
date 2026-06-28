@@ -43,6 +43,7 @@
         "@excalidraw/excalidraw": "^0.18.1",
         "@inertiajs/vite": "^3.0.0",
         "@inertiajs/vue3": "^3.0.0",
+        "@tanstack/vue-virtual": "^3.13.28",
         "@tiptap/extension-link": "^3.22.3",
         "@tiptap/extension-placeholder": "^3.22.3",
         "@tiptap/markdown": "^3.22.3",

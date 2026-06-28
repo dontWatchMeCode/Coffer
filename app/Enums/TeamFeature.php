@@ -12,6 +12,7 @@ enum TeamFeature: string
     case Bookmarks = 'bookmarks';
     case Subscriptions = 'subscriptions';
     case Notes = 'notes';
+    case Files = 'files';
     case Log = 'log';
     case Collections = 'collections';
 
@@ -24,6 +25,7 @@ enum TeamFeature: string
             self::Bookmarks => 'Bookmarks',
             self::Subscriptions => 'Subscriptions',
             self::Notes => 'Notes',
+            self::Files => 'Files',
             self::Log => 'Log',
             self::Collections => 'Collections',
         };

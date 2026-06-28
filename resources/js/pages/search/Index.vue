@@ -5,6 +5,7 @@ import {
     CalendarDays,
     Contact,
     CreditCard,
+    Files,
     FileText,
     FolderGit2,
     Layers3,
@@ -38,6 +39,7 @@ type SearchResponse = {
     bookmarks: SearchResultItem[];
     subscriptions: SearchResultItem[];
     notes: SearchResultItem[];
+    files: SearchResultItem[];
     collections: SearchResultItem[];
     log_entries: SearchResultItem[];
 };
@@ -76,6 +78,7 @@ const emptyResults: SearchResponse = {
     bookmarks: [],
     subscriptions: [],
     notes: [],
+    files: [],
     collections: [],
     log_entries: [],
 };
@@ -88,6 +91,7 @@ const typeIconMap: Record<string, typeof Search> = {
     bookmarks: Bookmark,
     subscriptions: CreditCard,
     notes: FileText,
+    files: Files,
     collections: Layers3,
     log_entries: ScrollText,
 };

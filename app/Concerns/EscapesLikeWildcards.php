@@ -22,6 +22,7 @@ trait EscapesLikeWildcards
         'email_addresses' => '"email_addresses" like ? escape ?',
         'links' => '"links" like ? escape ?',
         'name' => '"name" like ? escape ?',
+        'original_name' => '"original_name" like ? escape ?',
         'phone_numbers' => '"phone_numbers" like ? escape ?',
         'slug' => '"slug" like ? escape ?',
         'title' => '"title" like ? escape ?',

@@ -277,7 +277,7 @@ function getResultIndex(
             <DialogTitle class="sr-only">Search</DialogTitle>
             <DialogDescription class="sr-only">
                 Search across tasks, contacts, events, projects, bookmarks,
-                subscriptions, notes, and log entries in your team.
+                subscriptions, notes, files, and log entries in your team.
             </DialogDescription>
 
             <div class="flex items-center border-b px-4">

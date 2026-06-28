@@ -22,6 +22,7 @@ const prefixes: PrefixItem[] = [
     { prefix: 'b:', label: 'Bookmarks' },
     { prefix: 's:', label: 'Subscriptions' },
     { prefix: 'n:', label: 'Notes' },
+    { prefix: 'f:', label: 'Files' },
     { prefix: 'l:', label: 'Collections' },
     { prefix: 'g:', label: 'Log' },
 ];

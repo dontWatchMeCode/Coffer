@@ -6,6 +6,7 @@ import {
     Contact,
     CreditCard,
     FileText,
+    Files,
     Layers3,
     LayoutGrid,
     ListTodo,
@@ -33,6 +34,7 @@ import { index as teamBookmarks } from '@/routes/team/bookmarks/index';
 import { index as teamCalendar } from '@/routes/team/calendar/index';
 import { index as teamCollections } from '@/routes/team/collections/index';
 import { index as teamContacts } from '@/routes/team/contacts/index';
+import { index as teamFiles } from '@/routes/team/files/index';
 import { index as teamLog } from '@/routes/team/log/index';
 import { index as teamNotes } from '@/routes/team/notes/index';
 import { index as teamSubscriptions } from '@/routes/team/subscriptions/index';
@@ -94,6 +96,12 @@ const mainNavItems = computed<NavItem[]>(() => [
                   href: teamNotes(page.props.currentTeam.slug).url,
                   icon: FileText,
                   feature: 'notes',
+              },
+              {
+                  title: 'Files',
+                  href: teamFiles(page.props.currentTeam.slug).url,
+                  icon: Files,
+                  feature: 'files',
               },
               {
                   title: 'Log',

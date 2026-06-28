@@ -49,6 +49,7 @@ Route::prefix('{current_team}')
         require __DIR__.'/features/subscriptions.php';
         require __DIR__.'/features/log.php';
         require __DIR__.'/features/notes.php';
+        require __DIR__.'/features/files.php';
         require __DIR__.'/features/collections.php';
         require __DIR__.'/features/tasks.php';
     });

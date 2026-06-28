@@ -8,6 +8,7 @@ use App\Enums\TeamFeature;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\FileItem;
 use App\Models\LogEntry;
 use App\Models\Note;
 use App\Models\Project;
@@ -37,6 +38,7 @@ class RecordSearchRegistry
             'bookmark' => ['prefix' => 'b', 'global' => 'bookmarks', 'feature' => 'bookmarks', 'class' => Bookmark::class, 'columns' => ['title', 'description', 'url'], 'order' => 'title'],
             'subscription' => ['prefix' => 's', 'global' => 'subscriptions', 'feature' => 'subscriptions', 'class' => Subscription::class, 'columns' => ['name', 'category', 'description'], 'order' => 'name'],
             'note' => ['prefix' => 'n', 'global' => 'notes', 'feature' => 'notes', 'class' => Note::class, 'columns' => ['title'], 'order' => 'title'],
+            'file' => ['prefix' => 'f', 'global' => 'files', 'feature' => 'files', 'class' => FileItem::class, 'columns' => ['title', 'description', 'original_name'], 'order' => 'title'],
             'collection' => ['prefix' => 'l', 'global' => 'collections', 'feature' => 'collections', 'class' => RecordCollection::class, 'columns' => ['title', 'description'], 'order' => 'title'],
             'log_entry' => ['prefix' => 'g', 'global' => 'log_entries', 'feature' => 'log', 'class' => LogEntry::class, 'columns' => ['body'], 'order' => 'created_at'],
         ];

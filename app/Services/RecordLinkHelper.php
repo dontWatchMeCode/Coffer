@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\FileItem;
 use App\Models\LogEntry;
 use App\Models\Note;
 use App\Models\Project;
@@ -31,6 +32,7 @@ class RecordLinkHelper
             Bookmark::class => 'team.bookmarks.show',
             Subscription::class => 'team.subscriptions.show',
             Note::class => 'team.notes.show',
+            FileItem::class => 'team.files.show',
             RecordCollection::class => 'team.collections.show',
             LogEntry::class => 'team.log.index',
             default => null,
@@ -61,6 +63,7 @@ class RecordLinkHelper
                     Bookmark::class => 'bookmark',
                     Subscription::class => 'subscription',
                     Note::class => 'note',
+                    FileItem::class => 'file',
                     RecordCollection::class => 'collection',
                     default => $model->getTable(),
                 } => $model->getKey(),
@@ -83,6 +86,7 @@ class RecordLinkHelper
             Bookmark::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             Subscription::class => $model->getAttribute('name') ?? (string) $model->getKey(),
             Note::class => $model->getAttribute('title') ?? (string) $model->getKey(),
+            FileItem::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             RecordCollection::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             LogEntry::class => str($model->getAttribute('body') ?? '')->limit(80)->toString() ?: (string) $model->getKey(),
             default => (string) $model->getKey(),
@@ -102,6 +106,7 @@ class RecordLinkHelper
             Bookmark::class => $model->getAttribute('description'),
             Subscription::class => $model->getAttribute('description'),
             Note::class => self::notePreview($model),
+            FileItem::class => $model->getAttribute('description') ?? $model->getAttribute('original_name'),
             RecordCollection::class => $model->getAttribute('description'),
             LogEntry::class => str($model->getAttribute('body') ?? '')->limit(180)->toString() ?: null,
             default => null,
