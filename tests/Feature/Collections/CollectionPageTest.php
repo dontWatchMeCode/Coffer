@@ -82,7 +82,7 @@ test('collection show page can be rendered with links and tags payloads', functi
         ->get(route('team.collections.show', ['current_team' => $team, 'collection' => $collection]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('collections/Show')
+            ->component('collections/Index')
             ->where('collection.id', $collection->id)
             ->where('collection.title', 'Decision Set')
             ->has('recordLinks')

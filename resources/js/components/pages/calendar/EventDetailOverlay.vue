@@ -16,8 +16,7 @@ import { Label } from '@/components/ui/label';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeCalendarEvent } from '@/lib/markdown-serializers';
 import { taskInputLikeClass } from '@/lib/tasks';
-import { index as calendarIndex } from '@/routes/team/calendar';
-import type { ActivityHistoryConfig, CalendarEventItem, Team } from '@/types';
+import type { ActivityHistoryConfig, CalendarEventItem } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -40,7 +39,15 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
+type EventPageProps = PageProps & {
+    event?: CalendarEventItem;
+};
+
 const props = defineProps<Props>();
+const emit = defineEmits<{
+    close: [];
+    saved: [event: CalendarEventItem];
+}>();
 
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
@@ -53,24 +60,6 @@ const editTitle = ref(props.event.title);
 const editDescription = ref(props.event.description ?? '');
 const editDate = ref(props.event.date ?? '');
 const editTime = ref(props.event.time ?? '');
-
-defineOptions({
-    inheritAttrs: false,
-    layout: (layoutProps: {
-        currentTeam?: Team | null;
-        event?: { id: number; title: string };
-    }) => ({
-        breadcrumbs: [
-            {
-                title: 'Calendar',
-                href: calendarIndex(layoutProps.currentTeam?.slug).url,
-            },
-            {
-                title: layoutProps.event?.title ?? 'Event',
-            },
-        ],
-    }),
-});
 
 watch(
     () => props.event,
@@ -86,6 +75,10 @@ function resetEditFields(event: CalendarEventItem): void {
     editDescription.value = event.description ?? '';
     editDate.value = event.date ?? '';
     editTime.value = event.time ?? '';
+}
+
+function close(): void {
+    emit('close');
 }
 
 function cancelEdit(): void {
@@ -113,11 +106,6 @@ function confirmDelete(): void {
             current_team: currentTeamSlug.value,
             event: props.event.id,
         }),
-        {
-            onSuccess: () => {
-                router.visit(calendarIndex(currentTeamSlug.value).url);
-            },
-        },
     );
 }
 
@@ -136,9 +124,19 @@ function submitEdit(): void {
             time: editTime.value,
         },
         {
+            only: ['event', 'recordLinks', 'recordTags', 'activityHistory'],
             preserveScroll: true,
-            preserveState: false,
-            onSuccess: () => {
+            preserveState: true,
+            onSuccess: (response) => {
+                const savedEvent = (response.props as EventPageProps).event ?? {
+                    ...props.event,
+                    title: editTitle.value,
+                    description: editDescription.value,
+                    date: editDate.value,
+                    time: editTime.value,
+                };
+
+                emit('saved', savedEvent);
                 isEditing.value = false;
             },
             onFinish: () => {
@@ -162,13 +160,13 @@ function handleCopyAsMarkdown(): void {
 </script>
 
 <template>
-    <Head :title="`Edit: ${event.title}`" />
+    <Head :title="event.title" />
 
     <div class="flex min-h-screen flex-col">
         <PageHeader
             :title="event.title"
-            :back-href="calendarIndex(currentTeamSlug).url"
             back-label="Back to calendar"
+            :back-handler="close"
         />
 
         <div class="flex-1 px-4 py-6">

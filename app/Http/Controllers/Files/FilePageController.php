@@ -62,7 +62,16 @@ class FilePageController extends Controller
             ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
             ->findOrFail($file);
 
-        return Inertia::render('files/Show', [
+        return Inertia::render('files/Index', [
+            'files' => Inertia::optional(fn () => Inertia::scroll(
+                FileItem::query()
+                    ->whereBelongsTo($currentTeam)
+                    ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['title', 'description', 'original_name']))
+                    ->orderByDesc('created_at')
+                    ->simplePaginate(25)
+                    ->through(fn (FileItem $f): array => $this->filePayload($f, $currentTeam))
+            )),
+            'uploadConstraints' => Inertia::optional(fn (): array => $this->uploadConstraints()),
             'file' => $this->filePayload($file, $currentTeam),
             'recordLinks' => $this->recordLinksPayload($file, $currentTeam),
             'recordTags' => $this->recordTagsPayload($file, $currentTeam),

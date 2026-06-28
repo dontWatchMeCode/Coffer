@@ -14,6 +14,7 @@ import TaskList from '@/components/pages/tasks/TaskList.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useListDetailOverlay } from '@/composables/useListDetailOverlay';
 import { useSearch } from '@/composables/useSearch';
 import {
     edit,
@@ -69,22 +70,28 @@ const { searchQuery } = useSearch(
     'tasks',
 );
 
+const { closeDetail } = useListDetailOverlay(
+    'tasks',
+    currentTeamSlug.value,
+    Boolean(props.tasks),
+);
+
 defineOptions({
     inheritAttrs: false,
-    layout: (props: {
+    layout: (layoutProps: {
         currentTeam?: { slug: string } | null;
         project?: { id: number; name: string };
     }) => ({
         breadcrumbs: [
             {
                 title: 'Tasks',
-                href: index(props.currentTeam?.slug),
+                href: index(layoutProps.currentTeam?.slug),
             },
             {
-                title: props.project?.name ?? 'Project',
+                title: layoutProps.project?.name ?? 'Project',
                 href: show({
-                    current_team: props.currentTeam?.slug,
-                    project: props.project?.id ?? 0,
+                    current_team: layoutProps.currentTeam?.slug,
+                    project: layoutProps.project?.id ?? 0,
                 }),
             },
         ],
@@ -110,6 +117,9 @@ function openTask(task: TaskItem): void {
             project: props.project.id,
             task: task.id,
         }),
+        {
+            preserveScroll: true,
+        },
     );
 }
 
@@ -127,6 +137,10 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
         { preserveScroll: true },
     );
 }
+
+function closeProject(): void {
+    closeDetail(index(currentTeamSlug.value).url);
+}
 </script>
 
 <template>
@@ -135,7 +149,7 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
     <PageHeader
         :title="project.name"
         description="Review this project, create tasks, and update work status."
-        :back-href="index(currentTeamSlug).url"
+        :back-handler="closeProject"
         back-label="Back to projects"
     >
         <template v-if="project.isArchived" #actions>
@@ -165,7 +179,7 @@ function updateTaskStatus(task: TaskItem, status: AcceptableValue): void {
                         No tasks yet. Create one to get started.
                     </div>
 
-                    <InfiniteScroll v-else data="tasks">
+                    <InfiniteScroll v-else data="tasks" :buffer="1200">
                         <TaskList
                             :visible-tasks="visibleTasks"
                             :project="project"

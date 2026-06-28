@@ -8,6 +8,7 @@ use App\Enums\TeamRole;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\FileItem;
 use App\Models\LogEntry;
 use App\Models\Note;
 use App\Models\Project;
@@ -25,6 +26,7 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Pulse\Facades\Pulse;
 use Laravel\Telescope\Contracts\EntriesRepository;
 use Laravel\Telescope\Telescope;
@@ -50,6 +52,7 @@ class GenerateTestRecords extends Command
         Bookmark::class,
         CalendarEvent::class,
         Contact::class,
+        FileItem::class,
         Note::class,
         Project::class,
         RecordCollection::class,
@@ -80,6 +83,8 @@ class GenerateTestRecords extends Command
         DB::table('taggables')->delete();
         Tag::query()->delete();
         LogEntry::withoutGlobalScopes()->delete();
+        FileItem::withoutGlobalScopes()->forceDelete();
+        Storage::disk('local')->deleteDirectory('files');
         Subscription::withoutGlobalScopes()->delete();
         Task::withoutGlobalScopes()->delete();
         CalendarEvent::withoutGlobalScopes()->delete();
@@ -177,6 +182,8 @@ class GenerateTestRecords extends Command
             LogEntry::factory()->count(self::BATCH_SIZE)->recycle($teams)->create();
         }
 
+        $this->createFiles($teams);
+
         $this->createTags($teams);
         $this->createRecordLinks($teams);
         $this->createActivityHistory($teams, $allUsers);
@@ -265,6 +272,122 @@ class GenerateTestRecords extends Command
                 }
             }
         }
+    }
+
+    /**
+     * @param  Collection<int, Team>  $teams
+     */
+    protected function createFiles($teams): void
+    {
+        $this->info('Generating 1,000 Files with placeholder images...');
+
+        $disk = Storage::disk('local');
+        $extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $mimeByExtension = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+        ];
+
+        $teamsCount = $teams->count();
+        $perTeam = (int) floor(self::PER_TYPE / $teamsCount);
+        $remainder = self::PER_TYPE % $teamsCount;
+        $progress = $this->output->createProgressBar(self::PER_TYPE);
+        $progress->start();
+
+        $teamIndex = 0;
+
+        foreach ($teams as $team) {
+            $teamDirectory = 'files/'.$team->id;
+            $disk->makeDirectory($teamDirectory);
+
+            $countForTeam = $perTeam + ($teamIndex < $remainder ? 1 : 0);
+            $batchesForTeam = (int) ceil($countForTeam / self::BATCH_SIZE);
+            $createdForTeam = 0;
+
+            for ($i = 0; $i < $batchesForTeam; $i++) {
+                $now = now()->toDateTimeString();
+
+                $inserts = [];
+
+                $batchCount = min(self::BATCH_SIZE, $countForTeam - $createdForTeam);
+
+                for ($j = 0; $j < $batchCount; $j++) {
+                    $extension = $extensions[array_rand($extensions)];
+                    $width = random_int(320, 2400);
+                    $height = random_int(240, 1800);
+                    $red = random_int(0, 255);
+                    $green = random_int(0, 255);
+                    $blue = random_int(0, 255);
+
+                    $image = imagecreatetruecolor($width, $height);
+
+                    if ($image === false) {
+                        $progress->advance();
+
+                        continue;
+                    }
+
+                    $color = imagecolorallocate($image, $red, $green, $blue);
+
+                    if ($color === false) {
+                        $progress->advance();
+
+                        continue;
+                    }
+
+                    imagefill($image, 0, 0, $color);
+
+                    ob_start();
+                    match ($extension) {
+                        'png' => imagepng($image, quality: 9),
+                        'gif' => imagegif($image),
+                        'webp' => imagewebp($image, quality: 75),
+                        default => imagejpeg($image, quality: 75),
+                    };
+                    $bytes = ob_get_clean();
+
+                    if ($bytes === false) {
+                        $progress->advance();
+
+                        continue;
+                    }
+
+                    $uuid = fake()->uuid();
+                    $path = $teamDirectory.'/'.$uuid.'.'.$extension;
+                    $disk->put($path, $bytes);
+
+                    $inserts[] = [
+                        'team_id' => $team->id,
+                        'title' => fake()->sentence(3),
+                        'description' => fake()->optional(0.5)->sentence(),
+                        'disk' => 'local',
+                        'path' => $path,
+                        'original_name' => fake()->word().'.'.$extension,
+                        'mime_type' => $mimeByExtension[$extension],
+                        'size' => strlen($bytes),
+                        'width' => $width,
+                        'height' => $height,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                    $progress->advance();
+                }
+
+                foreach (array_chunk($inserts, 100) as $chunk) {
+                    FileItem::withoutGlobalScopes()->insert($chunk);
+                }
+
+                $createdForTeam += $batchCount;
+            }
+
+            $teamIndex++;
+        }
+
+        $progress->finish();
+        $this->newLine();
     }
 
     /**

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, usePage, Link } from '@inertiajs/vue3';
+import { Form, Head, usePage, Link, router } from '@inertiajs/vue3';
 import { Archive, FolderPlus, PieChart } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ProjectController from '@/actions/App/Http/Controllers/Tasks/ProjectController';
@@ -63,6 +63,18 @@ defineOptions({
         ],
     }),
 });
+
+function navigateToProject(project: TaskProject): void {
+    router.visit(
+        show({
+            current_team: currentTeamSlug.value,
+            project: project.id,
+        }).url,
+        {
+            preserveScroll: true,
+        },
+    );
+}
 
 function handleCreateProjectModal(value: boolean): void {
     createProjectOpen.value = value;
@@ -128,69 +140,58 @@ function handleCreateProjectModal(value: boolean): void {
 
                 <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     <template v-if="visibleProjects.length > 0">
-                        <Link
+                        <Card
                             v-for="project in visibleProjects"
                             :key="project.id"
-                            :href="
-                                show({
-                                    current_team: currentTeamSlug,
-                                    project: project.id,
-                                }).url
-                            "
-                            class="block"
+                            class="h-full cursor-pointer transition-colors hover:border-primary hover:bg-accent/20"
+                            @click="navigateToProject(project)"
                         >
-                            <Card
-                                class="h-full transition-colors hover:border-primary hover:bg-accent/20"
-                            >
-                                <CardHeader>
-                                    <div
-                                        class="flex items-center justify-between gap-3"
+                            <CardHeader>
+                                <div
+                                    class="flex items-center justify-between gap-3"
+                                >
+                                    <CardTitle>{{ project.name }}</CardTitle>
+                                    <Badge
+                                        variant="secondary"
+                                        :class="
+                                            project.isArchived
+                                                ? ''
+                                                : 'invisible'
+                                        "
                                     >
-                                        <CardTitle>{{
-                                            project.name
-                                        }}</CardTitle>
-                                        <Badge
-                                            variant="secondary"
-                                            :class="
-                                                project.isArchived
-                                                    ? ''
-                                                    : 'invisible'
-                                            "
-                                        >
-                                            Archived
-                                        </Badge>
-                                    </div>
-                                    <CardDescription>
-                                        {{
-                                            project.description ||
-                                            'No description yet.'
-                                        }}
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent class="space-y-3">
-                                    <div
-                                        class="flex items-center justify-between text-sm"
+                                        Archived
+                                    </Badge>
+                                </div>
+                                <CardDescription>
+                                    {{
+                                        project.description ||
+                                        'No description yet.'
+                                    }}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent class="space-y-3">
+                                <div
+                                    class="flex items-center justify-between text-sm"
+                                >
+                                    <span class="text-muted-foreground"
+                                        >Open tasks</span
                                     >
-                                        <span class="text-muted-foreground"
-                                            >Open tasks</span
-                                        >
-                                        <span class="font-medium">{{
-                                            project.openTasksCount
-                                        }}</span>
-                                    </div>
-                                    <div
-                                        class="flex items-center justify-between text-sm"
+                                    <span class="font-medium">{{
+                                        project.openTasksCount
+                                    }}</span>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between text-sm"
+                                >
+                                    <span class="text-muted-foreground"
+                                        >Total tasks</span
                                     >
-                                        <span class="text-muted-foreground"
-                                            >Total tasks</span
-                                        >
-                                        <span class="font-medium">{{
-                                            project.tasksCount
-                                        }}</span>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </Link>
+                                    <span class="font-medium">{{
+                                        project.tasksCount
+                                    }}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </template>
 
                     <Card

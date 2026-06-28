@@ -74,7 +74,23 @@ class BookmarkPageController extends Controller
             ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
             ->findOrFail($bookmark);
 
-        return Inertia::render('bookmarks/Show', [
+        return Inertia::render('bookmarks/Index', [
+            'bookmarks' => Inertia::optional(fn () => Inertia::scroll(
+                Bookmark::query()
+                    ->whereBelongsTo($currentTeam)
+                    ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['title', 'description', 'url']))
+                    ->orderByDesc('created_at')
+                    ->simplePaginate(25)
+                    ->through(fn (Bookmark $b): array => [
+                        'id' => $b->id,
+                        'title' => $b->title,
+                        'url' => $b->url,
+                        'description' => $b->description,
+                        'notes' => $b->notes,
+                        'createdAt' => $b->created_at?->format(\DateTimeInterface::ATOM),
+                        'updatedAt' => $b->updated_at?->format(\DateTimeInterface::ATOM),
+                    ])
+            )),
             'bookmark' => [
                 'id' => $bookmark->id,
                 'title' => $bookmark->title,

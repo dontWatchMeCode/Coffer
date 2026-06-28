@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import type { PageProps } from '@inertiajs/core';
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
+import CollectionDetailOverlay from '@/components/pages/collections/CollectionDetailOverlay.vue';
 import CollectionList from '@/components/pages/collections/CollectionList.vue';
 import CreateCollectionDialog from '@/components/pages/collections/CreateCollectionDialog.vue';
 import DeleteCollectionDialog from '@/components/pages/collections/DeleteCollectionDialog.vue';
 import { Button } from '@/components/ui/button';
+import { useListDetailOverlay } from '@/composables/useListDetailOverlay';
 import { useSearch } from '@/composables/useSearch';
 import { useViewMode } from '@/composables/useViewMode';
 import {
@@ -16,11 +19,36 @@ import {
     show as showCollection,
     trash as collectionsTrash,
 } from '@/routes/team/collections';
-import type { CollectionItem, PaginatedData, Team } from '@/types';
+import type {
+    ActivityHistoryConfig,
+    CollectionItem,
+    PaginatedData,
+    Team,
+} from '@/types';
+import type {
+    LinkContext,
+    LinkEndpoints,
+    LinkRecord,
+} from '@/types/record-links';
+import type { RecordTag, TagContext, TagEndpoints } from '@/types/record-tags';
 
 type Props = {
     collections: PaginatedData<CollectionItem>;
+    collection?: CollectionItem;
+    recordLinks?: {
+        links: LinkRecord[];
+        context: LinkContext;
+        endpoints: LinkEndpoints;
+    } | null;
+    recordTags?: {
+        tags: RecordTag[];
+        context: TagContext;
+        endpoints: TagEndpoints;
+    } | null;
+    activityHistory?: ActivityHistoryConfig;
 };
+
+type CollectionPageProps = PageProps & Partial<Props>;
 
 const props = defineProps<Props>();
 
@@ -29,6 +57,17 @@ const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const { searchQuery } = useSearch(
     collectionsIndex(currentTeamSlug.value).url,
     'collections',
+);
+
+const {
+    closeDetail,
+    rememberSavedItem,
+    getPendingSavedItem,
+    clearPendingSavedItem,
+} = useListDetailOverlay(
+    'collections',
+    currentTeamSlug.value,
+    Boolean(props.collections),
 );
 
 const { viewMode } = useViewMode('collections');
@@ -52,87 +91,169 @@ function navigateToCollection(collection: CollectionItem): void {
             current_team: currentTeamSlug.value,
             collection: collection.id,
         }).url,
+        {
+            only: [
+                'collection',
+                'recordLinks',
+                'recordTags',
+                'activityHistory',
+            ],
+            preserveScroll: true,
+        },
     );
 }
 
+function replaceLoadedCollection(collection: CollectionItem): boolean {
+    if (!props.collections?.data.some((c) => c.id === collection.id)) {
+        return false;
+    }
+
+    router.replaceProp<CollectionPageProps>(
+        'collections.data',
+        (collections: unknown) => {
+            if (!Array.isArray(collections)) {
+                return collections;
+            }
+
+            return collections.map((c) =>
+                c.id === collection.id ? collection : c,
+            );
+        },
+    );
+
+    return true;
+}
+
+function applyPendingSavedCollection(): void {
+    if (props.collection || !props.collections) {
+        return;
+    }
+
+    const collection = getPendingSavedItem<CollectionItem & { id: number }>();
+
+    if (!collection || typeof collection.id !== 'number') {
+        clearPendingSavedItem();
+
+        return;
+    }
+
+    replaceLoadedCollection(collection);
+    clearPendingSavedItem();
+}
+
+function closeCollection(): void {
+    closeDetail(collectionsIndex(currentTeamSlug.value).url);
+}
+
+function onSaved(collection: CollectionItem): void {
+    rememberSavedItem(collection);
+    replaceLoadedCollection(collection);
+}
+
+watch(
+    () => [props.collection?.id, props.collections?.data],
+    () => applyPendingSavedCollection(),
+    { immediate: true, flush: 'post' },
+);
+
 defineOptions({
     inheritAttrs: false,
-    layout: (pageProps: { currentTeam?: Team | null }) => ({
+    layout: (pageProps: {
+        currentTeam?: Team | null;
+        collection?: { id: number; title: string };
+    }) => ({
         breadcrumbs: [
             {
                 title: 'Collections',
                 href: collectionsIndex(pageProps.currentTeam?.slug).url,
             },
+            ...(pageProps.collection
+                ? [{ title: pageProps.collection.title }]
+                : []),
         ],
     }),
 });
 </script>
 
 <template>
-    <Head title="Collections" />
+    <Head :title="props.collection ? props.collection.title : 'Collections'" />
 
-    <PageHeader
-        title="Collections"
-        description="Group linked records into browsable collections."
-    />
+    <div v-if="props.collections && !props.collection">
+        <PageHeader
+            title="Collections"
+            description="Group linked records into browsable collections."
+        />
 
-    <div class="min-w-0 flex-1 px-4 py-6">
-        <div class="mx-auto w-full max-w-7xl">
-            <div class="mb-4 flex items-center justify-end gap-3">
-                <SearchInput
-                    v-model="searchQuery"
-                    data-testid="collections-search-input"
-                    placeholder="Search collections..."
-                />
-            </div>
-
-            <div class="min-w-0 space-y-4">
-                <div class="flex items-center justify-end gap-2">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        title="Trash"
-                        as-child
-                    >
-                        <Link :href="collectionsTrash(currentTeamSlug).url">
-                            <Trash2 class="h-4 w-4" />
-                        </Link>
-                    </Button>
-
-                    <CreateCollectionDialog ref="createDialogRef">
-                        <template #trigger>
-                            <Button
-                                size="icon"
-                                title="Create collection"
-                                class="cursor-pointer"
-                            >
-                                <ListPlus class="h-4 w-4" />
-                            </Button>
-                        </template>
-                    </CreateCollectionDialog>
-
-                    <ViewModeToggle
-                        v-if="props.collections.data.length > 0"
-                        v-model:view-mode="viewMode"
+        <div class="min-w-0 flex-1 px-4 py-6">
+            <div class="mx-auto w-full max-w-7xl">
+                <div class="mb-4 flex items-center justify-end gap-3">
+                    <SearchInput
+                        v-model="searchQuery"
+                        data-testid="collections-search-input"
+                        placeholder="Search collections..."
                     />
                 </div>
 
-                <InfiniteScroll data="collections">
-                    <CollectionList
-                        :filtered-collections="props.collections.data"
-                        :search-query="searchQuery"
-                        :navigate-to-collection="navigateToCollection"
-                        :open-delete-dialog="
-                            (collection) =>
-                                deleteDialogRef?.openDeleteDialog(collection)
-                        "
-                        :open-create-dialog="openCreateDialog"
-                        :view-mode="viewMode"
-                    />
-                </InfiniteScroll>
+                <div class="min-w-0 space-y-4">
+                    <div class="flex items-center justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            title="Trash"
+                            as-child
+                        >
+                            <Link :href="collectionsTrash(currentTeamSlug).url">
+                                <Trash2 class="h-4 w-4" />
+                            </Link>
+                        </Button>
+
+                        <CreateCollectionDialog ref="createDialogRef">
+                            <template #trigger>
+                                <Button
+                                    size="icon"
+                                    title="Create collection"
+                                    class="cursor-pointer"
+                                >
+                                    <ListPlus class="h-4 w-4" />
+                                </Button>
+                            </template>
+                        </CreateCollectionDialog>
+
+                        <ViewModeToggle
+                            v-if="props.collections.data.length > 0"
+                            v-model:view-mode="viewMode"
+                        />
+                    </div>
+
+                    <InfiniteScroll data="collections" :buffer="1200">
+                        <CollectionList
+                            :filtered-collections="props.collections.data"
+                            :search-query="searchQuery"
+                            :navigate-to-collection="navigateToCollection"
+                            :open-delete-dialog="
+                                (collection) =>
+                                    deleteDialogRef?.openDeleteDialog(
+                                        collection,
+                                    )
+                            "
+                            :open-create-dialog="openCreateDialog"
+                            :view-mode="viewMode"
+                        />
+                    </InfiniteScroll>
+                </div>
             </div>
         </div>
     </div>
+
+    <CollectionDetailOverlay
+        v-if="props.collection"
+        :collection="props.collection"
+        :record-links="props.recordLinks"
+        :record-tags="props.recordTags"
+        :activity-history="props.activityHistory"
+        @close="closeCollection"
+        @saved="onSaved"
+    />
 
     <DeleteCollectionDialog ref="deleteDialogRef" />
 </template>

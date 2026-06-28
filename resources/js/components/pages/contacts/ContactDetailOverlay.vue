@@ -16,16 +16,8 @@ import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { emptyEntry, firstEntryValueError } from '@/lib/contacts';
 import { serializeContact } from '@/lib/markdown-serializers';
 import { taskInputLikeClass } from '@/lib/tasks';
-import {
-    index as contactsIndex,
-    update as updateContact,
-} from '@/routes/team/contacts';
-import type {
-    ActivityHistoryConfig,
-    ContactEntry,
-    ContactItem,
-    Team,
-} from '@/types';
+import { update as updateContact } from '@/routes/team/contacts';
+import type { ActivityHistoryConfig, ContactEntry, ContactItem } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -48,30 +40,20 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
+type ContactPageProps = PageProps & {
+    contact?: ContactItem;
+};
+
 const props = defineProps<Props>();
+const emit = defineEmits<{
+    close: [];
+    saved: [contact: ContactItem];
+}>();
 
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const isEditing = ref(false);
-
-defineOptions({
-    inheritAttrs: false,
-    layout: (layoutProps: {
-        currentTeam?: Team | null;
-        contact?: { id: number; name: string };
-    }) => ({
-        breadcrumbs: [
-            {
-                title: 'Contacts',
-                href: contactsIndex(layoutProps.currentTeam?.slug).url,
-            },
-            {
-                title: layoutProps.contact?.name ?? 'Contact',
-            },
-        ],
-    }),
-});
 
 const editName = ref(props.contact.name);
 const editPhones = ref<ContactEntry[]>(
@@ -93,6 +75,9 @@ const editAddress = ref(props.contact.address ?? '');
 const editAdditionalInfo = ref(props.contact.additionalInfo ?? '');
 const isSubmitting = ref(false);
 const editFormRef = ref<HTMLFormElement | null>(null);
+const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
+    null,
+);
 
 watch(
     () => props.contact,
@@ -118,6 +103,10 @@ function resetEditFields(contact: ContactItem): void {
     editLinks.value = editableEntries(contact.links);
     editAddress.value = contact.address ?? '';
     editAdditionalInfo.value = contact.additionalInfo ?? '';
+}
+
+function close(): void {
+    emit('close');
 }
 
 function cancelEdit(): void {
@@ -172,9 +161,28 @@ function submitEdit(): void {
             additional_info: editAdditionalInfo.value,
         },
         {
+            only: ['contact', 'recordLinks', 'recordTags', 'activityHistory'],
             preserveScroll: true,
-            preserveState: false,
-            onSuccess: () => {
+            preserveState: true,
+            onSuccess: (response) => {
+                const savedContact = (response.props as ContactPageProps)
+                    .contact ?? {
+                    ...props.contact,
+                    name: editName.value,
+                    phoneNumbers: editPhones.value
+                        .filter((e) => e.value.trim() !== '')
+                        .map((e) => ({ label: e.label, value: e.value })),
+                    emailAddresses: editEmails.value
+                        .filter((e) => e.value.trim() !== '')
+                        .map((e) => ({ label: e.label, value: e.value })),
+                    links: editLinks.value
+                        .filter((e) => e.value.trim() !== '')
+                        .map((e) => ({ label: e.label, value: e.value })),
+                    address: editAddress.value,
+                    additionalInfo: editAdditionalInfo.value,
+                };
+
+                emit('saved', savedContact);
                 isEditing.value = false;
             },
             onFinish: () => {
@@ -183,10 +191,6 @@ function submitEdit(): void {
         },
     );
 }
-
-const deleteDialogRef = ref<InstanceType<typeof DeleteContactDialog> | null>(
-    null,
-);
 
 const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
 
@@ -208,8 +212,8 @@ function handleCopyAsMarkdown(): void {
         <PageHeader
             :title="contact.name"
             description="Review contact details and related records."
-            :back-href="contactsIndex(currentTeamSlug).url"
             back-label="Back to contacts"
+            :back-handler="close"
         />
 
         <div class="flex-1 px-4 py-6">
@@ -437,7 +441,7 @@ function handleCopyAsMarkdown(): void {
                 </template>
             </EditorSidebarLayout>
         </div>
-    </div>
 
-    <DeleteContactDialog ref="deleteDialogRef" />
+        <DeleteContactDialog ref="deleteDialogRef" />
+    </div>
 </template>

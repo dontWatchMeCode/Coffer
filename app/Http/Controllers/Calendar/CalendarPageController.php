@@ -84,7 +84,41 @@ class CalendarPageController extends Controller
             ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
             ->findOrFail($event);
 
-        return Inertia::render('calendar/Edit', [
+        $month = $request->integer('month', now()->month);
+        $year = $request->integer('year', now()->year);
+        $search = $request->string('search')->toString();
+
+        $base = Carbon::create($year, $month, 1) ?? now();
+        $start = $base->copy()->subMonth()->startOfMonth()->toDateString();
+        $end = $base->copy()->addMonth()->endOfMonth()->toDateString();
+
+        $calendarEventsQuery = CalendarEvent::query()
+            ->whereBelongsTo($currentTeam)
+            ->whereBetween('date', [$start, $end])
+            ->orderBy('date')
+            ->orderBy('time')
+            ->orderByDesc('updated_at');
+
+        return Inertia::render('calendar/Index', [
+            'calendarEvents' => Inertia::optional(fn () => (clone $calendarEventsQuery)
+                ->get()
+                ->map(fn (CalendarEvent $e): array => $this->formatEvent($e, includeTimestamps: true))
+                ->values()
+                ->all()),
+            'searchMatchIds' => Inertia::optional(fn () => $search
+                ? (clone $calendarEventsQuery)->search($search, ['title', 'description'])->pluck('id')->all()
+                : null),
+            'events' => Inertia::optional(fn () => Inertia::scroll(
+                CalendarEvent::query()
+                    ->whereBelongsTo($currentTeam)
+                    ->when($search, fn ($q) => $q->search($search, ['title', 'description']))
+                    ->where('date', '>=', now()->toDateString())
+                    ->orderBy('date')
+                    ->orderBy('time')
+                    ->orderByDesc('updated_at')
+                    ->simplePaginate(25)
+                    ->through(fn (CalendarEvent $e): array => $this->formatEvent($e, includeTimestamps: true)),
+            )),
             'event' => $this->formatEvent($event, includeTimestamps: true),
             'recordLinks' => $this->recordLinksPayload($event, $currentTeam),
             'recordTags' => $this->recordTagsPayload($event, $currentTeam),

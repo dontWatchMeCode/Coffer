@@ -59,7 +59,17 @@ class SubscriptionPageController extends Controller
             ->with(['recordTags' => fn ($query) => $query->orderBy('name'), 'subscriptionCategory'])
             ->findOrFail($subscription);
 
-        return Inertia::render('subscriptions/Show', [
+        return Inertia::render('subscriptions/Index', [
+            'subscriptions' => Inertia::optional(fn () => Inertia::scroll(
+                Subscription::query()
+                    ->whereBelongsTo($currentTeam)
+                    ->with('subscriptionCategory')
+                    ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['name', 'description']))
+                    ->orderByDesc('is_active')
+                    ->orderBy('name')
+                    ->simplePaginate(25)
+                    ->through(fn (Subscription $s): array => $this->formatSubscription($s))
+            )),
             'subscription' => $this->formatSubscription($subscription),
             'recordLinks' => $this->recordLinksPayload($subscription, $currentTeam),
             'recordTags' => $this->recordTagsPayload($subscription, $currentTeam),

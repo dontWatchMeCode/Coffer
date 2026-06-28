@@ -41,7 +41,7 @@ const searchQuery = defineModel<string>('searchQuery', { required: true });
                 />
             </div>
 
-            <InfiniteScroll :data="scrollData">
+            <InfiniteScroll :data="scrollData" :buffer="1200">
                 <TrashRecordList
                     :records="records"
                     :search-query="searchQuery"

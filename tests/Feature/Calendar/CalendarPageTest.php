@@ -173,7 +173,7 @@ test('calendar edit page includes timestamps for editor metadata', function () {
         ->get(route('team.calendar.events.edit', ['current_team' => $team, 'event' => $event]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('calendar/Edit')
+            ->component('calendar/Index')
             ->where('event.id', $event->id)
             ->where('event.updatedAt', fn (?string $updatedAt): bool => is_string($updatedAt)
                 && str_contains($updatedAt, 'T')),
@@ -223,7 +223,7 @@ test('calendar edit page includes activity history', function () {
         ->get(route('team.calendar.events.edit', ['current_team' => $team, 'event' => $event]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('calendar/Edit')
+            ->component('calendar/Index')
             ->has('activityHistory')
             ->where('activityHistory.subject_type', 'calendar_event')
             ->where('activityHistory.subject_id', $event->id)

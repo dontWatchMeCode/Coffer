@@ -1,57 +1,57 @@
 <script setup lang="ts">
+import type { PageProps } from '@inertiajs/core';
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
-import {
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    ChevronsUpDown,
-    ListPlus,
-    PieChart,
-    Trash2,
-} from 'lucide-vue-next';
-import {
-    ComboboxAnchor,
-    ComboboxContent,
-    ComboboxEmpty,
-    ComboboxInput,
-    ComboboxItem,
-    ComboboxItemIndicator,
-    ComboboxPortal,
-    ComboboxRoot,
-    ComboboxTrigger,
-    ComboboxViewport,
-    ComboboxVirtualizer,
-    useFilter,
-} from 'reka-ui';
+import { ListPlus, PieChart, Trash2 } from 'lucide-vue-next';
 import { computed, onUnmounted, ref, watch } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import CalendarEventDialogs from '@/components/pages/calendar/CalendarEventDialogs.vue';
 import CalendarGrid from '@/components/pages/calendar/CalendarGrid.vue';
 import CalendarList from '@/components/pages/calendar/CalendarList.vue';
+import CalendarMonthNav from '@/components/pages/calendar/CalendarMonthNav.vue';
 import CalendarViewToggle from '@/components/pages/calendar/CalendarViewToggle.vue';
+import EventDetailOverlay from '@/components/pages/calendar/EventDetailOverlay.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { useCalendarViewMode } from '@/composables/useCalendarViewMode';
+import { useListDetailOverlay } from '@/composables/useListDetailOverlay';
 import {
     index as calendarIndex,
     trash as calendarTrash,
     insights as calendarInsights,
 } from '@/routes/team/calendar';
 import { edit as editEventRoute } from '@/routes/team/calendar/events';
-import type { CalendarEventItem, PaginatedData, Team } from '@/types';
+import type {
+    ActivityHistoryConfig,
+    CalendarEventItem,
+    PaginatedData,
+    Team,
+} from '@/types';
+import type {
+    LinkContext,
+    LinkEndpoints,
+    LinkRecord,
+} from '@/types/record-links';
+import type { RecordTag, TagContext, TagEndpoints } from '@/types/record-tags';
 
 type Props = {
     calendarEvents: CalendarEventItem[];
     events: PaginatedData<CalendarEventItem>;
     searchMatchIds: number[] | null;
+    event?: CalendarEventItem;
+    recordLinks?: {
+        links: LinkRecord[];
+        context: LinkContext;
+        endpoints: LinkEndpoints;
+    } | null;
+    recordTags?: {
+        tags: RecordTag[];
+        context: TagContext;
+        endpoints: TagEndpoints;
+    } | null;
+    activityHistory?: ActivityHistoryConfig;
 };
+
+type EventPageProps = PageProps & Partial<Props>;
 
 const props = defineProps<Props>();
 
@@ -74,6 +74,17 @@ const currentMonth = ref(
 );
 
 let calendarTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const hasListData = computed(() =>
+    Boolean(props.events || props.calendarEvents),
+);
+
+const {
+    closeDetail,
+    rememberSavedItem,
+    getPendingSavedItem,
+    clearPendingSavedItem,
+} = useListDetailOverlay('calendar', currentTeamSlug.value, hasListData.value);
 
 function reloadCalendar(): void {
     if (calendarTimeout) {
@@ -121,12 +132,16 @@ onUnmounted(() => {
 
 defineOptions({
     inheritAttrs: false,
-    layout: (pageProps: { currentTeam?: Team | null }) => ({
+    layout: (pageProps: {
+        currentTeam?: Team | null;
+        event?: { id: number; title: string };
+    }) => ({
         breadcrumbs: [
             {
                 title: 'Calendar',
                 href: calendarIndex(pageProps.currentTeam?.slug).url,
             },
+            ...(pageProps.event ? [{ title: pageProps.event.title }] : []),
         ],
     }),
 });
@@ -149,57 +164,6 @@ const months = [
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const { viewMode } = useCalendarViewMode();
-const isYearPickerOpen = ref(false);
-
-const minYear = 1900;
-const maxYear = 2999;
-
-const yearRange = Array.from(
-    { length: maxYear - minYear + 1 },
-    (_, index) => minYear + index,
-);
-
-const yearSearch = ref('');
-const { contains } = useFilter({ sensitivity: 'base' });
-
-const effectiveYearSearch = computed(() => {
-    const value = yearSearch.value.trim();
-
-    if (value === String(currentYear.value) && value.length > 1) {
-        return value.slice(0, -1);
-    }
-
-    return value;
-});
-
-const filteredYears = computed(() =>
-    yearRange.filter((year) =>
-        contains(String(year), effectiveYearSearch.value),
-    ),
-);
-
-function displayYearValue(value: number | undefined): string {
-    return String(value ?? currentYear.value);
-}
-
-function updateCurrentYear(value: unknown): void {
-    if (
-        typeof value === 'number' &&
-        Number.isInteger(value) &&
-        value >= minYear &&
-        value <= maxYear
-    ) {
-        currentYear.value = value;
-    }
-}
-
-function updateYearPickerOpen(isOpen: boolean): void {
-    isYearPickerOpen.value = isOpen;
-
-    if (!isOpen) {
-        yearSearch.value = '';
-    }
-}
 
 function daysInMonth(year: number, month: number): number {
     return new Date(year, month + 1, 0).getDate();
@@ -269,37 +233,6 @@ const dayEventsMap = computed(() => {
     return map;
 });
 
-function prevMonth(): void {
-    if (currentMonth.value === 0 && currentYear.value === minYear) {
-        return;
-    }
-
-    if (currentMonth.value === 0) {
-        currentMonth.value = 11;
-        currentYear.value--;
-    } else {
-        currentMonth.value--;
-    }
-}
-
-function nextMonth(): void {
-    if (currentMonth.value === 11 && currentYear.value === maxYear) {
-        return;
-    }
-
-    if (currentMonth.value === 11) {
-        currentMonth.value = 0;
-        currentYear.value++;
-    } else {
-        currentMonth.value++;
-    }
-}
-
-function goToday(): void {
-    currentYear.value = now.getFullYear();
-    currentMonth.value = now.getMonth();
-}
-
 const dialogsRef = ref<InstanceType<typeof CalendarEventDialogs> | null>(null);
 
 function openCreateDialog(day: number): void {
@@ -313,210 +246,196 @@ function openEditDialog(event: CalendarEventItem): void {
             current_team: currentTeamSlug.value,
             event: event.id,
         }).url,
+        {
+            only: ['event', 'recordLinks', 'recordTags', 'activityHistory'],
+            preserveScroll: true,
+        },
     );
 }
+
+function replaceLoadedEvent(updatedEvent: CalendarEventItem): boolean {
+    const replacedInCalendar = props.calendarEvents?.some(
+        (e) => e.id === updatedEvent.id,
+    );
+    const replacedInPaginated = props.events?.data.some(
+        (e) => e.id === updatedEvent.id,
+    );
+
+    if (!replacedInCalendar && !replacedInPaginated) {
+        return false;
+    }
+
+    const patch = (arr: CalendarEventItem[]) =>
+        arr.map((e) => (e.id === updatedEvent.id ? updatedEvent : e));
+
+    if (replacedInCalendar) {
+        router.replaceProp<EventPageProps>(
+            'calendarEvents',
+            (events: unknown) => {
+                if (!Array.isArray(events)) {
+                    return events;
+                }
+
+                return patch(events as CalendarEventItem[]);
+            },
+        );
+    }
+
+    if (replacedInPaginated) {
+        router.replaceProp<EventPageProps>('events.data', (events: unknown) => {
+            if (!Array.isArray(events)) {
+                return events;
+            }
+
+            return patch(events as CalendarEventItem[]);
+        });
+    }
+
+    return true;
+}
+
+function applyPendingSavedEvent(): void {
+    if (props.event) {
+        return;
+    }
+
+    const event = getPendingSavedItem<CalendarEventItem & { id: number }>();
+
+    if (!event || typeof event.id !== 'number') {
+        clearPendingSavedItem();
+
+        return;
+    }
+
+    replaceLoadedEvent(event);
+    clearPendingSavedItem();
+}
+
+function closeEvent(): void {
+    closeDetail(calendarIndex(currentTeamSlug.value).url);
+}
+
+function onSaved(event: CalendarEventItem): void {
+    rememberSavedItem(event);
+    replaceLoadedEvent(event);
+}
+
+watch(
+    () => [props.event?.id, props.calendarEvents, props.events?.data],
+    () => applyPendingSavedEvent(),
+    { immediate: true, flush: 'post' },
+);
 </script>
 
 <template>
-    <Head title="Calendar" />
+    <Head :title="props.event ? props.event.title : 'Calendar'" />
 
-    <PageHeader title="Calendar" description="View and manage team events.">
-        <template #actions>
-            <Button
-                variant="outline"
-                size="sm"
-                title="Insights"
-                as-child
-                class="cursor-pointer gap-1.5"
-            >
-                <Link :href="calendarInsights(currentTeamSlug).url">
-                    <PieChart class="h-3.5 w-3.5" />
-                    Insights
-                </Link>
-            </Button>
-        </template>
-    </PageHeader>
+    <div v-if="!props.event">
+        <PageHeader title="Calendar" description="View and manage team events.">
+            <template #actions>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    title="Insights"
+                    as-child
+                    class="cursor-pointer gap-1.5"
+                >
+                    <Link :href="calendarInsights(currentTeamSlug).url">
+                        <PieChart class="h-3.5 w-3.5" />
+                        Insights
+                    </Link>
+                </Button>
+            </template>
+        </PageHeader>
 
-    <div class="min-w-0 flex-1 px-4 py-6">
-        <div class="mx-auto w-full max-w-7xl">
-            <div class="mb-4 flex items-center justify-end gap-3">
-                <SearchInput
-                    v-model="searchQuery"
-                    data-testid="calendar-search-input"
-                    placeholder="Search events..."
-                />
-            </div>
-
-            <div class="min-w-0 space-y-4">
-                <div class="flex items-center justify-between">
-                    <div
-                        v-if="viewMode === 'calendar'"
-                        class="flex items-center gap-2"
-                    >
-                        <div
-                            class="flex items-center rounded-md border bg-muted p-0.5"
-                        >
-                            <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                class="cursor-pointer hover:bg-background!"
-                                @click="prevMonth"
-                            >
-                                <ChevronLeft class="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                class="h-7 cursor-pointer hover:bg-background!"
-                                @click="goToday"
-                            >
-                                Today
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                class="cursor-pointer hover:bg-background!"
-                                @click="nextMonth"
-                            >
-                                <ChevronRight class="h-3.5 w-3.5" />
-                            </Button>
-                        </div>
-                        <Select
-                            :model-value="String(currentMonth)"
-                            @update:model-value="currentMonth = Number($event)"
-                        >
-                            <SelectTrigger
-                                class="ml-1 h-7 w-auto gap-4 border-none bg-transparent px-1 text-sm font-semibold shadow-none hover:bg-transparent focus:ring-0 dark:bg-transparent dark:hover:bg-transparent"
-                            >
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="(month, idx) in months"
-                                    :key="idx"
-                                    :value="String(idx)"
-                                >
-                                    {{ month }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <ComboboxRoot
-                            :model-value="currentYear"
-                            @update:model-value="updateCurrentYear"
-                            :open="isYearPickerOpen"
-                            @update:open="updateYearPickerOpen"
-                            :ignore-filter="true"
-                            open-on-focus
-                            class="min-w-0"
-                        >
-                            <ComboboxAnchor
-                                class="flex h-7 items-center gap-1 rounded-md border-none bg-transparent px-1 text-sm font-semibold shadow-none"
-                            >
-                                <ComboboxInput
-                                    v-model="yearSearch"
-                                    :display-value="displayYearValue"
-                                    placeholder="Year"
-                                    class="h-full w-14 bg-transparent text-center outline-none placeholder:text-foreground"
-                                />
-                                <ComboboxTrigger class="cursor-pointer">
-                                    <ChevronsUpDown
-                                        class="size-3.5 shrink-0 opacity-50"
-                                    />
-                                </ComboboxTrigger>
-                            </ComboboxAnchor>
-
-                            <ComboboxPortal>
-                                <ComboboxContent
-                                    position="popper"
-                                    class="z-50 max-h-64 min-w-[var(--reka-combobox-trigger-width)] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
-                                    :side-offset="4"
-                                >
-                                    <ComboboxViewport class="h-56 p-1">
-                                        <ComboboxEmpty
-                                            class="px-2 py-3 text-sm text-muted-foreground"
-                                        >
-                                            No years found.
-                                        </ComboboxEmpty>
-
-                                        <ComboboxVirtualizer
-                                            v-slot="{ option }"
-                                            :options="filteredYears"
-                                            :text-content="
-                                                (value) => String(value)
-                                            "
-                                            :estimate-size="30"
-                                        >
-                                            <ComboboxItem
-                                                :value="option"
-                                                class="relative flex w-full items-center rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
-                                            >
-                                                {{ option }}
-
-                                                <span
-                                                    class="absolute right-2 flex size-3.5 items-center justify-center"
-                                                >
-                                                    <ComboboxItemIndicator>
-                                                        <Check class="size-4" />
-                                                    </ComboboxItemIndicator>
-                                                </span>
-                                            </ComboboxItem>
-                                        </ComboboxVirtualizer>
-                                    </ComboboxViewport>
-                                </ComboboxContent>
-                            </ComboboxPortal>
-                        </ComboboxRoot>
-                    </div>
-
-                    <div class="ml-auto flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            title="Trash"
-                            as-child
-                        >
-                            <Link :href="calendarTrash(currentTeamSlug).url">
-                                <Trash2 class="h-4 w-4" />
-                            </Link>
-                        </Button>
-
-                        <Button
-                            size="icon"
-                            title="Create event"
-                            class="cursor-pointer"
-                            @click="dialogsRef?.openCreateDialogNoDate()"
-                        >
-                            <ListPlus class="h-4 w-4" />
-                        </Button>
-
-                        <CalendarViewToggle />
-                    </div>
+        <div class="min-w-0 flex-1 px-4 py-6">
+            <div class="mx-auto w-full max-w-7xl">
+                <div class="mb-4 flex items-center justify-end gap-3">
+                    <SearchInput
+                        v-model="searchQuery"
+                        data-testid="calendar-search-input"
+                        placeholder="Search events..."
+                    />
                 </div>
 
-                <CalendarGrid
-                    v-if="viewMode === 'calendar'"
-                    :calendar-days="calendarDays"
-                    :days-of-week="daysOfWeek"
-                    :today="today"
-                    :current-year="currentYear"
-                    :current-month="currentMonth"
-                    :day-events-map="dayEventsMap"
-                    :format-date-str="formatDateStr"
-                    :months="months"
-                    :open-create-dialog="openCreateDialog"
-                    :open-edit-dialog="openEditDialog"
-                />
+                <div class="min-w-0 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <CalendarMonthNav
+                            v-if="viewMode === 'calendar'"
+                            :current-month="currentMonth"
+                            :current-year="currentYear"
+                            :months="months"
+                            @update:current-month="currentMonth = $event"
+                            @update:current-year="currentYear = $event"
+                        />
 
-                <InfiniteScroll v-if="viewMode === 'list'" data="events">
-                    <CalendarList
-                        :events="props.events.data"
+                        <div class="ml-auto flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                title="Trash"
+                                as-child
+                            >
+                                <Link
+                                    :href="calendarTrash(currentTeamSlug).url"
+                                >
+                                    <Trash2 class="h-4 w-4" />
+                                </Link>
+                            </Button>
+
+                            <Button
+                                size="icon"
+                                title="Create event"
+                                class="cursor-pointer"
+                                @click="dialogsRef?.openCreateDialogNoDate()"
+                            >
+                                <ListPlus class="h-4 w-4" />
+                            </Button>
+
+                            <CalendarViewToggle />
+                        </div>
+                    </div>
+
+                    <CalendarGrid
+                        v-if="viewMode === 'calendar'"
+                        :calendar-days="calendarDays"
+                        :days-of-week="daysOfWeek"
                         :today="today"
+                        :current-year="currentYear"
+                        :current-month="currentMonth"
+                        :day-events-map="dayEventsMap"
+                        :format-date-str="formatDateStr"
                         :months="months"
+                        :open-create-dialog="openCreateDialog"
                         :open-edit-dialog="openEditDialog"
                     />
-                </InfiniteScroll>
+
+                    <InfiniteScroll
+                        v-if="viewMode === 'list'"
+                        data="events"
+                        :buffer="1200"
+                    >
+                        <CalendarList
+                            :events="props.events.data"
+                            :today="today"
+                            :months="months"
+                            :open-edit-dialog="openEditDialog"
+                        />
+                    </InfiniteScroll>
+                </div>
             </div>
         </div>
+
+        <CalendarEventDialogs ref="dialogsRef" />
     </div>
 
-    <CalendarEventDialogs ref="dialogsRef" />
+    <EventDetailOverlay
+        v-if="props.event"
+        :event="props.event"
+        :record-links="props.recordLinks"
+        :record-tags="props.recordTags"
+        :activity-history="props.activityHistory"
+        @close="closeEvent"
+        @saved="onSaved"
+    />
 </template>

@@ -26,11 +26,8 @@ import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeSubscription } from '@/lib/markdown-serializers';
 import { billingDateLabel } from '@/lib/subscriptions';
 import { taskInputLikeClass } from '@/lib/tasks';
-import {
-    index as subscriptionsIndex,
-    update as updateSubscription,
-} from '@/routes/team/subscriptions';
-import type { ActivityHistoryConfig, SubscriptionItem, Team } from '@/types';
+import { update as updateSubscription } from '@/routes/team/subscriptions';
+import type { ActivityHistoryConfig, SubscriptionItem } from '@/types';
 import type { SubscriptionCategory } from '@/types';
 import type {
     LinkContext,
@@ -56,30 +53,20 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
+type SubscriptionPageProps = PageProps & {
+    subscription?: SubscriptionItem;
+};
+
 const props = defineProps<Props>();
+const emit = defineEmits<{
+    close: [];
+    saved: [subscription: SubscriptionItem];
+}>();
 
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const isEditing = ref(false);
-
-defineOptions({
-    inheritAttrs: false,
-    layout: (layoutProps: {
-        currentTeam?: Team | null;
-        subscription?: { id: number; name: string };
-    }) => ({
-        breadcrumbs: [
-            {
-                title: 'Subscriptions',
-                href: subscriptionsIndex(layoutProps.currentTeam?.slug).url,
-            },
-            {
-                title: layoutProps.subscription?.name ?? 'Subscription',
-            },
-        ],
-    }),
-});
 
 const editName = ref(props.subscription.name);
 const editPrice = ref(props.subscription.price ?? '');
@@ -98,6 +85,9 @@ const editIsActive = ref(props.subscription.isActive);
 const editCategory = ref(props.subscription.category ?? '');
 const isSubmitting = ref(false);
 const editFormRef = ref<HTMLFormElement | null>(null);
+const deleteDialogRef = ref<InstanceType<
+    typeof DeleteSubscriptionDialog
+> | null>(null);
 const displayBillingDateLabel = computed(() =>
     billingDateLabel(props.subscription.isActive),
 );
@@ -130,6 +120,10 @@ function resetEditFields(subscription: SubscriptionItem): void {
     editCategory.value = subscription.category ?? '';
 }
 
+function close(): void {
+    emit('close');
+}
+
 function cancelEdit(): void {
     resetEditFields(props.subscription);
     isEditing.value = false;
@@ -157,9 +151,33 @@ function submitEdit(): void {
             category: editCategory.value || null,
         },
         {
+            only: [
+                'subscription',
+                'recordLinks',
+                'recordTags',
+                'activityHistory',
+            ],
             preserveScroll: true,
-            preserveState: false,
-            onSuccess: () => {
+            preserveState: true,
+            onSuccess: (response) => {
+                const savedSubscription = (
+                    response.props as SubscriptionPageProps
+                ).subscription ?? {
+                    ...props.subscription,
+                    name: editName.value,
+                    price: editPrice.value || null,
+                    currency: editCurrency.value || null,
+                    billingCycle: editBillingCycle.value || null,
+                    nextBillingDate: editNextBillingDate.value || null,
+                    firstBillingDate: editFirstBillingDate.value || null,
+                    url: editUrl.value || null,
+                    description: editDescription.value || null,
+                    notes: editNotes.value || null,
+                    isActive: editIsActive.value,
+                    category: editCategory.value || null,
+                };
+
+                emit('saved', savedSubscription);
                 isEditing.value = false;
             },
             onFinish: () => {
@@ -168,10 +186,6 @@ function submitEdit(): void {
         },
     );
 }
-
-const deleteDialogRef = ref<InstanceType<
-    typeof DeleteSubscriptionDialog
-> | null>(null);
 
 const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
 
@@ -230,8 +244,8 @@ function formatBillingCycle(cycle: string | null | undefined): string {
         <PageHeader
             :title="subscription.name"
             description="Review subscription details and related records."
-            :back-href="subscriptionsIndex(currentTeamSlug).url"
             back-label="Back to subscriptions"
+            :back-handler="close"
         />
 
         <div class="flex-1 px-4 py-6">
@@ -521,7 +535,7 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                 </template>
             </EditorSidebarLayout>
         </div>
-    </div>
 
-    <DeleteSubscriptionDialog ref="deleteDialogRef" />
+        <DeleteSubscriptionDialog ref="deleteDialogRef" />
+    </div>
 </template>

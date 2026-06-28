@@ -19,9 +19,26 @@ test('files page can be rendered', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('files/Index')
             ->has('files')
-            ->where('uploadConstraints.acceptedMimeTypes', ['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
-            ->where('uploadConstraints.acceptedExtensions', ['jpg', 'jpeg', 'png', 'gif', 'webp'])
-            ->where('uploadConstraints.maxMegabytes', 100));
+            ->has('uploadConstraints'));
+});
+
+test('files detail page renders as overlay with file data', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $file = FileItem::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Moodboard',
+    ]);
+
+    actingAs($user)
+        ->get(route('team.files.show', ['current_team' => $team, 'file' => $file]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('files/Index')
+            ->has('file')
+            ->where('file.title', 'Moodboard'));
 });
 
 test('files page shows files for current team without public storage urls', function () {

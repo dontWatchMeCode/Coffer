@@ -470,7 +470,7 @@ test('contact show page includes activity history', function () {
         ->get(route('team.contacts.show', ['current_team' => $team, 'contact' => $contact]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('contacts/Show')
+            ->component('contacts/Index')
             ->has('activityHistory')
             ->where('activityHistory.subject_type', 'contact')
             ->where('activityHistory.subject_id', $contact->id)
@@ -501,7 +501,7 @@ test('contact show page can be rendered', function () {
         ->get(route('team.contacts.show', ['current_team' => $team, 'contact' => $contact]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('contacts/Show')
+            ->component('contacts/Index')
             ->has('contact')
             ->where('contact.id', $contact->id)
             ->where('contact.name', 'Jane Doe')

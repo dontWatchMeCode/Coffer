@@ -10,12 +10,13 @@ interface Props {
     description?: string;
     backHref?: string;
     backLabel?: string;
+    backHandler?: () => void;
 }
 
 const props = defineProps<Props>();
 
 useEventListener('keydown', (event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || !props.backHref) {
+    if (event.key !== 'Escape' || (!props.backHref && !props.backHandler)) {
         return;
     }
 
@@ -29,7 +30,11 @@ useEventListener('keydown', (event: KeyboardEvent) => {
         return;
     }
 
-    router.visit(props.backHref);
+    if (props.backHandler) {
+        props.backHandler();
+    } else if (props.backHref) {
+        router.visit(props.backHref);
+    }
 });
 </script>
 
@@ -40,14 +45,17 @@ useEventListener('keydown', (event: KeyboardEvent) => {
         >
             <div class="flex items-center gap-3">
                 <Button
-                    v-if="backHref"
+                    v-if="backHref || backHandler"
                     variant="ghost"
                     size="icon"
                     as-child
                     class="shrink-0"
                     :title="backLabel ?? 'Go back'"
                 >
-                    <Link :href="backHref">
+                    <a v-if="backHandler" href="#" @click.prevent="backHandler">
+                        <ArrowLeft class="h-4 w-4" />
+                    </a>
+                    <Link v-else :href="backHref">
                         <ArrowLeft class="h-4 w-4" />
                     </Link>
                 </Button>

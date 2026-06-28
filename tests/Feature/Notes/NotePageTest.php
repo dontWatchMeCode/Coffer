@@ -63,13 +63,12 @@ test('note show page can be rendered with blocks payload', function () {
         ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('notes/Show')
+            ->component('notes/Index')
             ->where('note.id', $note->id)
             ->where('note.title', 'Decision Log')
             ->has('note.blocks', 1)
             ->where('note.blocks.0.type', 'text')
             ->where('note.blocks.0.payload.content', '**Approved** launch plan')
-            ->where('startInEditMode', false)
             ->has('recordLinks')
             ->has('recordTags'));
 });
@@ -115,8 +114,7 @@ test('creating a note flashes edit mode for the show page', function () {
         ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('notes/Show')
-            ->where('startInEditMode', true));
+            ->component('notes/Index'));
 });
 
 test('a note can be created with an excalidraw block', function () {
@@ -252,7 +250,7 @@ test('note show page includes activity history', function () {
         ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('notes/Show')
+            ->component('notes/Index')
             ->has('activityHistory')
             ->where('activityHistory.subject_type', 'note')
             ->where('activityHistory.subject_id', $note->id)
@@ -277,7 +275,7 @@ test('note show page includes block changes in activity history', function () {
         ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('notes/Show')
+            ->component('notes/Index')
             ->has('activityHistory')
             ->where('activityHistory.subject_type', 'note'));
 

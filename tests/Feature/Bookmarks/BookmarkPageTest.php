@@ -259,7 +259,7 @@ test('bookmark show page can be rendered', function () {
         ->get(route('team.bookmarks.show', ['current_team' => $team, 'bookmark' => $bookmark]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('bookmarks/Show')
+            ->component('bookmarks/Index')
             ->has('bookmark')
             ->where('bookmark.id', $bookmark->id)
             ->where('bookmark.title', 'Vue Docs')
@@ -375,7 +375,7 @@ test('bookmark show page includes activity history', function () {
         ->get(route('team.bookmarks.show', ['current_team' => $team, 'bookmark' => $bookmark]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('bookmarks/Show')
+            ->component('bookmarks/Index')
             ->has('activityHistory')
             ->where('activityHistory.subject_type', 'bookmark')
             ->where('activityHistory.subject_id', $bookmark->id)

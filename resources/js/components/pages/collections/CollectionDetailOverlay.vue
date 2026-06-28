@@ -21,11 +21,8 @@ import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeCollection } from '@/lib/markdown-serializers';
 import { taskInputLikeClass } from '@/lib/tasks';
 import { formatDateTime } from '@/lib/utils';
-import {
-    index as collectionsIndex,
-    update as updateCollection,
-} from '@/routes/team/collections';
-import type { ActivityHistoryConfig, CollectionItem, Team } from '@/types';
+import { update as updateCollection } from '@/routes/team/collections';
+import type { ActivityHistoryConfig, CollectionItem } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -48,7 +45,15 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
+type CollectionPageProps = PageProps & {
+    collection?: CollectionItem;
+};
+
 const props = defineProps<Props>();
+const emit = defineEmits<{
+    close: [];
+    saved: [collection: CollectionItem];
+}>();
 
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
@@ -98,6 +103,10 @@ watch(
     },
 );
 
+function close(): void {
+    emit('close');
+}
+
 function cancelEdit(): void {
     editTitle.value = props.collection.title;
     editDescription.value = props.collection.description ?? '';
@@ -117,8 +126,23 @@ function submitEdit(): void {
             description: editDescription.value || null,
         },
         {
+            only: [
+                'collection',
+                'recordLinks',
+                'recordTags',
+                'activityHistory',
+            ],
             preserveScroll: true,
-            onSuccess: () => {
+            preserveState: true,
+            onSuccess: (response) => {
+                const savedCollection = (response.props as CollectionPageProps)
+                    .collection ?? {
+                    ...props.collection,
+                    title: editTitle.value,
+                    description: editDescription.value || null,
+                };
+
+                emit('saved', savedCollection);
                 isEditing.value = false;
             },
             onFinish: () => {
@@ -151,24 +175,6 @@ function recordTypeBadge(type: string): string {
 
     return labels[type] ?? type.slice(0, 4).toUpperCase();
 }
-
-defineOptions({
-    inheritAttrs: false,
-    layout: (layoutProps: {
-        currentTeam?: Team | null;
-        collection?: { id: number; title: string };
-    }) => ({
-        breadcrumbs: [
-            {
-                title: 'Collections',
-                href: collectionsIndex(layoutProps.currentTeam?.slug).url,
-            },
-            {
-                title: layoutProps.collection?.title ?? 'Collection',
-            },
-        ],
-    }),
-});
 </script>
 
 <template>
@@ -178,8 +184,8 @@ defineOptions({
         <PageHeader
             :title="collection.title"
             description="Review and maintain a collection of linked records."
-            :back-href="collectionsIndex(currentTeamSlug).url"
             back-label="Back to collections"
+            :back-handler="close"
         />
 
         <div class="flex-1 px-4 py-6">
@@ -401,7 +407,7 @@ defineOptions({
                 </template>
             </EditorSidebarLayout>
         </div>
-    </div>
 
-    <DeleteCollectionDialog ref="deleteDialogRef" />
+        <DeleteCollectionDialog ref="deleteDialogRef" />
+    </div>
 </template>

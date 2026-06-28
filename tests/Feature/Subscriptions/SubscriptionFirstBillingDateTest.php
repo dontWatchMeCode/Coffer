@@ -121,7 +121,7 @@ it('returns first billing date in subscription payload', function () {
     $response = $this->get("/{$this->team->slug}/subscriptions/{$subscription->id}");
 
     $response->assertInertia(fn ($page) => $page
-        ->component('subscriptions/Show')
+        ->component('subscriptions/Index')
         ->where('subscription.firstBillingDate', fn ($value) => str_starts_with((string) $value, '2026-01-15'))
     );
 });

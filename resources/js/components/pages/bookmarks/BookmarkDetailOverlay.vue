@@ -15,11 +15,8 @@ import { Label } from '@/components/ui/label';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeBookmark } from '@/lib/markdown-serializers';
 import { taskInputLikeClass } from '@/lib/tasks';
-import {
-    index as bookmarksIndex,
-    update as updateBookmark,
-} from '@/routes/team/bookmarks';
-import type { ActivityHistoryConfig, BookmarkItem, Team } from '@/types';
+import { update as updateBookmark } from '@/routes/team/bookmarks';
+import type { ActivityHistoryConfig, BookmarkItem } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -42,30 +39,20 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
+type BookmarkPageProps = PageProps & {
+    bookmark?: BookmarkItem;
+};
+
 const props = defineProps<Props>();
+const emit = defineEmits<{
+    close: [];
+    saved: [bookmark: BookmarkItem];
+}>();
 
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const isEditing = ref(false);
-
-defineOptions({
-    inheritAttrs: false,
-    layout: (layoutProps: {
-        currentTeam?: Team | null;
-        bookmark?: { id: number; title: string };
-    }) => ({
-        breadcrumbs: [
-            {
-                title: 'Bookmarks',
-                href: bookmarksIndex(layoutProps.currentTeam?.slug).url,
-            },
-            {
-                title: layoutProps.bookmark?.title ?? 'Bookmark',
-            },
-        ],
-    }),
-});
 
 const editTitle = ref(props.bookmark.title);
 const editUrl = ref(props.bookmark.url);
@@ -73,6 +60,9 @@ const editDescription = ref(props.bookmark.description ?? '');
 const editNotes = ref(props.bookmark.notes ?? '');
 const isSubmitting = ref(false);
 const editFormRef = ref<HTMLFormElement | null>(null);
+const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
+    null,
+);
 
 watch(
     () => props.bookmark,
@@ -88,6 +78,10 @@ function resetEditFields(bookmark: BookmarkItem): void {
     editUrl.value = bookmark.url;
     editDescription.value = bookmark.description ?? '';
     editNotes.value = bookmark.notes ?? '';
+}
+
+function close(): void {
+    emit('close');
 }
 
 function cancelEdit(): void {
@@ -110,9 +104,20 @@ function submitEdit(): void {
             notes: editNotes.value || null,
         },
         {
+            only: ['bookmark', 'recordLinks', 'recordTags', 'activityHistory'],
             preserveScroll: true,
-            preserveState: false,
-            onSuccess: () => {
+            preserveState: true,
+            onSuccess: (response) => {
+                const savedBookmark = (response.props as BookmarkPageProps)
+                    .bookmark ?? {
+                    ...props.bookmark,
+                    title: editTitle.value,
+                    url: editUrl.value,
+                    description: editDescription.value || null,
+                    notes: editNotes.value || null,
+                };
+
+                emit('saved', savedBookmark);
                 isEditing.value = false;
             },
             onFinish: () => {
@@ -121,10 +126,6 @@ function submitEdit(): void {
         },
     );
 }
-
-const deleteDialogRef = ref<InstanceType<typeof DeleteBookmarkDialog> | null>(
-    null,
-);
 
 const { copied, copyError, copyAsMarkdown } = useCopyAsMarkdown();
 
@@ -146,8 +147,8 @@ function handleCopyAsMarkdown(): void {
         <PageHeader
             :title="bookmark.title"
             description="Review bookmark details and related records."
-            :back-href="bookmarksIndex(currentTeamSlug).url"
             back-label="Back to bookmarks"
+            :back-handler="close"
         />
 
         <div class="flex-1 px-4 py-6">
@@ -267,7 +268,7 @@ function handleCopyAsMarkdown(): void {
                 </template>
             </EditorSidebarLayout>
         </div>
-    </div>
 
-    <DeleteBookmarkDialog ref="deleteDialogRef" />
+        <DeleteBookmarkDialog ref="deleteDialogRef" />
+    </div>
 </template>

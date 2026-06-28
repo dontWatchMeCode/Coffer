@@ -70,14 +70,32 @@ class CollectionPageController extends Controller
         ]);
     }
 
-    public function show(Team $currentTeam, int $collection): Response
+    public function show(Request $request, Team $currentTeam, int $collection): Response
     {
         $collection = RecordCollection::query()
             ->whereBelongsTo($currentTeam)
             ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
             ->findOrFail($collection);
 
-        return Inertia::render('collections/Show', [
+        $search = $request->string('search')->toString();
+
+        return Inertia::render('collections/Index', [
+            'collections' => Inertia::optional(fn () => Inertia::scroll(
+                RecordCollection::query()
+                    ->whereBelongsTo($currentTeam)
+                    ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
+                    ->when($search, function ($q) use ($search): void {
+                        $q->where(function ($q) use ($search): void {
+                            $q->search($search, ['title', 'description'])
+                                ->orWhereHas('recordTags', function (Builder $query) use ($search): void {
+                                    $this->whereLikeEscaped($query, 'name', $this->likePattern($search));
+                                });
+                        });
+                    })
+                    ->orderByDesc('updated_at')
+                    ->simplePaginate(25)
+                    ->through(fn (RecordCollection $c): array => $this->collectionPayload($c))
+            )),
             'collection' => $this->collectionPayload($collection),
             'recordLinks' => $this->recordLinksPayload($collection, $currentTeam, includeDrawingData: true),
             'recordTags' => $this->recordTagsPayload($collection, $currentTeam),

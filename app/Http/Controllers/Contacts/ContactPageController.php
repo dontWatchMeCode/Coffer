@@ -78,7 +78,25 @@ class ContactPageController extends Controller
             ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
             ->findOrFail($contact);
 
-        return Inertia::render('contacts/Show', [
+        return Inertia::render('contacts/Index', [
+            'contacts' => Inertia::optional(fn () => Inertia::scroll(
+                Contact::query()
+                    ->whereBelongsTo($currentTeam)
+                    ->when($request->string('search')->toString(), fn ($q, $search) => $q->search($search, ['name', 'address', 'additional_info', 'phone_numbers', 'email_addresses', 'links']))
+                    ->orderBy('name')
+                    ->simplePaginate(25)
+                    ->through(fn (Contact $c): array => [
+                        'id' => $c->id,
+                        'name' => $c->name,
+                        'phoneNumbers' => $c->phone_numbers,
+                        'emailAddresses' => $c->email_addresses,
+                        'links' => $c->links,
+                        'address' => $c->address,
+                        'additionalInfo' => $c->additional_info,
+                        'createdAt' => $c->created_at?->format(\DateTimeInterface::ATOM),
+                        'updatedAt' => $c->updated_at?->format(\DateTimeInterface::ATOM),
+                    ])
+            )),
             'contact' => [
                 'id' => $contact->id,
                 'name' => $contact->name,

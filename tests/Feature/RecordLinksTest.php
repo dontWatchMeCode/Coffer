@@ -590,7 +590,7 @@ test('link activity appears in activity history payload', function () {
         ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note->id]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('notes/Show')
+            ->component('notes/Index')
             ->has('activityHistory')
             ->where('activityHistory.subject_type', 'note')
             ->whereType('activityHistory.total', 'integer'));

@@ -15,8 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { taskInputLikeClass } from '@/lib/tasks';
 import { formatBytes, formatDateTime } from '@/lib/utils';
-import { index as filesIndex, update as updateFile } from '@/routes/team/files';
-import type { ActivityHistoryConfig, FileItem, Team } from '@/types';
+import { update as updateFile } from '@/routes/team/files';
+import type { ActivityHistoryConfig, FileItem } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -39,7 +39,15 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
+type FilePageProps = PageProps & {
+    file?: FileItem;
+};
+
 const props = defineProps<Props>();
+const emit = defineEmits<{
+    close: [];
+    saved: [file: FileItem];
+}>();
 
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
@@ -61,6 +69,10 @@ watch(
     },
 );
 
+function close(): void {
+    emit('close');
+}
+
 function cancelEdit(): void {
     editTitle.value = props.file.title;
     editDescription.value = props.file.description ?? '';
@@ -69,6 +81,12 @@ function cancelEdit(): void {
 
 function submitEdit(): void {
     isSubmitting.value = true;
+
+    const updatedFile: FileItem = {
+        ...props.file,
+        title: editTitle.value,
+        description: editDescription.value || null,
+    };
 
     router.patch(
         updateFile({
@@ -80,9 +98,14 @@ function submitEdit(): void {
             description: editDescription.value || null,
         },
         {
+            only: ['file', 'recordLinks', 'recordTags', 'activityHistory'],
             preserveScroll: true,
             preserveState: true,
-            onSuccess: () => {
+            onSuccess: (response) => {
+                const savedFile =
+                    (response.props as FilePageProps).file ?? updatedFile;
+
+                emit('saved', savedFile);
                 isEditing.value = false;
             },
             onFinish: () => {
@@ -91,24 +114,6 @@ function submitEdit(): void {
         },
     );
 }
-
-defineOptions({
-    inheritAttrs: false,
-    layout: (layoutProps: {
-        currentTeam?: Team | null;
-        file?: { id: number; title: string };
-    }) => ({
-        breadcrumbs: [
-            {
-                title: 'Files',
-                href: filesIndex(layoutProps.currentTeam?.slug).url,
-            },
-            {
-                title: layoutProps.file?.title ?? 'File',
-            },
-        ],
-    }),
-});
 </script>
 
 <template>
@@ -118,8 +123,8 @@ defineOptions({
         <PageHeader
             :title="file.title"
             description="Preview file details and related records."
-            :back-href="filesIndex(currentTeamSlug).url"
             back-label="Back to files"
+            :back-handler="close"
         />
 
         <div class="flex-1 px-4 py-6">
@@ -256,7 +261,7 @@ defineOptions({
                 </template>
             </EditorSidebarLayout>
         </div>
-    </div>
 
-    <DeleteFileDialog ref="deleteDialogRef" />
+        <DeleteFileDialog ref="deleteDialogRef" />
+    </div>
 </template>

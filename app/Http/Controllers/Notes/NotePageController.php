@@ -70,19 +70,36 @@ class NotePageController extends Controller
         ]);
     }
 
-    public function show(Team $currentTeam, int $note): Response
+    public function show(Request $request, Team $currentTeam, int $note): Response
     {
         $note = Note::query()
             ->whereBelongsTo($currentTeam)
             ->with(['recordTags' => fn ($query) => $query->orderBy('name'), 'blocks'])
             ->findOrFail($note);
 
-        return Inertia::render('notes/Show', [
+        $search = $request->string('search')->toString();
+
+        return Inertia::render('notes/Index', [
+            'notes' => Inertia::optional(fn () => Inertia::scroll(
+                Note::query()
+                    ->whereBelongsTo($currentTeam)
+                    ->with(['recordTags' => fn ($query) => $query->orderBy('name')])
+                    ->when($search, function ($q) use ($search): void {
+                        $q->where(function ($q) use ($search): void {
+                            $q->search($search, ['title'])
+                                ->orWhereHas('recordTags', function (Builder $query) use ($search): void {
+                                    $this->whereLikeEscaped($query, 'name', $this->likePattern($search));
+                                });
+                        });
+                    })
+                    ->orderByDesc('updated_at')
+                    ->simplePaginate(25)
+                    ->through(fn (Note $n): array => $this->notePayload($n, includeBlocks: false))
+            )),
             'note' => $this->notePayload($note),
             'recordLinks' => $this->recordLinksPayload($note, $currentTeam),
             'recordTags' => $this->recordTagsPayload($note, $currentTeam),
             'activityHistory' => $this->activityHistoryConfig($note),
-            'startInEditMode' => session()->pull('edit', false),
         ]);
     }
 

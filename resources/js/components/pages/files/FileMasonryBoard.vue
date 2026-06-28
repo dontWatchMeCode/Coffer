@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useWindowVirtualizer } from '@tanstack/vue-virtual';
 import { Download, Image, Trash2 } from 'lucide-vue-next';
-import type { ComponentPublicInstance } from 'vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import EmptyState from '@/components/list/EmptyState.vue';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,9 @@ const props = defineProps<{
 const boardRef = ref<HTMLElement | null>(null);
 const scrollMargin = ref(0);
 const lanes = ref(1);
+const columnWidth = ref(320);
 const gap = 16;
+const cardChrome = 92;
 
 const imageFiles = computed(() => props.files.filter((file) => file.isImage));
 
@@ -32,11 +33,26 @@ function updateScrollMargin(): void {
     scrollMargin.value = boardRef.value?.offsetTop ?? 0;
 }
 
+function updateColumnWidth(): void {
+    const boardWidth = boardRef.value?.clientWidth ?? 0;
+
+    columnWidth.value = Math.max(
+        200,
+        (boardWidth - gap * (lanes.value - 1)) / lanes.value,
+    );
+}
+
 function estimateSize(index: number): number {
     const file = imageFiles.value[index];
     const ratio = file?.width && file.height ? file.height / file.width : 0.75;
 
-    return Math.max(220, Math.min(520, 320 * ratio + 92));
+    return Math.round(columnWidth.value * ratio + cardChrome);
+}
+
+function imageAspectRatio(file: FileItem): string {
+    return file.width && file.height
+        ? `${file.width} / ${file.height}`
+        : '4 / 3';
 }
 
 const virtualizer = useWindowVirtualizer(
@@ -65,26 +81,22 @@ function itemStyle(lane: number, start: number): Record<string, string> {
     };
 }
 
-function measureElement(el: Element | ComponentPublicInstance | null): void {
-    if (el instanceof Element) {
-        virtualizer.value.measureElement(el);
-    }
-}
-
-function measureVirtualizer(): void {
+function handleResize(): void {
+    updateLanes();
+    updateScrollMargin();
+    updateColumnWidth();
     virtualizer.value.measure();
 }
 
 onMounted(() => {
     updateLanes();
     updateScrollMargin();
-    window.addEventListener('resize', updateLanes);
-    window.addEventListener('resize', updateScrollMargin);
+    updateColumnWidth();
+    window.addEventListener('resize', handleResize);
 });
 
 onUnmounted(() => {
-    window.removeEventListener('resize', updateLanes);
-    window.removeEventListener('resize', updateScrollMargin);
+    window.removeEventListener('resize', handleResize);
 });
 </script>
 
@@ -94,7 +106,6 @@ onUnmounted(() => {
             <div
                 v-for="virtualItem in virtualItems"
                 :key="String(virtualItem.key)"
-                :ref="measureElement"
                 :data-index="virtualItem.index"
                 :style="itemStyle(virtualItem.lane, virtualItem.start)"
             >
@@ -102,13 +113,19 @@ onUnmounted(() => {
                     class="group mb-4 cursor-pointer overflow-hidden rounded-xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-card/50"
                     @click="navigateToFile(imageFiles[virtualItem.index])"
                 >
-                    <div class="relative bg-muted">
+                    <div
+                        class="relative bg-muted"
+                        :style="{
+                            aspectRatio: imageAspectRatio(
+                                imageFiles[virtualItem.index],
+                            ),
+                        }"
+                    >
                         <img
                             :src="imageFiles[virtualItem.index].previewUrl"
                             :alt="imageFiles[virtualItem.index].title"
                             loading="lazy"
-                            class="h-auto w-full object-cover"
-                            @load="measureVirtualizer"
+                            class="h-full w-full object-cover"
                         />
                         <div
                             class="absolute inset-x-0 top-0 flex justify-end gap-1 bg-gradient-to-b from-black/45 to-transparent p-2 opacity-0 transition group-hover:opacity-100"

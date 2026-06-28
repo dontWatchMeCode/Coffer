@@ -12,8 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeNote } from '@/lib/markdown-serializers';
-import { index as notesIndex, update as updateNote } from '@/routes/team/notes';
-import type { ActivityHistoryConfig, NoteItem, RteBlock, Team } from '@/types';
+import { update as updateNote } from '@/routes/team/notes';
+import type { ActivityHistoryConfig, NoteItem, RteBlock } from '@/types';
 import type {
     LinkContext,
     LinkEndpoints,
@@ -23,7 +23,6 @@ import type { RecordTag, TagContext, TagEndpoints } from '@/types/record-tags';
 
 type Props = {
     note: NoteItem;
-    startInEditMode?: boolean;
     recordLinks?: {
         links: LinkRecord[];
         context: LinkContext;
@@ -37,13 +36,21 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
+type NotePageProps = PageProps & {
+    note?: NoteItem;
+};
+
 const props = defineProps<Props>();
+const emit = defineEmits<{
+    close: [];
+    saved: [note: NoteItem];
+}>();
 
 const page = usePage<PageProps>();
 const errors = computed(() => page.props.errors ?? {});
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 
-const isEditing = ref(props.startInEditMode === true);
+const isEditing = ref(false);
 const editTitle = ref(props.note.title);
 const editBlocks = ref<RteBlock[]>(
     JSON.parse(JSON.stringify(props.note.blocks ?? [])),
@@ -74,6 +81,10 @@ watch(
     },
 );
 
+function close(): void {
+    emit('close');
+}
+
 function cancelEdit(): void {
     editTitle.value = props.note.title;
     editBlocks.value = JSON.parse(JSON.stringify(props.note.blocks ?? []));
@@ -98,8 +109,17 @@ function submitEdit(): void {
             })),
         },
         {
+            only: ['note', 'recordLinks', 'recordTags', 'activityHistory'],
             preserveScroll: true,
-            onSuccess: () => {
+            preserveState: true,
+            onSuccess: (response) => {
+                const savedNote = (response.props as NotePageProps).note ?? {
+                    ...props.note,
+                    title: editTitle.value,
+                    blocks: editBlocks.value,
+                };
+
+                emit('saved', savedNote);
                 isEditing.value = false;
             },
             onFinish: () => {
@@ -108,24 +128,6 @@ function submitEdit(): void {
         },
     );
 }
-
-defineOptions({
-    inheritAttrs: false,
-    layout: (layoutProps: {
-        currentTeam?: Team | null;
-        note?: { id: number; title: string };
-    }) => ({
-        breadcrumbs: [
-            {
-                title: 'Notes',
-                href: notesIndex(layoutProps.currentTeam?.slug).url,
-            },
-            {
-                title: layoutProps.note?.title ?? 'Note',
-            },
-        ],
-    }),
-});
 </script>
 
 <template>
@@ -135,8 +137,8 @@ defineOptions({
         <PageHeader
             :title="note.title"
             description="Edit note details and related records."
-            :back-href="notesIndex(currentTeamSlug).url"
             back-label="Back to notes"
+            :back-handler="close"
         />
 
         <div class="flex-1 px-4 py-6">
@@ -200,7 +202,7 @@ defineOptions({
                 </template>
             </EditorSidebarLayout>
         </div>
-    </div>
 
-    <DeleteNoteDialog ref="deleteDialogRef" />
+        <DeleteNoteDialog ref="deleteDialogRef" />
+    </div>
 </template>

@@ -9,6 +9,7 @@ import CommentsSection from '@/components/pages/tasks/CommentsSection.vue';
 import DeleteTaskDialog from '@/components/pages/tasks/DeleteTaskDialog.vue';
 import TaskEditForm from '@/components/pages/tasks/TaskEditForm.vue';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
+import { useListDetailOverlay } from '@/composables/useListDetailOverlay';
 import { serializeTask } from '@/lib/markdown-serializers';
 import { index, show, edit } from '@/routes/team/tasks/index';
 import type {
@@ -67,6 +68,12 @@ const selectedProjectId = ref(props.project.id.toString());
 const deleteDialogOpen = ref(false);
 const taskEditFormRef = ref<InstanceType<typeof TaskEditForm> | null>(null);
 const isSubmitting = ref(false);
+
+const { closeDetail } = useListDetailOverlay(
+    'tasks-ticket',
+    currentTeamSlug.value,
+    false,
+);
 
 defineOptions({
     inheritAttrs: false,
@@ -136,6 +143,15 @@ function handleCopyAsMarkdown(): void {
         ),
     );
 }
+
+function closeTask(): void {
+    closeDetail(
+        show({
+            current_team: currentTeamSlug.value,
+            project: props.project.id,
+        }).url,
+    );
+}
 </script>
 
 <template>
@@ -145,12 +161,7 @@ function handleCopyAsMarkdown(): void {
         <PageHeader
             :title="task.title"
             :subtitle="`#${task.id}`"
-            :back-href="
-                show({
-                    current_team: currentTeamSlug,
-                    project: project.id,
-                }).url
-            "
+            :back-handler="closeTask"
             back-label="Back to project"
         />
 

@@ -92,7 +92,7 @@ function submitEdit(entry: LogEntryItem): void {
 </script>
 
 <template>
-    <InfiniteScroll data="entries">
+    <InfiniteScroll data="entries" :buffer="1200">
         <div
             v-if="entriesWithSeparators.length > 0"
             class="relative space-y-5 pl-7 before:absolute before:top-7 before:bottom-2 before:left-2 before:w-px before:bg-border"
