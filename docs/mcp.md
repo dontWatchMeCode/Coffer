@@ -19,6 +19,7 @@ The app exposes a team-scoped MCP records server for external clients and agents
 - `bookmark`
 - `note`
 - `collection`
+- `file`
 
 ## Tools
 
@@ -38,6 +39,10 @@ The app exposes a team-scoped MCP records server for external clients and agents
 ## Notes Through MCP
 
 Use `format: "text"` for Markdown notes and `format: "excalidraw"` for drawing notes.
+
+## Files Through MCP
+
+Use optional `content` (base64-encoded bytes) to upload a file when creating or updating. Metadata-only creates/updates are supported without `content`. The MCP server never exposes raw file bytes or public storage URLs.
 
 ## Permission Model
 

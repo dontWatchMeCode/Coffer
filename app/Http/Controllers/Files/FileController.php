@@ -76,6 +76,7 @@ class FileController extends Controller
             ->findOrFail($file);
 
         $this->authorize('view', $file);
+        abort_if($file->disk === null || $file->path === null, 404);
         abort_unless(Storage::disk($file->disk)->exists($file->path), 404);
 
         $response = response()->file(Storage::disk($file->disk)->path($file->path), $this->headers($file));
@@ -92,6 +93,7 @@ class FileController extends Controller
             ->findOrFail($file);
 
         $this->authorize('view', $file);
+        abort_if($file->disk === null || $file->path === null, 404);
         abort_unless(Storage::disk($file->disk)->exists($file->path), 404);
 
         $response = response()->download(Storage::disk($file->disk)->path($file->path), $file->original_name, $this->headers($file));

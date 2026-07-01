@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\TaskStatus;
+use App\Http\Requests\Files\SaveFileRequest;
 use App\Mcp\Servers\RecordsServer;
 use App\Mcp\Tools\AddRecordTagsTool;
 use App\Mcp\Tools\AddTaskCommentTool;
@@ -19,6 +20,7 @@ use App\Mcp\Tools\UpdateRecordTool;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\FileItem;
 use App\Models\LogEntry;
 use App\Models\McpToken;
 use App\Models\Note;
@@ -29,6 +31,8 @@ use App\Models\Tag;
 use App\Models\Task;
 use App\Models\TaskComment;
 use App\Models\User;
+use App\Services\McpFileContent;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     app()->forgetInstance(McpToken::class);
@@ -44,6 +48,7 @@ test('the records mcp server describes its supported schema', function () {
     RecordsServer::actingAs($user)->tool(RecordsSchemaTool::class)
         ->assertOk()
         ->assertSee('calendar_event')
+        ->assertSee('file')
         ->assertSee('block')
         ->assertSee('relationships')
         ->assertSee('tags');
@@ -62,6 +67,7 @@ test('records can be created for each supported type through mcp', function (str
         'note' => ['title' => $expected, 'blocks' => [['type' => 'text', 'position' => 0, 'payload' => ['content' => 'MCP body']]]],
         'collection' => ['title' => $expected, 'description' => 'MCP collection'],
         'log_entry' => ['body' => $expected],
+        'file' => ['title' => $expected, 'original_name' => 'test.pdf', 'mime_type' => 'application/pdf', 'size' => 1024],
     };
 
     RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
@@ -78,6 +84,7 @@ test('records can be created for each supported type through mcp', function (str
     ['note', 'MCP note', Note::class],
     ['collection', 'MCP collection', RecordCollection::class],
     ['log_entry', 'MCP log entry', LogEntry::class],
+    ['file', 'MCP file', FileItem::class],
 ]);
 
 test('records can be searched read updated and deleted through mcp', function () {
@@ -112,6 +119,429 @@ test('records can be searched read updated and deleted through mcp', function ()
     ])->assertOk()->assertSee('deleted');
 
     $this->assertSoftDeleted('notes', ['id' => $note->id]);
+});
+
+test('file records can be searched read updated and deleted through mcp', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => ['title' => 'Alpha MCP File', 'original_name' => 'doc.pdf', 'mime_type' => 'application/pdf', 'size' => 2048],
+    ])->assertOk()->assertSee('Alpha MCP File');
+
+    $file = FileItem::query()->where('title', 'Alpha MCP File')->firstOrFail();
+
+    RecordsServer::actingAs($user)->tool(SearchRecordsTool::class, [
+        'query' => 'Alpha MCP',
+        'type' => 'file',
+    ])->assertOk()->assertSee('Alpha MCP File');
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'file',
+        'id' => $file->id,
+    ])->assertOk()->assertSee('Alpha MCP File');
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'file',
+        'id' => $file->id,
+        'data' => ['title' => 'Updated MCP File'],
+    ])->assertOk()->assertSee('Updated MCP File');
+
+    RecordsServer::actingAs($user)->tool(DeleteRecordTool::class, [
+        'type' => 'file',
+        'id' => $file->id,
+    ])->assertOk()->assertSee('deleted');
+
+    $this->assertSoftDeleted('file_items', ['id' => $file->id]);
+});
+
+test('mcp file payload does not expose disk or path', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $file = FileItem::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Sensitive File',
+        'disk' => 'private_s3',
+        'path' => 'secrets/classified.pdf',
+    ]);
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'file',
+        'id' => $file->id,
+    ])->assertOk()
+        ->assertDontSee('private_s3')
+        ->assertDontSee('secrets/classified')
+        ->assertDontSee('disk')
+        ->assertDontSee('path');
+});
+
+test('mcp search excludes file records when files feature is disabled', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $team->forceFill([
+        'feature_settings' => array_merge($team->featureSettings(), ['files' => false]),
+    ])->save();
+
+    FileItem::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Hidden Disabled File',
+    ]);
+
+    RecordsServer::actingAs($user)->tool(SearchRecordsTool::class, [
+        'query' => 'Hidden Disabled',
+    ])->assertOk()->assertDontSee('Hidden Disabled File');
+});
+
+test('mcp search excludes file records when files feature is disabled via type specific search', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $team->forceFill([
+        'feature_settings' => array_merge($team->featureSettings(), ['files' => false]),
+    ])->save();
+
+    RecordsServer::actingAs($user)->tool(SearchRecordsTool::class, [
+        'query' => 'anything',
+        'type' => 'file',
+    ])->assertHasErrors(['Permission denied.']);
+});
+
+test('mcp file token permission gating blocks access when files ability is none', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $file = FileItem::factory()->create(['team_id' => $team->id, 'title' => 'Blocked File']);
+
+    $token = McpToken::factory()->create([
+        'user_id' => $user->id,
+        'team_id' => $team->id,
+        'abilities' => [
+            'collections' => 'none',
+            'notes' => 'none',
+            'bookmarks' => 'none',
+            'contacts' => 'none',
+            'calendar' => 'none',
+            'tasks' => 'none',
+            'task_projects' => ['mode' => 'all', 'ids' => []],
+            'log_entries' => 'none',
+            'files' => 'none',
+        ],
+    ])->load('team');
+
+    app()->instance(McpToken::class, $token);
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'file',
+        'id' => $file->id,
+    ])->assertHasErrors(['Permission denied.']);
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => ['title' => 'Denied File'],
+    ])->assertHasErrors();
+});
+
+test('mcp file token write permission allows create and read', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $token = McpToken::factory()->create([
+        'user_id' => $user->id,
+        'team_id' => $team->id,
+        'abilities' => [
+            'collections' => 'none',
+            'notes' => 'none',
+            'bookmarks' => 'none',
+            'contacts' => 'none',
+            'calendar' => 'none',
+            'tasks' => 'none',
+            'task_projects' => ['mode' => 'all', 'ids' => []],
+            'log_entries' => 'none',
+            'files' => 'write',
+        ],
+    ])->load('team');
+
+    app()->instance(McpToken::class, $token);
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => ['title' => 'Allowed MCP File', 'original_name' => 'test.jpg', 'mime_type' => 'image/jpeg', 'size' => 512],
+    ])->assertOk()->assertSee('Allowed MCP File');
+
+    $file = FileItem::query()->where('title', 'Allowed MCP File')->firstOrFail();
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'file',
+        'id' => $file->id,
+    ])->assertOk()->assertSee('Allowed MCP File');
+});
+
+test('mcp can create file records with base64 content', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $pngBytes = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    );
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => [
+            'title' => 'Uploaded MCP Image',
+            'original_name' => 'pixel.png',
+            'content' => base64_encode($pngBytes),
+        ],
+    ])->assertOk()->assertSee('Uploaded MCP Image');
+
+    $file = FileItem::query()->where('title', 'Uploaded MCP Image')->firstOrFail();
+
+    expect($file->disk)->toBe(McpFileContent::DISK)
+        ->and($file->path)->toStartWith('files/'.$team->id.'/')
+        ->and($file->original_name)->toBe('pixel.png')
+        ->and($file->mime_type)->toBe('image/png')
+        ->and($file->size)->toBeGreaterThan(0)
+        ->and($file->width)->toBe(1)
+        ->and($file->height)->toBe(1);
+
+    Storage::disk(McpFileContent::DISK)->assertExists($file->path);
+});
+
+test('mcp can create file records with data uri content', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+
+    $pngBytes = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    );
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => [
+            'title' => 'Data URI File',
+            'original_name' => 'pixel.png',
+            'content' => 'data:image/png;base64,'.base64_encode($pngBytes),
+        ],
+    ])->assertOk()->assertSee('Data URI File');
+
+    $file = FileItem::query()->where('title', 'Data URI File')->firstOrFail();
+
+    expect($file->mime_type)->toBe('image/png');
+});
+
+test('mcp rejects file create with invalid base64 content', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => [
+            'title' => 'Bad File',
+            'content' => 'not valid base64 ***',
+        ],
+    ])->assertHasErrors(['File content must be valid base64 or data URI.']);
+
+    expect(FileItem::query()->count())->toBe(0);
+});
+
+test('mcp rejects file create with oversized content', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+
+    $oversizedBytes = str_repeat('a', SaveFileRequest::MAX_UPLOAD_KILOBYTES * 1024 + 1);
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => [
+            'title' => 'Oversized File',
+            'content' => base64_encode($oversizedBytes),
+        ],
+    ])->assertHasErrors(['The file must be 100 MB or smaller.']);
+
+    expect(FileItem::query()->count())->toBe(0);
+});
+
+test('mcp rejects file create with unsupported mime type', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+
+    $svgBytes = '<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"></svg>';
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => [
+            'title' => 'SVG File',
+            'content' => base64_encode($svgBytes),
+        ],
+    ])->assertHasErrors(['The file must be a JPEG, PNG, GIF, or WebP file.']);
+
+    expect(FileItem::query()->count())->toBe(0);
+});
+
+test('mcp file update can replace bytes', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+
+    $pngBytes = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    );
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => [
+            'title' => 'Replaceable File',
+            'original_name' => 'old.png',
+            'content' => base64_encode($pngBytes),
+        ],
+    ])->assertOk();
+
+    $file = FileItem::query()->where('title', 'Replaceable File')->firstOrFail();
+    $oldPath = $file->path;
+
+    Storage::disk(McpFileContent::DISK)->assertExists($oldPath);
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'file',
+        'id' => $file->id,
+        'data' => [
+            'title' => 'Replaced File',
+            'original_name' => 'new.png',
+            'content' => base64_encode($pngBytes),
+        ],
+    ])->assertOk()->assertSee('Replaced File');
+
+    $file->refresh();
+
+    expect($file->title)->toBe('Replaced File')
+        ->and($file->mime_type)->toBe('image/png')
+        ->and($file->path)->not->toBe($oldPath);
+
+    Storage::disk(McpFileContent::DISK)->assertExists($file->path);
+    Storage::disk(McpFileContent::DISK)->assertMissing($oldPath);
+});
+
+test('mcp file update without content preserves existing bytes', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+
+    $pngBytes = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    );
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => [
+            'title' => 'Preserved File',
+            'original_name' => 'preserved.png',
+            'content' => base64_encode($pngBytes),
+        ],
+    ])->assertOk();
+
+    $file = FileItem::query()->where('title', 'Preserved File')->firstOrFail();
+    $originalPath = $file->path;
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'file',
+        'id' => $file->id,
+        'data' => ['title' => 'Updated Title Only'],
+    ])->assertOk();
+
+    $file->refresh();
+
+    expect($file->title)->toBe('Updated Title Only')
+        ->and($file->path)->toBe($originalPath);
+
+    Storage::disk(McpFileContent::DISK)->assertExists($originalPath);
+});
+
+test('mcp file payload does not expose content field', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+
+    $pngBytes = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    );
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => [
+            'title' => 'Private Content File',
+            'content' => base64_encode($pngBytes),
+        ],
+    ])->assertOk()->assertDontSee('content')
+        ->assertDontSee(base64_encode($pngBytes));
+});
+
+test('mcp file create overrides client mime_type with detected value', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+
+    $pngBytes = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    );
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => [
+            'title' => 'Lying MIME File',
+            'original_name' => 'fake.jpg',
+            'mime_type' => 'image/jpeg',
+            'content' => base64_encode($pngBytes),
+        ],
+    ])->assertOk();
+
+    $file = FileItem::query()->where('title', 'Lying MIME File')->firstOrFail();
+
+    expect($file->mime_type)->toBe('image/png')
+        ->and($file->original_name)->toBe('fake.jpg');
+});
+
+test('mcp file update rejects invalid base64 content', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => ['title' => 'Valid File', 'original_name' => 'valid.pdf', 'mime_type' => 'application/pdf', 'size' => 12345],
+    ])->assertOk();
+
+    $file = FileItem::query()->where('title', 'Valid File')->firstOrFail();
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'file',
+        'id' => $file->id,
+        'data' => ['content' => 'not valid base64 ***'],
+    ])->assertHasErrors(['File content must be valid base64 or data URI.']);
+
+    expect($file->fresh()->path)->toBeNull();
+});
+
+test('mcp file metadata-only create does not write to storage', function () {
+    Storage::fake(McpFileContent::DISK);
+
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'file',
+        'data' => ['title' => 'Metadata Only', 'original_name' => 'meta.pdf', 'mime_type' => 'application/pdf', 'size' => 12345],
+    ])->assertOk();
+
+    $file = FileItem::query()->where('title', 'Metadata Only')->firstOrFail();
+
+    expect($file->disk)->toBeNull()
+        ->and($file->path)->toBeNull();
 });
 
 test('mcp search excludes records for disabled team features', function () {

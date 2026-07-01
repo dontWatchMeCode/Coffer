@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Http\Requests\Files\SaveFileRequest;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Team;
@@ -27,6 +28,7 @@ class McpRecordValidator
             'note' => ['title', 'blocks'],
             'collection' => ['title', 'description'],
             'log_entry' => ['body', 'category'],
+            'file' => ['title', 'description', 'original_name', 'mime_type', 'size', 'width', 'height', 'content'],
             default => [],
         };
     }
@@ -45,6 +47,7 @@ class McpRecordValidator
             'note' => ['title'],
             'collection' => ['title'],
             'log_entry' => ['body'],
+            'file' => ['title'],
             default => [],
         };
     }
@@ -57,6 +60,12 @@ class McpRecordValidator
         return match ($type) {
             'note' => [
                 'blocks' => 'Array of blocks. Each block: {type: "text"|"excalidraw"|"mermaid", position: int, payload: {content: "markdown"} or {scene: {...}} or {content: "mermaid code"}}.',
+            ],
+            'file' => [
+                'content' => 'Optional base64-encoded file bytes. Data URI format is also accepted.',
+                'original_name' => 'Used as display name and filename seed when content is provided.',
+                'size' => 'Auto-populated from decoded bytes when content is provided.',
+                'mime_type' => 'Auto-detected from decoded bytes when content is provided.',
             ],
             default => [],
         };
@@ -136,6 +145,16 @@ class McpRecordValidator
                 'body' => [...$required('required'), 'string', 'max:5000'],
                 'category' => [...$optional(), 'nullable', 'string', 'max:80'],
             ],
+            'file' => [
+                'title' => [...$required('required'), 'string', 'max:255'],
+                'description' => [...$optional(), 'nullable', 'string', 'max:5000'],
+                'original_name' => [...$optional(), 'nullable', 'string', 'max:255'],
+                'mime_type' => [...$optional(), 'nullable', 'string', 'max:127'],
+                'size' => [...$optional(), 'nullable', 'integer', 'min:0'],
+                'width' => [...$optional(), 'nullable', 'integer', 'min:0'],
+                'height' => [...$optional(), 'nullable', 'integer', 'min:0'],
+                'content' => [...$optional(), 'nullable', 'string', 'max:'.(int) ceil(SaveFileRequest::MAX_UPLOAD_KILOBYTES * 1024 * 4 / 3 + 500)],
+            ],
             default => [],
         };
     }
@@ -145,6 +164,44 @@ class McpRecordValidator
         if ($type === 'subscription') {
             $validator->sometimes('first_billing_date', 'before:next_billing_date', fn ($input): bool => $input->first_billing_date !== null
                 && $input->next_billing_date !== null);
+        }
+
+        if ($type === 'file') {
+            $validator->after(function (Validator $validator): void {
+                $data = $validator->getData();
+
+                if (! isset($data['content']) || $data['content'] === '') {
+                    return;
+                }
+
+                $encodedMaxLen = (int) ceil(SaveFileRequest::MAX_UPLOAD_KILOBYTES * 1024 * 4 / 3 + 500);
+
+                if (strlen((string) $data['content']) > $encodedMaxLen) {
+                    $validator->errors()->add('content', 'The file must be 100 MB or smaller.');
+
+                    return;
+                }
+
+                $decoded = McpFileContent::decodeBase64($data['content']);
+
+                if ($decoded === null) {
+                    $validator->errors()->add('content', 'File content must be valid base64 or data URI.');
+
+                    return;
+                }
+
+                if (strlen($decoded) > SaveFileRequest::MAX_UPLOAD_KILOBYTES * 1024) {
+                    $validator->errors()->add('content', 'The file must be 100 MB or smaller.');
+
+                    return;
+                }
+
+                $mimeType = McpFileContent::detectMimeType($decoded);
+
+                if (! in_array($mimeType, SaveFileRequest::ACCEPTED_IMAGE_MIME_TYPES, true)) {
+                    $validator->errors()->add('content', 'The file must be a JPEG, PNG, GIF, or WebP file.');
+                }
+            });
         }
     }
 
@@ -175,6 +232,10 @@ class McpRecordValidator
         return match ($type) {
             'note' => [
                 'blocks.*.type.in' => 'Block type must be "text", "excalidraw", or "mermaid".',
+            ],
+            'file' => [
+                'size.min' => 'File size must be a non-negative integer.',
+                'content.string' => 'File content must be a valid string.',
             ],
             default => [],
         };

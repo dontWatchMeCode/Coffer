@@ -13,7 +13,7 @@ use Laravel\Mcp\Request;
 class McpRecordResolver
 {
     /** @var list<string> */
-    public const RECORD_TYPES = ['task', 'calendar_event', 'contact', 'bookmark', 'subscription', 'note', 'collection', 'log_entry'];
+    public const RECORD_TYPES = ['task', 'calendar_event', 'contact', 'bookmark', 'subscription', 'note', 'collection', 'log_entry', 'file'];
 
     /**
      * @return class-string<Model>|null

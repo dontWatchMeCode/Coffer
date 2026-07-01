@@ -39,7 +39,9 @@ class FileItem extends Model implements LinkableRecord
                 return;
             }
 
-            Storage::disk($fileItem->disk)->delete($fileItem->path);
+            if ($fileItem->disk !== null && $fileItem->path !== null) {
+                Storage::disk($fileItem->disk)->delete($fileItem->path);
+            }
         });
     }
 
@@ -54,7 +56,9 @@ class FileItem extends Model implements LinkableRecord
 
     public function isImage(): bool
     {
-        return str_starts_with($this->mime_type, 'image/');
+        $mimeType = (string) $this->mime_type;
+
+        return str_starts_with($mimeType, 'image/');
     }
 
     /**

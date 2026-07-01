@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Contracts\LinkableRecord;
+use App\Models\FileItem;
 use App\Models\Note;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Model;
@@ -23,7 +24,11 @@ class McpRecordPayload
 
         $type = McpRecordResolver::typeForClass($model::class);
         $fields = McpRecordValidator::fieldsFor($type);
-        $dataFields = $model instanceof Note ? array_diff($fields, ['blocks']) : $fields;
+        $dataFields = match (true) {
+            $model instanceof Note => array_diff($fields, ['blocks']),
+            $model instanceof FileItem => array_diff($fields, ['content']),
+            default => $fields,
+        };
         $data = Arr::only($model->toArray(), $dataFields);
 
         if ($model instanceof Note && in_array('blocks', $fields, true)) {

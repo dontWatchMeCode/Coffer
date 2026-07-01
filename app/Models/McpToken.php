@@ -32,6 +32,7 @@ class McpToken extends Model
         'calendar_event' => 'calendar',
         'task' => 'tasks',
         'log_entry' => 'log_entries',
+        'file' => 'files',
     ];
 
     public const array PERMISSION_LEVELS = ['none', 'read', 'write'];

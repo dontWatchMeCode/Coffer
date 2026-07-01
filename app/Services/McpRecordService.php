@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Concerns\EscapesLikeWildcards;
 use App\Contracts\LinkableRecord;
+use App\Models\FileItem;
 use App\Models\Note;
 use App\Models\RecordLink;
 use App\Models\Subscription;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Laravel\Mcp\Request;
@@ -220,8 +222,35 @@ class McpRecordService
             unset($data['category']);
         }
 
-        /** @var Model $model */
-        $model = $class::create($data);
+        $storedPath = null;
+
+        if ($validated['type'] === 'file' && filled($data['content'] ?? null)) {
+            $fileAttributes = app(McpFileContent::class)->storeForTeam(
+                $team,
+                (string) $data['content'],
+                $data['original_name'] ?? null,
+            );
+
+            unset($data['content']);
+
+            $data = [
+                ...$data,
+                ...$fileAttributes,
+            ];
+
+            $storedPath = $fileAttributes['path'];
+        }
+
+        try {
+            /** @var Model $model */
+            $model = $class::create($data);
+        } catch (\Throwable $throwable) {
+            if ($storedPath !== null) {
+                Storage::disk(McpFileContent::DISK)->delete($storedPath);
+            }
+
+            throw $throwable;
+        }
 
         if ($validated['type'] === 'note' && ! empty($blocks)) {
             assert($model instanceof Note);
@@ -286,6 +315,32 @@ class McpRecordService
             unset($data['blocks']);
         }
 
+        $newPath = null;
+        $oldDisk = null;
+        $oldPath = null;
+
+        if ($validated['type'] === 'file' && filled($data['content'] ?? null)) {
+            assert($model instanceof FileItem);
+
+            $oldDisk = $model->disk;
+            $oldPath = $model->path;
+
+            $fileAttributes = app(McpFileContent::class)->storeForTeam(
+                $team,
+                (string) $data['content'],
+                $data['original_name'] ?? $model->original_name,
+            );
+
+            unset($data['content']);
+
+            $data = [
+                ...$data,
+                ...$fileAttributes,
+            ];
+
+            $newPath = $fileAttributes['path'];
+        }
+
         $model->fill($data);
 
         if ($validated['type'] === 'subscription' && array_key_exists('category', $data)) {
@@ -295,7 +350,19 @@ class McpRecordService
             unset($data['category']);
         }
 
-        $model->save();
+        try {
+            $model->save();
+        } catch (\Throwable $throwable) {
+            if ($newPath !== null) {
+                Storage::disk(McpFileContent::DISK)->delete($newPath);
+            }
+
+            throw $throwable;
+        }
+
+        if ($newPath !== null && $oldDisk !== null && $oldPath !== null) {
+            Storage::disk($oldDisk)->delete($oldPath);
+        }
 
         if ($validated['type'] === 'note' && $blocks !== null) {
             assert($model instanceof Note);

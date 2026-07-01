@@ -1,6 +1,6 @@
 # Main Pages
 
-The main team pages are Tasks, Calendar, Contacts, Bookmarks, Notes, Log, and Collections.
+The main team pages are Tasks, Calendar, Contacts, Bookmarks, Notes, Log, Files, and Collections.
 
 ## Shared Record Tools
 
@@ -154,6 +154,30 @@ Search and MCP:
 - Global search includes log entries (backend; frontend rendering not yet wired).
 - Log entry search uses the `g` prefix.
 - MCP tokens can allow log entry read/write access.
+
+## Files
+
+Files manage private, team-scoped file metadata.
+
+Pages:
+
+- File list / grid: view and create files.
+- File detail: review and edit file metadata and related records.
+- File trash: view, restore, or permanently delete deleted files.
+
+Features:
+
+- Files support title, description, original name, MIME type, size, dimensions, and optional private byte storage.
+- Files belong to the active team.
+- Files can use shared tags and related-record links.
+- File changes can appear in activity history.
+
+Search and MCP:
+
+- Global search includes files.
+- File search uses the `f` prefix.
+- MCP tokens can allow file read/write access.
+- MCP create/update supports optional `content` (base64-encoded bytes); raw bytes and public URLs are never exposed.
 
 ## Collections
 

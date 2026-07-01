@@ -67,6 +67,11 @@ This is a concise feature map of the app.
 - Log captures quick team notes and thoughts with an optional category.
 - Details: [Log](pages.md#log)
 
+## Files
+
+- Files manage private, team-scoped file metadata with optional byte storage.
+- Details: [Files](pages.md#files)
+
 ## Collections
 
 - Collections group related team records through shared links.
@@ -77,7 +82,7 @@ This is a concise feature map of the app.
 - Global search covers configured record types.
 - Search supports prefixes for narrowing results.
 - Link candidate search uses the same record registry.
-- Prefixes: `t` tasks, `c` contacts, `e` events, `p` projects, `b` bookmarks, `n` notes, `s` subscriptions, `g` log entries, `l` collections.
+- Prefixes: `t` tasks, `c` contacts, `e` events, `p` projects, `b` bookmarks, `n` notes, `s` subscriptions, `g` log entries, `l` collections, `f` files.
 
 ## Tags
 
@@ -104,7 +109,8 @@ This is a concise feature map of the app.
 - Tokens can be scoped per record area as none, read, or write.
 - Task access can be limited to selected projects.
 - The records server exposes schema, search, CRUD, links, and tags tools.
+- Files support optional base64 content upload through MCP create/update; raw bytes and public URLs are never exposed.
 
 ## Adding Record Areas
 
-- New record areas should follow the same team ownership, authorization, search, tags, links, and MCP exposure patterns when they need to behave like existing records.
+- New record areas should follow the same team ownership, authorization, search, tags, links, MCP exposure, and private storage patterns when they need to behave like existing records.
