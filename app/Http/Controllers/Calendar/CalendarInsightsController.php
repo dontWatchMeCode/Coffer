@@ -27,7 +27,8 @@ class CalendarInsightsController extends Controller
         /** @var EloquentCollection<int, CalendarEvent> $events */
         $events = CalendarEvent::query()
             ->whereBelongsTo($currentTeam)
-            ->whereBetween('date', [$window['start']->toDateString(), $window['end']->toDateString()])
+            ->where('date', '>=', $window['start']->toDateString())
+            ->where('date', '<', $window['end']->addDay()->toDateString())
             ->get();
 
         return Inertia::render('calendar/Insights', [
@@ -47,22 +48,21 @@ class CalendarInsightsController extends Controller
     private function kpis(Team $team, CarbonImmutable $today): array
     {
         $monthStart = $today->copy()->startOfMonth();
-        $monthEnd = $today->copy()->endOfMonth();
 
         return [
-            'thisMonth' => CalendarEvent::query()
-                ->whereBelongsTo($team)
-                ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-                ->count(),
-            'next7Days' => CalendarEvent::query()
-                ->whereBelongsTo($team)
-                ->whereBetween('date', [$today->toDateString(), $today->copy()->addDays(7)->toDateString()])
-                ->count(),
-            'next30Days' => CalendarEvent::query()
-                ->whereBelongsTo($team)
-                ->whereBetween('date', [$today->toDateString(), $today->copy()->addDays(30)->toDateString()])
-                ->count(),
+            'thisMonth' => $this->countEvents($team, $monthStart, $monthStart->addMonth()),
+            'next7Days' => $this->countEvents($team, $today, $today->addDays(8)),
+            'next30Days' => $this->countEvents($team, $today, $today->addDays(31)),
         ];
+    }
+
+    private function countEvents(Team $team, CarbonImmutable $start, CarbonImmutable $endExclusive): int
+    {
+        return CalendarEvent::query()
+            ->whereBelongsTo($team)
+            ->where('date', '>=', $start->toDateString())
+            ->where('date', '<', $endExclusive->toDateString())
+            ->count();
     }
 
     /**
