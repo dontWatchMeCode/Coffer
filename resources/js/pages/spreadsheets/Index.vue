@@ -5,13 +5,20 @@ import { computed, ref, watch } from 'vue';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
 import ConfirmDeleteDialog from '@/components/dialogs/ConfirmDeleteDialog.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
+import EmptyState from '@/components/list/EmptyState.vue';
+import ListContainer from '@/components/list/ListContainer.vue';
+import ListItem from '@/components/list/ListItem.vue';
+import ListItemActions from '@/components/list/ListItemActions.vue';
+import ListItemIcon from '@/components/list/ListItemIcon.vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import SpreadsheetGrid from '@/components/pages/spreadsheets/SpreadsheetGrid.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSearch } from '@/composables/useSearch';
 import { cloneSpreadsheetSnapshot } from '@/lib/spreadsheet-snapshot';
+import { formatDate } from '@/lib/utils';
 import { destroy, index, show, store, trash } from '@/routes/team/spreadsheets';
 import { update as saveWorkbook } from '@/routes/team/spreadsheets/workbook';
 import type {
@@ -63,6 +70,7 @@ const savedWorkbook = ref(JSON.stringify(workbook.value));
 const saving = ref(false);
 const saveState = ref<'idle' | 'error'>('idle');
 const deleteDialogOpen = ref(false);
+const spreadsheetToDelete = ref<SpreadsheetWorkbook | null>(null);
 
 const { searchQuery } = useSearch(
     index(currentTeamSlug.value).url,
@@ -165,16 +173,24 @@ function saveChanges(): void {
     );
 }
 
+function openDeleteDialog(spreadsheet: SpreadsheetWorkbook): void {
+    spreadsheetToDelete.value = spreadsheet;
+    deleteDialogOpen.value = true;
+}
+
 function deleteSpreadsheet(): void {
-    if (!props.spreadsheet) {
+    const spreadsheet = spreadsheetToDelete.value;
+
+    if (!spreadsheet) {
         return;
     }
 
     deleteDialogOpen.value = false;
+    spreadsheetToDelete.value = null;
     router.delete(
         destroy({
             current_team: currentTeamSlug.value,
-            spreadsheet: props.spreadsheet.id,
+            spreadsheet: spreadsheet.id,
         }).url,
     );
 }
@@ -243,49 +259,93 @@ defineOptions({
                 </div>
 
                 <InfiniteScroll v-if="props.spreadsheets" data="spreadsheets">
-                    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        <button
+                    <ListContainer v-if="items.length > 0">
+                        <ListItem
                             v-for="item in items"
                             :key="item.id"
-                            type="button"
-                            class="group rounded-xl border bg-card p-4 text-left shadow-xs transition hover:border-primary/40 hover:bg-accent/30"
+                            :data-testid="`spreadsheet-card-${item.id}`"
                             @click="openSpreadsheet(item)"
                         >
-                            <div class="flex items-start gap-3">
+                            <div class="flex flex-col gap-3">
                                 <div
-                                    class="rounded-lg bg-primary/10 p-2 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground"
+                                    class="flex items-start justify-between gap-3"
                                 >
-                                    <FileSpreadsheet class="h-5 w-5" />
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <h2 class="truncate font-semibold">
-                                        {{ item.title }}
-                                    </h2>
-                                    <p
-                                        class="mt-1 text-xs text-muted-foreground"
+                                    <ListItemIcon>
+                                        <FileSpreadsheet
+                                            class="h-5 w-5 text-muted-foreground"
+                                        />
+                                    </ListItemIcon>
+                                    <ListItemActions
+                                        :data-testid="`spreadsheet-actions-${item.id}`"
                                     >
-                                        {{ item.rowCount }} rows ·
-                                        {{ item.columnCount }} columns
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            class="h-8 w-8"
+                                            aria-label="Delete spreadsheet"
+                                            @click.stop="openDeleteDialog(item)"
+                                        >
+                                            <Trash2
+                                                class="h-4 w-4 text-muted-foreground"
+                                            />
+                                        </Button>
+                                    </ListItemActions>
+                                </div>
+
+                                <p class="line-clamp-2 text-base font-medium">
+                                    {{ item.title }}
+                                </p>
+
+                                <p class="text-sm text-muted-foreground">
+                                    {{ item.rowCount }} rows ·
+                                    {{ item.columnCount }} columns
+                                </p>
+
+                                <div class="mt-auto flex flex-col gap-3">
+                                    <div
+                                        v-if="item.tags.length"
+                                        class="flex flex-wrap gap-1"
+                                    >
+                                        <Badge
+                                            v-for="tag in item.tags.slice(0, 4)"
+                                            :key="tag.id"
+                                            variant="secondary"
+                                            class="text-[11px]"
+                                        >
+                                            {{ tag.name }}
+                                        </Badge>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground">
+                                        Updated {{ formatDate(item.updatedAt) }}
                                     </p>
                                 </div>
                             </div>
-                        </button>
-                    </div>
+                        </ListItem>
+                    </ListContainer>
 
-                    <div
-                        v-if="items.length === 0"
-                        class="rounded-xl border border-dashed px-6 py-14 text-center"
+                    <EmptyState
+                        v-else
+                        :title="
+                            searchQuery
+                                ? 'No spreadsheets match your search.'
+                                : 'No spreadsheets yet.'
+                        "
+                        :description="
+                            searchQuery
+                                ? 'Try another title or tag.'
+                                : 'Create one to start organizing team data.'
+                        "
+                        :show-action="!searchQuery"
+                        action-label="Add your first spreadsheet"
+                        @action="createSpreadsheet"
                     >
-                        <FileSpreadsheet
-                            class="mx-auto h-8 w-8 text-muted-foreground/50"
-                        />
-                        <p class="mt-3 text-sm font-medium">
-                            No spreadsheets yet
-                        </p>
-                        <p class="mt-1 text-xs text-muted-foreground">
-                            Create one to start organizing team data.
-                        </p>
-                    </div>
+                        <template #icon>
+                            <FileSpreadsheet class="h-12 w-12" />
+                        </template>
+                        <template #action-icon>
+                            <Plus class="mr-1.5 h-3.5 w-3.5" />
+                        </template>
+                    </EmptyState>
                 </InfiniteScroll>
             </div>
         </div>
@@ -305,7 +365,7 @@ defineOptions({
                 :on-save="saveChanges"
                 :save-disabled="!isDirty || saving || !editTitle.trim()"
                 :save-label="saving ? 'Saving...' : 'Save changes'"
-                :on-delete="() => (deleteDialogOpen = true)"
+                :on-delete="() => openDeleteDialog(props.spreadsheet!)"
                 delete-label="Delete spreadsheet"
                 :record-links="recordLinks"
                 :record-tags="recordTags"
@@ -342,14 +402,14 @@ defineOptions({
                 </template>
             </EditorSidebarLayout>
         </div>
-
-        <ConfirmDeleteDialog
-            v-model:open="deleteDialogOpen"
-            title="Delete spreadsheet"
-            description="This spreadsheet will move to trash and can be restored later."
-            confirm-label="Move to trash"
-            :confirm-icon="Trash2"
-            @confirm="deleteSpreadsheet"
-        />
     </div>
+
+    <ConfirmDeleteDialog
+        v-model:open="deleteDialogOpen"
+        title="Delete spreadsheet"
+        :description="`${spreadsheetToDelete?.title ?? 'This spreadsheet'} will move to trash and can be restored later.`"
+        confirm-label="Move to trash"
+        :confirm-icon="Trash2"
+        @confirm="deleteSpreadsheet"
+    />
 </template>

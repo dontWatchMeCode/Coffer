@@ -29,6 +29,38 @@ function waitForSpreadsheetSave(Webpage|AwaitableWebpage $page): void
     expect(false)->toBeTrue('Expected spreadsheet save to finish.');
 }
 
+it('uses the shared record cards on the spreadsheet index', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $spreadsheet = SpreadsheetWorkbook::factory()->create([
+        'team_id' => $team->id,
+        'title' => 'Card spreadsheet',
+    ]);
+
+    $this->actingAs($user);
+
+    $page = visit('/'.$team->slug.'/spreadsheets')
+        ->assertPresent('[data-testid="spreadsheet-card-'.$spreadsheet->id.'"]');
+
+    $page->script(
+        'document.querySelector(\'[aria-label="Delete spreadsheet"]\')?.focus()',
+    );
+    usleep(200_000);
+
+    expect($page->script(
+        'getComputedStyle(document.querySelector(\'[data-testid="spreadsheet-actions-'.$spreadsheet->id.'"]\')).opacity',
+    ))->toBe('1');
+
+    $page
+        ->click('[aria-label="Delete spreadsheet"]')
+        ->assertSee('Delete spreadsheet')
+        ->click('Move to trash')
+        ->assertDontSee('Card spreadsheet')
+        ->assertNoJavaScriptErrors();
+
+    expect(SpreadsheetWorkbook::query()->find($spreadsheet->id))->toBeNull();
+});
+
 it('enables save while editing a cell and persists the value', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
