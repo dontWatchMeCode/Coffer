@@ -10,6 +10,7 @@ import {
     ListTodo,
     ScrollText,
     Search,
+    Table2,
 } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -40,6 +41,7 @@ const typeIconMap: Record<string, typeof Search> = {
     notes: FileText,
     collections: Layers3,
     log_entries: ScrollText,
+    spreadsheets: Table2,
 };
 
 function setType(typeValue: string): void {

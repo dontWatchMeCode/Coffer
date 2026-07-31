@@ -12,6 +12,7 @@ import {
     ListTodo,
     ScrollText,
     Search,
+    Table2,
     X,
 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
@@ -42,6 +43,7 @@ type SearchResponse = {
     files: SearchResultItem[];
     collections: SearchResultItem[];
     log_entries: SearchResultItem[];
+    spreadsheets: SearchResultItem[];
 };
 
 type TagItem = { id: number; name: string; slug: string };
@@ -81,6 +83,7 @@ const emptyResults: SearchResponse = {
     files: [],
     collections: [],
     log_entries: [],
+    spreadsheets: [],
 };
 
 const typeIconMap: Record<string, typeof Search> = {
@@ -94,6 +97,7 @@ const typeIconMap: Record<string, typeof Search> = {
     files: Files,
     collections: Layers3,
     log_entries: ScrollText,
+    spreadsheets: Table2,
 };
 
 const allResults = computed(() => {

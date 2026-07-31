@@ -15,6 +15,7 @@ enum TeamFeature: string
     case Files = 'files';
     case Log = 'log';
     case Collections = 'collections';
+    case Spreadsheets = 'spreadsheets';
 
     public function label(): string
     {
@@ -28,6 +29,7 @@ enum TeamFeature: string
             self::Files => 'Files',
             self::Log => 'Log',
             self::Collections => 'Collections',
+            self::Spreadsheets => 'Spreadsheets',
         };
     }
 

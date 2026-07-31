@@ -13,6 +13,7 @@ use App\Models\LogEntry;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
+use App\Models\SpreadsheetWorkbook;
 use App\Models\Subscription;
 use App\Models\Task;
 use App\Models\Team;
@@ -41,6 +42,7 @@ class RecordSearchRegistry
             'file' => ['prefix' => 'f', 'global' => 'files', 'feature' => 'files', 'class' => FileItem::class, 'columns' => ['title', 'description', 'original_name'], 'order' => 'title'],
             'collection' => ['prefix' => 'l', 'global' => 'collections', 'feature' => 'collections', 'class' => RecordCollection::class, 'columns' => ['title', 'description'], 'order' => 'title'],
             'log_entry' => ['prefix' => 'g', 'global' => 'log_entries', 'feature' => 'log', 'class' => LogEntry::class, 'columns' => ['body'], 'order' => 'created_at'],
+            'spreadsheet' => ['prefix' => 'x', 'global' => 'spreadsheets', 'feature' => 'spreadsheets', 'class' => SpreadsheetWorkbook::class, 'columns' => ['title'], 'order' => 'title'],
         ];
     }
 

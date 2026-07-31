@@ -12,6 +12,7 @@ use App\Models\LogEntry;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
+use App\Models\SpreadsheetWorkbook;
 use App\Models\Subscription;
 use App\Models\Task;
 use App\Models\Team;
@@ -35,6 +36,7 @@ class RecordLinkHelper
             FileItem::class => 'team.files.show',
             RecordCollection::class => 'team.collections.show',
             LogEntry::class => 'team.log.index',
+            SpreadsheetWorkbook::class => 'team.spreadsheets.show',
             default => null,
         };
 
@@ -54,6 +56,10 @@ class RecordLinkHelper
             ],
             LogEntry::class => [
                 'current_team' => $currentTeam,
+            ],
+            SpreadsheetWorkbook::class => [
+                'current_team' => $currentTeam,
+                'spreadsheet' => $model->getKey(),
             ],
             default => [
                 'current_team' => $currentTeam,
@@ -89,6 +95,7 @@ class RecordLinkHelper
             FileItem::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             RecordCollection::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             LogEntry::class => str($model->getAttribute('body') ?? '')->limit(80)->toString() ?: (string) $model->getKey(),
+            SpreadsheetWorkbook::class => $model->getAttribute('title') ?? (string) $model->getKey(),
             default => (string) $model->getKey(),
         };
     }
@@ -109,6 +116,7 @@ class RecordLinkHelper
             FileItem::class => $model->getAttribute('description') ?? $model->getAttribute('original_name'),
             RecordCollection::class => $model->getAttribute('description'),
             LogEntry::class => str($model->getAttribute('body') ?? '')->limit(180)->toString() ?: null,
+            SpreadsheetWorkbook::class => null,
             default => null,
         };
     }

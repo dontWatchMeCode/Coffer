@@ -47,7 +47,7 @@ const emit = defineEmits<{
 
 <template>
     <Dialog :open="open" @update:open="emit('update:open', $event)">
-        <DialogContent>
+        <DialogContent @pointer-down-outside="emit('update:open', false)">
             <DialogHeader>
                 <DialogTitle>{{ title }}</DialogTitle>
                 <slot name="description">

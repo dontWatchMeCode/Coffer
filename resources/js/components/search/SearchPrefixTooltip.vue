@@ -25,6 +25,7 @@ const prefixes: PrefixItem[] = [
     { prefix: 'f:', label: 'Files' },
     { prefix: 'l:', label: 'Collections' },
     { prefix: 'g:', label: 'Log' },
+    { prefix: 'x:', label: 'Spreadsheets' },
 ];
 
 const props = withDefaults(

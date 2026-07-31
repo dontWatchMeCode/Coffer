@@ -11,6 +11,7 @@ export * from './navigation';
 export * from './notes';
 export * from './pagination';
 export * from './subscriptions';
+export * from './spreadsheets';
 export * from './tasks';
 export * from './teams';
 export * from './ui';

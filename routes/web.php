@@ -52,6 +52,7 @@ Route::prefix('{current_team}')
         require __DIR__.'/features/files.php';
         require __DIR__.'/features/collections.php';
         require __DIR__.'/features/tasks.php';
+        require __DIR__.'/features/spreadsheets.php';
     });
 
 Route::middleware(['auth'])->group(function () {

@@ -11,6 +11,7 @@ import {
     ListTodo,
     ScrollText,
     Search,
+    Table2,
 } from 'lucide-vue-next';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import SearchPrefixTooltip from '@/components/search/SearchPrefixTooltip.vue';
@@ -41,6 +42,7 @@ type SearchResponse = {
     notes: SearchResultItem[];
     collections: SearchResultItem[];
     log_entries: SearchResultItem[];
+    spreadsheets: SearchResultItem[];
 };
 
 const open = defineModel<boolean>('open', { default: false });
@@ -58,6 +60,7 @@ const emptyResults: SearchResponse = {
     notes: [],
     collections: [],
     log_entries: [],
+    spreadsheets: [],
 };
 const results = ref<SearchResponse>({ ...emptyResults });
 const selectedIndex = ref(0);
@@ -101,6 +104,10 @@ const allResults = computed(() => [
         ...item,
         type: 'log_entry' as const,
     })),
+    ...results.value.spreadsheets.map((item) => ({
+        ...item,
+        type: 'spreadsheet' as const,
+    })),
 ]);
 
 const hasResults = computed(() => allResults.value.length > 0);
@@ -136,6 +143,7 @@ const categories: {
     { key: 'notes', label: 'Notes', icon: FileText },
     { key: 'collections', label: 'Collections', icon: Layers3 },
     { key: 'log_entries', label: 'Log', icon: ScrollText },
+    { key: 'spreadsheets', label: 'Spreadsheets', icon: Table2 },
 ];
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
