@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\Records\AttachRecordTag;
+use App\Actions\Records\DetachRecordTag;
+use App\Actions\Records\FindOrCreateTag;
 use App\Concerns\EscapesLikeWildcards;
 use App\Concerns\ResolvesLinkableRecord;
+use App\Contracts\LinkableRecord;
 use App\Http\Requests\RecordTags\DeleteRecordTagRequest;
 use App\Http\Requests\RecordTags\RecordTagCandidatesRequest;
 use App\Http\Requests\RecordTags\StoreRecordTagRequest;
 use App\Models\Tag;
 use App\Models\Team;
-use App\Services\ActivityLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -21,12 +24,18 @@ class RecordTagController extends Controller
     use EscapesLikeWildcards;
     use ResolvesLinkableRecord;
 
+    public function __construct(
+        private readonly AttachRecordTag $attachRecordTag,
+        private readonly DetachRecordTag $detachRecordTag,
+        private readonly FindOrCreateTag $findOrCreateTag,
+    ) {}
+
     public function candidates(RecordTagCandidatesRequest $request, Team $currentTeam): JsonResponse
     {
         $validated = $request->validated();
         $from = $this->resolveModel($currentTeam, $validated['from_type'], $validated['from_id']);
 
-        if (! $from instanceof Model || ! method_exists($from, 'recordTags')) {
+        if (! $from instanceof Model || ! $from instanceof LinkableRecord || ! method_exists($from, 'recordTags')) {
             return response()->json(['tags' => []]);
         }
 
@@ -61,7 +70,7 @@ class RecordTagController extends Controller
         $validated = $request->validated();
         $from = $this->resolveModel($currentTeam, $validated['from_type'], $validated['from_id']);
 
-        if (! $from instanceof Model || ! method_exists($from, 'recordTags')) {
+        if (! $from instanceof Model || ! $from instanceof LinkableRecord || ! method_exists($from, 'recordTags')) {
             return response()->json(['message' => 'Record not found.'], 404);
         }
 
@@ -79,8 +88,7 @@ class RecordTagController extends Controller
             return response()->json(['message' => 'Tag already exists on this record.'], 422);
         }
 
-        $from->recordTags()->attach($tag->id);
-        ActivityLogger::logTagAttached($from, $tag);
+        $this->attachRecordTag->execute($from, $from->recordTags(), $tag);
 
         return response()->json([
             'message' => 'Tag added.',
@@ -93,7 +101,7 @@ class RecordTagController extends Controller
         $validated = $request->validated();
         $from = $this->resolveModel($currentTeam, $validated['from_type'], $validated['from_id']);
 
-        if (! $from instanceof Model || ! method_exists($from, 'recordTags')) {
+        if (! $from instanceof Model || ! $from instanceof LinkableRecord || ! method_exists($from, 'recordTags')) {
             return response()->json(['message' => 'Record not found.'], 404);
         }
 
@@ -105,9 +113,7 @@ class RecordTagController extends Controller
             return response()->json(['message' => 'Tag not found.'], 404);
         }
 
-        $from->recordTags()->detach($tag->id);
-        ActivityLogger::logTagDetached($from, $tag);
-        Tag::deleteUnused([$tag->id]);
+        $this->detachRecordTag->execute($from, $from->recordTags(), $tag);
 
         return response()->json(['message' => 'Tag removed.']);
     }
@@ -121,19 +127,7 @@ class RecordTagController extends Controller
             return Tag::query()->whereBelongsTo($currentTeam)->find((int) $validated['tag_id']);
         }
 
-        $name = trim((string) ($validated['name'] ?? ''));
-        $slug = Tag::slugFor($name);
-
-        if ($name === '' || $slug === '') {
-            return null;
-        }
-
-        return Tag::query()->firstOrCreate([
-            'team_id' => $currentTeam->id,
-            'slug' => $slug,
-        ], [
-            'name' => $name,
-        ]);
+        return $this->findOrCreateTag->execute($currentTeam, (string) ($validated['name'] ?? ''));
     }
 
     /**

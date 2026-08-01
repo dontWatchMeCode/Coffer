@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\RecordTypeRegistry;
 use Carbon\Carbon;
 use Database\Factories\McpTokenFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -22,18 +23,6 @@ class McpToken extends Model
 {
     /** @use HasFactory<McpTokenFactory> */
     use HasFactory;
-
-    public const array RECORD_TYPES = [
-        'collection' => 'collections',
-        'note' => 'notes',
-        'bookmark' => 'bookmarks',
-        'subscription' => 'subscriptions',
-        'contact' => 'contacts',
-        'calendar_event' => 'calendar',
-        'task' => 'tasks',
-        'log_entry' => 'log_entries',
-        'file' => 'files',
-    ];
 
     public const array PERMISSION_LEVELS = ['none', 'read', 'write'];
 
@@ -66,7 +55,7 @@ class McpToken extends Model
 
     public function allows(string $type, string $action, ?int $projectId = null): bool
     {
-        $resource = self::RECORD_TYPES[$type] ?? null;
+        $resource = RecordTypeRegistry::mcpResourceFor($type);
 
         if ($resource === null) {
             return false;

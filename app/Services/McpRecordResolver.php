@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\RecordLink;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
@@ -12,16 +11,13 @@ use Laravel\Mcp\Request;
 
 class McpRecordResolver
 {
-    /** @var list<string> */
-    public const RECORD_TYPES = ['task', 'calendar_event', 'contact', 'bookmark', 'subscription', 'note', 'collection', 'log_entry', 'file'];
-
     /**
      * @return class-string<Model>|null
      */
     public static function classFor(string $type): ?string
     {
-        return in_array($type, self::RECORD_TYPES, true)
-            ? (RecordSearchRegistry::definitions()[$type]['class'] ?? null)
+        return RecordTypeRegistry::mcpResourceFor($type) !== null
+            ? RecordTypeRegistry::classFor($type)
             : null;
     }
 
@@ -42,37 +38,14 @@ class McpRecordResolver
     public static function validateTypeAndId(Request $request): array
     {
         return $request->validate([
-            'type' => ['required', 'string', Rule::in(self::RECORD_TYPES)],
+            'type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpTypes())],
             'id' => ['required', 'integer', 'min:1'],
         ]);
     }
 
-    /**
-     * @return array{0: string, 1: int, 2: string, 3: int}
-     */
-    public static function normalizePair(string $typeA, int $idA, string $typeB, int $idB): array
-    {
-        if ($typeA < $typeB || ($typeA === $typeB && $idA < $idB)) {
-            return [$typeA, $idA, $typeB, $idB];
-        }
-
-        return [$typeB, $idB, $typeA, $idA];
-    }
-
-    public static function findLink(Team $team, string $leftType, int $leftId, string $rightType, int $rightId): ?RecordLink
-    {
-        return RecordLink::query()
-            ->where('team_id', $team->id)
-            ->where('left_type', $leftType)
-            ->where('left_id', $leftId)
-            ->where('right_type', $rightType)
-            ->where('right_id', $rightId)
-            ->first();
-    }
-
     public static function typeForClass(string $class): string
     {
-        return array_flip(RecordLink::linkableMap())[$class] ?? 'unknown';
+        return RecordTypeRegistry::typeForClass($class) ?? 'unknown';
     }
 
     /**

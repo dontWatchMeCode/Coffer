@@ -38,15 +38,14 @@ class McpTokenPermissionService
         $token = $this->currentToken();
 
         if (! $token instanceof McpToken) {
-            return array_keys(McpToken::RECORD_TYPES);
+            return RecordTypeRegistry::mcpTypes();
         }
 
         $team = $token->team;
 
         /** @var list<string> $types */
-        $types = collect(McpToken::RECORD_TYPES)
-            ->keys()
-            ->filter(fn (string $type): bool => $this->tokenAllowsTypeLevel($token, $type, 'read') && (! $team instanceof Team || RecordSearchRegistry::teamAllowsType($team, $type)))
+        $types = collect(RecordTypeRegistry::mcpTypes())
+            ->filter(fn (string $type): bool => $this->tokenAllowsTypeLevel($token, $type, 'read') && (! $team instanceof Team || RecordTypeRegistry::teamAllowsType($team, $type)))
             ->values()
             ->all();
 
@@ -61,15 +60,14 @@ class McpTokenPermissionService
         $token = $this->currentToken();
 
         if (! $token instanceof McpToken) {
-            return array_keys(McpToken::RECORD_TYPES);
+            return RecordTypeRegistry::mcpTypes();
         }
 
         $team = $token->team;
 
         /** @var list<string> $types */
-        $types = collect(McpToken::RECORD_TYPES)
-            ->keys()
-            ->filter(fn (string $type): bool => $this->tokenAllowsTypeLevel($token, $type, 'write') && (! $team instanceof Team || RecordSearchRegistry::teamAllowsType($team, $type)))
+        $types = collect(RecordTypeRegistry::mcpTypes())
+            ->filter(fn (string $type): bool => $this->tokenAllowsTypeLevel($token, $type, 'write') && (! $team instanceof Team || RecordTypeRegistry::teamAllowsType($team, $type)))
             ->values()
             ->all();
 
@@ -107,7 +105,7 @@ class McpTokenPermissionService
                     ? McpRecordResolver::resolveRecord($team, $type, $id)
                     : null;
 
-                return $model instanceof Model && RecordSearchRegistry::teamAllowsType($team, $type) && $this->can($type, 'read', $model);
+                return $model instanceof Model && RecordTypeRegistry::teamAllowsType($team, $type) && $this->can($type, 'read', $model);
             })
             ->values()
             ->all();
@@ -134,7 +132,7 @@ class McpTokenPermissionService
     private function tokenAllowsTypeLevel(McpToken $token, string $type, string $action): bool
     {
         // Tool registration only needs coarse type-level access; per-record task project scope is checked during execution.
-        $resource = McpToken::RECORD_TYPES[$type] ?? null;
+        $resource = RecordTypeRegistry::mcpResourceFor($type);
 
         if ($resource === null) {
             return false;

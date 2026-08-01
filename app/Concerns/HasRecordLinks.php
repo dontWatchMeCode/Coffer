@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * When adding a new linkable type, update:
  * 1. RecordLink::linkableMap() — alias → class mapping
  * 2. RecordLinkHelper — title, URL generation, and routability rules
- * 3. RecordSearchRegistry — prefixes, searchable columns, and sort order
+ * 3. RecordTypeRegistry - prefixes, searchable columns, and sort order
  */
 trait HasRecordLinks
 {

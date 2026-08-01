@@ -7,8 +7,8 @@ namespace App\Http\Controllers\Search;
 use App\Http\Controllers\Controller;
 use App\Models\Tag;
 use App\Models\Team;
-use App\Services\RecordSearchRegistry;
 use App\Services\RecordSearchService;
+use App\Services\RecordTypeRegistry;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -49,7 +49,7 @@ class SearchPageController extends Controller
                 'name' => $tag->name,
                 'slug' => $tag->slug,
             ], $tags),
-            'types' => collect(RecordSearchRegistry::enabledDefinitions($currentTeam))
+            'types' => collect(RecordTypeRegistry::enabledDefinitions($currentTeam))
                 ->map(fn (array $def, string $alias): array => [
                     'value' => $def['global'],
                     'label' => ucfirst(str_replace('_', ' ', $def['global'] === 'log_entries' ? 'log' : $def['global'])),
@@ -64,7 +64,7 @@ class SearchPageController extends Controller
     {
         $parts = [];
 
-        $prefixMap = RecordSearchRegistry::globalPrefixMap();
+        $prefixMap = RecordTypeRegistry::globalPrefixMap();
 
         if ($type !== '') {
             $prefix = collect($prefixMap)->search(fn (string $global): bool => $global === $type);

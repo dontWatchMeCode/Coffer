@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\Records\CreateRecordLink;
+use App\Actions\Records\DeleteRecordLink;
 use App\Concerns\ResolvesLinkableRecord;
 use App\Contracts\LinkableRecord;
 use App\Http\Requests\RecordLinks\RecordLinkCandidatesRequest;
 use App\Http\Requests\RecordLinks\StoreRecordLinkRequest;
 use App\Models\RecordLink;
 use App\Models\Team;
-use App\Services\ActivityLogger;
 use App\Services\RecordSearchService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -20,21 +21,11 @@ class RecordLinkController extends Controller
 {
     use ResolvesLinkableRecord;
 
-    public function __construct(private readonly RecordSearchService $recordSearch) {}
-
-    /**
-     * Find a record link by its normalized pair.
-     */
-    protected function findLink(Team $currentTeam, string $leftType, int $leftId, string $rightType, int $rightId): ?RecordLink
-    {
-        return RecordLink::query()
-            ->where('team_id', $currentTeam->id)
-            ->where('left_type', $leftType)
-            ->where('left_id', $leftId)
-            ->where('right_type', $rightType)
-            ->where('right_id', $rightId)
-            ->first();
-    }
+    public function __construct(
+        private readonly RecordSearchService $recordSearch,
+        private readonly CreateRecordLink $createRecordLink,
+        private readonly DeleteRecordLink $deleteRecordLink,
+    ) {}
 
     /**
      * Store a new record link.
@@ -54,27 +45,12 @@ class RecordLinkController extends Controller
             return response()->json(['message' => 'Cannot link a record to itself.'], 422);
         }
 
-        [$leftType, $leftId, $rightType, $rightId] = $this->normalizePair(
-            $from->linkableType(),
-            $from->getKey(),
-            $to->linkableType(),
-            $to->getKey(),
-        );
-
-        if ($this->findLink($currentTeam, $leftType, $leftId, $rightType, $rightId) instanceof RecordLink) {
+        if ($this->createRecordLink->find($currentTeam, $from, $to) instanceof RecordLink) {
             return response()->json(['message' => 'Link already exists.'], 422);
         }
 
         try {
-            $link = RecordLink::create([
-                'team_id' => $currentTeam->id,
-                'left_type' => $leftType,
-                'left_id' => $leftId,
-                'right_type' => $rightType,
-                'right_id' => $rightId,
-            ]);
-
-            ActivityLogger::logLinkCreated($link);
+            $this->createRecordLink->execute($currentTeam, $from, $to);
         } catch (QueryException $queryException) {
             if ($queryException->getCode() === '23000') {
                 return response()->json(['message' => 'Link already exists.'], 422);
@@ -100,21 +76,13 @@ class RecordLinkController extends Controller
             return response()->json(['message' => 'Record not found.'], 404);
         }
 
-        [$leftType, $leftId, $rightType, $rightId] = $this->normalizePair(
-            $from->linkableType(),
-            $from->getKey(),
-            $to->linkableType(),
-            $to->getKey(),
-        );
-
-        $link = $this->findLink($currentTeam, $leftType, $leftId, $rightType, $rightId);
+        $link = $this->createRecordLink->find($currentTeam, $from, $to);
 
         if (! $link instanceof RecordLink) {
             return response()->json(['message' => 'Link not found.'], 404);
         }
 
-        ActivityLogger::logLinkDestroyed($link);
-        $link->delete();
+        $this->deleteRecordLink->execute($link);
 
         return response()->json(['message' => 'Link removed.']);
     }
@@ -139,19 +107,5 @@ class RecordLinkController extends Controller
                 $request->string('q')->trim()->toString(),
             ),
         ]);
-    }
-
-    /**
-     * Normalize a pair so left <= right (by type string, then id).
-     *
-     * @return array{0: string, 1: int, 2: string, 3: int}
-     */
-    protected function normalizePair(string $typeA, int $idA, string $typeB, int $idB): array
-    {
-        if ($typeA < $typeB || ($typeA === $typeB && $idA < $idB)) {
-            return [$typeA, $idA, $typeB, $idB];
-        }
-
-        return [$typeB, $idB, $typeA, $idA];
     }
 }

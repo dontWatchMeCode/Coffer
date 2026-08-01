@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools;
 
-use App\Services\McpRecordResolver;
+use App\Services\RecordTypeRegistry;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 
@@ -48,6 +48,6 @@ class RecordToolSchemas
 
     public static function type(JsonSchema $schema): Type
     {
-        return $schema->string()->enum(McpRecordResolver::RECORD_TYPES);
+        return $schema->string()->enum(RecordTypeRegistry::mcpTypes());
     }
 }

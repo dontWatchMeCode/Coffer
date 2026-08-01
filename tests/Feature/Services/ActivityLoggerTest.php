@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Records\CreateRecordLink;
 use App\Models\Bookmark;
 use App\Models\Contact;
 use App\Models\Note;
@@ -7,7 +8,6 @@ use App\Models\RecordLink;
 use App\Models\Tag;
 use App\Models\User;
 use App\Services\ActivityLogger;
-use App\Services\McpRecordResolver;
 use Spatie\Activitylog\Models\Activity;
 
 it('logs a tag attachment with correct properties', function () {
@@ -127,7 +127,7 @@ it('logs link creation on both sides', function () {
     $note = Note::factory()->create(['team_id' => $team->id, 'title' => 'Linked note']);
     $contact = Contact::factory()->create(['team_id' => $team->id, 'name' => 'Linked contact']);
 
-    [$leftType, $leftId, $rightType, $rightId] = McpRecordResolver::normalizePair(
+    [$leftType, $leftId, $rightType, $rightId] = CreateRecordLink::normalizePair(
         'note', $note->id,
         'contact', $contact->id,
     );
@@ -168,7 +168,7 @@ it('logs link destruction on both sides', function () {
     $note = Note::factory()->create(['team_id' => $team->id, 'title' => 'Linked note']);
     $contact = Contact::factory()->create(['team_id' => $team->id, 'name' => 'Linked contact']);
 
-    [$leftType, $leftId, $rightType, $rightId] = McpRecordResolver::normalizePair(
+    [$leftType, $leftId, $rightType, $rightId] = CreateRecordLink::normalizePair(
         'note', $note->id,
         'contact', $contact->id,
     );
@@ -243,7 +243,7 @@ it('logs link cleanup when a record is deleted', function () {
     $note = Note::factory()->create(['team_id' => $team->id, 'title' => 'Deleted note']);
     $bookmark = Bookmark::factory()->create(['team_id' => $team->id, 'title' => 'Remaining bookmark']);
 
-    [$leftType, $leftId, $rightType, $rightId] = McpRecordResolver::normalizePair(
+    [$leftType, $leftId, $rightType, $rightId] = CreateRecordLink::normalizePair(
         'bookmark', $bookmark->id,
         'note', $note->id,
     );

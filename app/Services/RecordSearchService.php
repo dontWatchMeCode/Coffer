@@ -27,7 +27,7 @@ class RecordSearchService
      */
     public function global(Team $currentTeam, string $rawQuery, int $limit = 10): array
     {
-        [$query, $scopes, $tagSlug] = $this->parseSearchPrefix($rawQuery, RecordSearchRegistry::globalPrefixMap());
+        [$query, $scopes, $tagSlug] = $this->parseSearchPrefix($rawQuery, RecordTypeRegistry::globalPrefixMap());
 
         $results = $this->emptyGlobalResults();
 
@@ -37,7 +37,7 @@ class RecordSearchService
 
         $like = $query !== '' ? $this->likePattern($query) : null;
 
-        foreach (RecordSearchRegistry::enabledDefinitions($currentTeam) as $definition) {
+        foreach (RecordTypeRegistry::enabledDefinitions($currentTeam) as $definition) {
             $globalKey = $definition['global'];
 
             if (in_array($globalKey, $scopes, true)) {
@@ -55,7 +55,7 @@ class RecordSearchService
     {
         $results = $this->emptyGlobalResults();
 
-        foreach (RecordSearchRegistry::enabledDefinitions($currentTeam) as $definition) {
+        foreach (RecordTypeRegistry::enabledDefinitions($currentTeam) as $definition) {
             if ($definition['global'] === $type) {
                 $results[$type] = $this->globalResultsForDefinition($currentTeam, $definition, null, null, $limit);
 
@@ -71,7 +71,7 @@ class RecordSearchService
      */
     public function linkableCandidates(Team $currentTeam, LinkableRecord $from, string $rawQuery): array
     {
-        [$query, $scopes, $tagSlug] = $this->parseSearchPrefix($rawQuery, RecordSearchRegistry::linkablePrefixMap());
+        [$query, $scopes, $tagSlug] = $this->parseSearchPrefix($rawQuery, RecordTypeRegistry::linkablePrefixMap());
 
         if ($query === '' && $tagSlug === null) {
             return [];
@@ -81,7 +81,7 @@ class RecordSearchService
         $like = $query !== '' ? $this->likePattern($query) : null;
         $records = [];
 
-        foreach (RecordSearchRegistry::enabledDefinitions($currentTeam) as $alias => $definition) {
+        foreach (RecordTypeRegistry::enabledDefinitions($currentTeam) as $alias => $definition) {
             if (! in_array($alias, $scopes, true)) {
                 continue;
             }
@@ -200,7 +200,7 @@ class RecordSearchService
      */
     private function emptyGlobalResults(): array
     {
-        return collect(RecordSearchRegistry::definitions())
+        return collect(RecordTypeRegistry::definitions())
             ->mapWithKeys(fn (array $definition): array => [$definition['global'] => []])
             ->all();
     }
