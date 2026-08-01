@@ -26,6 +26,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
+/.opencode/goals
 /.vscode
 /.zed
 /_ide_helper.php

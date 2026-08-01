@@ -3,7 +3,7 @@
 use App\Concerns\EscapesLikeWildcards;
 use App\Concerns\ParsesSearchPrefixes;
 
-class SearchPrefixTester
+$searchPrefixTester = new class
 {
     use ParsesSearchPrefixes;
 
@@ -15,9 +15,9 @@ class SearchPrefixTester
     {
         return $this->parseSearchPrefix($query, $prefixMap);
     }
-}
+};
 
-class LikePatternTester
+$likePatternTester = new class
 {
     use EscapesLikeWildcards;
 
@@ -25,11 +25,11 @@ class LikePatternTester
     {
         return $this->likePattern($value);
     }
-}
+};
 
-it('parses prefixed search queries', function (string $query, array $expected) {
+it('parses prefixed search queries', function (string $query, array $expected) use ($searchPrefixTester) {
     $prefixMap = ['t' => 'tasks', 'c' => 'contacts'];
-    $result = (new SearchPrefixTester)->test($query, $prefixMap);
+    $result = $searchPrefixTester->test($query, $prefixMap);
 
     expect($result)->toBe($expected);
 })->with([
@@ -41,8 +41,8 @@ it('parses prefixed search queries', function (string $query, array $expected) {
     ['T: Hello', ['Hello', ['tasks'], null]],
 ]);
 
-it('escapes like wildcards', function (string $input, string $expected) {
-    $result = (new LikePatternTester)->test($input);
+it('escapes like wildcards', function (string $input, string $expected) use ($likePatternTester) {
+    $result = $likePatternTester->test($input);
 
     expect($result)->toBe($expected);
 })->with([
@@ -52,9 +52,9 @@ it('escapes like wildcards', function (string $input, string $expected) {
     ['he\\lo', '%he\\\\lo%'],
 ]);
 
-it('parses tag from search query', function (string $query, array $expected) {
+it('parses tag from search query', function (string $query, array $expected) use ($searchPrefixTester) {
     $prefixMap = ['t' => 'tasks', 'c' => 'contacts'];
-    $result = (new SearchPrefixTester)->test($query, $prefixMap);
+    $result = $searchPrefixTester->test($query, $prefixMap);
 
     expect($result)->toBe($expected);
 })->with([
