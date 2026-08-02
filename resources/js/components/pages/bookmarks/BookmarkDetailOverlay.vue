@@ -4,17 +4,14 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { ExternalLink } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
-import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import DetailLinkRow from '@/components/page/DetailLinkRow.vue';
 import DetailSection from '@/components/page/DetailSection.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
+import BookmarkFormFields from '@/components/pages/bookmarks/BookmarkFormFields.vue';
 import DeleteBookmarkDialog from '@/components/pages/bookmarks/DeleteBookmarkDialog.vue';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeBookmark } from '@/lib/markdown-serializers';
-import { taskInputLikeClass } from '@/lib/tasks';
 import { update as updateBookmark } from '@/routes/team/bookmarks';
 import type { ActivityHistoryConfig, BookmarkItem } from '@/types';
 import type {
@@ -220,50 +217,14 @@ function handleCopyAsMarkdown(): void {
                         class="space-y-5"
                         @submit.prevent="submitEdit"
                     >
-                        <div class="grid gap-2">
-                            <Label for="edit-bookmark-title">Title</Label>
-                            <Input
-                                id="edit-bookmark-title"
-                                v-model="editTitle"
-                                required
-                            />
-                            <InputError :message="errors.title" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="edit-bookmark-url">URL</Label>
-                            <Input
-                                id="edit-bookmark-url"
-                                v-model="editUrl"
-                                type="url"
-                                required
-                            />
-                            <InputError :message="errors.url" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="edit-bookmark-description"
-                                >Description</Label
-                            >
-                            <Input
-                                id="edit-bookmark-description"
-                                v-model="editDescription"
-                                placeholder="Short description"
-                            />
-                            <InputError :message="errors.description" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="edit-bookmark-notes">Notes</Label>
-                            <textarea
-                                id="edit-bookmark-notes"
-                                v-model="editNotes"
-                                :class="taskInputLikeClass"
-                                rows="4"
-                                placeholder="Additional notes about this link..."
-                            />
-                            <InputError :message="errors.notes" />
-                        </div>
+                        <BookmarkFormFields
+                            v-model:title="editTitle"
+                            v-model:url="editUrl"
+                            v-model:description="editDescription"
+                            v-model:notes="editNotes"
+                            :errors="errors"
+                            id-prefix="edit-bookmark"
+                        />
                     </form>
                 </template>
             </EditorSidebarLayout>

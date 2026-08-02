@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Notes;
 use App\Actions\Records\SaveNote;
 use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Notes\DeleteNoteRequest;
 use App\Http\Requests\Notes\SaveNoteRequest;
 use App\Models\Note;
 use App\Models\Team;
@@ -62,7 +61,7 @@ class NoteController extends Controller
         ]);
     }
 
-    public function destroy(DeleteNoteRequest $request, Team $currentTeam, int $note): RedirectResponse
+    public function destroy(Team $currentTeam, int $note): RedirectResponse
     {
         $note = Note::query()
             ->whereBelongsTo($currentTeam)

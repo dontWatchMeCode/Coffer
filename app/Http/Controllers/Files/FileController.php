@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Files;
 
 use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Files\DeleteFileRequest;
 use App\Http\Requests\Files\SaveFileRequest;
 use App\Models\FileItem;
 use App\Models\Team;
@@ -106,7 +105,7 @@ class FileController extends Controller
         return $response;
     }
 
-    public function destroy(DeleteFileRequest $request, Team $currentTeam, int $file): RedirectResponse
+    public function destroy(Team $currentTeam, int $file): RedirectResponse
     {
         $file = FileItem::query()
             ->whereBelongsTo($currentTeam)

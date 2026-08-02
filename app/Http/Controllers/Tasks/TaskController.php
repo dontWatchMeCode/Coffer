@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Tasks;
 
 use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Tasks\DeleteTaskRequest;
 use App\Http\Requests\Tasks\SaveTaskRequest;
 use App\Models\Task;
 use App\Models\Team;
@@ -59,7 +58,7 @@ class TaskController extends Controller
     /**
      * Remove the specified task.
      */
-    public function destroy(DeleteTaskRequest $request, Team $currentTeam, int $task): RedirectResponse
+    public function destroy(Team $currentTeam, int $task): RedirectResponse
     {
         $task = Task::query()
             ->whereBelongsTo($currentTeam)

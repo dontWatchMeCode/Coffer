@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Calendar;
 
 use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Calendar\DeleteCalendarEventRequest;
 use App\Http\Requests\Calendar\SaveCalendarEventRequest;
 use App\Models\CalendarEvent;
 use App\Models\Team;
@@ -41,7 +40,7 @@ class CalendarEventController extends Controller
         return back();
     }
 
-    public function destroy(DeleteCalendarEventRequest $request, Team $currentTeam, int $event): RedirectResponse
+    public function destroy(Team $currentTeam, int $event): RedirectResponse
     {
         $event = CalendarEvent::query()
             ->whereBelongsTo($currentTeam)

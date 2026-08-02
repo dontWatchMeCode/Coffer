@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Contacts;
 
-use App\Http\Requests\Concerns\AuthorizesTeamResource;
 use App\Validation\DomainRecordValidation;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SaveContactRequest extends FormRequest
 {
-    use AuthorizesTeamResource;
-
     protected function prepareForValidation(): void
     {
         $entries = [];
@@ -23,11 +20,6 @@ class SaveContactRequest extends FormRequest
         }
 
         $this->merge($entries);
-    }
-
-    public function authorize(): bool
-    {
-        return $this->isTeamMember();
     }
 
     /**

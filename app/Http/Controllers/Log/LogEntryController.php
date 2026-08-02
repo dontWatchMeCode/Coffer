@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Log;
 
 use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Log\DeleteLogEntryRequest;
 use App\Http\Requests\Log\SaveLogEntryRequest;
 use App\Models\LogEntry;
 use App\Models\Team;
@@ -41,7 +40,7 @@ class LogEntryController extends Controller
         return back();
     }
 
-    public function destroy(DeleteLogEntryRequest $request, Team $currentTeam, int $logEntry): RedirectResponse
+    public function destroy(Team $currentTeam, int $logEntry): RedirectResponse
     {
         $entry = LogEntry::query()
             ->whereBelongsTo($currentTeam)

@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Bookmarks;
 
 use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Bookmarks\DeleteBookmarkRequest;
 use App\Http\Requests\Bookmarks\SaveBookmarkRequest;
 use App\Models\Bookmark;
 use App\Models\Team;
@@ -47,7 +46,7 @@ class BookmarkController extends Controller
         ]);
     }
 
-    public function destroy(DeleteBookmarkRequest $request, Team $currentTeam, int $bookmark): RedirectResponse
+    public function destroy(Team $currentTeam, int $bookmark): RedirectResponse
     {
         $bookmark = Bookmark::query()
             ->whereBelongsTo($currentTeam)

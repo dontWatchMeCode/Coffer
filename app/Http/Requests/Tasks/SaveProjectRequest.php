@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tasks;
 
-use App\Http\Requests\Concerns\AuthorizesTeamResource;
 use App\Models\Team;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -12,13 +11,6 @@ use Illuminate\Validation\Rule;
 
 class SaveProjectRequest extends FormRequest
 {
-    use AuthorizesTeamResource;
-
-    public function authorize(): bool
-    {
-        return $this->isTeamMember();
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *

@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Contacts;
 
 use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Contacts\DeleteContactRequest;
 use App\Http\Requests\Contacts\SaveContactRequest;
 use App\Models\Contact;
 use App\Models\Team;
@@ -47,7 +46,7 @@ class ContactController extends Controller
         ]);
     }
 
-    public function destroy(DeleteContactRequest $request, Team $currentTeam, int $contact): RedirectResponse
+    public function destroy(Team $currentTeam, int $contact): RedirectResponse
     {
         $contact = Contact::query()
             ->whereBelongsTo($currentTeam)

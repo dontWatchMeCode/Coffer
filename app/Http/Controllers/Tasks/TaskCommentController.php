@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Tasks;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Tasks\DeleteTaskCommentRequest;
 use App\Http\Requests\Tasks\SaveTaskCommentRequest;
 use App\Models\Task;
 use App\Models\TaskComment;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class TaskCommentController extends Controller
 {
@@ -59,7 +59,7 @@ class TaskCommentController extends Controller
     /**
      * Remove an existing task comment.
      */
-    public function destroy(DeleteTaskCommentRequest $request, Team $currentTeam, int $task, int $comment): RedirectResponse
+    public function destroy(Request $request, Team $currentTeam, int $task, int $comment): RedirectResponse
     {
         $user = $request->user();
         abort_if($user === null, 401);

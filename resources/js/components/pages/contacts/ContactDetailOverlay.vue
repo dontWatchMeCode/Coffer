@@ -1,21 +1,16 @@
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Plus, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
-import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
+import ContactFormFields from '@/components/pages/contacts/ContactFormFields.vue';
 import ContactReadOnlyDetails from '@/components/pages/contacts/ContactReadOnlyDetails.vue';
 import DeleteContactDialog from '@/components/pages/contacts/DeleteContactDialog.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
-import { emptyEntry, firstEntryValueError } from '@/lib/contacts';
+import { emptyEntry } from '@/lib/contacts';
 import { serializeContact } from '@/lib/markdown-serializers';
-import { taskInputLikeClass } from '@/lib/tasks';
 import { update as updateContact } from '@/routes/team/contacts';
 import type { ActivityHistoryConfig, ContactEntry, ContactItem } from '@/types';
 import type {
@@ -112,30 +107,6 @@ function close(): void {
 function cancelEdit(): void {
     resetEditFields(props.contact);
     isEditing.value = false;
-}
-
-function addEditPhone(): void {
-    editPhones.value.push(emptyEntry());
-}
-
-function removeEditPhone(index: number): void {
-    editPhones.value.splice(index, 1);
-}
-
-function addEditEmail(): void {
-    editEmails.value.push(emptyEntry());
-}
-
-function removeEditEmail(index: number): void {
-    editEmails.value.splice(index, 1);
-}
-
-function addEditLink(): void {
-    editLinks.value.push(emptyEntry());
-}
-
-function removeEditLink(index: number): void {
-    editLinks.value.splice(index, 1);
 }
 
 function submitEdit(): void {
@@ -253,190 +224,16 @@ function handleCopyAsMarkdown(): void {
                         class="space-y-5"
                         @submit.prevent="submitEdit"
                     >
-                        <div class="grid gap-2">
-                            <Label for="edit-contact-name">Name</Label>
-                            <Input
-                                id="edit-contact-name"
-                                v-model="editName"
-                                required
-                            />
-                            <InputError :message="errors.name" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <div class="flex items-center justify-between">
-                                <Label>Phone Numbers</Label>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    class="cursor-pointer"
-                                    @click="addEditPhone"
-                                >
-                                    <Plus class="mr-1 h-3 w-3" />
-                                    Add
-                                </Button>
-                            </div>
-                            <div class="space-y-2">
-                                <div
-                                    v-for="(phone, idx) in editPhones"
-                                    :key="idx"
-                                    class="flex items-center gap-2"
-                                >
-                                    <Input
-                                        v-model="phone.label"
-                                        placeholder="Label"
-                                        class="w-28 shrink-0"
-                                    />
-                                    <Input
-                                        v-model="phone.value"
-                                        type="tel"
-                                        placeholder="Phone number"
-                                    />
-                                    <Button
-                                        v-if="editPhones.length > 1"
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                                        @click="removeEditPhone(idx)"
-                                    >
-                                        <X class="h-3.5 w-3.5" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <InputError
-                                :message="
-                                    firstEntryValueError(
-                                        errors,
-                                        'phone_numbers',
-                                    )
-                                "
-                            />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <div class="flex items-center justify-between">
-                                <Label>Email Addresses</Label>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    class="cursor-pointer"
-                                    @click="addEditEmail"
-                                >
-                                    <Plus class="mr-1 h-3 w-3" />
-                                    Add
-                                </Button>
-                            </div>
-                            <div class="space-y-2">
-                                <div
-                                    v-for="(email, idx) in editEmails"
-                                    :key="idx"
-                                    class="flex items-center gap-2"
-                                >
-                                    <Input
-                                        v-model="email.label"
-                                        placeholder="Label"
-                                        class="w-28 shrink-0"
-                                    />
-                                    <Input
-                                        v-model="email.value"
-                                        type="email"
-                                        placeholder="Email address"
-                                    />
-                                    <Button
-                                        v-if="editEmails.length > 1"
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                                        @click="removeEditEmail(idx)"
-                                    >
-                                        <X class="h-3.5 w-3.5" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <InputError
-                                :message="
-                                    firstEntryValueError(
-                                        errors,
-                                        'email_addresses',
-                                    )
-                                "
-                            />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <div class="flex items-center justify-between">
-                                <Label>Links</Label>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    class="cursor-pointer"
-                                    @click="addEditLink"
-                                >
-                                    <Plus class="mr-1 h-3 w-3" />
-                                    Add
-                                </Button>
-                            </div>
-                            <div class="space-y-2">
-                                <div
-                                    v-for="(link, idx) in editLinks"
-                                    :key="idx"
-                                    class="flex items-center gap-2"
-                                >
-                                    <Input
-                                        v-model="link.label"
-                                        placeholder="Label"
-                                        class="w-28 shrink-0"
-                                    />
-                                    <Input
-                                        v-model="link.value"
-                                        type="url"
-                                        placeholder="https://example.com"
-                                    />
-                                    <Button
-                                        v-if="editLinks.length > 1"
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                                        @click="removeEditLink(idx)"
-                                    >
-                                        <X class="h-3.5 w-3.5" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <InputError
-                                :message="firstEntryValueError(errors, 'links')"
-                            />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="edit-contact-address">Address</Label>
-                            <Input
-                                id="edit-contact-address"
-                                v-model="editAddress"
-                                placeholder="Office, city, or mailing address"
-                            />
-                            <InputError :message="errors.address" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="edit-contact-additional-info">
-                                Additional Info
-                            </Label>
-                            <textarea
-                                id="edit-contact-additional-info"
-                                v-model="editAdditionalInfo"
-                                :class="taskInputLikeClass"
-                                rows="4"
-                                placeholder="Notes, context, or anything helpful for the team"
-                            />
-                            <InputError :message="errors.additional_info" />
-                        </div>
+                        <ContactFormFields
+                            v-model:name="editName"
+                            v-model:phone-numbers="editPhones"
+                            v-model:email-addresses="editEmails"
+                            v-model:links="editLinks"
+                            v-model:address="editAddress"
+                            v-model:additional-info="editAdditionalInfo"
+                            :errors="errors"
+                            id-prefix="edit-contact"
+                        />
                     </form>
                 </template>
             </EditorSidebarLayout>

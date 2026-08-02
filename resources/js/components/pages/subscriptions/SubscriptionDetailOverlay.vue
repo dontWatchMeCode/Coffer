@@ -4,28 +4,16 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { ExternalLink, PowerOff } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ActivityHistoryPanel from '@/components/activity-history/ActivityHistoryPanel.vue';
-import InputError from '@/components/form/InputError.vue';
 import EditorSidebarLayout from '@/components/layouts/EditorSidebarLayout.vue';
 import DetailLinkRow from '@/components/page/DetailLinkRow.vue';
 import DetailSection from '@/components/page/DetailSection.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import DeleteSubscriptionDialog from '@/components/pages/subscriptions/DeleteSubscriptionDialog.vue';
-import SubscriptionCategorySelect from '@/components/pages/subscriptions/SubscriptionCategorySelect.vue';
+import SubscriptionFormFields from '@/components/pages/subscriptions/SubscriptionFormFields.vue';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { useCopyAsMarkdown } from '@/composables/useCopyAsMarkdown';
 import { serializeSubscription } from '@/lib/markdown-serializers';
 import { billingDateLabel } from '@/lib/subscriptions';
-import { taskInputLikeClass } from '@/lib/tasks';
 import { update as updateSubscription } from '@/routes/team/subscriptions';
 import type { ActivityHistoryConfig, SubscriptionItem } from '@/types';
 import type { SubscriptionCategory } from '@/types';
@@ -90,9 +78,6 @@ const deleteDialogRef = ref<InstanceType<
 > | null>(null);
 const displayBillingDateLabel = computed(() =>
     billingDateLabel(props.subscription.isActive),
-);
-const editBillingDateLabel = computed(() =>
-    billingDateLabel(editIsActive.value),
 );
 
 watch(
@@ -375,162 +360,26 @@ function formatBillingCycle(cycle: string | null | undefined): string {
                         class="space-y-5"
                         @submit.prevent="submitEdit"
                     >
-                        <div class="grid gap-2">
-                            <Label for="edit-subscription-name">Name</Label>
-                            <Input
-                                id="edit-subscription-name"
-                                v-model="editName"
-                                required
-                            />
-                            <InputError :message="errors.name" />
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="grid gap-2">
-                                <Label for="edit-subscription-price"
-                                    >Price</Label
-                                >
-                                <Input
-                                    id="edit-subscription-price"
-                                    v-model="editPrice"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                />
-                                <InputError :message="errors.price" />
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="edit-subscription-currency"
-                                    >Currency</Label
-                                >
-                                <Select v-model="editCurrency">
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="USD">USD</SelectItem>
-                                        <SelectItem value="EUR">EUR</SelectItem>
-                                        <SelectItem value="GBP">GBP</SelectItem>
-                                        <SelectItem value="CAD">CAD</SelectItem>
-                                        <SelectItem value="AUD">AUD</SelectItem>
-                                        <SelectItem value="JPY">JPY</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="edit-subscription-cycle"
-                                    >Billing Cycle</Label
-                                >
-                                <Select v-model="editBillingCycle">
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="weekly"
-                                            >Weekly</SelectItem
-                                        >
-                                        <SelectItem value="monthly"
-                                            >Monthly</SelectItem
-                                        >
-                                        <SelectItem value="yearly"
-                                            >Yearly</SelectItem
-                                        >
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="grid gap-2">
-                                <Label for="edit-subscription-first-date"
-                                    >First Billing Date</Label
-                                >
-                                <Input
-                                    id="edit-subscription-first-date"
-                                    v-model="editFirstBillingDate"
-                                    type="date"
-                                />
-                                <InputError
-                                    :message="errors.first_billing_date"
-                                />
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="edit-subscription-next-date">
-                                    {{ editBillingDateLabel }}
-                                </Label>
-                                <Input
-                                    id="edit-subscription-next-date"
-                                    v-model="editNextBillingDate"
-                                    type="date"
-                                />
-                                <InputError
-                                    :message="errors.next_billing_date"
-                                />
-                            </div>
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label>Category</Label>
-                            <SubscriptionCategorySelect
-                                v-model="editCategory"
-                                :categories="props.categories ?? []"
-                                :candidates-url="
-                                    props.categoryCandidatesUrl ?? ''
-                                "
-                                placeholder="e.g. Entertainment"
-                            />
-                            <InputError :message="errors.category" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="edit-subscription-url">URL</Label>
-                            <Input
-                                id="edit-subscription-url"
-                                v-model="editUrl"
-                                type="url"
-                            />
-                            <InputError :message="errors.url" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="edit-subscription-description"
-                                >Description</Label
-                            >
-                            <Input
-                                id="edit-subscription-description"
-                                v-model="editDescription"
-                                placeholder="Short description"
-                            />
-                            <InputError :message="errors.description" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="edit-subscription-notes">Notes</Label>
-                            <textarea
-                                id="edit-subscription-notes"
-                                v-model="editNotes"
-                                :class="taskInputLikeClass"
-                                rows="4"
-                                placeholder="Additional notes..."
-                            />
-                            <InputError :message="errors.notes" />
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <Checkbox
-                                id="edit-subscription-active"
-                                v-model="editIsActive"
-                            />
-                            <Label
-                                for="edit-subscription-active"
-                                class="cursor-pointer text-sm font-normal"
-                            >
-                                Active
-                            </Label>
-                        </div>
+                        <SubscriptionFormFields
+                            v-model:name="editName"
+                            v-model:price="editPrice"
+                            v-model:currency="editCurrency"
+                            v-model:billing-cycle="editBillingCycle"
+                            v-model:first-billing-date="editFirstBillingDate"
+                            v-model:next-billing-date="editNextBillingDate"
+                            v-model:category="editCategory"
+                            v-model:url="editUrl"
+                            v-model:description="editDescription"
+                            v-model:notes="editNotes"
+                            v-model:is-active="editIsActive"
+                            :errors="errors"
+                            :categories="props.categories ?? []"
+                            :category-candidates-url="
+                                props.categoryCandidatesUrl ?? ''
+                            "
+                            id-prefix="edit-subscription"
+                            show-active
+                        />
                     </form>
                 </template>
             </EditorSidebarLayout>

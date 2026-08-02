@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Subscriptions;
 use App\Actions\Records\SaveSubscription;
 use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Subscriptions\DeleteSubscriptionRequest;
 use App\Http\Requests\Subscriptions\SaveSubscriptionRequest;
 use App\Models\Subscription;
 use App\Models\Team;
@@ -51,7 +50,7 @@ class SubscriptionController extends Controller
         ]);
     }
 
-    public function destroy(DeleteSubscriptionRequest $request, Team $currentTeam, int $subscription): RedirectResponse
+    public function destroy(Team $currentTeam, int $subscription): RedirectResponse
     {
         $subscription = Subscription::query()
             ->whereBelongsTo($currentTeam)

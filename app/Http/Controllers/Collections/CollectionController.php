@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Collections;
 
 use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Collections\DeleteCollectionRequest;
 use App\Http\Requests\Collections\SaveCollectionRequest;
 use App\Models\RecordCollection;
 use App\Models\Team;
@@ -47,7 +46,7 @@ class CollectionController extends Controller
         ]);
     }
 
-    public function destroy(DeleteCollectionRequest $request, Team $currentTeam, int $collection): RedirectResponse
+    public function destroy(Team $currentTeam, int $collection): RedirectResponse
     {
         $collection = RecordCollection::query()
             ->whereBelongsTo($currentTeam)
