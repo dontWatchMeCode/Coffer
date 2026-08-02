@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Mcp\Tools;
 
 use App\Mcp\Tools\Concerns\RegistersForWritableTokens;
-use App\Services\McpRecordService;
+use App\Services\McpRecordTagService;
 use App\Services\RecordTypeRegistry;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
@@ -23,9 +23,9 @@ class RemoveRecordTagsTool extends Tool
 {
     use RegistersForWritableTokens;
 
-    public function handle(Request $request, McpRecordService $records): Response|ResponseFactory
+    public function handle(Request $request, McpRecordTagService $records): Response|ResponseFactory
     {
-        return $records->removeTags($request);
+        return $records->remove($request);
     }
 
     public function schema(JsonSchema $schema): array

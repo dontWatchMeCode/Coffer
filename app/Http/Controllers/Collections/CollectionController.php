@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Collections;
 
+use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Collections\DeleteCollectionRequest;
 use App\Http\Requests\Collections\SaveCollectionRequest;
@@ -13,6 +14,8 @@ use Illuminate\Http\RedirectResponse;
 
 class CollectionController extends Controller
 {
+    use HandlesTrashedRecords;
+
     public function store(SaveCollectionRequest $request, Team $currentTeam): RedirectResponse
     {
         $this->authorize('create', RecordCollection::class);
@@ -61,31 +64,11 @@ class CollectionController extends Controller
 
     public function restore(Team $currentTeam, int $collection): RedirectResponse
     {
-        $collection = RecordCollection::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($collection);
-
-        $this->authorize('restore', $collection);
-
-        $collection->restore();
-
-        return to_route('team.collections.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->restoreTrashedRecord($currentTeam, $collection, RecordCollection::class, 'team.collections.trash');
     }
 
     public function forceDestroy(Team $currentTeam, int $collection): RedirectResponse
     {
-        $collection = RecordCollection::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($collection);
-
-        $this->authorize('forceDelete', $collection);
-
-        $collection->forceDelete();
-
-        return to_route('team.collections.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->forceDeleteTrashedRecord($currentTeam, $collection, RecordCollection::class, 'team.collections.trash');
     }
 }

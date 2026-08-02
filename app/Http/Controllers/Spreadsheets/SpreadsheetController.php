@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Spreadsheets;
 
+use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Spreadsheets\SaveSpreadsheetRequest;
 use App\Http\Requests\Spreadsheets\SaveSpreadsheetWorkbookRequest;
@@ -13,6 +14,8 @@ use Illuminate\Http\RedirectResponse;
 
 class SpreadsheetController extends Controller
 {
+    use HandlesTrashedRecords;
+
     public function store(SaveSpreadsheetRequest $request, Team $currentTeam): RedirectResponse
     {
         $this->authorize('create', SpreadsheetWorkbook::class);
@@ -53,28 +56,12 @@ class SpreadsheetController extends Controller
 
     public function restore(Team $currentTeam, int $spreadsheet): RedirectResponse
     {
-        $spreadsheet = SpreadsheetWorkbook::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($spreadsheet);
-
-        $this->authorize('restore', $spreadsheet);
-
-        $spreadsheet->restore();
-
-        return to_route('team.spreadsheets.trash', ['current_team' => $currentTeam]);
+        return $this->restoreTrashedRecord($currentTeam, $spreadsheet, SpreadsheetWorkbook::class, 'team.spreadsheets.trash');
     }
 
     public function forceDestroy(Team $currentTeam, int $spreadsheet): RedirectResponse
     {
-        $spreadsheet = SpreadsheetWorkbook::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($spreadsheet);
-
-        $this->authorize('forceDelete', $spreadsheet);
-
-        $spreadsheet->forceDelete();
-
-        return to_route('team.spreadsheets.trash', ['current_team' => $currentTeam]);
+        return $this->forceDeleteTrashedRecord($currentTeam, $spreadsheet, SpreadsheetWorkbook::class, 'team.spreadsheets.trash');
     }
 
     private function spreadsheetForTeam(Team $currentTeam, int $spreadsheet): SpreadsheetWorkbook

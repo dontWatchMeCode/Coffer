@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Bookmarks;
 
+use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Bookmarks\DeleteBookmarkRequest;
 use App\Http\Requests\Bookmarks\SaveBookmarkRequest;
@@ -13,6 +14,8 @@ use Illuminate\Http\RedirectResponse;
 
 class BookmarkController extends Controller
 {
+    use HandlesTrashedRecords;
+
     public function store(SaveBookmarkRequest $request, Team $currentTeam): RedirectResponse
     {
         $this->authorize('create', Bookmark::class);
@@ -61,31 +64,11 @@ class BookmarkController extends Controller
 
     public function restore(Team $currentTeam, int $bookmark): RedirectResponse
     {
-        $bookmark = Bookmark::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($bookmark);
-
-        $this->authorize('restore', $bookmark);
-
-        $bookmark->restore();
-
-        return to_route('team.bookmarks.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->restoreTrashedRecord($currentTeam, $bookmark, Bookmark::class, 'team.bookmarks.trash');
     }
 
     public function forceDestroy(Team $currentTeam, int $bookmark): RedirectResponse
     {
-        $bookmark = Bookmark::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($bookmark);
-
-        $this->authorize('forceDelete', $bookmark);
-
-        $bookmark->forceDelete();
-
-        return to_route('team.bookmarks.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->forceDeleteTrashedRecord($currentTeam, $bookmark, Bookmark::class, 'team.bookmarks.trash');
     }
 }

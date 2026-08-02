@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Tasks;
 
+use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tasks\DeleteTaskRequest;
 use App\Http\Requests\Tasks\SaveTaskRequest;
 use App\Models\Task;
 use App\Models\Team;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 
 class TaskController extends Controller
 {
+    use HandlesTrashedRecords;
+
     /**
      * Store a newly created task.
      */
@@ -72,31 +76,23 @@ class TaskController extends Controller
 
     public function restore(Team $currentTeam, int $task): RedirectResponse
     {
-        $task = Task::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($task);
-
-        $this->authorize('restore', $task);
-
-        $projectId = $task->project_id;
-
-        $task->restore();
-
-        return to_route('team.tasks.trash', ['current_team' => $currentTeam, 'project' => $projectId]);
+        return $this->restoreTrashedRecord(
+            $currentTeam,
+            $task,
+            Task::class,
+            'team.tasks.trash',
+            fn (Model $task): array => ['project' => $task->getAttribute('project_id')],
+        );
     }
 
     public function forceDestroy(Team $currentTeam, int $task): RedirectResponse
     {
-        $task = Task::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($task);
-
-        $this->authorize('forceDelete', $task);
-
-        $projectId = $task->project_id;
-
-        $task->forceDelete();
-
-        return to_route('team.tasks.trash', ['current_team' => $currentTeam, 'project' => $projectId]);
+        return $this->forceDeleteTrashedRecord(
+            $currentTeam,
+            $task,
+            Task::class,
+            'team.tasks.trash',
+            fn (Model $task): array => ['project' => $task->getAttribute('project_id')],
+        );
     }
 }

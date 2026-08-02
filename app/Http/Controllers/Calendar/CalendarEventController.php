@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Calendar;
 
+use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Calendar\DeleteCalendarEventRequest;
 use App\Http\Requests\Calendar\SaveCalendarEventRequest;
@@ -13,6 +14,8 @@ use Illuminate\Http\RedirectResponse;
 
 class CalendarEventController extends Controller
 {
+    use HandlesTrashedRecords;
+
     public function store(SaveCalendarEventRequest $request, Team $currentTeam): RedirectResponse
     {
         $this->authorize('create', CalendarEvent::class);
@@ -53,27 +56,11 @@ class CalendarEventController extends Controller
 
     public function restore(Team $currentTeam, int $event): RedirectResponse
     {
-        $event = CalendarEvent::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($event);
-
-        $this->authorize('restore', $event);
-
-        $event->restore();
-
-        return to_route('team.calendar.trash', ['current_team' => $currentTeam]);
+        return $this->restoreTrashedRecord($currentTeam, $event, CalendarEvent::class, 'team.calendar.trash');
     }
 
     public function forceDestroy(Team $currentTeam, int $event): RedirectResponse
     {
-        $event = CalendarEvent::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($event);
-
-        $this->authorize('forceDelete', $event);
-
-        $event->forceDelete();
-
-        return to_route('team.calendar.trash', ['current_team' => $currentTeam]);
+        return $this->forceDeleteTrashedRecord($currentTeam, $event, CalendarEvent::class, 'team.calendar.trash');
     }
 }

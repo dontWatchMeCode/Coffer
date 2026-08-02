@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Actions\Records\SaveNote;
+use App\Actions\Records\SaveSubscription;
 use App\Models\FileItem;
 use App\Models\Note;
 use App\Models\Subscription;
-use App\Models\SubscriptionCategory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -24,6 +25,8 @@ class McpRecordWriteService
         private readonly McpRequestContext $requestContext,
         private readonly McpTokenPermissionService $permissions,
         private readonly McpFileContent $fileContent,
+        private readonly SaveNote $saveNote,
+        private readonly SaveSubscription $saveSubscription,
     ) {}
 
     public function create(Request $request): Response|ResponseFactory
@@ -65,23 +68,10 @@ class McpRecordWriteService
         }
 
         $data['team_id'] = $team->id;
-        $blocks = [];
-        $subscriptionCategoryId = null;
-
-        if ($validated['type'] === 'note') {
-            $blocks = $data['blocks'] ?? [];
-            unset($data['blocks']);
-        }
-
         if ($validated['type'] === 'task') {
             $data['created_by'] ??= $user->id;
             $data['progress'] ??= 0;
             $data['position'] ??= 0;
-        }
-
-        if ($validated['type'] === 'subscription' && isset($data['category'])) {
-            $subscriptionCategoryId = SubscriptionCategory::resolveIdForTeam($data['category'], $team);
-            unset($data['category']);
         }
 
         $storedPath = null;
@@ -99,24 +89,17 @@ class McpRecordWriteService
 
         try {
             /** @var Model $model */
-            $model = $class::create($data);
+            $model = match ($class) {
+                Note::class => $this->saveNote->execute(new Note, $data),
+                Subscription::class => $this->saveSubscription->execute(new Subscription, $team, $data),
+                default => $class::create($data),
+            };
         } catch (Throwable $throwable) {
             if ($storedPath !== null) {
                 Storage::disk(McpFileContent::DISK)->delete($storedPath);
             }
 
             throw $throwable;
-        }
-
-        if ($validated['type'] === 'note' && $blocks !== []) {
-            assert($model instanceof Note);
-            $model->syncBlocks($blocks);
-        }
-
-        if ($validated['type'] === 'subscription' && $subscriptionCategoryId !== null) {
-            assert($model instanceof Subscription);
-            $model->subscription_category_id = $subscriptionCategoryId;
-            $model->save();
         }
 
         return Response::structured(['record' => McpRecordPayload::forModel($model->fresh(), $team)]);
@@ -155,13 +138,6 @@ class McpRecordWriteService
         }
 
         Gate::forUser($user)->authorize('update', $model);
-        $blocks = null;
-
-        if ($validated['type'] === 'note') {
-            $blocks = $data['blocks'] ?? null;
-            unset($data['blocks']);
-        }
-
         $newPath = null;
         $oldDisk = null;
         $oldPath = null;
@@ -180,18 +156,12 @@ class McpRecordWriteService
             $newPath = $fileAttributes['path'];
         }
 
-        $model->fill($data);
-        $oldCategoryId = null;
-
-        if ($validated['type'] === 'subscription' && array_key_exists('category', $data)) {
-            assert($model instanceof Subscription);
-            $oldCategoryId = $model->subscription_category_id;
-            $model->subscription_category_id = SubscriptionCategory::resolveIdForTeam($data['category'], $team);
-            unset($data['category']);
-        }
-
         try {
-            $model->save();
+            match (true) {
+                $model instanceof Note => $this->saveNote->execute($model, $data),
+                $model instanceof Subscription => $this->saveSubscription->execute($model, $team, $data),
+                default => tap($model)->fill($data)->save(),
+            };
         } catch (Throwable $throwable) {
             if ($newPath !== null) {
                 Storage::disk(McpFileContent::DISK)->delete($newPath);
@@ -202,15 +172,6 @@ class McpRecordWriteService
 
         if ($newPath !== null && $oldDisk !== null && $oldPath !== null) {
             Storage::disk($oldDisk)->delete($oldPath);
-        }
-
-        if ($validated['type'] === 'note' && $blocks !== null) {
-            assert($model instanceof Note);
-            $model->syncBlocks($blocks);
-        }
-
-        if ($validated['type'] === 'subscription' && $model instanceof Subscription && $oldCategoryId !== null && $oldCategoryId !== $model->subscription_category_id) {
-            SubscriptionCategory::deleteUnused($team->id);
         }
 
         return Response::structured(['record' => McpRecordPayload::forModel($model->fresh(), $team)]);

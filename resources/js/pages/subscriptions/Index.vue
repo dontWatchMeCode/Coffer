@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { PageProps } from '@inertiajs/core';
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, PieChart, Trash2 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
@@ -52,8 +51,6 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
-type SubscriptionPageProps = PageProps & Partial<Props>;
-
 const props = defineProps<Props>();
 
 const page = usePage();
@@ -64,16 +61,21 @@ const { searchQuery } = useSearch(
     'subscriptions',
 );
 
-const {
-    closeDetail,
-    rememberSavedItem,
-    getPendingSavedItem,
-    clearPendingSavedItem,
-} = useListDetailOverlay(
-    'subscriptions',
-    currentTeamSlug.value,
-    Boolean(props.subscriptions),
-);
+const { closeDetail, onSavedItem: onSaved } =
+    useListDetailOverlay<SubscriptionItem>(
+        'subscriptions',
+        currentTeamSlug.value,
+        Boolean(props.subscriptions),
+        {
+            detailItem: () => props.subscription,
+            lists: [
+                {
+                    prop: 'subscriptions.data',
+                    items: () => props.subscriptions?.data,
+                },
+            ],
+        },
+    );
 
 function navigateToSubscription(subscription: SubscriptionItem): void {
     router.visit(
@@ -112,60 +114,9 @@ function openDeleteDialog(subscription: SubscriptionItem): void {
 
 const { viewMode } = useViewMode('subscriptions');
 
-function replaceLoadedSubscription(subscription: SubscriptionItem): boolean {
-    if (!props.subscriptions?.data.some((s) => s.id === subscription.id)) {
-        return false;
-    }
-
-    router.replaceProp<SubscriptionPageProps>(
-        'subscriptions.data',
-        (subs: unknown) => {
-            if (!Array.isArray(subs)) {
-                return subs;
-            }
-
-            return subs.map((s) =>
-                s.id === subscription.id ? subscription : s,
-            );
-        },
-    );
-
-    return true;
-}
-
-function applyPendingSavedSubscription(): void {
-    if (props.subscription || !props.subscriptions) {
-        return;
-    }
-
-    const subscription = getPendingSavedItem<
-        SubscriptionItem & { id: number }
-    >();
-
-    if (!subscription || typeof subscription.id !== 'number') {
-        clearPendingSavedItem();
-
-        return;
-    }
-
-    replaceLoadedSubscription(subscription);
-    clearPendingSavedItem();
-}
-
 function closeSubscription(): void {
     closeDetail(subscriptionsIndex(currentTeamSlug.value).url);
 }
-
-function onSaved(subscription: SubscriptionItem): void {
-    rememberSavedItem(subscription);
-    replaceLoadedSubscription(subscription);
-}
-
-watch(
-    () => [props.subscription?.id, props.subscriptions?.data],
-    () => applyPendingSavedSubscription(),
-    { immediate: true, flush: 'post' },
-);
 
 defineOptions({
     inheritAttrs: false,

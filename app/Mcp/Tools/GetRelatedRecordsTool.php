@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools;
 
-use App\Services\McpRecordService;
+use App\Services\McpRecordLinkService;
 use App\Services\RecordTypeRegistry;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
@@ -20,7 +20,7 @@ use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 #[IsReadOnly]
 class GetRelatedRecordsTool extends Tool
 {
-    public function handle(Request $request, McpRecordService $records): Response|ResponseFactory
+    public function handle(Request $request, McpRecordLinkService $records): Response|ResponseFactory
     {
         return $records->related($request);
     }

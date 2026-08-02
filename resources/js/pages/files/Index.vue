@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { PageProps } from '@inertiajs/core';
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
@@ -51,11 +50,9 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
-type FilePageProps = PageProps & Partial<Props>;
-
 const props = defineProps<Props>();
 
-const page = usePage<PageProps>();
+const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const filesData = computed(() => props.files?.data ?? []);
 const { searchQuery } = useSearch(
@@ -67,12 +64,16 @@ const createDialogRef = ref<InstanceType<typeof CreateFileDialog> | null>(null);
 const deleteDialogRef = ref<InstanceType<typeof DeleteFileDialog> | null>(null);
 const { viewMode } = useViewMode('files');
 
-const {
-    closeDetail: closeFile,
-    rememberSavedItem,
-    getPendingSavedItem,
-    clearPendingSavedItem,
-} = useListDetailOverlay('files', currentTeamSlug.value, Boolean(props.files));
+const { closeDetail: closeFile, onSavedItem: rememberSavedFile } =
+    useListDetailOverlay<FileItem>(
+        'files',
+        currentTeamSlug.value,
+        Boolean(props.files),
+        {
+            detailItem: () => props.file,
+            lists: [{ prop: 'files.data', items: () => props.files?.data }],
+        },
+    );
 
 function openCreateDialog(): void {
     if (createDialogRef.value) {
@@ -96,52 +97,6 @@ function navigateToFile(file: FileItem): void {
 function openDeleteDialog(file: FileItem): void {
     deleteDialogRef.value?.openDeleteDialog(file);
 }
-
-function replaceLoadedFile(file: FileItem): boolean {
-    if (!props.files?.data.some((loadedFile) => loadedFile.id === file.id)) {
-        return false;
-    }
-
-    router.replaceProp<FilePageProps>('files.data', (files: unknown) => {
-        if (!Array.isArray(files)) {
-            return files;
-        }
-
-        return files.map((loadedFile) =>
-            loadedFile.id === file.id ? file : loadedFile,
-        );
-    });
-
-    return true;
-}
-
-function rememberSavedFile(file: FileItem): void {
-    rememberSavedItem(file);
-    replaceLoadedFile(file);
-}
-
-function applyPendingSavedFile(): void {
-    if (props.file || !props.files) {
-        return;
-    }
-
-    const file = getPendingSavedItem<FileItem>();
-
-    if (!file || typeof file.id !== 'number') {
-        clearPendingSavedItem();
-
-        return;
-    }
-
-    replaceLoadedFile(file);
-    clearPendingSavedItem();
-}
-
-watch(
-    () => [props.file?.id, props.files?.data],
-    () => applyPendingSavedFile(),
-    { immediate: true, flush: 'post' },
-);
 
 defineOptions({
     inheritAttrs: false,

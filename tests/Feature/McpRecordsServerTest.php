@@ -624,6 +624,14 @@ test('note blocks can be updated through mcp', function () {
     $note = $note->fresh();
     expect($note->blocks)->toHaveCount(1);
     expect($note->blocks->first()->type)->toBe('excalidraw');
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'note',
+        'id' => $note->id,
+        'data' => ['blocks' => null],
+    ])->assertOk();
+
+    expect($note->fresh()->blocks)->toHaveCount(1);
 });
 
 test('linked records and tags can be managed through mcp', function () {

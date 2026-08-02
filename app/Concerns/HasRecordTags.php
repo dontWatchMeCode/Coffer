@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Concerns;
 
 use App\Models\Tag;
-use App\Models\Team;
-use App\Services\ActivityLogger;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
@@ -54,37 +52,5 @@ trait HasRecordTags
             ])
             ->values()
             ->all();
-    }
-
-    /**
-     * @param  array<int, string>  $names
-     */
-    public function syncRecordTagNames(array $names, Team $team): void
-    {
-        $tagIds = collect($names)
-            ->map(fn (string $name): string => trim($name))
-            ->filter()
-            ->unique(fn (string $name): string => Tag::slugFor($name))
-            ->take(20)
-            ->map(function (string $name) use ($team): int {
-                $slug = Tag::slugFor($name);
-
-                return (int) Tag::query()->firstOrCreate([
-                    'team_id' => $team->id,
-                    'slug' => $slug,
-                ], [
-                    'name' => $name,
-                ])->id;
-            })
-            ->all();
-
-        $changes = $this->recordTags()->sync($tagIds);
-
-        $addedNames = Tag::query()->whereIn('id', $changes['attached'])->pluck('name')->all();
-        $removedNames = Tag::query()->whereIn('id', $changes['detached'])->pluck('name')->all();
-
-        ActivityLogger::logTagsSynced($this, $addedNames, $removedNames);
-
-        Tag::deleteUnused($changes['detached']);
     }
 }

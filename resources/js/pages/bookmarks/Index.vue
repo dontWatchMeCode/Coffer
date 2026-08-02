@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { PageProps } from '@inertiajs/core';
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
@@ -48,8 +47,6 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
-type BookmarkPageProps = PageProps & Partial<Props>;
-
 const props = defineProps<Props>();
 
 const page = usePage();
@@ -60,16 +57,18 @@ const { searchQuery } = useSearch(
     'bookmarks',
 );
 
-const {
-    closeDetail,
-    rememberSavedItem,
-    getPendingSavedItem,
-    clearPendingSavedItem,
-} = useListDetailOverlay(
-    'bookmarks',
-    currentTeamSlug.value,
-    Boolean(props.bookmarks),
-);
+const { closeDetail, onSavedItem: onSaved } =
+    useListDetailOverlay<BookmarkItem>(
+        'bookmarks',
+        currentTeamSlug.value,
+        Boolean(props.bookmarks),
+        {
+            detailItem: () => props.bookmark,
+            lists: [
+                { prop: 'bookmarks.data', items: () => props.bookmarks?.data },
+            ],
+        },
+    );
 
 function navigateToBookmark(bookmark: BookmarkItem): void {
     router.visit(
@@ -103,56 +102,9 @@ function openDeleteDialog(bookmark: BookmarkItem): void {
 
 const { viewMode } = useViewMode('bookmarks');
 
-function replaceLoadedBookmark(bookmark: BookmarkItem): boolean {
-    if (!props.bookmarks?.data.some((b) => b.id === bookmark.id)) {
-        return false;
-    }
-
-    router.replaceProp<BookmarkPageProps>(
-        'bookmarks.data',
-        (bookmarks: unknown) => {
-            if (!Array.isArray(bookmarks)) {
-                return bookmarks;
-            }
-
-            return bookmarks.map((b) => (b.id === bookmark.id ? bookmark : b));
-        },
-    );
-
-    return true;
-}
-
-function applyPendingSavedBookmark(): void {
-    if (props.bookmark || !props.bookmarks) {
-        return;
-    }
-
-    const bookmark = getPendingSavedItem<BookmarkItem & { id: number }>();
-
-    if (!bookmark || typeof bookmark.id !== 'number') {
-        clearPendingSavedItem();
-
-        return;
-    }
-
-    replaceLoadedBookmark(bookmark);
-    clearPendingSavedItem();
-}
-
 function closeBookmark(): void {
     closeDetail(bookmarksIndex(currentTeamSlug.value).url);
 }
-
-function onSaved(bookmark: BookmarkItem): void {
-    rememberSavedItem(bookmark);
-    replaceLoadedBookmark(bookmark);
-}
-
-watch(
-    () => [props.bookmark?.id, props.bookmarks?.data],
-    () => applyPendingSavedBookmark(),
-    { immediate: true, flush: 'post' },
-);
 
 defineOptions({
     inheritAttrs: false,

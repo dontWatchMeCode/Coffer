@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Database\StrictSQLiteConnection;
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
@@ -37,7 +36,6 @@ use App\Policies\TagPolicy;
 use App\Policies\TaskCommentPolicy;
 use App\Policies\TaskPolicy;
 use App\Policies\TeamPolicy;
-use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -48,8 +46,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        Connection::resolverFor('sqlite', fn (mixed $connection, string $database, string $prefix, array $config): StrictSQLiteConnection => new StrictSQLiteConnection($connection, $database, $prefix, $config));
-
         if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
             $this->app->register(TelescopeServiceProvider::class);

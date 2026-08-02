@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { PageProps } from '@inertiajs/core';
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, PieChart, Trash2 } from 'lucide-vue-next';
 import { computed, onUnmounted, ref, watch } from 'vue';
@@ -51,8 +50,6 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
-type EventPageProps = PageProps & Partial<Props>;
-
 const props = defineProps<Props>();
 
 const page = usePage();
@@ -79,12 +76,19 @@ const hasListData = computed(() =>
     Boolean(props.events || props.calendarEvents),
 );
 
-const {
-    closeDetail,
-    rememberSavedItem,
-    getPendingSavedItem,
-    clearPendingSavedItem,
-} = useListDetailOverlay('calendar', currentTeamSlug.value, hasListData.value);
+const { closeDetail, onSavedItem: onSaved } =
+    useListDetailOverlay<CalendarEventItem>(
+        'calendar',
+        currentTeamSlug.value,
+        hasListData.value,
+        {
+            detailItem: () => props.event,
+            lists: [
+                { prop: 'calendarEvents', items: () => props.calendarEvents },
+                { prop: 'events.data', items: () => props.events?.data },
+            ],
+        },
+    );
 
 function reloadCalendar(): void {
     if (calendarTimeout) {
@@ -253,78 +257,9 @@ function openEditDialog(event: CalendarEventItem): void {
     );
 }
 
-function replaceLoadedEvent(updatedEvent: CalendarEventItem): boolean {
-    const replacedInCalendar = props.calendarEvents?.some(
-        (e) => e.id === updatedEvent.id,
-    );
-    const replacedInPaginated = props.events?.data.some(
-        (e) => e.id === updatedEvent.id,
-    );
-
-    if (!replacedInCalendar && !replacedInPaginated) {
-        return false;
-    }
-
-    const patch = (arr: CalendarEventItem[]) =>
-        arr.map((e) => (e.id === updatedEvent.id ? updatedEvent : e));
-
-    if (replacedInCalendar) {
-        router.replaceProp<EventPageProps>(
-            'calendarEvents',
-            (events: unknown) => {
-                if (!Array.isArray(events)) {
-                    return events;
-                }
-
-                return patch(events as CalendarEventItem[]);
-            },
-        );
-    }
-
-    if (replacedInPaginated) {
-        router.replaceProp<EventPageProps>('events.data', (events: unknown) => {
-            if (!Array.isArray(events)) {
-                return events;
-            }
-
-            return patch(events as CalendarEventItem[]);
-        });
-    }
-
-    return true;
-}
-
-function applyPendingSavedEvent(): void {
-    if (props.event) {
-        return;
-    }
-
-    const event = getPendingSavedItem<CalendarEventItem & { id: number }>();
-
-    if (!event || typeof event.id !== 'number') {
-        clearPendingSavedItem();
-
-        return;
-    }
-
-    replaceLoadedEvent(event);
-    clearPendingSavedItem();
-}
-
 function closeEvent(): void {
     closeDetail(calendarIndex(currentTeamSlug.value).url);
 }
-
-function onSaved(event: CalendarEventItem): void {
-    rememberSavedItem(event);
-    replaceLoadedEvent(event);
-}
-
-watch(
-    () => [props.event?.id, props.calendarEvents, props.events?.data],
-    () => applyPendingSavedEvent(),
-    { immediate: true, flush: 'post' },
-);
 </script>
 
 <template>

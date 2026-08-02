@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Log;
 
+use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Log\DeleteLogEntryRequest;
 use App\Http\Requests\Log\SaveLogEntryRequest;
@@ -13,6 +14,8 @@ use Illuminate\Http\RedirectResponse;
 
 class LogEntryController extends Controller
 {
+    use HandlesTrashedRecords;
+
     public function store(SaveLogEntryRequest $request, Team $currentTeam): RedirectResponse
     {
         $this->authorize('create', LogEntry::class);
@@ -53,31 +56,11 @@ class LogEntryController extends Controller
 
     public function restore(Team $currentTeam, int $logEntry): RedirectResponse
     {
-        $entry = LogEntry::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($logEntry);
-
-        $this->authorize('restore', $entry);
-
-        $entry->restore();
-
-        return to_route('team.log.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->restoreTrashedRecord($currentTeam, $logEntry, LogEntry::class, 'team.log.trash');
     }
 
     public function forceDestroy(Team $currentTeam, int $logEntry): RedirectResponse
     {
-        $entry = LogEntry::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($logEntry);
-
-        $this->authorize('forceDelete', $entry);
-
-        $entry->forceDelete();
-
-        return to_route('team.log.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->forceDeleteTrashedRecord($currentTeam, $logEntry, LogEntry::class, 'team.log.trash');
     }
 }

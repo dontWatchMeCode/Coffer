@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Notes;
 
+use App\Actions\Records\SaveNote;
+use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Notes\DeleteNoteRequest;
 use App\Http\Requests\Notes\SaveNoteRequest;
@@ -13,20 +15,24 @@ use Illuminate\Http\RedirectResponse;
 
 class NoteController extends Controller
 {
+    use HandlesTrashedRecords;
+
+    public function __construct(private readonly SaveNote $saveNote) {}
+
     public function store(SaveNoteRequest $request, Team $currentTeam): RedirectResponse
     {
         $this->authorize('create', Note::class);
 
         $validated = $request->validated();
 
-        $note = Note::create([
-            'team_id' => $currentTeam->id,
-            'title' => $validated['title'],
-        ]);
-
-        if (array_key_exists('blocks', $validated)) {
-            $note->syncBlocks($validated['blocks'] ?? []);
+        if (array_key_exists('blocks', $validated) && $validated['blocks'] === null) {
+            $validated['blocks'] = [];
         }
+
+        $note = $this->saveNote->execute(new Note, [
+            'team_id' => $currentTeam->id,
+            ...$validated,
+        ]);
 
         return to_route('team.notes.show', [
             'current_team' => $currentTeam,
@@ -44,13 +50,11 @@ class NoteController extends Controller
 
         $validated = $request->validated();
 
-        $note->update([
-            'title' => $validated['title'] ?? $note->title,
-        ]);
-
-        if (array_key_exists('blocks', $validated)) {
-            $note->syncBlocks($validated['blocks'] ?? []);
+        if (array_key_exists('blocks', $validated) && $validated['blocks'] === null) {
+            $validated['blocks'] = [];
         }
+
+        $this->saveNote->execute($note, $validated);
 
         return to_route('team.notes.show', [
             'current_team' => $currentTeam,
@@ -75,31 +79,11 @@ class NoteController extends Controller
 
     public function restore(Team $currentTeam, int $note): RedirectResponse
     {
-        $note = Note::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($note);
-
-        $this->authorize('restore', $note);
-
-        $note->restore();
-
-        return to_route('team.notes.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->restoreTrashedRecord($currentTeam, $note, Note::class, 'team.notes.trash');
     }
 
     public function forceDestroy(Team $currentTeam, int $note): RedirectResponse
     {
-        $note = Note::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($note);
-
-        $this->authorize('forceDelete', $note);
-
-        $note->forceDelete();
-
-        return to_route('team.notes.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->forceDeleteTrashedRecord($currentTeam, $note, Note::class, 'team.notes.trash');
     }
 }

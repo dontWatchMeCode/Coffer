@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Mcp\Tools;
 
 use App\Mcp\Tools\Concerns\RegistersForWritableTokens;
-use App\Services\McpRecordService;
+use App\Services\McpTaskCommentService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -20,9 +20,9 @@ class AddTaskCommentTool extends Tool
 {
     use RegistersForWritableTokens;
 
-    public function handle(Request $request, McpRecordService $records): Response|ResponseFactory
+    public function handle(Request $request, McpTaskCommentService $records): Response|ResponseFactory
     {
-        return $records->addTaskComment($request);
+        return $records->add($request);
     }
 
     public function schema(JsonSchema $schema): array

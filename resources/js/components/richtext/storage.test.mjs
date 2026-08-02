@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { renderStoredRichTextAsHtml } from './storage.ts';
+import {
+    normalizeStoredRichText,
+    renderStoredRichTextAsHtml,
+} from './storage.ts';
+
+test('normalizeStoredRichText preserves JSON-like markdown', () => {
+    assert.equal(normalizeStoredRichText('["text"]'), '["text"]');
+});
 
 test('renderStoredRichTextAsHtml preserves empty paragraphs in readonly mode', () => {
     const markdown = 'asdasdasd\n\n\n\nasd asdasd\n\nasdasd';

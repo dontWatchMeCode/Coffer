@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { PageProps } from '@inertiajs/core';
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
@@ -48,8 +47,6 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
-type CollectionPageProps = PageProps & Partial<Props>;
-
 const props = defineProps<Props>();
 
 const page = usePage();
@@ -59,16 +56,21 @@ const { searchQuery } = useSearch(
     'collections',
 );
 
-const {
-    closeDetail,
-    rememberSavedItem,
-    getPendingSavedItem,
-    clearPendingSavedItem,
-} = useListDetailOverlay(
-    'collections',
-    currentTeamSlug.value,
-    Boolean(props.collections),
-);
+const { closeDetail, onSavedItem: onSaved } =
+    useListDetailOverlay<CollectionItem>(
+        'collections',
+        currentTeamSlug.value,
+        Boolean(props.collections),
+        {
+            detailItem: () => props.collection,
+            lists: [
+                {
+                    prop: 'collections.data',
+                    items: () => props.collections?.data,
+                },
+            ],
+        },
+    );
 
 const { viewMode } = useViewMode('collections');
 
@@ -103,58 +105,9 @@ function navigateToCollection(collection: CollectionItem): void {
     );
 }
 
-function replaceLoadedCollection(collection: CollectionItem): boolean {
-    if (!props.collections?.data.some((c) => c.id === collection.id)) {
-        return false;
-    }
-
-    router.replaceProp<CollectionPageProps>(
-        'collections.data',
-        (collections: unknown) => {
-            if (!Array.isArray(collections)) {
-                return collections;
-            }
-
-            return collections.map((c) =>
-                c.id === collection.id ? collection : c,
-            );
-        },
-    );
-
-    return true;
-}
-
-function applyPendingSavedCollection(): void {
-    if (props.collection || !props.collections) {
-        return;
-    }
-
-    const collection = getPendingSavedItem<CollectionItem & { id: number }>();
-
-    if (!collection || typeof collection.id !== 'number') {
-        clearPendingSavedItem();
-
-        return;
-    }
-
-    replaceLoadedCollection(collection);
-    clearPendingSavedItem();
-}
-
 function closeCollection(): void {
     closeDetail(collectionsIndex(currentTeamSlug.value).url);
 }
-
-function onSaved(collection: CollectionItem): void {
-    rememberSavedItem(collection);
-    replaceLoadedCollection(collection);
-}
-
-watch(
-    () => [props.collection?.id, props.collections?.data],
-    () => applyPendingSavedCollection(),
-    { immediate: true, flush: 'post' },
-);
 
 defineOptions({
     inheritAttrs: false,

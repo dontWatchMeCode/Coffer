@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { PageProps } from '@inertiajs/core';
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
@@ -48,8 +47,6 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
-type NotePageProps = PageProps & Partial<Props>;
-
 const props = defineProps<Props>();
 
 const page = usePage();
@@ -59,12 +56,15 @@ const { searchQuery } = useSearch(
     'notes',
 );
 
-const {
-    closeDetail,
-    rememberSavedItem,
-    getPendingSavedItem,
-    clearPendingSavedItem,
-} = useListDetailOverlay('notes', currentTeamSlug.value, Boolean(props.notes));
+const { closeDetail, onSavedItem: onSaved } = useListDetailOverlay<NoteItem>(
+    'notes',
+    currentTeamSlug.value,
+    Boolean(props.notes),
+    {
+        detailItem: () => props.note,
+        lists: [{ prop: 'notes.data', items: () => props.notes?.data }],
+    },
+);
 
 const createDialogRef = ref<InstanceType<typeof CreateNoteDialog> | null>(null);
 const deleteDialogRef = ref<InstanceType<typeof DeleteNoteDialog> | null>(null);
@@ -90,53 +90,9 @@ function navigateToNote(note: NoteItem): void {
 
 const { viewMode } = useViewMode('notes');
 
-function replaceLoadedNote(note: NoteItem): boolean {
-    if (!props.notes?.data.some((n) => n.id === note.id)) {
-        return false;
-    }
-
-    router.replaceProp<NotePageProps>('notes.data', (notes: unknown) => {
-        if (!Array.isArray(notes)) {
-            return notes;
-        }
-
-        return notes.map((n) => (n.id === note.id ? note : n));
-    });
-
-    return true;
-}
-
-function applyPendingSavedNote(): void {
-    if (props.note || !props.notes) {
-        return;
-    }
-
-    const note = getPendingSavedItem<NoteItem & { id: number }>();
-
-    if (!note || typeof note.id !== 'number') {
-        clearPendingSavedItem();
-
-        return;
-    }
-
-    replaceLoadedNote(note);
-    clearPendingSavedItem();
-}
-
 function closeNote(): void {
     closeDetail(notesIndex(currentTeamSlug.value).url);
 }
-
-function onSaved(note: NoteItem): void {
-    rememberSavedItem(note);
-    replaceLoadedNote(note);
-}
-
-watch(
-    () => [props.note?.id, props.notes?.data],
-    () => applyPendingSavedNote(),
-    { immediate: true, flush: 'post' },
-);
 
 defineOptions({
     inheritAttrs: false,

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { PageProps } from '@inertiajs/core';
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
 import ViewModeToggle from '@/components/list/ViewModeToggle.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
@@ -48,8 +47,6 @@ type Props = {
     activityHistory?: ActivityHistoryConfig;
 };
 
-type ContactPageProps = PageProps & Partial<Props>;
-
 const props = defineProps<Props>();
 
 const page = usePage();
@@ -60,15 +57,14 @@ const { searchQuery } = useSearch(
     'contacts',
 );
 
-const {
-    closeDetail,
-    rememberSavedItem,
-    getPendingSavedItem,
-    clearPendingSavedItem,
-} = useListDetailOverlay(
+const { closeDetail, onSavedItem: onSaved } = useListDetailOverlay<ContactItem>(
     'contacts',
     currentTeamSlug.value,
     Boolean(props.contacts),
+    {
+        detailItem: () => props.contact,
+        lists: [{ prop: 'contacts.data', items: () => props.contacts?.data }],
+    },
 );
 
 function navigateToContact(contact: ContactItem): void {
@@ -103,56 +99,9 @@ function openDeleteDialog(contact: ContactItem): void {
 
 const { viewMode } = useViewMode('contacts');
 
-function applyPendingSavedContact(): void {
-    if (props.contact || !props.contacts) {
-        return;
-    }
-
-    const contact = getPendingSavedItem<ContactItem & { id: number }>();
-
-    if (!contact || typeof contact.id !== 'number') {
-        clearPendingSavedItem();
-
-        return;
-    }
-
-    replaceLoadedContact(contact);
-    clearPendingSavedItem();
-}
-
 function closeContact(): void {
     closeDetail(contactsIndex(currentTeamSlug.value).url);
 }
-
-function onSaved(contact: ContactItem): void {
-    rememberSavedItem(contact);
-    replaceLoadedContact(contact);
-}
-
-function replaceLoadedContact(contact: ContactItem): boolean {
-    if (!props.contacts?.data.some((c) => c.id === contact.id)) {
-        return false;
-    }
-
-    router.replaceProp<ContactPageProps>(
-        'contacts.data',
-        (contacts: unknown) => {
-            if (!Array.isArray(contacts)) {
-                return contacts;
-            }
-
-            return contacts.map((c) => (c.id === contact.id ? contact : c));
-        },
-    );
-
-    return true;
-}
-
-watch(
-    () => [props.contact?.id, props.contacts?.data],
-    () => applyPendingSavedContact(),
-    { immediate: true, flush: 'post' },
-);
 
 defineOptions({
     inheritAttrs: false,

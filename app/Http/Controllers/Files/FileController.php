@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Files;
 
+use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Files\DeleteFileRequest;
 use App\Http\Requests\Files\SaveFileRequest;
@@ -17,6 +18,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FileController extends Controller
 {
+    use HandlesTrashedRecords;
+
     public function store(SaveFileRequest $request, Team $currentTeam): RedirectResponse
     {
         $this->authorize('create', FileItem::class);
@@ -120,32 +123,12 @@ class FileController extends Controller
 
     public function restore(Team $currentTeam, int $file): RedirectResponse
     {
-        $file = FileItem::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($file);
-
-        $this->authorize('restore', $file);
-
-        $file->restore();
-
-        return to_route('team.files.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->restoreTrashedRecord($currentTeam, $file, FileItem::class, 'team.files.trash');
     }
 
     public function forceDestroy(Team $currentTeam, int $file): RedirectResponse
     {
-        $file = FileItem::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($file);
-
-        $this->authorize('forceDelete', $file);
-
-        $file->forceDelete();
-
-        return to_route('team.files.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->forceDeleteTrashedRecord($currentTeam, $file, FileItem::class, 'team.files.trash');
     }
 
     /**

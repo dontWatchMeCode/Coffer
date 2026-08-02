@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Contacts;
 
+use App\Concerns\HandlesTrashedRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Contacts\DeleteContactRequest;
 use App\Http\Requests\Contacts\SaveContactRequest;
@@ -13,6 +14,8 @@ use Illuminate\Http\RedirectResponse;
 
 class ContactController extends Controller
 {
+    use HandlesTrashedRecords;
+
     public function store(SaveContactRequest $request, Team $currentTeam): RedirectResponse
     {
         $this->authorize('create', Contact::class);
@@ -61,31 +64,11 @@ class ContactController extends Controller
 
     public function restore(Team $currentTeam, int $contact): RedirectResponse
     {
-        $contact = Contact::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($contact);
-
-        $this->authorize('restore', $contact);
-
-        $contact->restore();
-
-        return to_route('team.contacts.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->restoreTrashedRecord($currentTeam, $contact, Contact::class, 'team.contacts.trash');
     }
 
     public function forceDestroy(Team $currentTeam, int $contact): RedirectResponse
     {
-        $contact = Contact::onlyTrashed()
-            ->whereBelongsTo($currentTeam)
-            ->findOrFail($contact);
-
-        $this->authorize('forceDelete', $contact);
-
-        $contact->forceDelete();
-
-        return to_route('team.contacts.trash', [
-            'current_team' => $currentTeam,
-        ]);
+        return $this->forceDeleteTrashedRecord($currentTeam, $contact, Contact::class, 'team.contacts.trash');
     }
 }
