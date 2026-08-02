@@ -270,6 +270,41 @@ test('comment block changes are logged', function () {
         ->and($activities->first()->event)->toBe('blocks_updated');
 });
 
+test('comment block sync suppresses touch logging and resets loaded blocks relation', function () {
+    $comment = TaskComment::factory()->create();
+    $comment->blocks()->delete();
+    $block = $comment->blocks()->create(['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Same']]);
+    $comment->load('blocks');
+
+    $comment->syncBlocks([
+        ['id' => $block->id, 'type' => 'text', 'position' => 0, 'payload' => ['content' => 'Updated']],
+    ]);
+
+    $activities = $comment->activitiesAsSubject()->orderByDesc('id')->get();
+
+    expect($comment->relationLoaded('blocks'))->toBeFalse()
+        ->and($activities)->toHaveCount(2)
+        ->and($activities->first()->event)->toBe('blocks_updated');
+});
+
+test('comment block sync logs changed type with unchanged payload', function () {
+    $comment = TaskComment::factory()->create();
+    $comment->blocks()->delete();
+    $block = $comment->blocks()->create(['type' => 'text', 'position' => 0, 'payload' => ['content' => 'graph TD']]);
+
+    $comment->syncBlocks([
+        ['id' => $block->id, 'type' => 'mermaid', 'position' => 0, 'payload' => ['content' => 'graph TD']],
+    ]);
+
+    $activity = $comment->activitiesAsSubject()
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->properties['block_changes']['updated'])->toHaveCount(1)
+        ->and($activity->properties['block_changes']['updated'][0]['type'])->toBe('mermaid');
+});
+
 test('project show page includes activity history', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

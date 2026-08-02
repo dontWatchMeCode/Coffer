@@ -1,20 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import {
-    Bookmark,
-    CalendarDays,
-    Contact,
-    CreditCard,
-    Files,
-    FileText,
-    FolderGit2,
-    Layers3,
-    ListTodo,
-    ScrollText,
-    Search,
-    Table2,
-    X,
-} from 'lucide-vue-next';
+import { Search, X } from 'lucide-vue-next';
+import type { Component } from 'vue';
 import { computed, ref, watch } from 'vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import SearchFilterSidebar from '@/components/pages/search/SearchFilterSidebar.vue';
@@ -23,28 +10,15 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+    SEARCH_CATEGORIES,
+    buildSearchJsonUrl,
+    buildSearchPageUrl,
+    requestSearchResults,
+} from '@/composables/useTeamSearch';
+import { createEmptySearchResults, flattenSearchResults } from '@/lib/search';
+import type { SearchResponse } from '@/lib/search';
 import type { Team } from '@/types';
-
-type SearchResultItem = {
-    id: number;
-    title: string;
-    subtitle: string | null;
-    url: string;
-};
-
-type SearchResponse = {
-    tasks: SearchResultItem[];
-    contacts: SearchResultItem[];
-    events: SearchResultItem[];
-    projects: SearchResultItem[];
-    bookmarks: SearchResultItem[];
-    subscriptions: SearchResultItem[];
-    notes: SearchResultItem[];
-    files: SearchResultItem[];
-    collections: SearchResultItem[];
-    log_entries: SearchResultItem[];
-    spreadsheets: SearchResultItem[];
-};
 
 type TagItem = { id: number; name: string; slug: string };
 type TypeOption = { value: string; label: string; prefix: string };
@@ -72,46 +46,7 @@ const loading = ref(false);
 const localResults = ref<SearchResponse>(props.results);
 const inputRef = ref<{ focus: () => void } | null>(null);
 
-const emptyResults: SearchResponse = {
-    tasks: [],
-    contacts: [],
-    events: [],
-    projects: [],
-    bookmarks: [],
-    subscriptions: [],
-    notes: [],
-    files: [],
-    collections: [],
-    log_entries: [],
-    spreadsheets: [],
-};
-
-const typeIconMap: Record<string, typeof Search> = {
-    tasks: ListTodo,
-    contacts: Contact,
-    events: CalendarDays,
-    projects: FolderGit2,
-    bookmarks: Bookmark,
-    subscriptions: CreditCard,
-    notes: FileText,
-    files: Files,
-    collections: Layers3,
-    log_entries: ScrollText,
-    spreadsheets: Table2,
-};
-
-const allResults = computed(() => {
-    const items: (SearchResultItem & { category: string })[] = [];
-
-    for (const [key, resultItems] of Object.entries(localResults.value)) {
-        for (const item of resultItems) {
-            items.push({ ...item, category: key });
-        }
-    }
-
-    return items;
-});
-
+const allResults = computed(() => flattenSearchResults(localResults.value));
 const hasResults = computed(() => allResults.value.length > 0);
 
 const activeTagName = computed(() => {
@@ -125,8 +60,9 @@ const activeTagName = computed(() => {
     );
 });
 
-const categoryLabel = (key: string): string =>
-    key === 'log_entries' ? 'Log' : key.charAt(0).toUpperCase() + key.slice(1);
+function iconForType(key: string): Component {
+    return SEARCH_CATEGORIES.find((c) => c.key === key)?.icon ?? Search;
+}
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -157,7 +93,7 @@ async function performSearch(): Promise<void> {
     }
 
     if (!q && !activeType.value && !activeTag.value) {
-        localResults.value = { ...emptyResults };
+        localResults.value = createEmptySearchResults();
         loading.value = false;
         updateUrl();
 
@@ -168,7 +104,9 @@ async function performSearch(): Promise<void> {
         updateUrl();
 
         router.visit(
-            `/${currentTeamSlug.value}/search/page?type=${encodeURIComponent(activeType.value)}`,
+            buildSearchPageUrl(currentTeamSlug.value, {
+                type: activeType.value,
+            }),
             { preserveState: true, preserveScroll: true },
         );
 
@@ -181,29 +119,13 @@ async function performSearch(): Promise<void> {
             activeType.value,
             activeTag.value,
         );
-        const fetchParams = new URLSearchParams();
 
-        if (builtQuery) {
-            fetchParams.set('q', builtQuery);
-        }
-
-        const response = await fetch(
-            `/${currentTeamSlug.value}/search?${fetchParams.toString()}`,
-            {
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            },
+        localResults.value = await requestSearchResults(
+            buildSearchJsonUrl(
+                currentTeamSlug.value,
+                builtQuery ? { q: builtQuery } : {},
+            ),
         );
-
-        if (response.ok) {
-            localResults.value = await response.json();
-        } else {
-            localResults.value = { ...emptyResults };
-        }
-    } catch {
-        localResults.value = { ...emptyResults };
     } finally {
         loading.value = false;
     }
@@ -333,7 +255,7 @@ defineOptions({
                             class="gap-1 text-xs"
                         >
                             <component
-                                :is="typeIconMap[activeType] ?? Search"
+                                :is="iconForType(activeType)"
                                 class="h-3 w-3"
                             />
                             {{
@@ -391,43 +313,37 @@ defineOptions({
 
                     <div v-else class="space-y-1">
                         <template
-                            v-for="category in Object.keys(typeIconMap)"
-                            :key="category"
+                            v-for="category in SEARCH_CATEGORIES"
+                            :key="category.key"
                         >
                             <template
-                                v-if="
-                                    localResults[
-                                        category as keyof SearchResponse
-                                    ]?.length > 0
-                                "
+                                v-if="localResults[category.key]?.length > 0"
                             >
                                 <div
                                     class="flex items-center gap-2 px-1 py-1.5 text-xs font-medium tracking-wider text-muted-foreground uppercase"
                                 >
                                     <component
-                                        :is="typeIconMap[category]"
+                                        :is="category.icon"
                                         class="h-3 w-3 opacity-70"
                                     />
-                                    {{ categoryLabel(category) }}
+                                    {{ category.label }}
                                     <span class="font-normal tabular-nums">
                                         ({{
-                                            localResults[
-                                                category as keyof SearchResponse
-                                            ].length
+                                            localResults[category.key].length
                                         }})
                                     </span>
                                 </div>
                                 <div class="space-y-0.5">
                                     <Link
                                         v-for="item in localResults[
-                                            category as keyof SearchResponse
+                                            category.key
                                         ]"
                                         :key="item.id"
                                         :href="item.url"
                                         class="flex min-w-0 items-start gap-3 overflow-hidden rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-accent/50"
                                     >
                                         <component
-                                            :is="typeIconMap[category]"
+                                            :is="category.icon"
                                             class="mt-0.5 h-4 w-4 shrink-0 opacity-60"
                                         />
                                         <div class="min-w-0 flex-1">

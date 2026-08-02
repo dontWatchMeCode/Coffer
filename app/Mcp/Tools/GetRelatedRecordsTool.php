@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Mcp\Tools;
 
 use App\Services\McpRecordService;
+use App\Services\RecordTypeRegistry;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -26,6 +27,6 @@ class GetRelatedRecordsTool extends Tool
 
     public function schema(JsonSchema $schema): array
     {
-        return RecordToolSchemas::typeAndId($schema);
+        return RecordToolSchemas::typeAndId($schema, RecordTypeRegistry::mcpLinkableTypes());
     }
 }

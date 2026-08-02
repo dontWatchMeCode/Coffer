@@ -6,8 +6,8 @@ namespace App\Http\Controllers\Log;
 
 use App\Http\Controllers\Controller;
 use App\Models\LogEntry;
-use App\Models\RecordLink;
 use App\Models\Team;
+use App\Services\RecordTypeRegistry;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +18,7 @@ class LogPageController extends Controller
     public function index(Request $request, Team $currentTeam): Response
     {
         $search = $request->string('search')->toString();
-        $subjectType = array_flip(RecordLink::linkableMap())[LogEntry::class] ?? null;
+        $subjectType = RecordTypeRegistry::typeForClass(LogEntry::class);
         $categoryInput = $request->input('categories');
         $selectedCategories = collect(is_array($categoryInput) ? $categoryInput : [$request->string('category')->toString()])
             ->filter(fn (mixed $category): bool => is_string($category) && $category !== '')

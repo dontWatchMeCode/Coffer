@@ -6,7 +6,6 @@ namespace App\Http\Controllers\ActivityHistory;
 
 use App\Concerns\ProvidesActivityHistory;
 use App\Http\Controllers\Controller;
-use App\Models\RecordLink;
 use App\Models\Team;
 use App\Services\RecordTypeRegistry;
 use Illuminate\Http\JsonResponse;
@@ -20,11 +19,11 @@ class ActivityHistoryController extends Controller
     public function index(Request $request, Team $currentTeam): JsonResponse
     {
         $validated = $request->validate([
-            'subject_type' => ['required', 'string', Rule::in(array_keys(RecordLink::linkableMap()))],
+            'subject_type' => ['required', 'string', Rule::in(array_keys(RecordTypeRegistry::definitions()))],
             'subject_id' => ['required', 'integer', 'min:1'],
         ]);
 
-        $class = RecordLink::linkableMap()[$validated['subject_type']] ?? null;
+        $class = RecordTypeRegistry::classFor((string) $validated['subject_type']);
 
         if ($class === null || ! class_exists($class) || ! RecordTypeRegistry::teamAllowsType($currentTeam, (string) $validated['subject_type'])) {
             return response()->json(['activities' => [], 'total' => 0, 'has_more' => false]);

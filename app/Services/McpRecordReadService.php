@@ -36,7 +36,7 @@ class McpRecordReadService
                 ],
             ])->all(),
             'relationships' => [
-                'supported_types' => $types,
+                'supported_types' => RecordTypeRegistry::mcpLinkableTypes(),
                 'relation_types' => ['related'],
                 'note' => 'Links are bidirectional generic related-record links.',
             ],

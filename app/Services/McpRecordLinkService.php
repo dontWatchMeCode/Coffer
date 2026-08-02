@@ -121,7 +121,7 @@ class McpRecordLinkService
         }
 
         [$user, $team] = $context;
-        $validated = McpRecordResolver::validateTypeAndId($request);
+        $validated = McpRecordResolver::validateTypeAndId($request, RecordTypeRegistry::mcpLinkableTypes());
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 
         if (! RecordTypeRegistry::teamAllowsType($team, $validated['type']) || ! $model instanceof Model || ! $model instanceof LinkableRecord) {
@@ -159,9 +159,9 @@ class McpRecordLinkService
     private function linkedPair(Request $request, Team $team): array
     {
         $validated = $request->validate([
-            'source_type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpTypes())],
+            'source_type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpLinkableTypes())],
             'source_id' => ['required', 'integer', 'min:1'],
-            'target_type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpTypes())],
+            'target_type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpLinkableTypes())],
             'target_id' => ['required', 'integer', 'min:1'],
         ]);
 

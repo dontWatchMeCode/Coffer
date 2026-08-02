@@ -1,18 +1,6 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
-import {
-    Bookmark,
-    CalendarDays,
-    Contact,
-    CreditCard,
-    FileText,
-    FolderGit2,
-    Layers3,
-    ListTodo,
-    ScrollText,
-    Search,
-    Table2,
-} from 'lucide-vue-next';
+import { Search } from 'lucide-vue-next';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import SearchPrefixTooltip from '@/components/search/SearchPrefixTooltip.vue';
 import { Button } from '@/components/ui/button';
@@ -24,45 +12,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-
-type SearchResultItem = {
-    id: number;
-    title: string;
-    subtitle: string | null;
-    url: string;
-};
-
-type SearchResponse = {
-    tasks: SearchResultItem[];
-    contacts: SearchResultItem[];
-    events: SearchResultItem[];
-    projects: SearchResultItem[];
-    bookmarks: SearchResultItem[];
-    subscriptions: SearchResultItem[];
-    notes: SearchResultItem[];
-    collections: SearchResultItem[];
-    log_entries: SearchResultItem[];
-    spreadsheets: SearchResultItem[];
-};
+import { SEARCH_CATEGORIES, useTeamSearch } from '@/composables/useTeamSearch';
+import type { SearchCategoryKey } from '@/lib/search';
 
 const open = defineModel<boolean>('open', { default: false });
 
 const page = usePage();
 const query = ref('');
-const loading = ref(false);
-const emptyResults: SearchResponse = {
-    tasks: [],
-    contacts: [],
-    events: [],
-    projects: [],
-    bookmarks: [],
-    subscriptions: [],
-    notes: [],
-    collections: [],
-    log_entries: [],
-    spreadsheets: [],
-};
-const results = ref<SearchResponse>({ ...emptyResults });
 const selectedIndex = ref(0);
 const inputRef = ref<{ focus: () => void } | null>(null);
 
@@ -70,81 +26,26 @@ const currentTeamSlug = computed(
     () => page.props.currentTeam?.slug as string | undefined,
 );
 
-const allResults = computed(() => [
-    ...results.value.tasks.map((item) => ({ ...item, type: 'task' as const })),
-    ...results.value.contacts.map((item) => ({
-        ...item,
-        type: 'contact' as const,
-    })),
-    ...results.value.events.map((item) => ({
-        ...item,
-        type: 'event' as const,
-    })),
-    ...results.value.projects.map((item) => ({
-        ...item,
-        type: 'project' as const,
-    })),
-    ...results.value.bookmarks.map((item) => ({
-        ...item,
-        type: 'bookmark' as const,
-    })),
-    ...results.value.subscriptions.map((item) => ({
-        ...item,
-        type: 'subscription' as const,
-    })),
-    ...results.value.notes.map((item) => ({
-        ...item,
-        type: 'note' as const,
-    })),
-    ...results.value.collections.map((item) => ({
-        ...item,
-        type: 'collection' as const,
-    })),
-    ...results.value.log_entries.map((item) => ({
-        ...item,
-        type: 'log_entry' as const,
-    })),
-    ...results.value.spreadsheets.map((item) => ({
-        ...item,
-        type: 'spreadsheet' as const,
-    })),
-]);
-
-const hasResults = computed(() => allResults.value.length > 0);
+const {
+    loading,
+    results,
+    allResults,
+    hasResults,
+    resetResults,
+    searchPageUrl: buildTeamSearchPageUrl,
+    runJsonSearch,
+} = useTeamSearch(currentTeamSlug);
 
 const searchPageUrl = computed(() => {
-    if (!currentTeamSlug.value) {
-        return '';
-    }
-
     const q = query.value.trim();
 
-    return q
-        ? `/${currentTeamSlug.value}/search/page?q=${encodeURIComponent(q)}`
-        : `/${currentTeamSlug.value}/search/page`;
+    return buildTeamSearchPageUrl(q ? { q } : {});
 });
 
 function goToSearchPage(): void {
     open.value = false;
     router.visit(searchPageUrl.value);
 }
-
-const categories: {
-    key: keyof SearchResponse;
-    label: string;
-    icon: typeof Search;
-}[] = [
-    { key: 'tasks', label: 'Tasks', icon: ListTodo },
-    { key: 'contacts', label: 'Contacts', icon: Contact },
-    { key: 'events', label: 'Events', icon: CalendarDays },
-    { key: 'projects', label: 'Projects', icon: FolderGit2 },
-    { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
-    { key: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
-    { key: 'notes', label: 'Notes', icon: FileText },
-    { key: 'collections', label: 'Collections', icon: Layers3 },
-    { key: 'log_entries', label: 'Log', icon: ScrollText },
-    { key: 'spreadsheets', label: 'Spreadsheets', icon: Table2 },
-];
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -156,43 +57,22 @@ watch(query, (newQuery) => {
     selectedIndex.value = 0;
 
     if (!newQuery.trim() || !currentTeamSlug.value) {
-        results.value = { ...emptyResults };
-        loading.value = false;
+        resetResults();
 
         return;
     }
 
     loading.value = true;
 
-    debounceTimer = setTimeout(async () => {
-        try {
-            const response = await fetch(
-                `/${currentTeamSlug.value}/search?q=${encodeURIComponent(newQuery.trim())}`,
-                {
-                    headers: {
-                        Accept: 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                },
-            );
-
-            if (response.ok) {
-                results.value = await response.json();
-            } else {
-                results.value = { ...emptyResults };
-            }
-        } catch {
-            results.value = { ...emptyResults };
-        } finally {
-            loading.value = false;
-        }
+    debounceTimer = setTimeout(() => {
+        runJsonSearch({ q: newQuery.trim() });
     }, 200);
 });
 
 watch(open, (isOpen) => {
     if (isOpen) {
         query.value = '';
-        results.value = { ...emptyResults };
+        resetResults();
         selectedIndex.value = 0;
         nextTick(() => inputRef.value?.focus());
     }
@@ -258,12 +138,12 @@ function navigateTo(url: string): void {
 }
 
 function getResultIndex(
-    categoryKey: keyof SearchResponse,
+    categoryKey: SearchCategoryKey,
     itemIndex: number,
 ): number {
     let offset = 0;
 
-    for (const cat of categories) {
+    for (const cat of SEARCH_CATEGORIES) {
         if (cat.key === categoryKey) {
             break;
         }
@@ -285,7 +165,8 @@ function getResultIndex(
             <DialogTitle class="sr-only">Search</DialogTitle>
             <DialogDescription class="sr-only">
                 Search across tasks, contacts, events, projects, bookmarks,
-                subscriptions, notes, files, and log entries in your team.
+                subscriptions, notes, files, collections, log entries, and
+                spreadsheets in your team.
             </DialogDescription>
 
             <div class="flex items-center border-b px-4">
@@ -331,7 +212,7 @@ function getResultIndex(
 
                 <div v-else>
                     <template
-                        v-for="category in categories"
+                        v-for="category in SEARCH_CATEGORIES"
                         :key="category.key"
                     >
                         <div

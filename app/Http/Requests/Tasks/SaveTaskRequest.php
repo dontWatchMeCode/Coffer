@@ -9,9 +9,9 @@ use App\Http\Requests\Concerns\AuthorizesTeamResource;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Team;
+use App\Validation\DomainRecordValidation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class SaveTaskRequest extends FormRequest
 {
@@ -38,28 +38,18 @@ class SaveTaskRequest extends FormRequest
             abort(404);
         }
 
-        $statusValues = $this->projectStatusValues($team);
-
-        return [
-            'project_id' => [
-                ...$this->requiredRule(),
-                'integer',
-                Rule::exists('projects', 'id')->where(fn ($query) => $query->where('team_id', $team->id)),
+        return DomainRecordValidation::rulesFor(
+            'task',
+            $this->isMethod('patch'),
+            $team,
+            $this->all(),
+            $this->routeTask($team),
+            requiredWhenPresent: [
+                'project_id' => false,
+                'title' => false,
+                'status' => false,
             ],
-            'assigned_to' => [
-                ...$this->optionalOnPatchRule(),
-                'nullable',
-                'integer',
-                Rule::exists('team_members', 'user_id')->where(fn ($query) => $query->where('team_id', $team->id)),
-            ],
-            'title' => [...$this->requiredRule(), 'string', 'max:255'],
-            'description' => [...$this->optionalOnPatchRule(), 'nullable', 'string'],
-            'status' => [...$this->requiredRule(), Rule::in($statusValues)],
-            'progress' => [...$this->optionalOnPatchRule(), 'sometimes', 'integer', 'between:0,100'],
-            'time_estimate' => [...$this->optionalOnPatchRule(), 'nullable', 'integer', 'min:0'],
-            'position' => [...$this->optionalOnPatchRule(), 'nullable', 'integer', 'min:0'],
-            'due_at' => [...$this->optionalOnPatchRule(), 'nullable', 'date'],
-        ];
+        );
     }
 
     /**
@@ -102,24 +92,21 @@ class SaveTaskRequest extends FormRequest
         }
     }
 
-    /**
-     * Get the rules that make a field required for creates and optional for patches.
-     *
-     * @return list<string>
-     */
-    protected function requiredRule(): array
+    private function routeTask(Team $team): ?Task
     {
-        return $this->isMethod('patch') ? ['sometimes'] : ['required'];
-    }
+        $routeTask = $this->route('task');
 
-    /**
-     * Get the rules that make a field optional on patches.
-     *
-     * @return list<string>
-     */
-    protected function optionalOnPatchRule(): array
-    {
-        return $this->isMethod('patch') ? ['sometimes'] : [];
+        if ($routeTask instanceof Task) {
+            return (int) $routeTask->team_id === (int) $team->id ? $routeTask : null;
+        }
+
+        if (! is_numeric($routeTask)) {
+            return null;
+        }
+
+        return Task::query()
+            ->whereBelongsTo($team)
+            ->find((int) $routeTask);
     }
 
     /**
@@ -129,14 +116,8 @@ class SaveTaskRequest extends FormRequest
     {
         $projectId = $this->input('project_id');
 
-        if ($projectId === null && $this->route('task') !== null) {
-            $task = Task::query()
-                ->whereBelongsTo($team)
-                ->find($this->route('task'));
-
-            if ($task instanceof Task) {
-                $projectId = $task->project_id;
-            }
+        if ($projectId === null) {
+            $projectId = $this->routeTask($team)?->project_id;
         }
 
         return Project::taskStatusValuesFor($team, $projectId);

@@ -6,6 +6,8 @@
 - Inertia and Vue frontend.
 - Tailwind CSS styling.
 - Wayfinder-generated route helpers.
+- React is used for embedded Excalidraw rendering inside Vue.
+- Mermaid and Unovis power diagram blocks and insights charts.
 - Pest tests.
 - Pint, PHPStan, ESLint, Prettier, Rector, and Vite checks.
 

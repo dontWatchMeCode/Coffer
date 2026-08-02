@@ -354,6 +354,18 @@ test('syncBlocks updates existing and removes stale blocks and logs activity', f
         ->and($removed[0]['payload']['content'])->toBe('Remove');
 });
 
+test('syncBlocks updates an existing block when its id is a numeric string', function () {
+    $note = Note::factory()->create();
+    $block = $note->blocks()->create(['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Before']]);
+
+    $note->syncBlocks([
+        ['id' => (string) $block->id, 'type' => 'text', 'position' => 0, 'payload' => ['content' => 'After']],
+    ]);
+
+    expect($note->blocks()->count())->toBe(1)
+        ->and($block->fresh()->payload['content'])->toBe('After');
+});
+
 test('syncBlocks only logs blocks whose payload changed', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
@@ -384,6 +396,44 @@ test('syncBlocks only logs blocks whose payload changed', function () {
         ->and($updated[0]['type'])->toBe('mermaid')
         ->and($updated[0]['old_payload']['content'])->toBe('graph TD')
         ->and($updated[0]['payload']['content'])->toBe('graph LR');
+});
+
+test('syncBlocks does not log unchanged text or mermaid payloads', function () {
+    $note = Note::factory()->create();
+    $textBlock = $note->blocks()->create(['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Same text']]);
+    $mermaidBlock = $note->blocks()->create(['type' => 'mermaid', 'position' => 1, 'payload' => ['content' => 'graph TD']]);
+
+    $note->syncBlocks([
+        ['id' => $textBlock->id, 'type' => 'text', 'position' => 0, 'payload' => ['content' => 'Same text']],
+        ['id' => $mermaidBlock->id, 'type' => 'mermaid', 'position' => 1, 'payload' => ['content' => 'graph TD']],
+    ]);
+
+    $activity = $note->activitiesAsSubject()
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    expect($activity)->toBeNull();
+});
+
+test('syncBlocks logs changed block type with unchanged payload', function () {
+    $note = Note::factory()->create();
+    $block = $note->blocks()->create(['type' => 'text', 'position' => 0, 'payload' => ['content' => 'graph TD']]);
+
+    $note->syncBlocks([
+        ['id' => $block->id, 'type' => 'mermaid', 'position' => 0, 'payload' => ['content' => 'graph TD']],
+    ]);
+
+    $activity = $note->activitiesAsSubject()
+        ->where('event', 'blocks_updated')
+        ->first();
+
+    $updated = $activity->properties['block_changes']['updated'];
+
+    expect($activity)->not->toBeNull()
+        ->and($updated)->toHaveCount(1)
+        ->and($updated[0]['type'])->toBe('mermaid')
+        ->and($updated[0]['old_payload']['content'])->toBe('graph TD')
+        ->and($updated[0]['payload']['content'])->toBe('graph TD');
 });
 
 test('syncBlocks ignores excalidraw viewport-only changes', function () {

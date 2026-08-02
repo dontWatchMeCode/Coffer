@@ -6,6 +6,7 @@ namespace App\Mcp\Tools;
 
 use App\Mcp\Tools\Concerns\RegistersForWritableTokens;
 use App\Services\McpRecordService;
+use App\Services\RecordTypeRegistry;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -27,6 +28,6 @@ class LinkRecordsTool extends Tool
 
     public function schema(JsonSchema $schema): array
     {
-        return RecordToolSchemas::pair($schema);
+        return RecordToolSchemas::pair($schema, RecordTypeRegistry::mcpLinkableTypes());
     }
 }

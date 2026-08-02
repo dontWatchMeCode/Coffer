@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Files;
 
 use App\Http\Requests\Concerns\AuthorizesTeamResource;
+use App\Validation\DomainRecordValidation;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SaveFileRequest extends FormRequest
@@ -40,25 +41,7 @@ class SaveFileRequest extends FormRequest
      */
     public function rules(): array
     {
-        $sometimes = $this->isMethod('patch');
-
-        return [
-            'title' => $sometimes
-                ? ['sometimes', 'required', 'string', 'max:255']
-                : ['required', 'string', 'max:255'],
-            'description' => $sometimes
-                ? ['sometimes', 'nullable', 'string']
-                : ['nullable', 'string'],
-            'file' => $sometimes
-                ? ['prohibited']
-                : [
-                    'required',
-                    'file',
-                    'max:'.self::MAX_UPLOAD_KILOBYTES,
-                    'mimes:'.implode(',', self::ACCEPTED_IMAGE_EXTENSIONS),
-                    'mimetypes:'.implode(',', self::ACCEPTED_IMAGE_MIME_TYPES),
-                ],
-        ];
+        return DomainRecordValidation::rulesFor('file', $this->isMethod('patch'), includeHttpFileUpload: true);
     }
 
     /**

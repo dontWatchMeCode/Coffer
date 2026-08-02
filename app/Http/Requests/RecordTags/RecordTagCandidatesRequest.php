@@ -26,7 +26,7 @@ class RecordTagCandidatesRequest extends FormRequest
     {
         return [
             'q' => ['nullable', 'string', 'max:255'],
-            'from_type' => ['required', 'string', Rule::in(array_keys(RecordLink::linkableMap()))],
+            'from_type' => ['required', 'string', Rule::in(array_keys(RecordLink::taggableMap()))],
             'from_id' => ['required', 'integer', 'min:1'],
         ];
     }

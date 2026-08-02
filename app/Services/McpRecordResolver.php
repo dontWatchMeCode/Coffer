@@ -33,12 +33,13 @@ class McpRecordResolver
     }
 
     /**
+     * @param  list<string>|null  $types
      * @return array<string, mixed>
      */
-    public static function validateTypeAndId(Request $request): array
+    public static function validateTypeAndId(Request $request, ?array $types = null): array
     {
         return $request->validate([
-            'type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpTypes())],
+            'type' => ['required', 'string', Rule::in($types ?? RecordTypeRegistry::mcpTypes())],
             'id' => ['required', 'integer', 'min:1'],
         ]);
     }

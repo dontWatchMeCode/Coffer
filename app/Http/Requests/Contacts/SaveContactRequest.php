@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Contacts;
 
 use App\Http\Requests\Concerns\AuthorizesTeamResource;
+use App\Validation\DomainRecordValidation;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SaveContactRequest extends FormRequest
@@ -34,34 +35,7 @@ class SaveContactRequest extends FormRequest
      */
     public function rules(): array
     {
-        $sometimes = $this->isMethod('patch');
-
-        return [
-            'name' => $sometimes
-                ? ['sometimes', 'required', 'string', 'max:255']
-                : ['required', 'string', 'max:255'],
-            'phone_numbers' => $sometimes
-                ? ['sometimes', 'nullable', 'array', 'max:20']
-                : ['nullable', 'array', 'max:20'],
-            'phone_numbers.*.label' => ['nullable', 'string', 'max:100'],
-            'phone_numbers.*.value' => ['required', 'string', 'max:255'],
-            'email_addresses' => $sometimes
-                ? ['sometimes', 'nullable', 'array', 'max:20']
-                : ['nullable', 'array', 'max:20'],
-            'email_addresses.*.label' => ['nullable', 'string', 'max:100'],
-            'email_addresses.*.value' => ['required', 'email', 'max:255'],
-            'links' => $sometimes
-                ? ['sometimes', 'nullable', 'array', 'max:20']
-                : ['nullable', 'array', 'max:20'],
-            'links.*.label' => ['nullable', 'string', 'max:100'],
-            'links.*.value' => ['required', 'url', 'max:2048'],
-            'address' => $sometimes
-                ? ['sometimes', 'nullable', 'string']
-                : ['nullable', 'string'],
-            'additional_info' => $sometimes
-                ? ['sometimes', 'nullable', 'string']
-                : ['nullable', 'string'],
-        ];
+        return DomainRecordValidation::rulesFor('contact', $this->isMethod('patch'));
     }
 
     /**

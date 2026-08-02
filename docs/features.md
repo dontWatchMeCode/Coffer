@@ -39,7 +39,7 @@ This is a concise feature map of the app.
 
 ## Tasks
 
-- Projects group team tasks, comments, assignment, progress, and due dates.
+- Projects group team tasks, rich block comments, assignment, progress, due dates, and insights.
 - Details: [Tasks](pages.md#tasks)
 
 ## Calendar
@@ -57,9 +57,15 @@ This is a concise feature map of the app.
 - Bookmarks track useful team links with descriptions and notes.
 - Details: [Bookmarks](pages.md#bookmarks)
 
+## Subscriptions
+
+- Subscriptions track recurring services with price, currency, billing cycle, billing dates, URL, notes, active state, and category.
+- Subscription insights show monthly spend, active count, upcoming renewals, spend trend, and category breakdown.
+- Details: [Subscriptions](pages.md#subscriptions)
+
 ## Notes
 
-- Notes capture team knowledge in text or Excalidraw format.
+- Notes capture team knowledge as ordered rich blocks: text, Excalidraw, and Mermaid.
 - Details: [Notes](pages.md#notes)
 
 ## Log
@@ -72,6 +78,11 @@ This is a concise feature map of the app.
 - Files manage private, team-scoped file metadata with optional byte storage.
 - Details: [Files](pages.md#files)
 
+## Spreadsheets
+
+- Spreadsheets manage team workbook snapshots with typed columns and rows.
+- Details: [Spreadsheets](pages.md#spreadsheets)
+
 ## Collections
 
 - Collections group related team records through shared links.
@@ -82,7 +93,8 @@ This is a concise feature map of the app.
 - Global search covers configured record types.
 - Search supports prefixes for narrowing results.
 - Link candidate search uses the same record registry.
-- Prefixes: `t` tasks, `c` contacts, `e` events, `p` projects, `b` bookmarks, `n` notes, `s` subscriptions, `g` log entries, `l` collections, `f` files.
+- Prefix format is one letter plus colon, for example `t: bug`; `#tag-name` filters by the first tag in the query.
+- Prefixes: `t:` tasks, `c:` contacts, `e:` events, `p:` projects, `b:` bookmarks, `s:` subscriptions, `n:` notes, `f:` files, `l:` collections, `g:` log entries, `x:` spreadsheets.
 
 ## Tags
 
@@ -108,8 +120,10 @@ This is a concise feature map of the app.
 - Tokens can expire.
 - Tokens can be scoped per record area as none, read, or write.
 - Task access can be limited to selected projects.
-- The records server exposes schema, search, CRUD, links, and tags tools.
+- The records server exposes schema, search, CRUD, links, tags, and task comment tools.
 - Files support optional base64 content upload through MCP create/update; raw bytes and public URLs are never exposed.
+- MCP record types are `task`, `calendar_event`, `contact`, `bookmark`, `subscription`, `note`, `collection`, `log_entry`, and `file`.
+- MCP notes use `blocks` with `text`, `excalidraw`, and `mermaid` block types.
 
 ## Adding Record Areas
 

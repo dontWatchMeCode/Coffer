@@ -24,6 +24,16 @@ class RecordLink extends Model
     }
 
     /**
+     * The allowed taggable model classes mapped by type alias.
+     *
+     * @return array<string, class-string<Model>>
+     */
+    public static function taggableMap(): array
+    {
+        return RecordTypeRegistry::taggableMap();
+    }
+
+    /**
      * Query record links where the given model appears on either side.
      *
      * @return Builder<static>

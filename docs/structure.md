@@ -31,7 +31,7 @@ This is a high-level map of where code lives in the app.
 ## Routes
 
 - `routes/web.php`: public, dashboard, team workspace, and shared record management routes. Per-feature routes are in `routes/features/`.
-- `routes/features/`: per-feature route files (calendar, contacts, bookmarks, subscriptions, log, notes, collections, tasks, files) required from inside the `{current_team}` group.
+- `routes/features/`: per-feature route files (calendar, contacts, bookmarks, subscriptions, log, notes, collections, tasks, files, spreadsheets) required from inside the `{current_team}` group.
 - `routes/settings.php`: profile, security, appearance, and team settings routes.
 - `routes/ai.php`: MCP route registration.
 - `routes/console.php`: console routes.

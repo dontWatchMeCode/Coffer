@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Collections;
 
 use App\Http\Requests\Concerns\AuthorizesTeamResource;
+use App\Validation\DomainRecordValidation;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SaveCollectionRequest extends FormRequest
@@ -21,15 +22,6 @@ class SaveCollectionRequest extends FormRequest
      */
     public function rules(): array
     {
-        $sometimes = $this->isMethod('patch');
-
-        return [
-            'title' => $sometimes
-                ? ['sometimes', 'required', 'string', 'max:255']
-                : ['required', 'string', 'max:255'],
-            'description' => $sometimes
-                ? ['sometimes', 'nullable', 'string']
-                : ['nullable', 'string'],
-        ];
+        return DomainRecordValidation::rulesFor('collection', $this->isMethod('patch'));
     }
 }

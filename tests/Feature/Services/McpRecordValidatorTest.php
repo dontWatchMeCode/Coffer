@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Requests\Files\SaveFileRequest;
 use App\Models\Project;
 use App\Models\Team;
 use App\Services\McpRecordValidator;
@@ -10,7 +11,7 @@ it('returns fields for each record type', function (string $type, array $expecte
 
     expect($fields)->toBe($expectedFields);
 })->with([
-    'task' => ['task', ['project_id', 'assigned_to', 'title', 'description', 'status', 'progress', 'position', 'due_at']],
+    'task' => ['task', ['project_id', 'assigned_to', 'title', 'description', 'status', 'progress', 'time_estimate', 'position', 'due_at']],
     'calendar_event' => ['calendar_event', ['title', 'description', 'date', 'time']],
     'contact' => ['contact', ['name', 'phone_numbers', 'email_addresses', 'links', 'address', 'additional_info']],
     'bookmark' => ['bookmark', ['title', 'url', 'description', 'notes']],
@@ -18,6 +19,7 @@ it('returns fields for each record type', function (string $type, array $expecte
     'note' => ['note', ['title', 'blocks']],
     'collection' => ['collection', ['title', 'description']],
     'log_entry' => ['log_entry', ['body', 'category']],
+    'file' => ['file', ['title', 'description', 'original_name', 'mime_type', 'size', 'width', 'height', 'content']],
 ]);
 
 it('returns empty fields for unknown type', function () {
@@ -35,6 +37,7 @@ it('returns required fields for each record type', function (string $type, array
     'note' => ['note', ['title']],
     'collection' => ['collection', ['title']],
     'log_entry' => ['log_entry', ['body']],
+    'file' => ['file', ['title']],
 ]);
 
 it('returns empty required fields for unknown type', function () {
@@ -227,6 +230,29 @@ it('validates task progress is between 0 and 100', function () {
         ->and($validator->errors()->has('progress'))->toBeTrue();
 });
 
+it('validates task time estimate is a non-negative integer', function () {
+    $team = Team::factory()->make();
+    $rules = McpRecordValidator::rulesFor('task', false, $team);
+
+    $validator = Validator::make([
+        'project_id' => 1,
+        'title' => 'Test',
+        'status' => 'planned',
+        'time_estimate' => -1,
+    ], $rules);
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->has('time_estimate'))->toBeTrue();
+});
+
+it('keeps mcp file content out of http file request rules', function () {
+    $request = SaveFileRequest::create('/files', 'POST');
+
+    expect($request->rules())->toHaveKey('file')
+        ->and($request->rules())->not->toHaveKey('content')
+        ->and(McpRecordValidator::rulesFor('file', false, Team::factory()->make()))->toHaveKey('content');
+});
+
 it('validates bookmark url max length', function () {
     $team = Team::factory()->make();
     $rules = McpRecordValidator::rulesFor('bookmark', false, $team);
@@ -263,7 +289,7 @@ it('accepts valid create data for each record type', function (string $type, arr
 
     expect($validator->fails())->toBeFalse();
 })->with([
-    'task' => ['task', ['title' => 'Task', 'status' => 'planned']],
+    'task' => ['task', ['title' => 'Task', 'status' => 'planned', 'time_estimate' => 30]],
     'calendar_event' => ['calendar_event', ['title' => 'Event', 'date' => '2026-05-08']],
     'contact' => ['contact', ['name' => 'John Doe']],
     'bookmark' => ['bookmark', ['title' => 'Link', 'url' => 'https://example.com']],
@@ -271,4 +297,5 @@ it('accepts valid create data for each record type', function (string $type, arr
     'note' => ['note', ['title' => 'My Note']],
     'collection' => ['collection', ['title' => 'My Collection']],
     'log_entry' => ['log_entry', ['body' => 'Log entry text']],
+    'file' => ['file', ['title' => 'Image']],
 ]);

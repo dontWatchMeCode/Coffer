@@ -1,10 +1,10 @@
 # Main Pages
 
-The main team pages are Tasks, Calendar, Contacts, Bookmarks, Notes, Log, Files, and Collections.
+The main team pages are Tasks, Calendar, Contacts, Bookmarks, Subscriptions, Notes, Log, Files, Collections, and Spreadsheets.
 
 ## Shared Record Tools
 
-Supported records can be tagged and linked to other records. Tags help group records by topic, while links connect related work, knowledge, contacts, events, bookmarks, notes, and collections across the team.
+Supported records can be tagged and linked to other records. Tags help group records by topic, while links connect related work, knowledge, contacts, events, bookmarks, subscriptions, notes, files, collections, and spreadsheets across the team. Log entries support neither tags nor related-record links.
 
 Deleted records move to the trash page for their module. Trash pages let team members review, restore, or permanently delete deleted records.
 
@@ -15,6 +15,7 @@ Tasks are the team work planning area.
 Pages:
 
 - Project list: choose a project, review project counts, and create projects.
+- Task insights: review completion rate, overdue/open counts, status distribution, assignment distribution, and creation trends by time range and optional project.
 - Project detail: review a project, create tasks, and update work status.
 - Task trash: view, restore, or permanently delete deleted tasks for a project.
 - Task edit: edit task details and related records.
@@ -24,15 +25,17 @@ Features:
 - Projects group tasks and can be archived.
 - Tasks support title, description, status, progress, assignee, creator, position, and due date.
 - Tasks can be assigned to team members.
-- Tasks have comments that can be created, edited, and deleted.
+- Tasks have rich comments that can be created, edited, and deleted.
+- Task comments use ordered text, Excalidraw, and Mermaid blocks.
 - Task and project changes can appear in activity history.
 - Tasks and projects can use shared tags and related-record links.
 
 Search and MCP:
 
 - Global search includes tasks and projects.
-- Task search uses the `t` prefix; project search uses the `p` prefix.
+- Task search uses the `t:` prefix; project search uses the `p:` prefix.
 - MCP tokens can allow task read/write access and optionally limit tasks to selected projects.
+- MCP exposes `records.task_comments.list` and `records.task_comments.add` for task comments.
 
 ## Calendar
 
@@ -55,7 +58,7 @@ Features:
 Search and MCP:
 
 - Global search includes calendar events.
-- Event search uses the `e` prefix.
+- Event search uses the `e:` prefix.
 - MCP tokens can allow calendar read/write access.
 
 ## Contacts
@@ -79,7 +82,7 @@ Features:
 Search and MCP:
 
 - Global search includes contacts.
-- Contact search uses the `c` prefix.
+- Contact search uses the `c:` prefix.
 - MCP tokens can allow contact read/write access.
 
 ## Bookmarks
@@ -102,8 +105,32 @@ Features:
 Search and MCP:
 
 - Global search includes bookmarks.
-- Bookmark search uses the `b` prefix.
+- Bookmark search uses the `b:` prefix.
 - MCP tokens can allow bookmark read/write access.
+
+## Subscriptions
+
+Subscriptions track recurring team expenses and renewals.
+
+Pages:
+
+- Subscription list: view, create, filter, and update subscriptions.
+- Subscription insights: review spend KPIs, trends, and category breakdowns.
+- Subscription trash: view, restore, or permanently delete deleted subscriptions.
+- Subscription detail: review and edit subscription details and related records.
+
+Features:
+
+- Subscriptions support name, price, currency, weekly/monthly/yearly billing cycle, first billing date, next billing date, URL, description, notes, active state, and category.
+- Categories can be selected or created and unused categories are cleaned up.
+- Subscriptions can use shared tags and related-record links.
+- Subscription changes can appear in activity history.
+
+Search and MCP:
+
+- Global search includes subscriptions.
+- Subscription search uses the `s:` prefix.
+- MCP tokens can allow subscription read/write access.
 
 ## Notes
 
@@ -117,19 +144,19 @@ Pages:
 
 Features:
 
-- Notes support `text` and `excalidraw` formats.
-- Text notes are Markdown-backed.
-- Excalidraw notes store drawing data.
-- A note uses one format at a time.
+- Notes support mixed ordered blocks: `text`, `excalidraw`, and `mermaid`.
+- Text blocks are Markdown-backed.
+- Excalidraw blocks store drawing scene data.
+- Mermaid blocks store Mermaid diagram source.
 - Notes can use shared tags and related-record links.
 - Note changes can appear in activity history.
 
 Search and MCP:
 
 - Global search includes notes.
-- Note search uses the `n` prefix.
+- Note search uses the `n:` prefix.
 - MCP tokens can allow note read/write access.
-- Through MCP, use `format: "text"` or `format: "excalidraw"`.
+- Through MCP, use `blocks` with block `type`, `position`, and optional `payload`.
 
 ## Log
 
@@ -151,8 +178,8 @@ Features:
 
 Search and MCP:
 
-- Global search includes log entries (backend; frontend rendering not yet wired).
-- Log entry search uses the `g` prefix.
+- Global search includes log entries.
+- Log entry search uses the `g:` prefix.
 - MCP tokens can allow log entry read/write access.
 
 ## Files
@@ -175,7 +202,7 @@ Features:
 Search and MCP:
 
 - Global search includes files.
-- File search uses the `f` prefix.
+- File search uses the `f:` prefix.
 - MCP tokens can allow file read/write access.
 - MCP create/update supports optional `content` (base64-encoded bytes); raw bytes and public URLs are never exposed.
 
@@ -200,5 +227,31 @@ Features:
 Search and MCP:
 
 - Global search includes collections.
-- Collection search uses the `l` prefix.
+- Collection search uses the `l:` prefix.
 - MCP tokens can allow collection read/write access.
+
+## Spreadsheets
+
+Spreadsheets manage team tabular workbooks.
+
+Pages:
+
+- Spreadsheet list: view and create spreadsheets.
+- Spreadsheet detail: edit the workbook snapshot.
+- Spreadsheet trash: view, restore, or permanently delete deleted spreadsheets.
+
+Features:
+
+- Spreadsheets support title and workbook snapshot.
+- Snapshots include version `1`, columns, and rows.
+- Column types are `text`, `number`, `date`, `select`, and `checkbox`.
+- Columns support id, name, type, width, hidden state, and select options.
+- Rows support id and cell values keyed by column id.
+- Spreadsheets can use shared tags and related-record links.
+- Spreadsheet title changes can appear in activity history.
+
+Search and MCP:
+
+- Global search includes spreadsheets.
+- Spreadsheet search uses the `x:` prefix.
+- Spreadsheets are not exposed as MCP record types.

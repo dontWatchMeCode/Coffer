@@ -25,7 +25,7 @@ class DeleteRecordTagRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'from_type' => ['required', 'string', Rule::in(array_keys(RecordLink::linkableMap()))],
+            'from_type' => ['required', 'string', Rule::in(array_keys(RecordLink::taggableMap()))],
             'from_id' => ['required', 'integer', 'min:1'],
             'tag_id' => ['required', 'integer', 'min:1'],
         ];

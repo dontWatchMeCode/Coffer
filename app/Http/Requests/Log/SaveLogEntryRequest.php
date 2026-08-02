@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Log;
 
 use App\Http\Requests\Concerns\AuthorizesTeamResource;
+use App\Validation\DomainRecordValidation;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SaveLogEntryRequest extends FormRequest
@@ -21,9 +22,6 @@ class SaveLogEntryRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'body' => ['required', 'string', 'max:5000'],
-            'category' => ['nullable', 'string', 'max:80'],
-        ];
+        return DomainRecordValidation::rulesFor('log_entry', false);
     }
 }
