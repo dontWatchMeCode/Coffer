@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Models\McpToken;
+use App\Services\RecordTypeRegistry;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -26,17 +27,17 @@ class StoreApiTokenRequest extends FormRequest
      */
     public function rules(): array
     {
+        $abilityRules = [];
+
+        foreach (RecordTypeRegistry::mcpResources() as $resource) {
+            $abilityRules['abilities.'.$resource] = ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)];
+        }
+
         return [
             'name' => ['required', 'string', 'max:100'],
             'expires_at' => ['nullable', 'date', 'after:today'],
             'abilities' => ['required', 'array'],
-            'abilities.collections' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
-            'abilities.notes' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
-            'abilities.bookmarks' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
-            'abilities.subscriptions' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
-            'abilities.contacts' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
-            'abilities.calendar' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
-            'abilities.tasks' => ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)],
+            ...$abilityRules,
             'abilities.task_projects' => ['required', 'array'],
             'abilities.task_projects.mode' => ['required', 'string', Rule::in(['all', 'only'])],
             'abilities.task_projects.ids' => ['array'],

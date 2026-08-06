@@ -6,27 +6,13 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { SEARCH_CATEGORIES } from '@/lib/search';
 import { cn } from '@/lib/utils';
 
-type PrefixItem = {
-    prefix: string;
-    label: string;
-};
-
-// Keep in sync with RecordSearchRegistry.php.
-const prefixes: PrefixItem[] = [
-    { prefix: 't:', label: 'Tasks' },
-    { prefix: 'c:', label: 'Contacts' },
-    { prefix: 'e:', label: 'Events' },
-    { prefix: 'p:', label: 'Projects' },
-    { prefix: 'b:', label: 'Bookmarks' },
-    { prefix: 's:', label: 'Subscriptions' },
-    { prefix: 'n:', label: 'Notes' },
-    { prefix: 'f:', label: 'Files' },
-    { prefix: 'l:', label: 'Collections' },
-    { prefix: 'g:', label: 'Log' },
-    { prefix: 'x:', label: 'Spreadsheets' },
-];
+const prefixes = SEARCH_CATEGORIES.map((category) => ({
+    prefix: `${category.prefix}:`,
+    label: category.label,
+}));
 
 const props = withDefaults(
     defineProps<{

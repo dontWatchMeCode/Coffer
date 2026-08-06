@@ -41,6 +41,21 @@ it('derives MCP types from record definitions', function () {
         ->and(RecordTypeRegistry::classFor('spreadsheet'))->toBe(SpreadsheetWorkbook::class);
 });
 
+it('derives ordered MCP permission resources and labels', function () {
+    expect(RecordTypeRegistry::mcpResourceLabels())->toBe([
+        'tasks' => 'Tasks',
+        'calendar' => 'Calendar',
+        'contacts' => 'Contacts',
+        'bookmarks' => 'Bookmarks',
+        'subscriptions' => 'Subscriptions',
+        'notes' => 'Notes',
+        'collections' => 'Collections',
+        'log_entries' => 'Log',
+        'files' => 'Files',
+    ])->and(RecordTypeRegistry::mcpResources())
+        ->toBe(array_keys(RecordTypeRegistry::mcpResourceLabels()));
+});
+
 it('reports record capabilities per type', function () {
     expect(RecordTypeRegistry::isLinkable('task'))->toBeTrue()
         ->and(RecordTypeRegistry::isTaggable('task'))->toBeTrue()

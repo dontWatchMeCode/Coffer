@@ -294,3 +294,20 @@ it('handles subscription type in permission checks', function () {
         ->and($service->writableTypes())->toContain('subscription')
         ->and($service->writableTypes())->not->toContain('task');
 });
+
+it('restricts malformed task project scopes for both permission checks and query filters', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $token = McpToken::createToken($user, $team, 'Malformed', [
+        'tasks' => 'write',
+        'task_projects' => ['mode' => 'only', 'ids' => 'not-an-array'],
+    ])[0];
+
+    app()->instance(McpToken::class, $token);
+
+    $service = app(McpTokenPermissionService::class);
+
+    expect($service->can('task', 'write', null, ['project_id' => $project->id]))->toBeFalse()
+        ->and($token->taskProjectIds())->toBe([]);
+});

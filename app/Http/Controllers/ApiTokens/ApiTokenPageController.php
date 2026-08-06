@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\McpToken;
 use App\Models\Project;
 use App\Models\Team;
+use App\Services\RecordTypeRegistry;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -38,7 +39,7 @@ class ApiTokenPageController extends Controller
                         'id' => $token->id,
                         'name' => $token->name,
                         'token' => $token->token,
-                        'abilities' => $token->abilities,
+                        'abilities' => $token->normalizedAbilities(),
                         'last_used_at' => $lastUsed instanceof CarbonInterface ? $lastUsed->toISOString() : null,
                         'expires_at' => $expires instanceof CarbonInterface ? $expires->toDateString() : null,
                         'created_at' => $token->created_at instanceof CarbonInterface ? $token->created_at->toISOString() : null,
@@ -54,6 +55,7 @@ class ApiTokenPageController extends Controller
                     'name' => $project->name,
                 ]),
             'permissionLevels' => McpToken::PERMISSION_LEVELS,
+            'resourceLabels' => RecordTypeRegistry::mcpResourceLabels(),
             'mcpEndpointUrl' => route('mcp.records'),
         ]);
     }

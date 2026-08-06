@@ -9,6 +9,7 @@ use App\Http\Requests\StoreApiTokenRequest;
 use App\Models\McpToken;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\RecordTypeRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -107,18 +108,17 @@ class ApiTokenController extends Controller
             ])->validate();
         }
 
-        return [
-            'collections' => $input['collections'],
-            'notes' => $input['notes'],
-            'bookmarks' => $input['bookmarks'],
-            'subscriptions' => $input['subscriptions'],
-            'contacts' => $input['contacts'],
-            'calendar' => $input['calendar'],
-            'tasks' => $input['tasks'],
-            'task_projects' => [
-                'mode' => $input['task_projects']['mode'],
-                'ids' => $input['task_projects']['mode'] === 'only' ? $ids : [],
-            ],
+        $abilities = [];
+
+        foreach (RecordTypeRegistry::mcpResources() as $resource) {
+            $abilities[$resource] = $input[$resource];
+        }
+
+        $abilities['task_projects'] = [
+            'mode' => $input['task_projects']['mode'],
+            'ids' => $input['task_projects']['mode'] === 'only' ? $ids : [],
         ];
+
+        return $abilities;
     }
 }

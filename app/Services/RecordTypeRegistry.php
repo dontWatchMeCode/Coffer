@@ -28,32 +28,32 @@ class RecordTypeRegistry
      * - taggable: the record may carry record tags (uses HasRecordTags).
      * - mcp_resource: the record is exposed through MCP tools when non-null.
      *
-     * @var array<string, array{prefix: string, global: string, feature: TeamFeature, class: class-string<Model>, columns: list<string>, order: string, linkable: bool, taggable: bool, mcp_resource: string|null, mcp_order: int|null}>|null
+     * @var array<string, array{prefix: string, global: string, label: string, feature: TeamFeature, class: class-string<Model>, columns: list<string>, order: string, linkable: bool, taggable: bool, mcp_resource: string|null, mcp_order: int|null}>|null
      */
     private static ?array $definitions = null;
 
     /**
-     * @return array<string, array{prefix: string, global: string, feature: TeamFeature, class: class-string<Model>, columns: list<string>, order: string, linkable: bool, taggable: bool, mcp_resource: string|null, mcp_order: int|null}>
+     * @return array<string, array{prefix: string, global: string, label: string, feature: TeamFeature, class: class-string<Model>, columns: list<string>, order: string, linkable: bool, taggable: bool, mcp_resource: string|null, mcp_order: int|null}>
      */
     public static function definitions(): array
     {
         return self::$definitions ??= [
-            'task' => ['prefix' => 't', 'global' => 'tasks', 'feature' => TeamFeature::Tasks, 'class' => Task::class, 'columns' => ['title', 'description'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'tasks', 'mcp_order' => 0],
-            'contact' => ['prefix' => 'c', 'global' => 'contacts', 'feature' => TeamFeature::Contacts, 'class' => Contact::class, 'columns' => ['name', 'address', 'additional_info'], 'order' => 'name', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'contacts', 'mcp_order' => 2],
-            'calendar_event' => ['prefix' => 'e', 'global' => 'events', 'feature' => TeamFeature::Calendar, 'class' => CalendarEvent::class, 'columns' => ['title', 'description'], 'order' => 'date', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'calendar', 'mcp_order' => 1],
-            'project' => ['prefix' => 'p', 'global' => 'projects', 'feature' => TeamFeature::Tasks, 'class' => Project::class, 'columns' => ['name', 'description'], 'order' => 'name', 'linkable' => true, 'taggable' => true, 'mcp_resource' => null, 'mcp_order' => null],
-            'bookmark' => ['prefix' => 'b', 'global' => 'bookmarks', 'feature' => TeamFeature::Bookmarks, 'class' => Bookmark::class, 'columns' => ['title', 'description', 'url'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'bookmarks', 'mcp_order' => 3],
-            'subscription' => ['prefix' => 's', 'global' => 'subscriptions', 'feature' => TeamFeature::Subscriptions, 'class' => Subscription::class, 'columns' => ['name', 'category', 'description'], 'order' => 'name', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'subscriptions', 'mcp_order' => 4],
-            'note' => ['prefix' => 'n', 'global' => 'notes', 'feature' => TeamFeature::Notes, 'class' => Note::class, 'columns' => ['title'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'notes', 'mcp_order' => 5],
-            'file' => ['prefix' => 'f', 'global' => 'files', 'feature' => TeamFeature::Files, 'class' => FileItem::class, 'columns' => ['title', 'description', 'original_name'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'files', 'mcp_order' => 8],
-            'collection' => ['prefix' => 'l', 'global' => 'collections', 'feature' => TeamFeature::Collections, 'class' => RecordCollection::class, 'columns' => ['title', 'description'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'collections', 'mcp_order' => 6],
-            'log_entry' => ['prefix' => 'g', 'global' => 'log_entries', 'feature' => TeamFeature::Log, 'class' => LogEntry::class, 'columns' => ['body'], 'order' => 'created_at', 'linkable' => false, 'taggable' => false, 'mcp_resource' => 'log_entries', 'mcp_order' => 7],
-            'spreadsheet' => ['prefix' => 'x', 'global' => 'spreadsheets', 'feature' => TeamFeature::Spreadsheets, 'class' => SpreadsheetWorkbook::class, 'columns' => ['title'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => null, 'mcp_order' => null],
+            'task' => ['prefix' => 't', 'global' => 'tasks', 'label' => 'Tasks', 'feature' => TeamFeature::Tasks, 'class' => Task::class, 'columns' => ['title', 'description'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'tasks', 'mcp_order' => 0],
+            'contact' => ['prefix' => 'c', 'global' => 'contacts', 'label' => 'Contacts', 'feature' => TeamFeature::Contacts, 'class' => Contact::class, 'columns' => ['name', 'address', 'additional_info'], 'order' => 'name', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'contacts', 'mcp_order' => 2],
+            'calendar_event' => ['prefix' => 'e', 'global' => 'events', 'label' => 'Events', 'feature' => TeamFeature::Calendar, 'class' => CalendarEvent::class, 'columns' => ['title', 'description'], 'order' => 'date', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'calendar', 'mcp_order' => 1],
+            'project' => ['prefix' => 'p', 'global' => 'projects', 'label' => 'Projects', 'feature' => TeamFeature::Tasks, 'class' => Project::class, 'columns' => ['name', 'description'], 'order' => 'name', 'linkable' => true, 'taggable' => true, 'mcp_resource' => null, 'mcp_order' => null],
+            'bookmark' => ['prefix' => 'b', 'global' => 'bookmarks', 'label' => 'Bookmarks', 'feature' => TeamFeature::Bookmarks, 'class' => Bookmark::class, 'columns' => ['title', 'description', 'url'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'bookmarks', 'mcp_order' => 3],
+            'subscription' => ['prefix' => 's', 'global' => 'subscriptions', 'label' => 'Subscriptions', 'feature' => TeamFeature::Subscriptions, 'class' => Subscription::class, 'columns' => ['name', 'category', 'description'], 'order' => 'name', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'subscriptions', 'mcp_order' => 4],
+            'note' => ['prefix' => 'n', 'global' => 'notes', 'label' => 'Notes', 'feature' => TeamFeature::Notes, 'class' => Note::class, 'columns' => ['title'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'notes', 'mcp_order' => 5],
+            'file' => ['prefix' => 'f', 'global' => 'files', 'label' => 'Files', 'feature' => TeamFeature::Files, 'class' => FileItem::class, 'columns' => ['title', 'description', 'original_name'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'files', 'mcp_order' => 8],
+            'collection' => ['prefix' => 'l', 'global' => 'collections', 'label' => 'Collections', 'feature' => TeamFeature::Collections, 'class' => RecordCollection::class, 'columns' => ['title', 'description'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => 'collections', 'mcp_order' => 6],
+            'log_entry' => ['prefix' => 'g', 'global' => 'log_entries', 'label' => 'Log', 'feature' => TeamFeature::Log, 'class' => LogEntry::class, 'columns' => ['body'], 'order' => 'created_at', 'linkable' => false, 'taggable' => false, 'mcp_resource' => 'log_entries', 'mcp_order' => 7],
+            'spreadsheet' => ['prefix' => 'x', 'global' => 'spreadsheets', 'label' => 'Spreadsheets', 'feature' => TeamFeature::Spreadsheets, 'class' => SpreadsheetWorkbook::class, 'columns' => ['title'], 'order' => 'title', 'linkable' => true, 'taggable' => true, 'mcp_resource' => null, 'mcp_order' => null],
         ];
     }
 
     /**
-     * @return array{prefix: string, global: string, feature: TeamFeature, class: class-string<Model>, columns: list<string>, order: string, linkable: bool, taggable: bool, mcp_resource: string|null, mcp_order: int|null}|null
+     * @return array{prefix: string, global: string, label: string, feature: TeamFeature, class: class-string<Model>, columns: list<string>, order: string, linkable: bool, taggable: bool, mcp_resource: string|null, mcp_order: int|null}|null
      */
     public static function definition(string $type): ?array
     {
@@ -61,7 +61,7 @@ class RecordTypeRegistry
     }
 
     /**
-     * @return array<string, array{prefix: string, global: string, feature: TeamFeature, class: class-string<Model>, columns: list<string>, order: string, linkable: bool, taggable: bool, mcp_resource: string|null, mcp_order: int|null}>
+     * @return array<string, array{prefix: string, global: string, label: string, feature: TeamFeature, class: class-string<Model>, columns: list<string>, order: string, linkable: bool, taggable: bool, mcp_resource: string|null, mcp_order: int|null}>
      */
     public static function enabledDefinitions(Team $team): array
     {
@@ -175,6 +175,22 @@ class RecordTypeRegistry
             ->filter(fn (array $definition): bool => $definition['mcp_resource'] !== null)
             ->sortBy('mcp_order')
             ->mapWithKeys(fn (array $definition, string $type): array => [$type => $definition['mcp_resource']])
+            ->all();
+    }
+
+    /** @return list<string> */
+    public static function mcpResources(): array
+    {
+        return array_values(self::mcpResourceMap());
+    }
+
+    /** @return array<string, string> */
+    public static function mcpResourceLabels(): array
+    {
+        return collect(self::mcpResourceMap())
+            ->mapWithKeys(fn (string $resource, string $type): array => [
+                $resource => self::definitions()[$type]['feature']->label(),
+            ])
             ->all();
     }
 

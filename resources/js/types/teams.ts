@@ -1,5 +1,18 @@
 export type TeamRole = 'owner' | 'admin' | 'member';
 
+/** Keep in sync with App\Enums\TeamFeature. */
+export type TeamFeatureKey =
+    | 'tasks'
+    | 'calendar'
+    | 'contacts'
+    | 'bookmarks'
+    | 'subscriptions'
+    | 'notes'
+    | 'files'
+    | 'log'
+    | 'collections'
+    | 'spreadsheets';
+
 export type Team = {
     id: number;
     name: string;
@@ -9,11 +22,11 @@ export type Team = {
     roleLabel?: string;
     isCurrent?: boolean;
     defaultTaskStatusOptions?: { value: string; label: string }[];
-    featureSettings?: Record<string, boolean>;
+    featureSettings?: Partial<Record<TeamFeatureKey, boolean>>;
 };
 
 export type TeamFeatureOption = {
-    value: string;
+    value: TeamFeatureKey;
     label: string;
 };
 

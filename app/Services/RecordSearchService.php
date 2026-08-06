@@ -29,7 +29,7 @@ class RecordSearchService
     {
         [$query, $scopes, $tagSlug] = $this->parseSearchPrefix($rawQuery, RecordTypeRegistry::globalPrefixMap());
 
-        $results = $this->emptyGlobalResults();
+        $results = $this->emptyResults();
 
         if ($query === '' && $tagSlug === null) {
             return $results;
@@ -53,7 +53,7 @@ class RecordSearchService
      */
     public function browse(Team $currentTeam, string $type, int $limit = 50): array
     {
-        $results = $this->emptyGlobalResults();
+        $results = $this->emptyResults();
 
         foreach (RecordTypeRegistry::enabledDefinitions($currentTeam) as $definition) {
             if ($definition['global'] === $type) {
@@ -198,7 +198,7 @@ class RecordSearchService
     /**
      * @return array<string, array<int, array{id: int, title: string, subtitle: string|null, url: string}>>
      */
-    private function emptyGlobalResults(): array
+    public function emptyResults(): array
     {
         return collect(RecordTypeRegistry::definitions())
             ->mapWithKeys(fn (array $definition): array => [$definition['global'] => []])

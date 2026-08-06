@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Search, X } from 'lucide-vue-next';
-import type { Component } from 'vue';
+import type { LucideIcon } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import SearchFilterSidebar from '@/components/pages/search/SearchFilterSidebar.vue';
@@ -11,25 +11,30 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-    SEARCH_CATEGORIES,
     buildSearchJsonUrl,
     buildSearchPageUrl,
     requestSearchResults,
 } from '@/composables/useTeamSearch';
-import { createEmptySearchResults, flattenSearchResults } from '@/lib/search';
-import type { SearchResponse } from '@/lib/search';
+import {
+    SEARCH_CATEGORIES,
+    createEmptySearchResults,
+    flattenSearchResults,
+    searchCategory,
+} from '@/lib/search';
+import type {
+    SearchResponse,
+    SearchTagItem,
+    SearchTypeOption,
+} from '@/lib/search';
 import type { Team } from '@/types';
-
-type TagItem = { id: number; name: string; slug: string };
-type TypeOption = { value: string; label: string; prefix: string };
 
 type Props = {
     query: string;
     type: string;
     tag: string;
     results: SearchResponse;
-    tags: TagItem[];
-    types: TypeOption[];
+    tags: SearchTagItem[];
+    types: SearchTypeOption[];
 };
 
 const props = defineProps<Props>();
@@ -60,8 +65,8 @@ const activeTagName = computed(() => {
     );
 });
 
-function iconForType(key: string): Component {
-    return SEARCH_CATEGORIES.find((c) => c.key === key)?.icon ?? Search;
+function iconForType(key: string): LucideIcon {
+    return searchCategory(key)?.icon ?? Search;
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;

@@ -1,26 +1,13 @@
 <script setup lang="ts">
-import {
-    Bookmark,
-    CalendarDays,
-    Contact,
-    CreditCard,
-    FileText,
-    FolderGit2,
-    Layers3,
-    ListTodo,
-    ScrollText,
-    Search,
-    Table2,
-} from 'lucide-vue-next';
+import { Search } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-
-type TagItem = { id: number; name: string; slug: string };
-type TypeOption = { value: string; label: string; prefix: string };
+import { searchCategory } from '@/lib/search';
+import type { SearchTagItem, SearchTypeOption } from '@/lib/search';
 
 const props = defineProps<{
-    types: TypeOption[];
-    tags: TagItem[];
+    types: SearchTypeOption[];
+    tags: SearchTagItem[];
     activeType: string;
     activeTag: string;
 }>();
@@ -30,19 +17,6 @@ const emit = defineEmits<{
     'update:activeTag': [value: string];
     clearFilters: [];
 }>();
-
-const typeIconMap: Record<string, typeof Search> = {
-    tasks: ListTodo,
-    contacts: Contact,
-    events: CalendarDays,
-    projects: FolderGit2,
-    bookmarks: Bookmark,
-    subscriptions: CreditCard,
-    notes: FileText,
-    collections: Layers3,
-    log_entries: ScrollText,
-    spreadsheets: Table2,
-};
 
 function setType(typeValue: string): void {
     emit('update:activeType', props.activeType === typeValue ? '' : typeValue);
@@ -74,7 +48,7 @@ function setTag(tagSlug: string): void {
                 @click="setType(typeOption.value)"
             >
                 <component
-                    :is="typeIconMap[typeOption.value] ?? Search"
+                    :is="searchCategory(typeOption.value)?.icon ?? Search"
                     class="h-3.5 w-3.5"
                 />
                 {{ typeOption.label }}

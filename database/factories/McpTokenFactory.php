@@ -7,6 +7,7 @@ namespace Database\Factories;
 use App\Models\McpToken;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\RecordTypeRegistry;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -31,12 +32,7 @@ class McpTokenFactory extends Factory
             'token_hash' => McpToken::hashToken($plainTextToken),
             'token' => $plainTextToken,
             'abilities' => [
-                'collections' => 'write',
-                'notes' => 'write',
-                'bookmarks' => 'write',
-                'contacts' => 'write',
-                'calendar' => 'write',
-                'tasks' => 'write',
+                ...array_fill_keys(RecordTypeRegistry::mcpResources(), 'write'),
                 'task_projects' => ['mode' => 'all', 'ids' => []],
             ],
         ];

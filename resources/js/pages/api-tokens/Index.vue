@@ -27,12 +27,13 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { destroy, index, store, update } from '@/routes/team/mcp';
-import { apiTokenResourceLabels } from '@/types';
+import { apiTokenResourceKeys, createApiTokenAbilities } from '@/types';
 import type {
-    ApiTokenAbilities,
+    ApiTokenFormData,
     ApiTokenItem,
     ApiTokenPermission,
     ApiTokenProject,
+    ApiTokenResourceLabels,
     Team,
 } from '@/types';
 import TokenDialog from './TokenDialog.vue';
@@ -41,35 +42,22 @@ type Props = {
     tokens: ApiTokenItem[];
     projects: ApiTokenProject[];
     permissionLevels: ApiTokenPermission[];
+    resourceLabels: ApiTokenResourceLabels;
     mcpEndpointUrl: string;
 };
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const page = usePage();
 const currentTeamSlug = computed(() => page.props.currentTeam?.slug ?? '');
 const errors = computed(() => page.props.errors ?? {});
 
-const resourceKeys = Object.keys(apiTokenResourceLabels) as Array<
-    keyof Omit<ApiTokenAbilities, 'task_projects'>
->;
+const resourceKeys = computed(() => apiTokenResourceKeys(props.resourceLabels));
 
-const form = reactive({
+const form = reactive<ApiTokenFormData>({
     name: '',
     expires_at: '',
-    abilities: {
-        collections: 'none' as ApiTokenPermission,
-        notes: 'none' as ApiTokenPermission,
-        bookmarks: 'none' as ApiTokenPermission,
-        subscriptions: 'none' as ApiTokenPermission,
-        contacts: 'none' as ApiTokenPermission,
-        calendar: 'none' as ApiTokenPermission,
-        tasks: 'none' as ApiTokenPermission,
-        task_projects: {
-            mode: 'all' as 'all' | 'only',
-            ids: [] as number[],
-        },
-    },
+    abilities: createApiTokenAbilities(resourceKeys.value),
 });
 
 const copiedId = ref<number | null>(null);
@@ -84,7 +72,7 @@ function resetForm(): void {
     form.name = '';
     form.expires_at = '';
 
-    for (const resource of resourceKeys) {
+    for (const resource of resourceKeys.value) {
         form.abilities[resource] = 'none';
     }
 
@@ -103,8 +91,8 @@ function openEditModal(token: ApiTokenItem): void {
     form.name = token.name;
     form.expires_at = token.expires_at ?? '';
 
-    for (const resource of resourceKeys) {
-        form.abilities[resource] = token.abilities[resource];
+    for (const resource of resourceKeys.value) {
+        form.abilities[resource] = token.abilities[resource] ?? 'none';
     }
 
     form.abilities.task_projects.mode = token.abilities.task_projects.mode;
@@ -114,11 +102,7 @@ function openEditModal(token: ApiTokenItem): void {
     tokenDialogOpen.value = true;
 }
 
-function submit(data: {
-    name: string;
-    expires_at: string;
-    abilities: Record<string, unknown>;
-}): void {
+function submit(data: ApiTokenFormData): void {
     form.name = data.name;
     form.expires_at = data.expires_at;
     Object.assign(form.abilities, data.abilities);
@@ -245,6 +229,7 @@ defineOptions({
                     :initial-form="form"
                     :projects="projects"
                     :permission-levels="permissionLevels"
+                    :resource-labels="resourceLabels"
                     :errors="errors"
                     @submit="submit"
                 />
@@ -284,7 +269,7 @@ defineOptions({
                                     variant="secondary"
                                     class="text-[10px]"
                                 >
-                                    {{ apiTokenResourceLabels[resource] }}
+                                    {{ resourceLabels[resource] }}
                                 </Badge>
                                 <Badge
                                     v-if="token.abilities.tasks !== 'none'"

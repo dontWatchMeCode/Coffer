@@ -80,15 +80,9 @@ class McpToken extends Model
 
     public function allowsTaskProject(?int $projectId): bool
     {
-        $projectScope = $this->abilities['task_projects'] ?? null;
+        $projectScope = $this->taskProjectScope();
 
-        if (! is_array($projectScope)) {
-            return true;
-        }
-
-        $mode = $projectScope['mode'] ?? 'all';
-
-        if ($mode === 'all') {
+        if ($projectScope['mode'] === 'all') {
             return true;
         }
 
@@ -96,39 +90,57 @@ class McpToken extends Model
             return false;
         }
 
-        $ids = $projectScope['ids'] ?? [];
-
-        if (! is_array($ids)) {
-            return false;
-        }
-
-        return in_array($projectId, array_map(intval(...), $ids), true);
+        return in_array($projectId, $projectScope['ids'], true);
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function normalizedAbilities(): array
+    {
+        $abilities = [];
+
+        foreach (RecordTypeRegistry::mcpResources() as $resource) {
+            $level = $this->abilities[$resource] ?? 'none';
+            $abilities[$resource] = in_array($level, self::PERMISSION_LEVELS, true) ? $level : 'none';
+        }
+
+        $abilities['task_projects'] = $this->taskProjectScope();
+
+        return $abilities;
+    }
+
+    /**
+     * Project ids a task-scoped token is limited to, or null when every project is allowed.
+     *
      * @return list<int>|null
      */
     public function taskProjectIds(): ?array
     {
+        $projectScope = $this->taskProjectScope();
+
+        return $projectScope['mode'] === 'all' ? null : $projectScope['ids'];
+    }
+
+    /**
+     * Stored task project scope, normalized so every reader agrees on malformed values.
+     *
+     * @return array{mode: 'all'|'only', ids: list<int>}
+     */
+    private function taskProjectScope(): array
+    {
         $projectScope = $this->abilities['task_projects'] ?? null;
+        $storedMode = is_array($projectScope) ? ($projectScope['mode'] ?? 'all') : 'all';
 
-        if (! is_array($projectScope)) {
-            return null;
+        if ($storedMode === 'all') {
+            return ['mode' => 'all', 'ids' => []];
         }
 
-        $mode = $projectScope['mode'] ?? 'all';
+        $ids = is_array($projectScope) && is_array($projectScope['ids'] ?? null)
+            ? array_values(array_unique(array_map(intval(...), $projectScope['ids'])))
+            : [];
 
-        if ($mode === 'all') {
-            return null;
-        }
-
-        $ids = $projectScope['ids'] ?? [];
-
-        if (! is_array($ids)) {
-            return null;
-        }
-
-        return array_values(array_map(intval(...), $ids));
+        return ['mode' => 'only', 'ids' => $ids];
     }
 
     public function isExpired(): bool

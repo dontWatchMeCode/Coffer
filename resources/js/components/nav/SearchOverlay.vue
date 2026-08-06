@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SEARCH_CATEGORIES, useTeamSearch } from '@/composables/useTeamSearch';
+import { useTeamSearch } from '@/composables/useTeamSearch';
+import { SEARCH_CATEGORIES } from '@/lib/search';
 import type { SearchCategoryKey } from '@/lib/search';
 
 const open = defineModel<boolean>('open', { default: false });

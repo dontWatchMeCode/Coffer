@@ -30,7 +30,7 @@ class SearchPageController extends Controller
         $results = match (true) {
             $hasText || $hasTag => $this->recordSearch->global($currentTeam, $this->buildQuery($query, $type, $tagSlug), limit: 50),
             $hasType => $this->recordSearch->browse($currentTeam, $type, limit: 50),
-            default => [],
+            default => $this->recordSearch->emptyResults(),
         };
 
         $tags = Tag::query()
@@ -52,7 +52,7 @@ class SearchPageController extends Controller
             'types' => collect(RecordTypeRegistry::enabledDefinitions($currentTeam))
                 ->map(fn (array $def, string $alias): array => [
                     'value' => $def['global'],
-                    'label' => ucfirst(str_replace('_', ' ', $def['global'] === 'log_entries' ? 'log' : $def['global'])),
+                    'label' => $def['label'],
                     'prefix' => $def['prefix'],
                 ])
                 ->values()

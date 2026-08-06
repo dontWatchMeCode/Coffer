@@ -35,39 +35,21 @@ import {
     TagsInputItemDelete,
     TagsInputItemText,
 } from '@/components/ui/tags-input';
-import { apiTokenResourceLabels } from '@/types';
+import { apiTokenResourceKeys, createApiTokenAbilities } from '@/types';
 import type {
-    ApiTokenAbilities,
+    ApiTokenFormData,
     ApiTokenPermission,
     ApiTokenProject,
+    ApiTokenResourceLabels,
 } from '@/types';
-
-type FormAbilities = {
-    collections: ApiTokenPermission;
-    notes: ApiTokenPermission;
-    bookmarks: ApiTokenPermission;
-    subscriptions: ApiTokenPermission;
-    contacts: ApiTokenPermission;
-    calendar: ApiTokenPermission;
-    tasks: ApiTokenPermission;
-    task_projects: {
-        mode: 'all' | 'only';
-        ids: number[];
-    };
-};
-
-type FormData = {
-    name: string;
-    expires_at: string;
-    abilities: FormAbilities;
-};
 
 type Props = {
     open: boolean;
     mode: 'create' | 'edit';
-    initialForm: FormData;
+    initialForm: ApiTokenFormData;
     projects: ApiTokenProject[];
     permissionLevels: ApiTokenPermission[];
+    resourceLabels: ApiTokenResourceLabels;
     errors: Record<string, string>;
 };
 
@@ -75,22 +57,15 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
     'update:open': [value: boolean];
-    submit: [form: FormData];
+    submit: [form: ApiTokenFormData];
 }>();
 
-const localForm = reactive<FormData>({
+const resourceKeys = computed(() => apiTokenResourceKeys(props.resourceLabels));
+
+const localForm = reactive<ApiTokenFormData>({
     name: '',
     expires_at: '',
-    abilities: {
-        collections: 'none',
-        notes: 'none',
-        bookmarks: 'none',
-        subscriptions: 'none',
-        contacts: 'none',
-        calendar: 'none',
-        tasks: 'none',
-        task_projects: { mode: 'all', ids: [] },
-    },
+    abilities: createApiTokenAbilities(resourceKeys.value),
 });
 
 watch(
@@ -105,10 +80,6 @@ watch(
     },
     { immediate: true },
 );
-
-const resourceKeys = Object.keys(apiTokenResourceLabels) as Array<
-    keyof Omit<ApiTokenAbilities, 'task_projects'>
->;
 
 const projectSearchTerm = ref('');
 const projectPickerOpen = ref(false);
@@ -243,10 +214,11 @@ function handleSubmit(): void {
                     <div
                         v-for="resource in resourceKeys"
                         :key="resource"
+                        :data-testid="`mcp-permission-${resource}`"
                         class="grid grid-cols-[1fr_150px] items-center gap-3"
                     >
                         <span class="text-sm">{{
-                            apiTokenResourceLabels[resource]
+                            resourceLabels[resource]
                         }}</span>
                         <Select v-model="localForm.abilities[resource]">
                             <SelectTrigger class="w-full">

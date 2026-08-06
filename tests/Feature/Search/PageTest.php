@@ -8,6 +8,7 @@ use App\Models\Tag;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\RecordTypeRegistry;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -39,7 +40,10 @@ test('search page renders with empty query', function () {
             ->where('query', '')
             ->where('type', '')
             ->where('tag', '')
-            ->where('results', [])
+            ->where('results', array_fill_keys(
+                array_column(RecordTypeRegistry::definitions(), 'global'),
+                [],
+            ))
             ->has('tags')
             ->has('types')
         );
