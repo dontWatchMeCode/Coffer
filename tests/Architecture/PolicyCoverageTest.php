@@ -13,6 +13,12 @@ it('has a policy for every model', function () {
         'Membership',
         'TeamInvitation',
         'User',
+        'E2eeMemberKey',
+        'E2eeKeyEpoch',
+        'E2eeKeyEnvelope',
+        'E2eeRecordEnvelope',
+        'E2eeSyncLog',
+        'E2eeFile',
     ];
 
     foreach ($finder as $file) {

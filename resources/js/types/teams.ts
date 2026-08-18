@@ -11,7 +11,8 @@ export type TeamFeatureKey =
     | 'files'
     | 'log'
     | 'collections'
-    | 'spreadsheets';
+    | 'spreadsheets'
+    | 'e2ee';
 
 export type Team = {
     id: number;

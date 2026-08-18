@@ -28,11 +28,11 @@ Replace the semantic record tools with opaque `vault.*` transport for E2EE teams
 
 ## Acceptance Criteria
 
-- [ ] `tools/list` advertises `vault.*` for E2EE teams and `records.*` for plaintext teams
-- [ ] Pull/push cursor and version behavior is tested
-- [ ] Task-project and ability scoping is enforced on vault payload metadata
-- [ ] Retries and stale-write conflicts are tested
-- [ ] Encrypted file put/get works without server plaintext inspection
+- [x] `tools/list` advertises `vault.*` for E2EE teams and `records.*` for plaintext teams
+- [x] Pull/push cursor and version behavior is tested
+- [x] Task-project and ability scoping is enforced on vault payload metadata
+- [x] Retries and stale-write conflicts are tested
+- [x] Encrypted file put/get works without server plaintext inspection
 
 ## Notes
 

@@ -22,12 +22,13 @@ Define the versioned, language-neutral envelope format shared by the Vue browser
 
 ## Acceptance Criteria
 
-- [ ] Protocol spec is documented in `docs/e2ee/protocol.md`
-- [ ] A fixed vector fixture exists in `e2ee/test-vectors.json`
-- [ ] The Go reference crypto implementation can produce/consume the fixture
-- [ ] The browser libsodium implementation can produce/consume the same fixture
+- [x] Protocol spec is documented in `docs/e2ee/protocol.md`
+- [x] A fixed vector fixture exists in `e2ee/test-vectors.json`
+- [x] The Go reference crypto implementation can produce/consume the fixture
+- [ ] The browser libsodium implementation can produce/consume the same fixture (completes in todo-frontend-225)
 
 ## Notes
 
 - Laravel never receives a team key, decrypted value, search term, filename, or plaintext file byte.
 - Doctrine: fixed vectors are generated from the reference implementation and frozen.
+- Implemented in `cli/crypto/` with vector tests passing; browser interop lands with todo-frontend-225.

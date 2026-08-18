@@ -22,7 +22,7 @@ function frontendSource(string $path): string
 function unionMembers(string $source, string $type): array
 {
     preg_match('/export type '.$type.' =(.*?);/s', $source, $union);
-    preg_match_all("/'([a-z_]+)'/", $union[1] ?? '', $members);
+    preg_match_all("/'([a-z0-9_]+)'/", $union[1] ?? '', $members);
 
     return $members[1];
 }

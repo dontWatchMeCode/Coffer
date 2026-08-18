@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\Tools\Concerns\RegistersForPlaintextTeams;
 use App\Services\McpRecordTagService;
 use App\Services\RecordTypeRegistry;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -20,6 +21,8 @@ use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 #[IsReadOnly]
 class ListRecordTagsTool extends Tool
 {
+    use RegistersForPlaintextTeams;
+
     public function handle(Request $request, McpRecordTagService $records): Response|ResponseFactory
     {
         return $records->list($request);

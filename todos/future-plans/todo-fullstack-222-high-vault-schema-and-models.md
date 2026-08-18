@@ -21,10 +21,10 @@ Add migrations and Eloquent models for ciphertext-only team vault state, plus th
 
 ## Acceptance Criteria
 
-- [ ] Migrations are reversible and follow existing SQLite-friendly conventions (explicit FK indexes)
-- [ ] Models follow existing traits/type conventions (BelongsToTeam not used — vault is team-scoped explicitly)
-- [ ] `Team::hasFeature(TeamFeature::E2ee)` gates E2EE path
-- [ ] Feature toggle test covers E2EE flag on/off
+- [x] Migrations are reversible and follow existing SQLite-friendly conventions (explicit FK indexes)
+- [x] Models follow existing traits/type conventions (BelongsToTeam not used — vault is team-scoped explicitly)
+- [x] `Team::hasFeature(TeamFeature::E2ee)` gates E2EE path
+- [x] Feature toggle test covers E2EE flag on/off
 
 ## Notes
 

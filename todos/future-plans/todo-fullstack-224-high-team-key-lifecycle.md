@@ -23,11 +23,11 @@ Implement the E2EE team key lifecycle: invitee registration, team-key sharing, e
 
 ## Acceptance Criteria
 
-- [ ] Member public key registration is only possible for authorized active team members
-- [ ] Current-team-key envelope fetch is limited to active member devices
-- [ ] Epoch rotation on member removal removes that member's envelopes and records a new epoch in the sync log
-- [ ] Recovery-phrase-only flows never expose keys to Laravel
-- [ ] Rotated/removed-member boundaries are tested with multiple members and devices
+- [x] Member public key registration is only possible for authorized active team members
+- [x] Current-team-key envelope fetch is limited to active member devices
+- [x] Epoch rotation on member removal removes that member's envelopes and records a new epoch in the sync log
+- [x] Recovery-phrase-only flows never expose keys to Laravel
+- [x] Rotated/removed-member boundaries are tested with multiple members and devices
 
 ## Notes
 

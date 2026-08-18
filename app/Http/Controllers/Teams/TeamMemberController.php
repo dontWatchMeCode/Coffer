@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Teams;
 
+use App\Enums\TeamFeature;
 use App\Enums\TeamRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teams\UpdateTeamMemberRequest;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\VaultKeyService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -47,6 +49,14 @@ class TeamMemberController extends Controller
         $team->memberships()
             ->where('user_id', $user->id)
             ->delete();
+
+        // E2EE teams: retire the current key epoch and drop the removed
+        // member's envelopes so they can no longer unwrap the team key. This
+        // runs after the membership delete so the removed user is no longer an
+        // active member when their envelopes are dropped.
+        if ($team->hasFeature(TeamFeature::E2ee)) {
+            app(VaultKeyService::class)->retireOnMemberRemoval($team, $user->id);
+        }
 
         if ($user->isCurrentTeam($team)) {
             $personalTeam = $user->personalTeam();

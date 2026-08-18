@@ -16,6 +16,7 @@ enum TeamFeature: string
     case Log = 'log';
     case Collections = 'collections';
     case Spreadsheets = 'spreadsheets';
+    case E2ee = 'e2ee';
 
     public function label(): string
     {
@@ -30,6 +31,7 @@ enum TeamFeature: string
             self::Log => 'Log',
             self::Collections => 'Collections',
             self::Spreadsheets => 'Spreadsheets',
+            self::E2ee => 'End-to-end Encryption',
         };
     }
 
@@ -38,9 +40,15 @@ enum TeamFeature: string
      */
     public static function defaults(): array
     {
-        return collect(self::cases())
+        $defaults = collect(self::cases())
             ->mapWithKeys(fn (self $feature): array => [$feature->value => true])
             ->all();
+
+        // E2EE is opt-in and defaults to disabled to preserve the existing
+        // plaintext behavior for all current teams.
+        $defaults[self::E2ee->value] = false;
+
+        return $defaults;
     }
 
     /**
