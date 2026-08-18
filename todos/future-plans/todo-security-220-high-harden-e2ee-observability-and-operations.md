@@ -1,7 +1,7 @@
 ---
 id: 220
 section: security
-status: planning
+status: todo
 severity: high
 ---
 
