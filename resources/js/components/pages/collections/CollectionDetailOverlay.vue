@@ -180,7 +180,7 @@ function recordTypeBadge(type: string): string {
 <template>
     <Head :title="collection.title" />
 
-    <div class="flex min-h-screen flex-col">
+    <div class="flex flex-col">
         <PageHeader
             :title="collection.title"
             description="Review and maintain a collection of linked records."

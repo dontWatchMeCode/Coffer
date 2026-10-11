@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, Link, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
@@ -56,7 +56,8 @@ const { searchQuery } = useSearch(
     'notes',
 );
 
-const { closeDetail, onSavedItem: onSaved } = useListDetailOverlay<NoteItem>(
+const { closeDetail, onSavedItem: onSaved, visitDetail } =
+    useListDetailOverlay<NoteItem>(
     'notes',
     currentTeamSlug.value,
     Boolean(props.notes),
@@ -76,15 +77,12 @@ function openCreateDialog(): void {
 }
 
 function navigateToNote(note: NoteItem): void {
-    router.visit(
+    visitDetail(
         showNote({
             current_team: currentTeamSlug.value,
             note: note.id,
         }).url,
-        {
-            only: ['note', 'recordLinks', 'recordTags', 'activityHistory'],
-            preserveScroll: true,
-        },
+        ['note', 'recordLinks', 'recordTags', 'activityHistory'],
     );
 }
 

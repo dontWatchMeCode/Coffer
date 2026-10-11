@@ -162,7 +162,7 @@ function handleCopyAsMarkdown(): void {
 <template>
     <Head :title="event.title" />
 
-    <div class="flex min-h-screen flex-col">
+    <div class="flex flex-col">
         <PageHeader
             :title="event.title"
             back-label="Back to calendar"

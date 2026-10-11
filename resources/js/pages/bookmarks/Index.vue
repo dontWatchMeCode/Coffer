@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, Link, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
@@ -57,7 +57,7 @@ const { searchQuery } = useSearch(
     'bookmarks',
 );
 
-const { closeDetail, onSavedItem: onSaved } =
+const { closeDetail, onSavedItem: onSaved, visitDetail } =
     useListDetailOverlay<BookmarkItem>(
         'bookmarks',
         currentTeamSlug.value,
@@ -71,15 +71,12 @@ const { closeDetail, onSavedItem: onSaved } =
     );
 
 function navigateToBookmark(bookmark: BookmarkItem): void {
-    router.visit(
+    visitDetail(
         showBookmark({
             current_team: currentTeamSlug.value,
             bookmark: bookmark.id,
         }).url,
-        {
-            only: ['bookmark', 'recordLinks', 'recordTags', 'activityHistory'],
-            preserveScroll: true,
-        },
+        ['bookmark', 'recordLinks', 'recordTags', 'activityHistory'],
     );
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, Link, usePage } from '@inertiajs/vue3';
 import { ListPlus, PieChart, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
@@ -61,7 +61,7 @@ const { searchQuery } = useSearch(
     'subscriptions',
 );
 
-const { closeDetail, onSavedItem: onSaved } =
+const { closeDetail, onSavedItem: onSaved, visitDetail } =
     useListDetailOverlay<SubscriptionItem>(
         'subscriptions',
         currentTeamSlug.value,
@@ -78,20 +78,12 @@ const { closeDetail, onSavedItem: onSaved } =
     );
 
 function navigateToSubscription(subscription: SubscriptionItem): void {
-    router.visit(
+    visitDetail(
         showSubscription({
             current_team: currentTeamSlug.value,
             subscription: subscription.id,
         }).url,
-        {
-            only: [
-                'subscription',
-                'recordLinks',
-                'recordTags',
-                'activityHistory',
-            ],
-            preserveScroll: true,
-        },
+        ['subscription', 'recordLinks', 'recordTags', 'activityHistory'],
     );
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, Link, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
@@ -56,7 +56,7 @@ const { searchQuery } = useSearch(
     'collections',
 );
 
-const { closeDetail, onSavedItem: onSaved } =
+const { closeDetail, onSavedItem: onSaved, visitDetail } =
     useListDetailOverlay<CollectionItem>(
         'collections',
         currentTeamSlug.value,
@@ -88,20 +88,12 @@ function openCreateDialog(): void {
 }
 
 function navigateToCollection(collection: CollectionItem): void {
-    router.visit(
+    visitDetail(
         showCollection({
             current_team: currentTeamSlug.value,
             collection: collection.id,
         }).url,
-        {
-            only: [
-                'collection',
-                'recordLinks',
-                'recordTags',
-                'activityHistory',
-            ],
-            preserveScroll: true,
-        },
+        ['collection', 'recordLinks', 'recordTags', 'activityHistory'],
     );
 }
 

@@ -88,7 +88,7 @@ function handleCreateProjectModal(value: boolean): void {
 <template>
     <Head title="Tasks" />
 
-    <div class="flex min-h-screen flex-col">
+    <div class="flex flex-col">
         <PageHeader
             title="Tasks"
             description="Choose a project to work on or create a new one."

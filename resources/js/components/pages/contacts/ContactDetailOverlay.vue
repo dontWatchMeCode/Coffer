@@ -179,7 +179,7 @@ function handleCopyAsMarkdown(): void {
 <template>
     <Head :title="contact.name" />
 
-    <div class="flex min-h-screen flex-col">
+    <div class="flex flex-col">
         <PageHeader
             :title="contact.name"
             description="Review contact details and related records."

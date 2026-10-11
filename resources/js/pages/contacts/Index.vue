@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, Link, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
@@ -57,7 +57,8 @@ const { searchQuery } = useSearch(
     'contacts',
 );
 
-const { closeDetail, onSavedItem: onSaved } = useListDetailOverlay<ContactItem>(
+const { closeDetail, onSavedItem: onSaved, visitDetail } =
+    useListDetailOverlay<ContactItem>(
     'contacts',
     currentTeamSlug.value,
     Boolean(props.contacts),
@@ -68,15 +69,12 @@ const { closeDetail, onSavedItem: onSaved } = useListDetailOverlay<ContactItem>(
 );
 
 function navigateToContact(contact: ContactItem): void {
-    router.visit(
+    visitDetail(
         showContact({
             current_team: currentTeamSlug.value,
             contact: contact.id,
         }).url,
-        {
-            only: ['contact', 'recordLinks', 'recordTags', 'activityHistory'],
-            preserveScroll: true,
-        },
+        ['contact', 'recordLinks', 'recordTags', 'activityHistory'],
     );
 }
 

@@ -133,7 +133,7 @@ function submitEdit(): void {
 <template>
     <Head :title="note.title" />
 
-    <div class="flex min-h-screen flex-col">
+    <div class="flex flex-col">
         <PageHeader
             :title="note.title"
             description="Edit note details and related records."

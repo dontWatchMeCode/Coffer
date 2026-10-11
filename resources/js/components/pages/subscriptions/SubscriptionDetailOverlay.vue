@@ -225,7 +225,7 @@ function formatBillingCycle(cycle: string | null | undefined): string {
 <template>
     <Head :title="subscription.name" />
 
-    <div class="flex min-h-screen flex-col">
+    <div class="flex flex-col">
         <PageHeader
             :title="subscription.name"
             description="Review subscription details and related records."

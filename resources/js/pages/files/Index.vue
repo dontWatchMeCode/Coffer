@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, InfiniteScroll, Link, usePage } from '@inertiajs/vue3';
 import { ListPlus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SearchInput from '@/components/list/SearchInput.vue';
@@ -64,7 +64,7 @@ const createDialogRef = ref<InstanceType<typeof CreateFileDialog> | null>(null);
 const deleteDialogRef = ref<InstanceType<typeof DeleteFileDialog> | null>(null);
 const { viewMode } = useViewMode('files');
 
-const { closeDetail: closeFile, onSavedItem: rememberSavedFile } =
+const { closeDetail: closeFile, onSavedItem: rememberSavedFile, visitDetail } =
     useListDetailOverlay<FileItem>(
         'files',
         currentTeamSlug.value,
@@ -82,15 +82,12 @@ function openCreateDialog(): void {
 }
 
 function navigateToFile(file: FileItem): void {
-    router.visit(
+    visitDetail(
         showFile({
             current_team: currentTeamSlug.value,
             file: file.id,
         }).url,
-        {
-            only: ['file', 'recordLinks', 'recordTags', 'activityHistory'],
-            preserveScroll: true,
-        },
+        ['file', 'recordLinks', 'recordTags', 'activityHistory'],
     );
 }
 

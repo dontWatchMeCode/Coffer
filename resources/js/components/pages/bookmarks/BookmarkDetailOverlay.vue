@@ -140,7 +140,7 @@ function handleCopyAsMarkdown(): void {
 <template>
     <Head :title="bookmark.title" />
 
-    <div class="flex min-h-screen flex-col">
+    <div class="flex flex-col">
         <PageHeader
             :title="bookmark.title"
             description="Review bookmark details and related records."

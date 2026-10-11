@@ -76,7 +76,7 @@ const hasListData = computed(() =>
     Boolean(props.events || props.calendarEvents),
 );
 
-const { closeDetail, onSavedItem: onSaved } =
+const { closeDetail, onSavedItem: onSaved, visitDetail } =
     useListDetailOverlay<CalendarEventItem>(
         'calendar',
         currentTeamSlug.value,
@@ -245,15 +245,12 @@ function openCreateDialog(day: number): void {
 }
 
 function openEditDialog(event: CalendarEventItem): void {
-    router.visit(
+    visitDetail(
         editEventRoute({
             current_team: currentTeamSlug.value,
             event: event.id,
         }).url,
-        {
-            only: ['event', 'recordLinks', 'recordTags', 'activityHistory'],
-            preserveScroll: true,
-        },
+        ['event', 'recordLinks', 'recordTags', 'activityHistory'],
     );
 }
 

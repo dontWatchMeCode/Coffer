@@ -157,7 +157,7 @@ function closeTask(): void {
 <template>
     <Head :title="`${task.title} #${task.id}`" />
 
-    <div class="flex min-h-screen flex-col">
+    <div class="flex flex-col">
         <PageHeader
             :title="task.title"
             :subtitle="`#${task.id}`"

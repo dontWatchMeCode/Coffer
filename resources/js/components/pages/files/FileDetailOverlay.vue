@@ -119,7 +119,7 @@ function submitEdit(): void {
 <template>
     <Head :title="file.title" />
 
-    <div class="flex min-h-screen flex-col">
+    <div class="flex flex-col">
         <PageHeader
             :title="file.title"
             description="Preview file details and related records."

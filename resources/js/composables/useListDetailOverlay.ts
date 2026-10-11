@@ -41,6 +41,23 @@ export function useListDetailOverlay<TItem extends SavedItem = SavedItem>(
         router.visit(indexUrl);
     }
 
+    /**
+     * Open a detail overlay via partial reload. Scroll is preserved for the
+     * history entry (so going back restores the list position) but the
+     * detail itself always starts at the top.
+     */
+    function visitDetail(url: string, only: string[]): void {
+        router.visit(url, {
+            only,
+            preserveScroll: true,
+            onSuccess: () => {
+                if (typeof window !== 'undefined') {
+                    window.scrollTo(0, 0);
+                }
+            },
+        });
+    }
+
     function getPendingSavedItem(): TItem | null {
         if (typeof window === 'undefined') {
             return null;
@@ -133,5 +150,6 @@ export function useListDetailOverlay<TItem extends SavedItem = SavedItem>(
     return {
         closeDetail,
         onSavedItem,
+        visitDetail,
     };
 }
