@@ -110,7 +110,7 @@ onUnmounted(() => {
                 :style="itemStyle(virtualItem.lane, virtualItem.start)"
             >
                 <article
-                    class="group mb-4 cursor-pointer overflow-hidden rounded-xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-card/50"
+                    class="group mb-4 cursor-pointer overflow-hidden border bg-card transition-colors hover:border-primary"
                     @click="navigateToFile(imageFiles[virtualItem.index])"
                 >
                     <div

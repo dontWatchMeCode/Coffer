@@ -56,7 +56,7 @@ defineOptions({
 
             <div
                 v-if="errors.invitation"
-                class="mt-2 text-center text-sm font-medium text-red-600"
+                class="mt-2 text-center text-sm font-medium text-destructive"
             >
                 {{ errors.invitation }}
             </div>

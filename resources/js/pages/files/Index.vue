@@ -124,7 +124,7 @@ defineOptions({
             description="Private team uploads with image previews and linked records."
         />
 
-        <div class="min-w-0 flex-1 px-4 py-6">
+        <div class="min-w-0 flex-1 py-5">
             <div class="mx-auto w-full max-w-7xl">
                 <div class="mb-4 flex items-center justify-end gap-3">
                     <SearchInput

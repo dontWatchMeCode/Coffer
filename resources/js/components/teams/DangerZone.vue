@@ -17,9 +17,9 @@ const emit = defineEmits<{
     <div class="space-y-6">
         <h3 class="text-sm font-medium">Delete team</h3>
         <div
-            class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10"
+            class="space-y-4 border border-destructive/40 bg-destructive/10 p-4"
         >
-            <div class="relative space-y-0.5 text-red-600 dark:text-red-100">
+            <div class="relative space-y-0.5 text-destructive">
                 <p class="font-medium">Warning</p>
                 <p class="text-sm">
                     Please proceed with caution, this cannot be undone.

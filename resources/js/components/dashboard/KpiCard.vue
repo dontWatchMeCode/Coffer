@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
 import type { HTMLAttributes } from 'vue';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -17,24 +17,25 @@ const props = defineProps<Props>();
 
 <template>
     <Card :class="cn('gap-0 py-0', props.class)">
-        <div class="flex items-start justify-between gap-3 p-5">
-            <div class="min-w-0 space-y-1">
-                <p class="text-xs font-medium text-muted-foreground">
-                    {{ label }}
-                </p>
-                <p class="text-2xl leading-none font-semibold tabular-nums">
-                    {{ value }}
-                </p>
-                <p v-if="detail" class="text-xs text-muted-foreground">
-                    {{ detail }}
-                </p>
-            </div>
-            <div
-                v-if="icon"
-                class="rounded-lg bg-muted p-2 text-muted-foreground"
+        <CardHeader>
+            <CardTitle class="flex items-center justify-between gap-3">
+                <span>{{ label }}</span>
+                <component
+                    v-if="icon"
+                    :is="icon"
+                    class="size-3.5 text-muted-foreground"
+                />
+            </CardTitle>
+        </CardHeader>
+        <div class="min-w-0 px-3 py-3.5">
+            <p
+                class="text-[2.375rem] leading-tight font-bold tracking-[-1px] wrap-anywhere text-heading tabular-nums"
             >
-                <component :is="icon" class="h-4 w-4" />
-            </div>
+                {{ value }}
+            </p>
+            <p v-if="detail" class="mt-1.5 text-xs text-muted-foreground">
+                {{ detail }}
+            </p>
         </div>
     </Card>
 </template>

@@ -217,7 +217,7 @@ function submitEdit(entry: LogEntryItem): void {
                                             v-if="
                                                 copiedEntryId === item.entry.id
                                             "
-                                            class="h-3.5 w-3.5 text-green-600"
+                                            class="h-3.5 w-3.5 text-success"
                                         />
                                         <Clipboard
                                             v-else
@@ -246,7 +246,7 @@ function submitEdit(entry: LogEntryItem): void {
                                 }}</span>
                                 <span
                                     v-if="item.entry.category"
-                                    class="rounded-full border border-border px-2 py-0.5 text-[11px]"
+                                    class="border border-border px-2 py-0.5 text-[11px]"
                                 >
                                     {{ item.entry.category }}
                                 </span>

@@ -147,9 +147,9 @@ const statusIcons = {
             </div>
 
             <div class="flex shrink-0 items-center gap-1">
-                <div class="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                <div class="h-2 w-16 overflow-hidden border bg-muted">
                     <div
-                        class="h-full rounded-full bg-primary transition-all"
+                        class="h-full bg-linear-to-r from-primary/70 to-primary transition-[width]"
                         :style="{
                             width: `${task.progress}%`,
                         }"

@@ -157,7 +157,7 @@ defineOptions({
         </template>
     </PageHeader>
 
-    <div class="flex-1 px-4 py-6">
+    <div class="flex-1 py-5">
         <div class="mx-auto max-w-7xl">
             <div class="grid gap-4 md:grid-cols-3">
                 <KpiCard
@@ -273,7 +273,7 @@ defineOptions({
                     </ul>
                     <div
                         v-else
-                        class="rounded-2xl border border-dashed bg-background/70 p-6 text-sm text-muted-foreground"
+                        class="border border-dashed bg-background/70 p-6 text-sm text-muted-foreground"
                     >
                         No active subscriptions yet. Add one to see category
                         breakdown.

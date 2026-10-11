@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Breadcrumbs from '@/components/nav/Breadcrumbs.vue';
+import TeamSwitcher from '@/components/nav/TeamSwitcher.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem } from '@/types';
 
@@ -15,13 +16,20 @@ withDefaults(
 
 <template>
     <header
-        class="flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border/70 px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4"
+        class="sticky top-0 z-30 flex h-[60px] shrink-0 items-center gap-3.5 border-b bg-background"
     >
-        <div class="flex items-center gap-2">
-            <SidebarTrigger class="-ml-1" />
-            <template v-if="breadcrumbs && breadcrumbs.length > 0">
+        <SidebarTrigger class="min-[1081px]:hidden" />
+        <TeamSwitcher />
+        <div class="ml-auto flex min-w-0 items-center gap-2">
+            <div
+                v-if="breadcrumbs && breadcrumbs.length > 0"
+                class="min-w-0 overflow-x-auto"
+                tabindex="0"
+                role="region"
+                aria-label="Breadcrumbs"
+            >
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
-            </template>
+            </div>
         </div>
     </header>
 </template>

@@ -32,7 +32,7 @@ function handleKeydown(event: KeyboardEvent): void {
 
 <template>
     <div
-        class="group rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50 dark:bg-card/50"
+        class="group border border-dashed bg-card p-3 transition-colors hover:border-primary hover:bg-accent/30"
         :class="{ 'cursor-pointer': props.clickable }"
         :role="props.clickable ? 'button' : undefined"
         :tabindex="props.clickable ? 0 : undefined"

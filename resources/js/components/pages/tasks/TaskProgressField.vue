@@ -46,7 +46,7 @@ function progressFillWidth(progress: number): string {
         </h3>
         <div class="mb-3 flex items-center gap-2">
             <div
-                class="group relative h-2 flex-1 overflow-hidden rounded-full bg-muted"
+                class="group relative h-2 flex-1 border bg-muted focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-ring"
             >
                 <div
                     class="pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity group-hover:opacity-100"
@@ -59,16 +59,17 @@ function progressFillWidth(progress: number): string {
                     />
                 </div>
                 <div
-                    class="absolute inset-y-0 left-0 z-10 rounded-full bg-primary transition-all"
+                    class="absolute inset-y-0 left-0 z-10 bg-linear-to-r from-primary/70 to-primary transition-[width]"
                     :style="{ width: progressFillWidth(selectedProgress) }"
                 />
                 <input
                     :value="selectedProgress"
                     type="range"
+                    aria-label="Task progress"
                     min="0"
                     max="100"
                     step="10"
-                    class="absolute inset-0 z-20 h-2 w-full cursor-pointer appearance-none bg-transparent opacity-0"
+                    class="absolute inset-x-0 top-1/2 z-20 h-6 w-full -translate-y-1/2 cursor-pointer appearance-none bg-transparent opacity-0"
                     @input="
                         emit(
                             'update:selectedProgress',

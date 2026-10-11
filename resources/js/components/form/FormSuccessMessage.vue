@@ -16,7 +16,7 @@ withDefaults(defineProps<Props>(), {
         leave-active-class="transition ease-in-out"
         leave-to-class="opacity-0"
     >
-        <p v-show="show" class="text-sm text-neutral-600">
+        <p v-show="show" class="text-sm text-success">
             {{ message }}
         </p>
     </Transition>

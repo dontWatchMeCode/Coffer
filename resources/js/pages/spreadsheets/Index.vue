@@ -223,7 +223,7 @@ defineOptions({
             description="Flexible tables for team data."
         />
 
-        <div class="min-w-0 flex-1 px-4 py-6">
+        <div class="min-w-0 flex-1 py-5">
             <div class="mx-auto w-full max-w-7xl space-y-4">
                 <div
                     class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
@@ -359,7 +359,7 @@ defineOptions({
             :back-handler="closeSpreadsheet"
         />
 
-        <div class="min-w-0 flex-1 px-4 py-6">
+        <div class="min-w-0 flex-1 py-5">
             <EditorSidebarLayout
                 :updated-at="props.spreadsheet.updatedAt"
                 :on-save="saveChanges"

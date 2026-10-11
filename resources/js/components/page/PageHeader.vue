@@ -39,11 +39,11 @@ useEventListener('keydown', (event: KeyboardEvent) => {
 </script>
 
 <template>
-    <div class="border-b px-4 py-4">
+    <div class="border border-l-2 border-l-primary bg-card px-4 py-3.5">
         <div
             class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
-            <div class="flex items-center gap-3">
+            <div class="flex min-w-0 items-center gap-3">
                 <Button
                     v-if="backHref || backHandler"
                     variant="ghost"
@@ -60,10 +60,10 @@ useEventListener('keydown', (event: KeyboardEvent) => {
                     </Link>
                 </Button>
 
-                <div
-                    class="flex min-h-[50px] min-w-0 flex-col items-start justify-center"
-                >
-                    <h1 class="text-xl leading-tight font-semibold">
+                <div class="flex min-w-0 flex-col items-start justify-center">
+                    <h1
+                        class="text-lg leading-tight font-semibold wrap-anywhere"
+                    >
                         {{ title }}
                         <span v-if="subtitle" class="text-muted-foreground">
                             {{ subtitle }}</span
@@ -80,7 +80,7 @@ useEventListener('keydown', (event: KeyboardEvent) => {
 
             <div
                 v-if="$slots.actions"
-                class="flex shrink-0 items-center justify-end gap-2"
+                class="flex shrink-0 flex-wrap items-center justify-end gap-2"
             >
                 <slot name="actions" />
             </div>

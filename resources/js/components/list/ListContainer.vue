@@ -10,7 +10,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const layoutClasses: Record<ViewMode, string> = {
-    list: 'space-y-3',
+    list: 'space-y-2',
     grid: 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3',
 };
 </script>

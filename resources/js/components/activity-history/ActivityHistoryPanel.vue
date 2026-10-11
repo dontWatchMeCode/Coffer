@@ -138,7 +138,7 @@ function loadMore(): void {
             <span class="flex-1">Activity History</span>
             <span
                 v-if="total > 0"
-                class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                class="inline-flex items-center border px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
             >
                 {{ total }}
             </span>
@@ -154,7 +154,7 @@ function loadMore(): void {
             <History class="h-3.5 w-3.5" />
             <span
                 v-if="total > 0"
-                class="inline-flex items-center rounded-full border px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
+                class="inline-flex items-center border px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
             >
                 {{ total }}
             </span>

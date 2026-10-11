@@ -1,5 +1,5 @@
 export const taskInputLikeClass =
-    'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive';
+    'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground border-input w-full min-w-0 border bg-card px-3 py-2 text-sm transition-colors outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive';
 
 type TaskStatusMeta = {
     label: string;
@@ -11,38 +11,38 @@ type TaskStatusMeta = {
 export const taskStatusMeta: Record<string, TaskStatusMeta> = {
     planned: {
         label: 'Planned',
-        triggerColor: 'bg-slate-500',
-        badgeColor: 'text-slate-500',
+        triggerColor: 'bg-muted-foreground',
+        badgeColor: 'text-muted-foreground',
         icon: 'flag',
     },
     in_progress: {
         label: 'In Progress',
-        triggerColor: 'bg-yellow-500',
-        badgeColor: 'text-yellow-500',
+        triggerColor: 'bg-primary',
+        badgeColor: 'text-primary',
         icon: 'activity',
     },
     on_hold: {
         label: 'On Hold',
-        triggerColor: 'bg-orange-500',
-        badgeColor: 'text-orange-500',
+        triggerColor: 'bg-warning',
+        badgeColor: 'text-warning',
         icon: 'ban',
     },
     completed: {
         label: 'Completed',
-        triggerColor: 'bg-green-500',
-        badgeColor: 'text-green-500',
+        triggerColor: 'bg-success',
+        badgeColor: 'text-success',
         icon: 'check',
     },
     dropped: {
         label: 'Dropped',
-        triggerColor: 'bg-red-500',
-        badgeColor: 'text-red-500',
+        triggerColor: 'bg-destructive',
+        badgeColor: 'text-destructive',
         icon: 'trash',
     },
     question: {
         label: 'Question',
-        triggerColor: 'bg-purple-500',
-        badgeColor: 'text-purple-500',
+        triggerColor: 'bg-info',
+        badgeColor: 'text-info',
         icon: 'help',
     },
 };
@@ -54,8 +54,8 @@ export function getTaskStatusMeta(status: string): TaskStatusMeta {
                 .split('_')
                 .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' '),
-            triggerColor: 'bg-gray-500',
-            badgeColor: 'text-gray-500',
+            triggerColor: 'bg-muted-foreground',
+            badgeColor: 'text-muted-foreground',
             icon: 'flag',
         }
     );

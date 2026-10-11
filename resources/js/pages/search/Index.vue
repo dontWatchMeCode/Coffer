@@ -226,7 +226,7 @@ defineOptions({
         description="Search across all your team records."
     />
 
-    <div class="min-w-0 flex-1 px-4 py-6">
+    <div class="min-w-0 flex-1 py-5">
         <div class="mx-auto w-full max-w-7xl">
             <div class="mb-4 flex items-center gap-2">
                 <div class="relative flex-1">

@@ -109,7 +109,7 @@ function handleCreateProjectModal(value: boolean): void {
             </template>
         </PageHeader>
 
-        <div class="min-w-0 flex-1 px-4 py-6">
+        <div class="min-w-0 flex-1 py-5">
             <div class="mx-auto w-full max-w-7xl space-y-4">
                 <div class="flex items-center justify-end gap-2">
                     <Button
@@ -120,7 +120,7 @@ function handleCreateProjectModal(value: boolean): void {
                         class="cursor-pointer"
                         :class="
                             showArchived
-                                ? 'bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90'
+                                ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
                                 : 'bg-muted hover:bg-muted/80'
                         "
                         @click="showArchived = !showArchived"
@@ -150,7 +150,10 @@ function handleCreateProjectModal(value: boolean): void {
                                 <div
                                     class="flex items-center justify-between gap-3"
                                 >
-                                    <CardTitle>{{ project.name }}</CardTitle>
+                                    <CardTitle
+                                        class="text-sm text-card-foreground"
+                                        >{{ project.name }}</CardTitle
+                                    >
                                     <Badge
                                         variant="secondary"
                                         :class="
@@ -203,7 +206,7 @@ function handleCreateProjectModal(value: boolean): void {
                             <FolderPlus
                                 class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
                             />
-                            <CardTitle class="text-base"
+                            <CardTitle class="text-base text-card-foreground"
                                 >Create your first project</CardTitle
                             >
                             <CardDescription
@@ -222,7 +225,8 @@ function handleCreateProjectModal(value: boolean): void {
                                 <Archive
                                     class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
                                 />
-                                <CardTitle class="text-base"
+                                <CardTitle
+                                    class="text-base text-card-foreground"
                                     >All projects are archived</CardTitle
                                 >
                                 <CardDescription
@@ -240,7 +244,8 @@ function handleCreateProjectModal(value: boolean): void {
                                 <FolderPlus
                                     class="mx-auto mb-3 h-8 w-8 text-muted-foreground"
                                 />
-                                <CardTitle class="text-base"
+                                <CardTitle
+                                    class="text-base text-card-foreground"
                                     >Create a new project</CardTitle
                                 >
                                 <CardDescription

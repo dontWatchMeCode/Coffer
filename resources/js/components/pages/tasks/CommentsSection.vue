@@ -246,7 +246,7 @@ function deleteComment(comment: TaskCommentItem): void {
                                 <Badge
                                     v-if="comment.source === 'mcp'"
                                     variant="outline"
-                                    class="gap-1 rounded-full px-2 py-0 text-[0.6875rem] font-medium text-muted-foreground"
+                                    class="gap-1 px-2 py-0 text-[0.6875rem] font-medium text-muted-foreground"
                                 >
                                     <Bot class="h-3 w-3" />
                                     MCP<span v-if="comment.mcpTokenName"

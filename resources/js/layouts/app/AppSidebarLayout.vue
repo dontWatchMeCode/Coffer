@@ -16,10 +16,15 @@ withDefaults(defineProps<Props>(), {
 
 <template>
     <AppShell variant="sidebar">
-        <AppSidebar />
-        <AppContent variant="sidebar" class="overflow-x-clip">
-            <AppSidebarHeader :breadcrumbs="breadcrumbs" />
-            <slot />
-        </AppContent>
+        <AppSidebarHeader :breadcrumbs="breadcrumbs" />
+        <div
+            data-testid="workspace-columns"
+            class="flex min-w-0 flex-1 flex-col items-stretch gap-[26px] pt-5 min-[1081px]:flex-row"
+        >
+            <AppSidebar />
+            <AppContent variant="sidebar" class="overflow-x-clip">
+                <slot />
+            </AppContent>
+        </div>
     </AppShell>
 </template>

@@ -41,7 +41,7 @@ onMounted(async () => {
 <template>
     <Card class="w-full">
         <CardHeader>
-            <CardTitle class="flex gap-3">
+            <CardTitle class="flex gap-3 text-sm text-card-foreground">
                 <LockKeyhole class="size-4" />2FA recovery codes
             </CardTitle>
             <CardDescription>

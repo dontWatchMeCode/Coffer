@@ -39,7 +39,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
         description="Manage your profile and account settings"
     />
 
-    <div class="flex-1 px-4 py-6">
+    <div class="flex-1 py-5">
         <div class="mx-auto">
             <div class="flex flex-col lg:flex-row lg:space-x-12">
                 <aside class="w-full max-w-xl lg:w-48">

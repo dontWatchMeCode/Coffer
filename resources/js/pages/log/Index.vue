@@ -232,7 +232,7 @@ defineOptions({
             </template>
         </PageHeader>
 
-        <div class="min-w-0 flex-1 px-4 py-6">
+        <div class="min-w-0 flex-1 py-5">
             <div
                 class="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]"
             >

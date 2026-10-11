@@ -188,7 +188,7 @@ function recordTypeBadge(type: string): string {
             :back-handler="close"
         />
 
-        <div class="flex-1 px-4 py-6">
+        <div class="flex-1 py-5">
             <EditorSidebarLayout
                 variant="compact"
                 :updated-at="collection.updatedAt"

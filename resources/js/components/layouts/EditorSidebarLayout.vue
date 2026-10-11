@@ -204,7 +204,7 @@ const hasRecordTags = computed(() => props.recordTags !== null);
                 >
                     <Check
                         v-if="copyAsMarkdownCopied"
-                        class="h-4 w-4 text-green-600"
+                        class="h-4 w-4 text-success"
                     />
                     <Clipboard
                         v-else

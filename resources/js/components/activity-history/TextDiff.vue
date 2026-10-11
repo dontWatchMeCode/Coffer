@@ -13,15 +13,12 @@ const changes = computed(() => diffWords(props.oldText, props.newText));
 <template>
     <span class="text-xs leading-relaxed whitespace-pre-wrap">
         <template v-for="(change, idx) in changes" :key="idx">
-            <span
-                v-if="change.added"
-                class="rounded bg-green-100 px-0.5 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-            >
+            <span v-if="change.added" class="bg-success/10 px-0.5 text-success">
                 {{ change.value }}
             </span>
             <span
                 v-else-if="change.removed"
-                class="rounded bg-red-100 px-0.5 text-red-800 line-through dark:bg-red-900/30 dark:text-red-400"
+                class="bg-destructive/10 px-0.5 text-destructive line-through"
             >
                 {{ change.value }}
             </span>
