@@ -86,10 +86,8 @@ const hasRecordTags = computed(() => props.recordTags !== null);
 
 <template>
     <div
-        class="mx-auto flex flex-col xl:flex-row"
-        :class="[
-            props.variant === 'compact' ? 'max-w-5xl gap-6' : 'max-w-7xl gap-8',
-        ]"
+        class="flex w-full flex-col xl:flex-row"
+        :class="[props.variant === 'compact' ? 'gap-6' : 'gap-8']"
     >
         <div class="order-2 min-w-0 flex-1 space-y-6 xl:order-1">
             <slot name="main" />
