@@ -18,9 +18,15 @@ export type ThemeId =
     | 'daybreak'
     | 'parchment'
     | 'glacier'
+    | 'sage'
+    | 'rose-pine-dawn'
+    | 'porcelain'
     | 'dracula'
+    | 'nord'
+    | 'rose-pine'
     | 'espresso'
-    | 'abyss';
+    | 'abyss'
+    | 'gruvbox';
 
 export type ThemeOption = {
     id: ThemeId;
@@ -54,10 +60,40 @@ export const THEMES: readonly ThemeOption[] = [
         swatches: ['#eef3f6', '#1668a0', '#d3e4ee'],
     },
     {
+        id: 'sage',
+        mode: 'light',
+        name: 'Sage',
+        swatches: ['#f0f3ed', '#3e684f', '#dbe7d7'],
+    },
+    {
+        id: 'rose-pine-dawn',
+        mode: 'light',
+        name: 'Rosé Pine Dawn',
+        swatches: ['#faf4ed', '#705588', '#eee3ec'],
+    },
+    {
+        id: 'porcelain',
+        mode: 'light',
+        name: 'Porcelain',
+        swatches: ['#f5f5f4', '#404652', '#e2e4e8'],
+    },
+    {
         id: 'dracula',
         mode: 'dark',
         name: 'Dracula',
         swatches: ['#282a36', '#bd93f9', '#44405a'],
+    },
+    {
+        id: 'nord',
+        mode: 'dark',
+        name: 'Nord',
+        swatches: ['#2e3440', '#88c0d0', '#434c5e'],
+    },
+    {
+        id: 'rose-pine',
+        mode: 'dark',
+        name: 'Rosé Pine',
+        swatches: ['#191724', '#c4a7e7', '#40334d'],
     },
     {
         id: 'espresso',
@@ -70,6 +106,12 @@ export const THEMES: readonly ThemeOption[] = [
         mode: 'dark',
         name: 'Abyss',
         swatches: ['#0e1620', '#5cc8e6', '#23405a'],
+    },
+    {
+        id: 'gruvbox',
+        mode: 'dark',
+        name: 'Gruvbox',
+        swatches: ['#282828', '#fabd2f', '#504536'],
     },
 ] as const;
 

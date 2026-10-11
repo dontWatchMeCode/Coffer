@@ -23,9 +23,15 @@ class HandleAppearance
         'daybreak' => 'light',
         'parchment' => 'light',
         'glacier' => 'light',
+        'sage' => 'light',
+        'rose-pine-dawn' => 'light',
+        'porcelain' => 'light',
         'dracula' => 'dark',
+        'nord' => 'dark',
+        'rose-pine' => 'dark',
         'espresso' => 'dark',
         'abyss' => 'dark',
+        'gruvbox' => 'dark',
     ];
 
     private const APPEARANCES = ['light', 'dark', 'system'];

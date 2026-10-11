@@ -40,8 +40,32 @@
                 background-color: #eef3f6;
             }
 
+            html[data-theme='sage'] {
+                background-color: #f0f3ed;
+            }
+
+            html[data-theme='rose-pine-dawn'] {
+                background-color: #faf4ed;
+            }
+
+            html[data-theme='porcelain'] {
+                background-color: #f5f5f4;
+            }
+
             html.dark {
                 background-color: #282a36;
+            }
+
+            html.dark[data-theme='nord'] {
+                background-color: #2e3440;
+            }
+
+            html.dark[data-theme='rose-pine'] {
+                background-color: #191724;
+            }
+
+            html.dark[data-theme='gruvbox'] {
+                background-color: #282828;
             }
 
             html.dark[data-theme='espresso'] {
