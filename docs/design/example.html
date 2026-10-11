@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Charts (Pastel Dracula)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#282a36;
+    --panel:#2e3040;
+    --panel2:#353849;
+    --accent:#bd93f9;
+    --dim:#808cb8;
+    --green:#8ff0a4;
+    --red:#ff9a9a;
+    --line:#44475a;
+    --txt:#d6d8e8;
+    --heading:#f8f8f2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'IBM Plex Mono',monospace;
+    background:var(--bg);
+    color:var(--txt);
+    font-size:13px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    position:relative;
+    min-height:100vh;
+  }
+
+  .screen{max-width:1400px;margin:0 auto;padding:0 18px 40px}
+  .bar{display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line);padding:12px 0;position:sticky;top:0;background:var(--bg);z-index:50}
+  .teamselect{display:flex;align-items:center;gap:10px;font-family:inherit;font-size:12px;color:var(--txt);background:var(--panel);border:1px solid var(--line);padding:6px 12px 6px 8px;cursor:pointer}
+  .teamselect:hover{border-color:var(--accent)}
+  .teamselect .nm{color:var(--heading);font-weight:600}
+  .teamselect .car{color:var(--dim);font-size:10px}
+  .bar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .mcpbtn{display:flex;align-items:center;gap:8px;font-family:inherit;font-size:12px;color:var(--txt);background:var(--panel);border:1px solid var(--line);padding:6px 10px;cursor:pointer;text-transform:uppercase;letter-spacing:.06em}
+  .mcpbtn:hover{border-color:var(--accent)}
+  .mcpbtn .cnt{min-width:16px;height:16px;padding:0 5px;background:var(--accent);color:var(--bg);display:grid;place-items:center;font-size:10px;font-weight:700}
+  .gearbtn{width:30px;height:30px;display:grid;place-items:center;background:var(--panel);border:1px solid var(--line);color:var(--txt);cursor:pointer;font-size:13px}
+  .gearbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+  .layout{display:grid;grid-template-columns:230px 1fr;gap:26px;margin-top:20px}
+  .side{border-right:1px dashed var(--line);padding-right:20px}
+  .sys{color:var(--dim);font-size:11px;margin-bottom:14px}
+  .nav a{display:block;color:var(--txt);text-decoration:none;padding:4px 0;transition:.12s}
+  .nav a:hover{color:var(--heading)}
+  .nav a.active{color:var(--bg);background:var(--accent);padding:4px 8px;margin-left:-8px}
+  .nav a .n{float:right}
+  .nav a.active .n{color:var(--bg)}
+  .side .ver{margin-top:22px;padding-top:14px;border-top:1px dashed var(--line);font-size:11px;color:var(--dim);line-height:1.7}
+
+  .main{min-width:0}
+  .banner{border:1px solid var(--line);background:var(--panel);padding:16px 18px;margin-bottom:20px;position:relative}
+  .banner .tag{position:absolute;top:-1px;left:-1px;background:var(--accent);color:var(--bg);font-size:10px;padding:2px 8px;font-weight:700}
+  .banner h1{font-size:15px;color:var(--heading);font-weight:600;margin-top:14px}
+  .banner p{color:var(--dim);font-size:12px;margin-top:4px}
+
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+  .box{border:1px solid var(--line);background:var(--panel);padding:0}
+  .box .ttl{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);border-bottom:1px solid var(--line);padding:7px 12px;background:var(--panel2)}
+  .box .ttl b{color:var(--accent)}
+  .box .body{padding:14px 12px}
+
+  .kpi{grid-column:span 3}
+  .kpi .n{font-size:38px;color:var(--heading);font-weight:700;letter-spacing:-1px}
+  .kpi .n small{font-size:14px;color:var(--dim)}
+  .kpi .sub{color:var(--dim);font-size:11px;margin-top:6px}
+  .kpi .sub .warn{color:var(--red)}
+  .kpi .sub .ok{color:var(--green)}
+
+  .tasks{grid-column:span 7}
+  .task{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line)}
+  .task:last-child{border-bottom:0}
+  .task .id{color:var(--dim);font-size:11px}
+  .task .t{color:var(--txt)}
+  .task .t i{color:var(--dim);font-style:normal;font-size:11px;margin-left:6px}
+  .task .st{font-size:11px}
+  .task .st.open{color:var(--accent)}
+  .task .st.over{color:var(--red)}
+  .task .st.done{color:var(--green)}
+  .task.done .t{color:var(--dim);text-decoration:line-through}
+
+  .chart{grid-column:span 5}
+  .chart svg{display:block;width:100%;height:auto}
+  .xlabels{display:flex;justify-content:space-between;padding:4px 6px 0;font-size:10px;color:var(--dim)}
+  .cats{display:grid;grid-template-columns:1fr auto;gap:3px 12px;font-size:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .cats .v{color:var(--dim)}
+
+  .prog{grid-column:span 4}
+  .pbar{display:flex;align-items:center;gap:10px;margin-bottom:13px;font-size:12px}
+  .pbar:last-child{margin-bottom:0}
+  .pbar .name{width:120px;color:var(--txt)}
+  .pbar .meter{flex:1;height:8px;border:1px solid var(--line);background:var(--panel2);position:relative;overflow:hidden}
+  .pbar .meter i{position:absolute;top:0;left:0;bottom:0;background:linear-gradient(90deg,#9d7bee,var(--accent))}
+  .pbar .pct{color:var(--dim);font-size:11px;width:36px;text-align:right}
+
+  .agenda{grid-column:span 4}
+  .ev{display:grid;grid-template-columns:56px 1fr;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);align-items:center}
+  .ev:last-child{border-bottom:0}
+  .ev .when{color:var(--heading);background:var(--panel2);border:1px solid var(--line);text-align:center;font-size:11px;padding:3px 0}
+  .ev .t{color:var(--txt);font-size:12px}
+  .ev .t i{display:block;color:var(--dim);font-style:normal;font-size:11px}
+
+  .recent{grid-column:span 4}
+  .ri{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:12px;align-items:center}
+  .ri:last-child{border-bottom:0}
+  .ri .badge{color:var(--bg);background:var(--dim);font-size:9px;padding:1px 5px;font-weight:700}
+  .ri .ty{color:var(--dim);font-size:10px}
+  @media(max-width:1080px){
+    .layout{grid-template-columns:1fr}
+    .side{border-right:0;border-bottom:1px dashed var(--line);padding-right:0;padding-bottom:16px}
+    .kpi,.tasks,.chart,.prog,.agenda,.recent{grid-column:span 12}
+  }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="bar">
+    <button class="teamselect">
+      <span class="nm">Acme Team</span>
+      <span class="car">▼</span>
+    </button>
+    <div class="right">
+      <button class="mcpbtn">MCP <span class="cnt">9</span></button>
+      <button class="gearbtn" aria-label="Settings">⚙</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside class="side">
+      <div class="sys">Modules</div>
+      <nav class="nav">
+        <a class="active">Tasks <span class="n">24</span></a>
+        <a>Calendar <span class="n">9</span></a>
+        <a>Contacts <span class="n">132</span></a>
+        <a>Bookmarks <span class="n">48</span></a>
+        <a>Subscriptions <span class="n">17</span></a>
+        <a>Notes <span class="n">63</span></a>
+        <a>Log <span class="n">210</span></a>
+        <a>Files <span class="n">31</span></a>
+        <a>Collections <span class="n">7</span></a>
+        <a>Spreadsheets <span class="n">4</span></a>
+      </nav>
+      <div class="ver">
+        User: alex.kim<br>
+        Role: owner<br>
+        Team: acme
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="banner">
+        <span class="tag">Info</span>
+        <h1>Workspace Overview</h1>
+        <p>24 open tasks · 3 overdue · 5 projects active · 3 renewals due this week</p>
+      </div>
+
+      <div class="grid">
+        <div class="box kpi"><div class="ttl"><b>Open Tasks</b><span>today</span></div><div class="body"><div class="n">24</div><div class="sub"><span class="warn">3 overdue</span> · 5 due</div></div></div>
+        <div class="box kpi"><div class="ttl"><b>Projects</b><span>active</span></div><div class="body"><div class="n">05</div><div class="sub"><span class="ok">1 nearing done</span></div></div></div>
+        <div class="box kpi"><div class="ttl"><b>Contacts</b><span>total</span></div><div class="body"><div class="n">132</div><div class="sub"><span class="ok">+6</span> this month</div></div></div>
+        <div class="box kpi"><div class="ttl"><b>Monthly Spend</b><span>per month</span></div><div class="body"><div class="n">412<small> $</small></div><div class="sub">3 renewals due</div></div></div>
+
+        <div class="box tasks">
+          <div class="ttl"><b>Priority Tasks</b><span>4 tasks</span></div>
+          <div class="body">
+            <div class="task"><span class="id">T-204</span><span class="t">finalize onboarding flow<i>website-redesign</i></span><span class="st over">OVERDUE</span></div>
+            <div class="task"><span class="id">T-198</span><span class="t">review Q4 budget sheet<i>finance</i></span><span class="st open">FRI 12</span></div>
+            <div class="task"><span class="id">T-191</span><span class="t">ship dark mode tokens<i>api-platform</i></span><span class="st open">TUE 16</span></div>
+            <div class="task done"><span class="id">T-187</span><span class="t">draft launch announcement<i>q4-marketing</i></span><span class="st done">DONE</span></div>
+          </div>
+        </div>
+
+        <div class="box chart">
+          <div class="ttl"><b>Spend Trend</b><span>May – Oct</span></div>
+          <div class="body">
+            <svg viewBox="0 0 560 200" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#bd93f9" stop-opacity="0.38"/>
+                  <stop offset="1" stop-color="#bd93f9" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <g stroke="#44475a" stroke-width="1">
+                <line x1="44" y1="20" x2="534" y2="20"/>
+                <line x1="44" y1="60" x2="534" y2="60"/>
+                <line x1="44" y1="100" x2="534" y2="100"/>
+                <line x1="44" y1="140" x2="534" y2="140"/>
+                <line x1="44" y1="180" x2="534" y2="180"/>
+              </g>
+              <g fill="#808cb8" font-size="12" font-family="IBM Plex Mono, monospace" text-anchor="end">
+                <text x="36" y="24">412</text>
+                <text x="36" y="104">225</text>
+                <text x="36" y="184">0</text>
+              </g>
+              <path d="M44,80 L139,63 L234,72 L330,42 L425,52 L520,34 L520,180 L44,180 Z" fill="url(#chartGrad)"/>
+              <path d="M44,80 L139,63 L234,72 L330,42 L425,52 L520,34" fill="none" stroke="#bd93f9" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+              <g fill="#282a36" stroke="#bd93f9" stroke-width="2.5">
+                <circle cx="44" cy="80" r="3.5"/>
+                <circle cx="139" cy="63" r="3.5"/>
+                <circle cx="234" cy="72" r="3.5"/>
+                <circle cx="330" cy="42" r="3.5"/>
+                <circle cx="425" cy="52" r="3.5"/>
+                <circle cx="520" cy="34" r="4.5"/>
+              </g>
+            </svg>
+            <div class="xlabels"><span>may</span><span>jun</span><span>jul</span><span>aug</span><span>sep</span><span>oct</span></div>
+            <div class="cats"><span>software</span><span class="v">$196</span><span>infrastructure</span><span class="v">$128</span><span>design</span><span class="v">$88</span></div>
+          </div>
+        </div>
+
+        <div class="box prog">
+          <div class="ttl"><b>Projects</b><span>progress</span></div>
+          <div class="body">
+            <div class="pbar"><span class="name">website-redesign</span><span class="meter"><i style="width:68%"></i></span><span class="pct">68%</span></div>
+            <div class="pbar"><span class="name">mobile-app</span><span class="meter"><i style="width:42%"></i></span><span class="pct">42%</span></div>
+            <div class="pbar"><span class="name">q4-marketing</span><span class="meter"><i style="width:90%"></i></span><span class="pct">90%</span></div>
+            <div class="pbar"><span class="name">api-platform</span><span class="meter"><i style="width:15%"></i></span><span class="pct">15%</span></div>
+          </div>
+        </div>
+
+        <div class="box agenda">
+          <div class="ttl"><b>Calendar</b><span>next 3</span></div>
+          <div class="body">
+            <div class="ev"><span class="when">MON 14</span><span class="t">team standup<i>09:30 – 09:45</i></span></div>
+            <div class="ev"><span class="when">TUE 15</span><span class="t">design review — mobile<i>10:00 – 11:00</i></span></div>
+            <div class="ev"><span class="when">THU 17</span><span class="t">client kickoff call<i>14:00 – 15:00</i></span></div>
+          </div>
+        </div>
+
+        <div class="box recent">
+          <div class="ttl"><b>Recently Added</b><span>created</span></div>
+          <div class="body">
+            <div class="ri"><span class="badge">BM</span><span>brand guidelines v3</span><span class="ty">bookmark</span></div>
+            <div class="ri"><span class="badge">CT</span><span>priya raman</span><span class="ty">contact</span></div>
+            <div class="ri"><span class="badge">SB</span><span>figma org plan</span><span class="ty">subscription</span></div>
+            <div class="ri"><span class="badge">NT</span><span>q4 roadmap notes</span><span class="ty">note</span></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>
