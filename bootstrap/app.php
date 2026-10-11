@@ -27,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 Request::HEADER_X_FORWARDED_PROTO,
         );
 
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->encryptCookies(except: ['appearance', 'theme', 'sidebar_state']);
 
         $middleware->web(append: [
             HandleAppearance::class,

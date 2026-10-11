@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"  @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $theme ?? 'daybreak' }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,14 +8,21 @@
         <script>
             (function() {
                 const appearance = '{{ $appearance ?? "system" }}';
+                const theme = '{{ $theme ?? "daybreak" }}';
+                const lightThemes = @json($themeLightIds ?? ['daybreak']);
+                const darkThemes = @json($themeDarkIds ?? ['dracula']);
+
+                let isDark = appearance === 'dark';
 
                 if (appearance === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-                    if (prefersDark) {
-                        document.documentElement.classList.add('dark');
-                    }
+                    isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 }
+
+                const root = document.documentElement;
+                root.classList.toggle('dark', isDark);
+
+                const pool = isDark ? darkThemes : lightThemes;
+                root.dataset.theme = pool.includes(theme) ? theme : pool[0];
             })();
         </script>
 
@@ -25,8 +32,24 @@
                 background-color: #f4f3f8;
             }
 
+            html[data-theme='parchment'] {
+                background-color: #f5f0e6;
+            }
+
+            html[data-theme='glacier'] {
+                background-color: #eef3f6;
+            }
+
             html.dark {
                 background-color: #282a36;
+            }
+
+            html.dark[data-theme='espresso'] {
+                background-color: #201914;
+            }
+
+            html.dark[data-theme='abyss'] {
+                background-color: #0e1620;
             }
         </style>
 
