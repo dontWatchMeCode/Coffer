@@ -1,13 +1,23 @@
 ---
 id: 213
 section: backend
-status: todo
+status: done
 severity: high
 ---
 
 # Investigate Intermittent 404 After Login
 
 Diagnose and fix cases where a user sometimes lands on a 404 page immediately after logging in.
+
+## Closure Note
+
+Closed at user request after investigation; no fix applied and root cause remains unconfirmed.
+
+Most likely explanation: a stale intended URL remains in the session. After successful login, both normal and two-factor login responses redirect to that destination without checking whether it still exists. A deleted record, renamed/deleted team, or changed membership could make the destination return 404/403. This would explain why direct login works while returning through an old destination sometimes fails.
+
+Both dashboard routes exist. Existing authentication tests passed (8 tests, 23 assertions), but do not cover stale intended destinations. Telescope investigation was blocked by SQLite reporting “database disk image is malformed.” If this recurs, capture the exact post-login destination and add a regression test for that path.
+
+The acceptance criteria below remain unchecked because the issue was closed without reproducing or fixing it.
 
 ## Context
 
