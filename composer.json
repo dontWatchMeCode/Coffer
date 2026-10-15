@@ -65,8 +65,7 @@
         ],
         "setup-dev": [
             "Composer\\Config::disableProcessTimeout",
-            "@php -r \"array_map('unlink', array_filter(['database/database.sqlite', 'database/database.sqlite-shm', 'database/database.sqlite-wal'], 'file_exists')); touch('database/database.sqlite');\"",
-            "@php artisan migrate --force",
+            "@php artisan migrate:fresh --force --no-interaction",
             "@php -d memory_limit=512M artisan app:generate-test-records"
         ],
         "dev": [
