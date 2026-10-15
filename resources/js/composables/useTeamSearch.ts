@@ -39,9 +39,11 @@ export function buildSearchPageUrl(
 
 export async function requestSearchResults(
     url: string,
+    signal?: AbortSignal,
 ): Promise<SearchResponse> {
     try {
         const response = await fetch(url, {
+            signal,
             headers: {
                 Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',

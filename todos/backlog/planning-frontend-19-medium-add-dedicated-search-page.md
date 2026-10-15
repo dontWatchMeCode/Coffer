@@ -23,6 +23,10 @@ Add a full search page that is accessible from the current search overlay and by
 - Non-ok fetch responses clear stale data in both overlay and page
 - Route throttled at 30 req/min
 - 11 feature tests + all 23 existing search tests passing
+- QA 2026-10-15: retains results while loading, inline reduced-motion-aware spinner (`motion-safe:animate-spin`), reserved filter-chip row (`min-h-6`); `loading` reset for missing team + Inertia `onFinish`; removed unused `inputRef`
+- 5 search template regression tests in `resources/js/pages/search/Index.test.mjs` (`npm test` 20 passed); `composer qa` passed in 128.45s
+- Request cancellation implemented: `requestSearchResults()` accepts optional `AbortSignal`; immediate query/tag/type invalidation cancels previous fetch and per-Inertia visit; `requestVersion` guards results/loading/URL; unmount cancels; external Inertia props restore query/type/tag/results and invalidate pending fetch; network/non-OK errors still settle to empty results
+- 12 search page tests in `Index.test.mjs` (5 template + 7 runtime cancellation); `npm test` 27 passes; `composer qa` passed 131.14s before final 3-line input sync adjustment; targeted tests/types/lint/format running on final
 
 ## Needs Refinement
 
@@ -37,6 +41,8 @@ Add a full search page that is accessible from the current search overlay and by
 - `SearchResponse` type duplicated across Index.vue and SearchOverlay.vue
 - `log_entries` → `"Log"` label logic duplicated in 3 places
 - Could extract shared types to `resources/js/types/search.ts` and icon map to a composable
+- Preexisting out-of-order JSON response risk handled via AbortController + requestVersion guard
+- Other diff in working tree is unrelated formatter churn, not part of this feature
 
 ## Acceptance Criteria
 

@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { Search, X } from 'lucide-vue-next';
+import { LoaderCircle, Search, X } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import SearchFilterSidebar from '@/components/pages/search/SearchFilterSidebar.vue';
 import SearchPrefixTooltip from '@/components/search/SearchPrefixTooltip.vue';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
     buildSearchJsonUrl,
     buildSearchPageUrl,
@@ -49,7 +48,6 @@ const activeType = ref(props.type);
 const activeTag = ref(props.tag);
 const loading = ref(false);
 const localResults = ref<SearchResponse>(props.results);
-const inputRef = ref<{ focus: () => void } | null>(null);
 
 const allResults = computed(() => flattenSearchResults(localResults.value));
 const hasResults = computed(() => allResults.value.length > 0);
@@ -70,30 +68,61 @@ function iconForType(key: string): LucideIcon {
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let requestVersion = 0;
+let abortController: AbortController | null = null;
+let cancelVisit: (() => void) | null = null;
 
-watch(searchQuery, () => {
+function cancelSearch(): void {
+    requestVersion++;
+    abortController?.abort();
+    abortController = null;
+    const cancel = cancelVisit;
+    cancelVisit = null;
+    cancel?.();
+
     if (debounceTimer) {
         clearTimeout(debounceTimer);
+        debounceTimer = null;
     }
+}
 
-    loading.value = true;
-    debounceTimer = setTimeout(async () => {
-        await performSearch();
-    }, 200);
-});
+watch(
+    searchQuery,
+    () => {
+        cancelSearch();
+        loading.value = true;
+        debounceTimer = setTimeout(async () => {
+            await performSearch();
+        }, 200);
+    },
+    { flush: 'sync' },
+);
+
+onUnmounted(cancelSearch);
 
 watch(
     () => props.results,
-    (newResults) => {
-        localResults.value = newResults;
+    (results) => {
+        if (cancelVisit) {
+            return;
+        }
+
+        searchQuery.value = props.query;
+        activeType.value = props.type;
+        activeTag.value = props.tag;
+        cancelSearch();
+        localResults.value = results;
         loading.value = false;
     },
 );
 
 async function performSearch(): Promise<void> {
+    const version = requestVersion;
     const q = searchQuery.value.trim();
 
     if (!currentTeamSlug.value) {
+        loading.value = false;
+
         return;
     }
 
@@ -112,11 +141,38 @@ async function performSearch(): Promise<void> {
             buildSearchPageUrl(currentTeamSlug.value, {
                 type: activeType.value,
             }),
-            { preserveState: true, preserveScroll: true },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onCancelToken: (token) => {
+                    if (version !== requestVersion) {
+                        token.cancel();
+
+                        return;
+                    }
+
+                    cancelVisit = () => token.cancel();
+                },
+                onSuccess: (response) => {
+                    if (version === requestVersion) {
+                        localResults.value = response.props
+                            .results as SearchResponse;
+                    }
+                },
+                onFinish: () => {
+                    if (version === requestVersion) {
+                        cancelVisit = null;
+                        loading.value = false;
+                    }
+                },
+            },
         );
 
         return;
     }
+
+    const controller = new AbortController();
+    abortController = controller;
 
     try {
         const builtQuery = buildPrefixedQuery(
@@ -125,17 +181,24 @@ async function performSearch(): Promise<void> {
             activeTag.value,
         );
 
-        localResults.value = await requestSearchResults(
+        const results = await requestSearchResults(
             buildSearchJsonUrl(
                 currentTeamSlug.value,
                 builtQuery ? { q: builtQuery } : {},
             ),
+            controller.signal,
         );
-    } finally {
-        loading.value = false;
-    }
 
-    updateUrl();
+        if (version === requestVersion && !controller.signal.aborted) {
+            localResults.value = results;
+            updateUrl();
+        }
+    } finally {
+        if (version === requestVersion) {
+            abortController = null;
+            loading.value = false;
+        }
+    }
 }
 
 function buildPrefixedQuery(q: string, type: string, tagSlug: string): string {
@@ -170,10 +233,7 @@ function updateUrl(): void {
 }
 
 function onSidebarTypeChange(value: string): void {
-    if (debounceTimer) {
-        clearTimeout(debounceTimer);
-        debounceTimer = null;
-    }
+    cancelSearch();
 
     activeType.value = value;
     loading.value = true;
@@ -181,10 +241,7 @@ function onSidebarTypeChange(value: string): void {
 }
 
 function onSidebarTagChange(value: string): void {
-    if (debounceTimer) {
-        clearTimeout(debounceTimer);
-        debounceTimer = null;
-    }
+    cancelSearch();
 
     activeTag.value = value;
     loading.value = true;
@@ -192,10 +249,7 @@ function onSidebarTagChange(value: string): void {
 }
 
 function clearFilters(): void {
-    if (debounceTimer) {
-        clearTimeout(debounceTimer);
-        debounceTimer = null;
-    }
+    cancelSearch();
 
     activeType.value = '';
     activeTag.value = '';
@@ -234,24 +288,36 @@ defineOptions({
                         class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                     />
                     <Input
-                        ref="inputRef"
                         v-model="searchQuery"
                         data-testid="search-page-input"
                         placeholder="Search tasks, contacts, events... use #tag to filter by tag"
-                        class="h-11 pl-10"
+                        class="h-11 pr-10 pl-10"
                         autofocus
                     />
+                    <span
+                        v-show="loading"
+                        role="status"
+                        class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
+                    >
+                        <LoaderCircle
+                            class="h-4 w-4 motion-safe:animate-spin"
+                        />
+                        <span class="sr-only">Searching…</span>
+                    </span>
                 </div>
                 <SearchPrefixTooltip side="bottom" />
             </div>
 
             <div class="mx-auto flex flex-col gap-8 xl:flex-row">
-                <div class="order-2 min-w-0 flex-1 space-y-6 xl:order-1">
-                    <div
-                        v-if="activeType || activeTag"
-                        class="flex flex-wrap items-center gap-1.5"
-                    >
-                        <span class="text-xs text-muted-foreground"
+                <div
+                    :aria-busy="loading"
+                    data-testid="search-results"
+                    class="order-2 min-w-0 flex-1 space-y-6 xl:order-1"
+                >
+                    <div class="flex min-h-6 flex-wrap items-center gap-1.5">
+                        <span
+                            v-if="activeType || activeTag"
+                            class="text-xs text-muted-foreground"
                             >Filtered by:</span
                         >
                         <Badge
@@ -289,20 +355,24 @@ defineOptions({
                         </Badge>
                     </div>
 
-                    <div v-if="loading" class="space-y-3">
-                        <Skeleton class="h-14 w-full" />
-                        <Skeleton class="h-14 w-full" />
-                        <Skeleton class="h-14 w-full" />
-                    </div>
-
                     <div
-                        v-else-if="
-                            !searchQuery.trim() && !activeType && !activeTag
+                        v-if="
+                            !hasResults &&
+                            (loading ||
+                                (!searchQuery.trim() &&
+                                    !activeType &&
+                                    !activeTag))
                         "
                         class="flex flex-col items-center justify-center py-16 text-muted-foreground"
                     >
                         <Search class="mb-3 h-10 w-10 opacity-30" />
-                        <p class="text-sm">Type to search across your team</p>
+                        <p class="text-sm">
+                            {{
+                                loading
+                                    ? 'Searching…'
+                                    : 'Type to search across your team'
+                            }}
+                        </p>
                     </div>
 
                     <div
