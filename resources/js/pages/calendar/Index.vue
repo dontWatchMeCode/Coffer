@@ -76,19 +76,22 @@ const hasListData = computed(() =>
     Boolean(props.events || props.calendarEvents),
 );
 
-const { closeDetail, onSavedItem: onSaved, visitDetail } =
-    useListDetailOverlay<CalendarEventItem>(
-        'calendar',
-        currentTeamSlug.value,
-        hasListData.value,
-        {
-            detailItem: () => props.event,
-            lists: [
-                { prop: 'calendarEvents', items: () => props.calendarEvents },
-                { prop: 'events.data', items: () => props.events?.data },
-            ],
-        },
-    );
+const {
+    closeDetail,
+    onSavedItem: onSaved,
+    visitDetail,
+} = useListDetailOverlay<CalendarEventItem>(
+    'calendar',
+    currentTeamSlug.value,
+    hasListData.value,
+    {
+        detailItem: () => props.event,
+        lists: [
+            { prop: 'calendarEvents', items: () => props.calendarEvents },
+            { prop: 'events.data', items: () => props.events?.data },
+        ],
+    },
+);
 
 function reloadCalendar(): void {
     if (calendarTimeout) {

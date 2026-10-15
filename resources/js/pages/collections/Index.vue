@@ -56,21 +56,24 @@ const { searchQuery } = useSearch(
     'collections',
 );
 
-const { closeDetail, onSavedItem: onSaved, visitDetail } =
-    useListDetailOverlay<CollectionItem>(
-        'collections',
-        currentTeamSlug.value,
-        Boolean(props.collections),
-        {
-            detailItem: () => props.collection,
-            lists: [
-                {
-                    prop: 'collections.data',
-                    items: () => props.collections?.data,
-                },
-            ],
-        },
-    );
+const {
+    closeDetail,
+    onSavedItem: onSaved,
+    visitDetail,
+} = useListDetailOverlay<CollectionItem>(
+    'collections',
+    currentTeamSlug.value,
+    Boolean(props.collections),
+    {
+        detailItem: () => props.collection,
+        lists: [
+            {
+                prop: 'collections.data',
+                items: () => props.collections?.data,
+            },
+        ],
+    },
+);
 
 const { viewMode } = useViewMode('collections');
 

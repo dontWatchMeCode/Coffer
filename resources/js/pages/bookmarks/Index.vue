@@ -57,18 +57,19 @@ const { searchQuery } = useSearch(
     'bookmarks',
 );
 
-const { closeDetail, onSavedItem: onSaved, visitDetail } =
-    useListDetailOverlay<BookmarkItem>(
-        'bookmarks',
-        currentTeamSlug.value,
-        Boolean(props.bookmarks),
-        {
-            detailItem: () => props.bookmark,
-            lists: [
-                { prop: 'bookmarks.data', items: () => props.bookmarks?.data },
-            ],
-        },
-    );
+const {
+    closeDetail,
+    onSavedItem: onSaved,
+    visitDetail,
+} = useListDetailOverlay<BookmarkItem>(
+    'bookmarks',
+    currentTeamSlug.value,
+    Boolean(props.bookmarks),
+    {
+        detailItem: () => props.bookmark,
+        lists: [{ prop: 'bookmarks.data', items: () => props.bookmarks?.data }],
+    },
+);
 
 function navigateToBookmark(bookmark: BookmarkItem): void {
     visitDetail(

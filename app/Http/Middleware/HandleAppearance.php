@@ -19,7 +19,7 @@ class HandleAppearance
      *
      * @var array<string, 'light'|'dark'>
      */
-    private const THEMES = [
+    private const array THEMES = [
         'daybreak' => 'light',
         'parchment' => 'light',
         'glacier' => 'light',
@@ -34,7 +34,7 @@ class HandleAppearance
         'gruvbox' => 'dark',
     ];
 
-    private const APPEARANCES = ['light', 'dark', 'system'];
+    private const array APPEARANCES = ['light', 'dark', 'system'];
 
     /**
      * Handle an incoming request.

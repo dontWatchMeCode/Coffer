@@ -47,7 +47,10 @@ const themesFor = (mode: ThemeMode) =>
             role="radiogroup"
             :aria-labelledby="`theme-group-${group.mode}`"
         >
-            <p :id="`theme-group-${group.mode}`" class="text-sm text-muted-foreground">
+            <p
+                :id="`theme-group-${group.mode}`"
+                class="text-sm text-muted-foreground"
+            >
                 {{ group.label }}
             </p>
             <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">

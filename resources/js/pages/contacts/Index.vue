@@ -57,8 +57,11 @@ const { searchQuery } = useSearch(
     'contacts',
 );
 
-const { closeDetail, onSavedItem: onSaved, visitDetail } =
-    useListDetailOverlay<ContactItem>(
+const {
+    closeDetail,
+    onSavedItem: onSaved,
+    visitDetail,
+} = useListDetailOverlay<ContactItem>(
     'contacts',
     currentTeamSlug.value,
     Boolean(props.contacts),

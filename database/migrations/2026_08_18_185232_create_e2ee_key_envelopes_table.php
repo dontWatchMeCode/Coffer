@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('e2ee_key_envelopes', function (Blueprint $table) {
+        Schema::create('e2ee_key_envelopes', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('epoch_id')->constrained('e2ee_key_epochs')->cascadeOnDelete();
             $table->foreignId('member_key_id')->constrained('e2ee_member_keys')->cascadeOnDelete();

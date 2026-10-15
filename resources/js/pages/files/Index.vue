@@ -64,16 +64,19 @@ const createDialogRef = ref<InstanceType<typeof CreateFileDialog> | null>(null);
 const deleteDialogRef = ref<InstanceType<typeof DeleteFileDialog> | null>(null);
 const { viewMode } = useViewMode('files');
 
-const { closeDetail: closeFile, onSavedItem: rememberSavedFile, visitDetail } =
-    useListDetailOverlay<FileItem>(
-        'files',
-        currentTeamSlug.value,
-        Boolean(props.files),
-        {
-            detailItem: () => props.file,
-            lists: [{ prop: 'files.data', items: () => props.files?.data }],
-        },
-    );
+const {
+    closeDetail: closeFile,
+    onSavedItem: rememberSavedFile,
+    visitDetail,
+} = useListDetailOverlay<FileItem>(
+    'files',
+    currentTeamSlug.value,
+    Boolean(props.files),
+    {
+        detailItem: () => props.file,
+        lists: [{ prop: 'files.data', items: () => props.files?.data }],
+    },
+);
 
 function openCreateDialog(): void {
     if (createDialogRef.value) {

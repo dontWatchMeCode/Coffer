@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('e2ee_key_epochs', function (Blueprint $table) {
+        Schema::create('e2ee_key_epochs', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('team_id')->constrained()->cascadeOnDelete();
             $table->integer('epoch'); // monotonic per team

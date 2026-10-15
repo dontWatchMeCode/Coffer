@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('e2ee_sync_log', function (Blueprint $table) {
+        Schema::create('e2ee_sync_log', function (Blueprint $table): void {
             // Append-only monotonic change log. The auto-increment id is used
             // as the sync cursor.
             $table->id();

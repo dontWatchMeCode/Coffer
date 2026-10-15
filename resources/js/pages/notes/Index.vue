@@ -56,8 +56,11 @@ const { searchQuery } = useSearch(
     'notes',
 );
 
-const { closeDetail, onSavedItem: onSaved, visitDetail } =
-    useListDetailOverlay<NoteItem>(
+const {
+    closeDetail,
+    onSavedItem: onSaved,
+    visitDetail,
+} = useListDetailOverlay<NoteItem>(
     'notes',
     currentTeamSlug.value,
     Boolean(props.notes),

@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('e2ee_files', function (Blueprint $table) {
+        Schema::create('e2ee_files', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('team_id')->constrained()->cascadeOnDelete();
             $table->integer('file_id'); // record id of the file record (type 'file')

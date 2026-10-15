@@ -61,21 +61,24 @@ const { searchQuery } = useSearch(
     'subscriptions',
 );
 
-const { closeDetail, onSavedItem: onSaved, visitDetail } =
-    useListDetailOverlay<SubscriptionItem>(
-        'subscriptions',
-        currentTeamSlug.value,
-        Boolean(props.subscriptions),
-        {
-            detailItem: () => props.subscription,
-            lists: [
-                {
-                    prop: 'subscriptions.data',
-                    items: () => props.subscriptions?.data,
-                },
-            ],
-        },
-    );
+const {
+    closeDetail,
+    onSavedItem: onSaved,
+    visitDetail,
+} = useListDetailOverlay<SubscriptionItem>(
+    'subscriptions',
+    currentTeamSlug.value,
+    Boolean(props.subscriptions),
+    {
+        detailItem: () => props.subscription,
+        lists: [
+            {
+                prop: 'subscriptions.data',
+                items: () => props.subscriptions?.data,
+            },
+        ],
+    },
+);
 
 function navigateToSubscription(subscription: SubscriptionItem): void {
     visitDetail(
