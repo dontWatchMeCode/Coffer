@@ -7,8 +7,10 @@ export type FileItem = {
     size: number;
     width?: number | null;
     height?: number | null;
-    isImage: boolean;
-    previewUrl: string;
+    previewKind: 'image' | 'video' | 'text' | null;
+    previewUrl: string | null;
+    thumbnailUrl: string | null;
+    textPreview?: { content: string; truncated: boolean } | null;
     downloadUrl: string;
     createdAt?: string | null;
     updatedAt?: string | null;

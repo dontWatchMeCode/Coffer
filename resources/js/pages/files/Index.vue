@@ -121,7 +121,7 @@ defineOptions({
     <div v-if="props.files && !props.file">
         <PageHeader
             title="Files"
-            description="Private team uploads with image previews and linked records."
+            description="Private images, videos, and documents with linked records."
         />
 
         <div class="min-w-0 flex-1 py-5">

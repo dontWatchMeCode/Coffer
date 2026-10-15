@@ -30,7 +30,7 @@ const supportedExtensions = computed(() =>
 );
 const uploadHelpText = computed(
     () =>
-        `Supports ${supportedExtensions.value} images up to ${props.uploadConstraints.maxMegabytes} MB.`,
+        `Supports ${supportedExtensions.value} files up to ${props.uploadConstraints.maxMegabytes} MB.`,
 );
 
 const createDialogOpen = ref(false);
@@ -91,7 +91,7 @@ defineExpose({
     <CreateDialog
         :open="createDialogOpen"
         title="Add File"
-        description="Upload a private team file. Images are supported first."
+        description="Upload a private image, video, or document for your team."
         submit-label="Add File"
         @update:open="handleCreateClose"
         @submit="submitCreate"
@@ -113,7 +113,7 @@ defineExpose({
         </div>
 
         <div class="grid gap-2">
-            <Label for="create-file-upload">Image</Label>
+            <Label for="create-file-upload">File</Label>
             <Input
                 :key="inputKey"
                 id="create-file-upload"

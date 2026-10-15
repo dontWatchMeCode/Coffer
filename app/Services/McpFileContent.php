@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Team;
+use App\Support\FileTypes;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -24,14 +25,14 @@ class McpFileContent
         }
 
         $mimeType = self::detectMimeType($bytes);
-        $extension = $this->extensionForMimeType($mimeType);
+        $extension = FileTypes::extension($mimeType);
         $name = $this->safeOriginalName($originalName, $extension);
         $filename = Str::uuid().'-'.Str::slug(pathinfo($name, PATHINFO_FILENAME)).'.'.$extension;
         $path = 'files/'.$team->id.'/'.$filename;
 
         Storage::disk(self::DISK)->put($path, $bytes);
 
-        [$width, $height] = self::imageDimensions($bytes);
+        [$width, $height] = FileTypes::previewKind($mimeType) === 'image' ? self::imageDimensions($bytes) : [null, null];
 
         return [
             'disk' => self::DISK,
@@ -93,16 +94,5 @@ class McpFileContent
         }
 
         return $name;
-    }
-
-    private function extensionForMimeType(string $mimeType): string
-    {
-        return match ($mimeType) {
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/gif' => 'gif',
-            'image/webp' => 'webp',
-            default => 'bin',
-        };
     }
 }

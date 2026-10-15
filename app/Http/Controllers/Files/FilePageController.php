@@ -8,10 +8,11 @@ use App\Concerns\ProvidesActivityHistory;
 use App\Concerns\ProvidesRecordLinks;
 use App\Concerns\ProvidesRecordTags;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Files\SaveFileRequest;
 use App\Models\FileItem;
 use App\Models\Team;
+use App\Support\FileTypes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -72,7 +73,7 @@ class FilePageController extends Controller
                     ->through(fn (FileItem $f): array => $this->filePayload($f, $currentTeam))
             )),
             'uploadConstraints' => Inertia::optional(fn (): array => $this->uploadConstraints()),
-            'file' => $this->filePayload($file, $currentTeam),
+            'file' => $this->filePayload($file, $currentTeam, includeTextPreview: true),
             'recordLinks' => $this->recordLinksPayload($file, $currentTeam),
             'recordTags' => $this->recordTagsPayload($file, $currentTeam),
             'activityHistory' => $this->activityHistoryConfig($file),
@@ -82,8 +83,11 @@ class FilePageController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function filePayload(FileItem $file, Team $currentTeam): array
+    private function filePayload(FileItem $file, Team $currentTeam, bool $includeTextPreview = false): array
     {
+        $hasInlinePreview = $file->disk !== null && $file->path !== null
+            && in_array($file->previewKind(), ['image', 'video'], true);
+
         return [
             'id' => $file->id,
             'title' => $file->title,
@@ -93,12 +97,52 @@ class FilePageController extends Controller
             'size' => $file->size,
             'width' => $file->width,
             'height' => $file->height,
-            'isImage' => $file->isImage(),
-            'previewUrl' => route('team.files.inline', ['current_team' => $currentTeam, 'file' => $file->id]),
+            'previewKind' => $file->previewKind(),
+            'previewUrl' => $hasInlinePreview ? route('team.files.inline', ['current_team' => $currentTeam, 'file' => $file->id]) : null,
+            'thumbnailUrl' => $hasInlinePreview && $file->previewKind() === 'video'
+                ? route('team.files.thumbnail', ['current_team' => $currentTeam, 'file' => $file->id, 'v' => hash('xxh128', (string) $file->path)])
+                : null,
             'downloadUrl' => route('team.files.download', ['current_team' => $currentTeam, 'file' => $file->id]),
             'createdAt' => $file->created_at?->format(\DateTimeInterface::ATOM),
             'updatedAt' => $file->updated_at?->format(\DateTimeInterface::ATOM),
+            ...($includeTextPreview ? ['textPreview' => $this->textPreview($file)] : []),
         ];
+    }
+
+    /** @return array{content: string, truncated: bool}|null */
+    private function textPreview(FileItem $file): ?array
+    {
+        if ($file->previewKind() !== 'text' || $file->disk === null || $file->path === null) {
+            return null;
+        }
+
+        $disk = Storage::disk($file->disk);
+
+        if (! $disk->exists($file->path)) {
+            return null;
+        }
+
+        $stream = $disk->readStream($file->path);
+
+        if (! is_resource($stream)) {
+            return null;
+        }
+
+        try {
+            $bytes = stream_get_contents($stream, FileTypes::TEXT_PREVIEW_BYTES + 1);
+        } finally {
+            fclose($stream);
+        }
+
+        if ($bytes === false) {
+            return null;
+        }
+
+        $content = mb_strcut($bytes, 0, FileTypes::TEXT_PREVIEW_BYTES, 'UTF-8');
+
+        return mb_check_encoding($content, 'UTF-8')
+            ? ['content' => $content, 'truncated' => strlen($bytes) > FileTypes::TEXT_PREVIEW_BYTES]
+            : null;
     }
 
     /**
@@ -107,10 +151,10 @@ class FilePageController extends Controller
     private function uploadConstraints(): array
     {
         return [
-            'acceptedMimeTypes' => SaveFileRequest::ACCEPTED_IMAGE_MIME_TYPES,
-            'acceptedExtensions' => SaveFileRequest::ACCEPTED_IMAGE_EXTENSIONS,
-            'maxKilobytes' => SaveFileRequest::MAX_UPLOAD_KILOBYTES,
-            'maxMegabytes' => SaveFileRequest::MAX_UPLOAD_MEGABYTES,
+            'acceptedMimeTypes' => FileTypes::mimeTypes(),
+            'acceptedExtensions' => FileTypes::extensions(),
+            'maxKilobytes' => FileTypes::MAX_UPLOAD_KILOBYTES,
+            'maxMegabytes' => FileTypes::MAX_UPLOAD_MEGABYTES,
         ];
     }
 }

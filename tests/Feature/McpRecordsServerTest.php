@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\TaskStatus;
-use App\Http\Requests\Files\SaveFileRequest;
 use App\Mcp\Servers\RecordsServer;
 use App\Mcp\Tools\AddRecordTagsTool;
 use App\Mcp\Tools\AddTaskCommentTool;
@@ -32,6 +31,8 @@ use App\Models\Task;
 use App\Models\TaskComment;
 use App\Models\User;
 use App\Services\McpFileContent;
+use App\Services\VideoThumbnail;
+use App\Support\FileTypes;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -353,7 +354,7 @@ test('mcp rejects file create with oversized content', function () {
 
     $user = User::factory()->create();
 
-    $oversizedBytes = str_repeat('a', SaveFileRequest::MAX_UPLOAD_KILOBYTES * 1024 + 1);
+    $oversizedBytes = str_repeat('a', FileTypes::MAX_UPLOAD_KILOBYTES * 1024 + 1);
 
     RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
         'type' => 'file',
@@ -379,7 +380,7 @@ test('mcp rejects file create with unsupported mime type', function () {
             'title' => 'SVG File',
             'content' => base64_encode($svgBytes),
         ],
-    ])->assertHasErrors(['The file must be a JPEG, PNG, GIF, or WebP file.']);
+    ])->assertHasErrors(['The file must be '.FileTypes::SUPPORTED_FORMATS.'.']);
 
     expect(FileItem::query()->count())->toBe(0);
 });
@@ -404,6 +405,8 @@ test('mcp file update can replace bytes', function () {
 
     $file = FileItem::query()->where('title', 'Replaceable File')->firstOrFail();
     $oldPath = $file->path;
+    $oldThumbnail = VideoThumbnail::pathFor($oldPath);
+    Storage::disk(McpFileContent::DISK)->put($oldThumbnail, 'cached thumbnail');
 
     Storage::disk(McpFileContent::DISK)->assertExists($oldPath);
 
@@ -425,6 +428,7 @@ test('mcp file update can replace bytes', function () {
 
     Storage::disk(McpFileContent::DISK)->assertExists($file->path);
     Storage::disk(McpFileContent::DISK)->assertMissing($oldPath);
+    Storage::disk(McpFileContent::DISK)->assertMissing($oldThumbnail);
 });
 
 test('mcp file update without content preserves existing bytes', function () {

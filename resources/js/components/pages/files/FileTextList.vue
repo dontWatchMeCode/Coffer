@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Download, File, Image, Plus, Trash2 } from 'lucide-vue-next';
+import { Download, File, Plus, Trash2 } from 'lucide-vue-next';
 import EmptyState from '@/components/list/EmptyState.vue';
 import ListItem from '@/components/list/ListItem.vue';
 import ListItemActions from '@/components/list/ListItemActions.vue';
 import ListItemIcon from '@/components/list/ListItemIcon.vue';
+import FileKindIcon from '@/components/pages/files/FileKindIcon.vue';
 import { Button } from '@/components/ui/button';
 import { formatBytes } from '@/lib/utils';
 import type { FileItem } from '@/types';
@@ -28,11 +29,10 @@ defineProps<Props>();
         >
             <div class="flex min-w-0 items-center gap-4 overflow-hidden">
                 <ListItemIcon>
-                    <Image
-                        v-if="file.isImage"
+                    <FileKindIcon
+                        :kind="file.previewKind"
                         class="h-5 w-5 text-muted-foreground"
                     />
-                    <File v-else class="h-5 w-5 text-muted-foreground" />
                 </ListItemIcon>
 
                 <div class="min-w-0 flex-1">

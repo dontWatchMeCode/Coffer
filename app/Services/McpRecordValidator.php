@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Http\Requests\Files\SaveFileRequest;
+use App\Models\FileItem;
 use App\Models\Team;
+use App\Support\FileTypes;
 use App\Validation\DomainRecordValidation;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Validator;
@@ -42,7 +43,15 @@ class McpRecordValidator
      */
     public static function rulesFor(string $type, bool $updating, Team $team, array $data = [], ?Model $model = null): array
     {
-        return DomainRecordValidation::rulesFor($type, $updating, $team, $data, $model, includeMcpFileFields: true);
+        $rules = DomainRecordValidation::rulesFor($type, $updating, $team, $data, $model, includeMcpFileFields: true);
+
+        if ($type === 'file' && $model instanceof FileItem && $model->path !== null && ! filled($data['content'] ?? null)) {
+            foreach (['mime_type', 'size', 'width', 'height'] as $field) {
+                $rules[$field] = ['prohibited'];
+            }
+        }
+
+        return $rules;
     }
 
     public static function applyConditionalRules(Validator $validator, string $type): void
@@ -60,7 +69,7 @@ class McpRecordValidator
                     return;
                 }
 
-                $encodedMaxLen = (int) ceil(SaveFileRequest::MAX_UPLOAD_KILOBYTES * 1024 * 4 / 3 + 500);
+                $encodedMaxLen = (int) ceil(FileTypes::MAX_UPLOAD_KILOBYTES * 1024 * 4 / 3 + 500);
 
                 if (strlen((string) $data['content']) > $encodedMaxLen) {
                     $validator->errors()->add('content', 'The file must be 100 MB or smaller.');
@@ -76,7 +85,7 @@ class McpRecordValidator
                     return;
                 }
 
-                if (strlen($decoded) > SaveFileRequest::MAX_UPLOAD_KILOBYTES * 1024) {
+                if (strlen($decoded) > FileTypes::MAX_UPLOAD_KILOBYTES * 1024) {
                     $validator->errors()->add('content', 'The file must be 100 MB or smaller.');
 
                     return;
@@ -84,8 +93,8 @@ class McpRecordValidator
 
                 $mimeType = McpFileContent::detectMimeType($decoded);
 
-                if (! in_array($mimeType, SaveFileRequest::ACCEPTED_IMAGE_MIME_TYPES, true)) {
-                    $validator->errors()->add('content', 'The file must be a JPEG, PNG, GIF, or WebP file.');
+                if (! in_array($mimeType, FileTypes::mimeTypes(), true)) {
+                    $validator->errors()->add('content', 'The file must be '.FileTypes::SUPPORTED_FORMATS.'.');
                 }
             });
         }

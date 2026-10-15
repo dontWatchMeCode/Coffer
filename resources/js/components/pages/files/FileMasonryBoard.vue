@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { useWindowVirtualizer } from '@tanstack/vue-virtual';
-import { Download, Image, Trash2 } from 'lucide-vue-next';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { Download, File, Trash2 } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import type { ComponentPublicInstance } from 'vue';
 import EmptyState from '@/components/list/EmptyState.vue';
+import FileKindIcon from '@/components/pages/files/FileKindIcon.vue';
 import { Button } from '@/components/ui/button';
+import { formatBytes } from '@/lib/utils';
 import type { FileItem } from '@/types';
 
 const props = defineProps<{
@@ -20,8 +23,22 @@ const lanes = ref(1);
 const columnWidth = ref(320);
 const gap = 16;
 const cardChrome = 92;
+const failedPreviews = ref(new Set<number>());
 
-const imageFiles = computed(() => props.files.filter((file) => file.isImage));
+watch(
+    () => props.files,
+    () => {
+        failedPreviews.value.clear();
+    },
+);
+
+function previewImageUrl(file: FileItem): string | null {
+    if (failedPreviews.value.has(file.id)) {
+        return null;
+    }
+
+    return file.previewKind === 'image' ? file.previewUrl : file.thumbnailUrl;
+}
 
 function updateLanes(): void {
     const width = window.innerWidth;
@@ -43,22 +60,27 @@ function updateColumnWidth(): void {
 }
 
 function estimateSize(index: number): number {
-    const file = imageFiles.value[index];
-    const ratio = file?.width && file.height ? file.height / file.width : 0.75;
+    const file = props.files[index];
+    const ratio =
+        file?.previewKind === 'image' && file.width && file.height
+            ? file.height / file.width
+            : 0.75;
 
     return Math.round(columnWidth.value * ratio + cardChrome);
 }
 
 function imageAspectRatio(file: FileItem): string {
-    return file.width && file.height
+    return file.previewKind === 'image' && file.width && file.height
         ? `${file.width} / ${file.height}`
         : '4 / 3';
 }
 
 const virtualizer = useWindowVirtualizer(
     computed(() => ({
-        count: imageFiles.value.length,
+        count: props.files.length,
         estimateSize,
+        getItemKey: (index: number) => props.files[index].id,
+        gap,
         lanes: lanes.value,
         overscan: 8,
         scrollMargin: scrollMargin.value,
@@ -67,6 +89,12 @@ const virtualizer = useWindowVirtualizer(
 
 const virtualItems = computed(() => virtualizer.value.getVirtualItems());
 const totalSize = computed(() => virtualizer.value.getTotalSize());
+
+function measureItem(element: Element | ComponentPublicInstance | null): void {
+    virtualizer.value.measureElement(
+        element instanceof HTMLElement ? element : null,
+    );
+}
 
 function itemStyle(lane: number, start: number): Record<string, string> {
     const width = `calc((100% - ${gap * (lanes.value - 1)}px) / ${lanes.value})`;
@@ -101,40 +129,71 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div v-if="imageFiles.length > 0" ref="boardRef" class="pr-1">
+    <div v-if="files.length > 0" ref="boardRef" class="pr-1">
         <div class="relative w-full" :style="{ height: `${totalSize}px` }">
             <div
                 v-for="virtualItem in virtualItems"
                 :key="String(virtualItem.key)"
+                :ref="measureItem"
                 :data-index="virtualItem.index"
                 :style="itemStyle(virtualItem.lane, virtualItem.start)"
             >
                 <article
-                    class="group mb-4 cursor-pointer overflow-hidden border bg-card transition-colors hover:border-primary"
-                    @click="navigateToFile(imageFiles[virtualItem.index])"
+                    data-testid="file-board-item"
+                    class="group cursor-pointer overflow-hidden border bg-card transition-colors hover:border-primary"
+                    @click="navigateToFile(files[virtualItem.index])"
                 >
                     <div
                         class="relative bg-muted"
                         :style="{
                             aspectRatio: imageAspectRatio(
-                                imageFiles[virtualItem.index],
+                                files[virtualItem.index],
                             ),
                         }"
                     >
                         <img
-                            :src="imageFiles[virtualItem.index].previewUrl"
-                            :alt="imageFiles[virtualItem.index].title"
+                            v-if="previewImageUrl(files[virtualItem.index])"
+                            :src="
+                                previewImageUrl(files[virtualItem.index]) ??
+                                undefined
+                            "
+                            :alt="files[virtualItem.index].title"
                             loading="lazy"
                             class="h-full w-full object-cover"
+                            @error="
+                                failedPreviews.add(files[virtualItem.index].id)
+                            "
                         />
+                        <div
+                            v-else
+                            class="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-muted-foreground"
+                        >
+                            <FileKindIcon
+                                :kind="files[virtualItem.index].previewKind"
+                                class="h-12 w-12"
+                            />
+                            <p class="max-w-full truncate text-xs">
+                                {{ files[virtualItem.index].originalName }}
+                            </p>
+                            <p class="text-xs">
+                                {{ formatBytes(files[virtualItem.index].size) }}
+                            </p>
+                        </div>
+                        <span
+                            v-if="
+                                files[virtualItem.index].previewKind === 'video'
+                            "
+                            class="pointer-events-none absolute bottom-2 left-2 flex items-center gap-1 rounded bg-black/65 px-2 py-1 text-xs text-white"
+                        >
+                            <FileKindIcon kind="video" class="h-3 w-3" />
+                            Video
+                        </span>
                         <div
                             class="absolute inset-x-0 top-0 flex justify-end gap-1 bg-gradient-to-b from-black/45 to-transparent p-2 opacity-0 transition group-hover:opacity-100"
                         >
                             <Button
                                 as="a"
-                                :href="
-                                    imageFiles[virtualItem.index].downloadUrl
-                                "
+                                :href="files[virtualItem.index].downloadUrl"
                                 variant="secondary"
                                 size="icon"
                                 class="h-8 w-8"
@@ -149,9 +208,7 @@ onUnmounted(() => {
                                 class="h-8 w-8"
                                 aria-label="Delete file"
                                 @click.stop="
-                                    openDeleteDialog(
-                                        imageFiles[virtualItem.index],
-                                    )
+                                    openDeleteDialog(files[virtualItem.index])
                                 "
                             >
                                 <Trash2 class="h-4 w-4" />
@@ -160,13 +217,13 @@ onUnmounted(() => {
                     </div>
                     <div class="space-y-1 p-3">
                         <h2 class="line-clamp-2 text-sm font-medium">
-                            {{ imageFiles[virtualItem.index].title }}
+                            {{ files[virtualItem.index].title }}
                         </h2>
                         <p
-                            v-if="imageFiles[virtualItem.index].description"
+                            v-if="files[virtualItem.index].description"
                             class="line-clamp-2 text-xs text-muted-foreground"
                         >
-                            {{ imageFiles[virtualItem.index].description }}
+                            {{ files[virtualItem.index].description }}
                         </p>
                     </div>
                 </article>
@@ -174,32 +231,20 @@ onUnmounted(() => {
         </div>
     </div>
 
-    <div
-        v-else-if="files.length > 0"
-        class="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground"
-    >
-        No image previews in the loaded files. Switch to list view to review
-        filenames and downloads.
-    </div>
-
     <EmptyState
         v-else
-        :title="
-            searchQuery
-                ? 'No image files match your search.'
-                : 'No image files yet.'
-        "
+        :title="searchQuery ? 'No files match your search.' : 'No files yet.'"
         :description="
             searchQuery
-                ? 'Switch to text view to see non-image files or try another search.'
-                : 'Upload your first private image to start the board.'
+                ? 'Try another title, filename, or description.'
+                : 'Upload your first private image, video, or document.'
         "
         :show-action="!searchQuery"
         action-label="Add your first file"
         @action="openCreateDialog"
     >
         <template #icon>
-            <Image class="h-12 w-12" />
+            <File class="h-12 w-12" />
         </template>
     </EmptyState>
 </template>

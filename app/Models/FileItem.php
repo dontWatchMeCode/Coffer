@@ -9,6 +9,8 @@ use App\Concerns\Filterable;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
+use App\Services\VideoThumbnail;
+use App\Support\FileTypes;
 use Database\Factories\FileItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -40,7 +42,7 @@ class FileItem extends Model implements LinkableRecord
             }
 
             if ($fileItem->disk !== null && $fileItem->path !== null) {
-                Storage::disk($fileItem->disk)->delete($fileItem->path);
+                Storage::disk($fileItem->disk)->delete([$fileItem->path, VideoThumbnail::pathFor($fileItem->path)]);
             }
         });
     }
@@ -54,11 +56,9 @@ class FileItem extends Model implements LinkableRecord
             ->dontLogEmptyChanges();
     }
 
-    public function isImage(): bool
+    public function previewKind(): ?string
     {
-        $mimeType = (string) $this->mime_type;
-
-        return str_starts_with($mimeType, 'image/');
+        return FileTypes::previewKind((string) $this->mime_type);
     }
 
     /**

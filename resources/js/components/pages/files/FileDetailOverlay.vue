@@ -10,6 +10,7 @@ import DetailLinkRow from '@/components/page/DetailLinkRow.vue';
 import DetailSection from '@/components/page/DetailSection.vue';
 import PageHeader from '@/components/page/PageHeader.vue';
 import DeleteFileDialog from '@/components/pages/files/DeleteFileDialog.vue';
+import FilePreview from '@/components/pages/files/FilePreview.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -152,25 +153,7 @@ function submitEdit(): void {
 
                 <template #main>
                     <div v-if="!isEditing" class="space-y-6">
-                        <div
-                            v-if="file.isImage"
-                            class="overflow-hidden rounded-xl border bg-muted"
-                        >
-                            <img
-                                :src="file.previewUrl"
-                                :alt="file.title"
-                                class="mx-auto max-h-[70vh] w-auto object-contain"
-                            />
-                        </div>
-
-                        <div
-                            v-else
-                            class="rounded-xl border bg-card p-8 text-center"
-                        >
-                            <p class="text-sm text-muted-foreground">
-                                Preview is not available for this file type yet.
-                            </p>
-                        </div>
+                        <FilePreview :file="file" />
 
                         <div class="flex justify-end">
                             <Button

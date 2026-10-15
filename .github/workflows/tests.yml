@@ -64,6 +64,9 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install video thumbnail dependency
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Install Node Dependencies
         run: npm i
 

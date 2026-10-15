@@ -40,7 +40,7 @@ Add a private Files library for team-scoped uploads with an image-first board, t
 - Authenticated non-members cannot view file metadata pages, inline previews, downloads, or raw bytes.
 - Soft-deleted records should not expose file bytes through normal show/inline/download routes.
 - Force delete must remove the private uploaded file and clean up tags/links.
-- Validate uploads with large-media-ready limits. Support images first, keep the validation design extensible for documents and videos, and do not allow SVG.
+- Validate uploads via centralized `FileTypes` upload/preview policy with same 100 MB HTTP+MCP limit. Accepts JPEG/PNG/GIF/WebP/MP4/WebM/PDF/TXT/DOCX/XLSX/PPTX; rejects SVG/HTML/XML. Inline allowlist is images/video only; PDF/Office download-only per explicit user decision (no PDF.js, no Composer/NPM deps).
 
 ## Frontend Notes
 
@@ -49,7 +49,7 @@ Add a private Files library for team-scoped uploads with an image-first board, t
 - Use lazy `<img>` loading and a visual placeholder/skeleton while image previews load.
 - Adapt image board lane count responsively for mobile, tablet, and desktop.
 - Keep the UI consistent with existing list pages and Notes view switching, but make the image board more visual and skimmable like Pinry.
-- Non-image future file types should be able to render as generic text/file cards without schema or route rewrites.
+- Video cards show static JPEG previews from private authenticated `thumbnail` GET (no board `<video>`); lazy `<img>` with icon fallback on any image error. Detail page native player unchanged. Docs/text remain icon placeholders (generic `FileItem` schema, no migrations). Measured virtual cards use stable id keys and `gap-16`.
 
 ## Recommended Work
 
@@ -74,6 +74,13 @@ Add a private Files library for team-scoped uploads with an image-first board, t
 - [x] Permanent delete removes the private uploaded file.
 - [x] Guests and non-members cannot access pages, inline previews, downloads, or file bytes.
 - [x] Targeted Pest tests pass.
+- [x] Mixed board: video cards render static private JPEG thumbnails (no board video); docs/text use icon placeholders. Detail video keeps native controls + `preload="metadata"` with private `BinaryFileResponse` range support and codec-download fallback.
+- [x] TXT preview is detail-only, bounded 64 KiB UTF-8 escaped; PDFs/Office are download-only; stored MCP MIME metadata is immutable without validated byte replacement; team auth/private cache/`nosniff`+CSP retained.
+
+## Implemented Media Extension Note
+
+- `VideoThumbnail` service creates private cached JPEG (`<source>.thumbnail.jpg`) on first authenticated `thumbnail` GET: FFmpeg timeout 10 / threads 1 / forced format / file protocol; 15s lock + 12s block; 300s failure backoff; JPEG-validated UUID temp + atomic move; rechecks fresh filesystem + DB path; deleted on forceDelete/MCP byte replacement. FFmpeg is an approved system dep (Docker runtime + browser CI), no Composer/NPM deps.
+- Verification: 7 thumbnail feature tests; 3 browser tests (static JPEG card + detail play/seek, mixed text XSS, gap); `npm` 40 passed; `composer qa` passed 158.34s incl. full suite + browser. QA-loop 3 passes (startup-failure exception + test; reactive-set claim disproved with watchEffect regression; clean). PHPStan `freshFileExists` documents impure IO + `clearstatcache` and passed.
 
 ## QA Polish (post-review)
 

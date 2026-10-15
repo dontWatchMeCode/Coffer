@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Validation;
 
 use App\Enums\TaskStatus;
-use App\Http\Requests\Files\SaveFileRequest;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Team;
+use App\Support\FileTypes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
 
@@ -214,9 +214,9 @@ class DomainRecordValidation
                 : [
                     'required',
                     'file',
-                    'max:'.SaveFileRequest::MAX_UPLOAD_KILOBYTES,
-                    'mimes:'.implode(',', SaveFileRequest::ACCEPTED_IMAGE_EXTENSIONS),
-                    'mimetypes:'.implode(',', SaveFileRequest::ACCEPTED_IMAGE_MIME_TYPES),
+                    'max:'.FileTypes::MAX_UPLOAD_KILOBYTES,
+                    'mimes:'.implode(',', FileTypes::extensions()),
+                    'mimetypes:'.implode(',', FileTypes::mimeTypes()),
                 ];
         }
 
@@ -228,7 +228,7 @@ class DomainRecordValidation
                 'size' => [...$optional(), 'nullable', 'integer', 'min:0'],
                 'width' => [...$optional(), 'nullable', 'integer', 'min:0'],
                 'height' => [...$optional(), 'nullable', 'integer', 'min:0'],
-                'content' => [...$optional(), 'nullable', 'string', 'max:'.(int) ceil(SaveFileRequest::MAX_UPLOAD_KILOBYTES * 1024 * 4 / 3 + 500)],
+                'content' => [...$optional(), 'nullable', 'string', 'max:'.(int) ceil(FileTypes::MAX_UPLOAD_KILOBYTES * 1024 * 4 / 3 + 500)],
             ]);
         }
 

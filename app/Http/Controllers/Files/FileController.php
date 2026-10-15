@@ -9,6 +9,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Files\SaveFileRequest;
 use App\Models\FileItem;
 use App\Models\Team;
+use App\Services\VideoThumbnail;
+use App\Support\FileTypes;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +31,8 @@ class FileController extends Controller
         $path = $uploadedFile->store('files/'.$currentTeam->id, 'local');
         abort_if($path === false, 500);
 
-        [$width, $height] = $this->imageDimensions($uploadedFile);
+        $mimeType = $uploadedFile->getMimeType() ?? 'application/octet-stream';
+        [$width, $height] = FileTypes::previewKind($mimeType) === 'image' ? $this->imageDimensions($uploadedFile) : [null, null];
 
         try {
             $file = DB::transaction(fn () => FileItem::create([
@@ -38,7 +41,7 @@ class FileController extends Controller
                 'disk' => 'local',
                 'path' => $path,
                 'original_name' => $uploadedFile->getClientOriginalName(),
-                'mime_type' => $uploadedFile->getMimeType() ?? 'application/octet-stream',
+                'mime_type' => $mimeType,
                 'size' => $uploadedFile->getSize() ?: 0,
                 'width' => $width,
                 'height' => $height,
@@ -78,6 +81,7 @@ class FileController extends Controller
             ->findOrFail($file);
 
         $this->authorize('view', $file);
+        abort_unless(in_array($file->previewKind(), ['image', 'video'], true), 404);
         abort_if($file->disk === null || $file->path === null, 404);
         abort_unless(Storage::disk($file->disk)->exists($file->path), 404);
 
@@ -99,6 +103,23 @@ class FileController extends Controller
         abort_unless(Storage::disk($file->disk)->exists($file->path), 404);
 
         $response = response()->download(Storage::disk($file->disk)->path($file->path), $file->original_name, $this->headers($file));
+        $response->setPrivate();
+        $response->headers->addCacheControlDirective('no-cache');
+
+        return $response;
+    }
+
+    public function thumbnail(Team $currentTeam, int $file, VideoThumbnail $thumbnails): BinaryFileResponse
+    {
+        $file = FileItem::query()->whereBelongsTo($currentTeam)->findOrFail($file);
+        $this->authorize('view', $file);
+        $path = $thumbnails->forFile($file);
+        abort_if($path === null || $file->disk === null, 404);
+
+        $response = response()->file(Storage::disk($file->disk)->path($path), [
+            ...$this->headers($file),
+            'Content-Type' => 'image/jpeg',
+        ]);
         $response->setPrivate();
         $response->headers->addCacheControlDirective('no-cache');
 
@@ -149,6 +170,7 @@ class FileController extends Controller
         return [
             'Content-Type' => $file->mime_type,
             'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "sandbox; default-src 'none'; frame-ancestors 'none'",
         ];
     }
 }

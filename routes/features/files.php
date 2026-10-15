@@ -17,6 +17,9 @@ Route::middleware(EnsureTeamFeatureEnabled::class.':files')->group(function (): 
     Route::get('files/{file}/download', [FileController::class, 'download'])
         ->whereNumber('file')
         ->name('team.files.download');
+    Route::get('files/{file}/thumbnail', [FileController::class, 'thumbnail'])
+        ->whereNumber('file')
+        ->name('team.files.thumbnail');
     Route::post('files', [FileController::class, 'store'])->name('team.files.store');
     Route::patch('files/{file}', [FileController::class, 'update'])
         ->whereNumber('file')
