@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
-import { Search } from 'lucide-vue-next';
+import { LoaderCircle, Search } from 'lucide-vue-next';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import SearchPrefixTooltip from '@/components/search/SearchPrefixTooltip.vue';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useTeamSearch } from '@/composables/useTeamSearch';
 import { SEARCH_CATEGORIES } from '@/lib/search';
 import type { SearchCategoryKey } from '@/lib/search';
@@ -33,6 +32,7 @@ const {
     allResults,
     hasResults,
     resetResults,
+    cancelSearch,
     searchPageUrl: buildTeamSearchPageUrl,
     runJsonSearch,
 } = useTeamSearch(currentTeamSlug);
@@ -50,34 +50,58 @@ function goToSearchPage(): void {
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-watch(query, (newQuery) => {
+function cancelPendingSearch(): void {
     if (debounceTimer) {
         clearTimeout(debounceTimer);
+        debounceTimer = null;
     }
 
-    selectedIndex.value = 0;
+    cancelSearch();
+}
 
-    if (!newQuery.trim() || !currentTeamSlug.value) {
-        resetResults();
-
-        return;
-    }
-
-    loading.value = true;
-
-    debounceTimer = setTimeout(() => {
-        runJsonSearch({ q: newQuery.trim() });
-    }, 200);
-});
-
-watch(open, (isOpen) => {
-    if (isOpen) {
-        query.value = '';
-        resetResults();
+watch(
+    [query, currentTeamSlug],
+    ([newQuery, teamSlug], [, previousTeamSlug]) => {
+        cancelPendingSearch();
         selectedIndex.value = 0;
-        nextTick(() => inputRef.value?.focus());
-    }
+
+        if (teamSlug !== previousTeamSlug) {
+            resetResults();
+        }
+
+        if (!open.value || !newQuery.trim() || !currentTeamSlug.value) {
+            resetResults();
+
+            return;
+        }
+
+        loading.value = true;
+
+        debounceTimer = setTimeout(() => {
+            runJsonSearch({ q: newQuery.trim() });
+        }, 200);
+    },
+    { flush: 'sync' },
+);
+
+watch(results, () => {
+    selectedIndex.value = 0;
 });
+
+watch(
+    open,
+    (isOpen) => {
+        cancelPendingSearch();
+
+        if (isOpen) {
+            query.value = '';
+            resetResults();
+            selectedIndex.value = 0;
+            nextTick(() => inputRef.value?.focus());
+        }
+    },
+    { flush: 'sync' },
+);
 
 function onGlobalKeyDown(event: KeyboardEvent): void {
     if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
@@ -97,6 +121,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    cancelPendingSearch();
     document.removeEventListener('keydown', onGlobalKeyDown);
 });
 
@@ -159,7 +184,7 @@ function getResultIndex(
 <template>
     <Dialog v-model:open="open">
         <DialogContent
-            class="gap-0 overflow-hidden p-0 sm:max-w-lg"
+            class="top-[10svh] max-h-[80svh] translate-y-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0 sm:max-w-lg"
             :showCloseButton="false"
             @keydown="onKeyDown"
         >
@@ -171,7 +196,16 @@ function getResultIndex(
             </DialogDescription>
 
             <div class="flex items-center border-b px-4">
-                <Search class="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                <span class="mr-2 h-4 w-4 shrink-0 opacity-50">
+                    <LoaderCircle
+                        v-if="loading"
+                        class="h-4 w-4 motion-safe:animate-spin"
+                    />
+                    <Search v-else class="h-4 w-4" />
+                </span>
+                <span v-if="loading" role="status" class="sr-only"
+                    >Searching…</span
+                >
                 <Input
                     ref="inputRef"
                     data-testid="global-search-input"
@@ -189,19 +223,23 @@ function getResultIndex(
                 </div>
             </div>
 
-            <div class="max-h-[60vh] overflow-y-auto">
-                <div v-if="loading" class="space-y-2 p-4">
-                    <Skeleton class="h-10 w-full" />
-                    <Skeleton class="h-10 w-full" />
-                    <Skeleton class="h-10 w-full" />
-                </div>
-
+            <div
+                :aria-busy="loading"
+                data-testid="global-search-results"
+                class="max-h-[60svh] min-h-0 overflow-y-auto"
+            >
                 <div
-                    v-else-if="!query.trim()"
+                    v-if="!hasResults && (loading || !query.trim())"
                     class="flex flex-col items-center justify-center py-8 text-sm text-muted-foreground"
                 >
                     <Search class="mb-2 h-8 w-8 opacity-30" />
-                    <p>Type to search across your team</p>
+                    <p>
+                        {{
+                            loading
+                                ? 'Searching…'
+                                : 'Type to search across your team'
+                        }}
+                    </p>
                 </div>
 
                 <div

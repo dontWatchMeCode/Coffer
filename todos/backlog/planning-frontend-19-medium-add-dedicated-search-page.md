@@ -27,6 +27,7 @@ Add a full search page that is accessible from the current search overlay and by
 - 5 search template regression tests in `resources/js/pages/search/Index.test.mjs` (`npm test` 20 passed); `composer qa` passed in 128.45s
 - Request cancellation implemented: `requestSearchResults()` accepts optional `AbortSignal`; immediate query/tag/type invalidation cancels previous fetch and per-Inertia visit; `requestVersion` guards results/loading/URL; unmount cancels; external Inertia props restore query/type/tag/results and invalidate pending fetch; network/non-OK errors still settle to empty results
 - 12 search page tests in `Index.test.mjs` (5 template + 7 runtime cancellation); `npm test` 27 passes; `composer qa` passed 131.14s before final 3-line input sync adjustment; targeted tests/types/lint/format running on final
+- SearchOverlay overlay fix/QA: keeps existing results while pending with inline motion-safe spinner, anchored `top-10svh` (no vertical re-centering as counts change), scroll-bounded `80svh` dialog; `useTeamSearch` AbortController + version guard — query/open-close/unmount/team changes cancel debounce and requests, team change clears old results immediately, keyboard selection resets on results refresh; shared runtime test helper extracted; 7 overlay JS regressions (SSR + runtime), `npm test` 34 pass; `tests/Browser/SearchOverlayTest.php` 2 passed (same-input top holds through 8→1→0 results); QA review 3 passes (pass2 A→B stale-results fixed, pass3 clean); final `composer qa` passed 143.02s
 
 ## Needs Refinement
 

@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import ts from 'typescript';
 import * as Vue from 'vue';
 import { parse } from 'vue/compiler-sfc';
 import { renderToString } from 'vue/server-renderer';
 import * as search from '../../lib/search.ts';
+import { evaluateScript } from '../../lib/vue-test-helpers.mjs';
 
 const { descriptor } = parse(
     readFileSync(new URL('./Index.vue', import.meta.url), 'utf8'),
@@ -125,36 +125,6 @@ test('search shows the empty state after the request completes', async () => {
     assert.match(html, /No results found/);
     assert.match(html, /aria-busy="false"/);
 });
-
-function evaluateScript(
-    source,
-    imports,
-    props = {},
-    returnExpression = 'exports',
-) {
-    const { outputText } = ts.transpileModule(source, {
-        compilerOptions: { module: ts.ModuleKind.CommonJS },
-    });
-
-    return new Function(
-        'require',
-        'exports',
-        'defineProps',
-        'defineOptions',
-        `${outputText}\nreturn ${returnExpression};`,
-    )(
-        (name) => {
-            if (!(name in imports)) {
-                throw new Error(`Unexpected import: ${name}`);
-            }
-
-            return imports[name];
-        },
-        {},
-        () => props,
-        () => {},
-    );
-}
 
 const searchRequests = evaluateScript(
     readFileSync(

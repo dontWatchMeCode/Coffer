@@ -56,3 +56,43 @@ it('searches globally and navigates to a result', function () {
     waitForBrowserPath($page, '/'.$team->slug.'/tasks/'.$project->id.'/'.$task->id.'/edit')
         ->assertNoJavaScriptErrors();
 });
+
+it('keeps the search input anchored as result counts change', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+
+    foreach (range(1, 8) as $number) {
+        Task::factory()->create([
+            'team_id' => $team->id,
+            'project_id' => $project->id,
+            'title' => 'Stable Search Task '.$number,
+        ]);
+    }
+
+    $this->actingAs($user);
+
+    $page = visit('/'.$team->slug.'/dashboard')->assertNoJavaScriptErrors();
+    $page->script(<<<'JS'
+        (() => {
+            const style = document.createElement('style');
+            style.textContent = '*, *::before, *::after { animation: none !important; transition: none !important; }';
+            document.head.append(style);
+        })()
+    JS);
+    $page->click('[data-testid="global-search-trigger"]');
+
+    $inputTop = $page->script('document.querySelector("[data-testid=global-search-input]").getBoundingClientRect().top');
+
+    foreach (['Stable Search', 'Stable Search Task 1', 'NoMatchingStableSearchRecord'] as $query) {
+        $page->fill('[data-testid="global-search-input"]', $query);
+        waitForBrowserText($page, $query === 'NoMatchingStableSearchRecord' ? 'No results found' : 'Stable Search Task 1');
+        waitForBrowserText($page, $query === 'Stable Search' ? '8 results' : ($query === 'Stable Search Task 1' ? '1 result' : 'No results found'));
+
+        $updatedTop = $page->script('document.querySelector("[data-testid=global-search-input]").getBoundingClientRect().top');
+
+        expect(abs($updatedTop - $inputTop))->toBeLessThan(1);
+    }
+
+    $page->assertNoJavaScriptErrors();
+});

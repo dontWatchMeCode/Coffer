@@ -67,6 +67,8 @@ export function useTeamSearch(teamSlug: Ref<string | undefined>) {
         flattenSearchResults(results.value),
     );
     const hasResults = computed(() => allResults.value.length > 0);
+    let requestVersion = 0;
+    let abortController: AbortController | null = null;
 
     function searchJsonUrl(params?: QueryParams): string {
         return buildSearchJsonUrl(teamSlug.value, params);
@@ -76,14 +78,40 @@ export function useTeamSearch(teamSlug: Ref<string | undefined>) {
         return buildSearchPageUrl(teamSlug.value, params);
     }
 
-    function resetResults(): void {
-        results.value = createEmptySearchResults();
+    function cancelSearch(): void {
+        requestVersion++;
+        abortController?.abort();
+        abortController = null;
         loading.value = false;
     }
 
+    function resetResults(): void {
+        cancelSearch();
+        results.value = createEmptySearchResults();
+    }
+
     async function runJsonSearch(params?: QueryParams): Promise<void> {
-        results.value = await requestSearchResults(searchJsonUrl(params));
-        loading.value = false;
+        cancelSearch();
+        const version = requestVersion;
+        const controller = new AbortController();
+        abortController = controller;
+        loading.value = true;
+
+        try {
+            const nextResults = await requestSearchResults(
+                searchJsonUrl(params),
+                controller.signal,
+            );
+
+            if (version === requestVersion && !controller.signal.aborted) {
+                results.value = nextResults;
+            }
+        } finally {
+            if (version === requestVersion) {
+                abortController = null;
+                loading.value = false;
+            }
+        }
     }
 
     return {
@@ -92,6 +120,7 @@ export function useTeamSearch(teamSlug: Ref<string | undefined>) {
         allResults,
         hasResults,
         resetResults,
+        cancelSearch,
         searchJsonUrl,
         searchPageUrl,
         runJsonSearch,
