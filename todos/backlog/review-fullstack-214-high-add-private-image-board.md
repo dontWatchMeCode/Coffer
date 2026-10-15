@@ -49,7 +49,7 @@ Add a private Files library for team-scoped uploads with an image-first board, t
 - Use lazy `<img>` loading and a visual placeholder/skeleton while image previews load.
 - Adapt image board lane count responsively for mobile, tablet, and desktop.
 - Keep the UI consistent with existing list pages and Notes view switching, but make the image board more visual and skimmable like Pinry.
-- Video cards show static JPEG previews from private authenticated `thumbnail` GET (no board `<video>`); lazy `<img>` with icon fallback on any image error. Detail page native player unchanged. Docs/text remain icon placeholders (generic `FileItem` schema, no migrations). Measured virtual cards use stable id keys and `gap-16`.
+- Video cards show static JPEG previews from private authenticated `thumbnail` GET (no board `<video>`); lazy `<img>` with icon fallback on any image error. Detail page uses Video.js 10 `video-player`/`video-skin` with poster + `kind="metadata"` storyboard track. Docs/text remain icon placeholders (generic `FileItem` schema, no migrations). Measured virtual cards use stable id keys and `gap-16`.
 
 ## Recommended Work
 
@@ -74,13 +74,21 @@ Add a private Files library for team-scoped uploads with an image-first board, t
 - [x] Permanent delete removes the private uploaded file.
 - [x] Guests and non-members cannot access pages, inline previews, downloads, or file bytes.
 - [x] Targeted Pest tests pass.
-- [x] Mixed board: video cards render static private JPEG thumbnails (no board video); docs/text use icon placeholders. Detail video keeps native controls + `preload="metadata"` with private `BinaryFileResponse` range support and codec-download fallback.
+- [x] Mixed board: video cards render static private JPEG thumbnails (no board video); docs/text use icon placeholders. Detail video uses Video.js 10 `video-player`/`video-skin` with poster + private `storyboard.vtt` hover track, `preload="metadata"` with private `BinaryFileResponse` range support and codec-download fallback.
 - [x] TXT preview is detail-only, bounded 64 KiB UTF-8 escaped; PDFs/Office are download-only; stored MCP MIME metadata is immutable without validated byte replacement; team auth/private cache/`nosniff`+CSP retained.
 
 ## Implemented Media Extension Note
 
 - `VideoThumbnail` service creates private cached JPEG (`<source>.thumbnail.jpg`) on first authenticated `thumbnail` GET: FFmpeg timeout 10 / threads 1 / forced format / file protocol; 15s lock + 12s block; 300s failure backoff; JPEG-validated UUID temp + atomic move; rechecks fresh filesystem + DB path; deleted on forceDelete/MCP byte replacement. FFmpeg is an approved system dep (Docker runtime + browser CI), no Composer/NPM deps.
 - Verification: 7 thumbnail feature tests; 3 browser tests (static JPEG card + detail play/seek, mixed text XSS, gap); `npm` 40 passed; `composer qa` passed 158.34s incl. full suite + browser. QA-loop 3 passes (startup-failure exception + test; reactive-set claim disproved with watchEffect regression; clean). PHPStan `freshFileExists` documents impure IO + `clearstatcache` and passed.
+- Detail player is Video.js 10 (`@videojs/html` `video-player`/`video-skin` in `FilePreview.vue`) with poster on the `video-player` element (not the inner native `video`) + `kind="metadata"` track wired to private `storyboardUrl` (detail payload only). Private `storyboard.vtt`/`storyboard.jpg` endpoints: team-scoped auth, `private`/`no-cache`/`nosniff`, max 30 tiles at 160x90; full layout stored in `.storyboard.json` with legacy duration-only fallback; corrupt metadata self-heals (delete + 404 for retry); 5s ffprobe / 20s ffmpeg timeouts; 45s lock + 32s block + 300s failure backoff. Cards keep static JPEGs; no public URLs.
+
+## Follow-up: PDF Text Preview
+
+- [ ] Add a bounded, escaped PDF text preview using Poppler's `pdftotext`, while retaining private downloads and no embedded PDF viewer.
+- Add the system dependency to Docker and relevant CI jobs; enforce extraction timeout/output limits, team authorization, and cleanup of temporary or cached output.
+- Show a download fallback when extraction fails or produces no text. Scanned/image-only PDFs require OCR, which is outside this follow-up.
+- Not implemented yet; current PDF behavior remains download-only.
 
 ## QA Polish (post-review)
 

@@ -171,7 +171,7 @@ class McpRecordWriteService
         }
 
         if ($newPath !== null && $oldDisk !== null && $oldPath !== null) {
-            Storage::disk($oldDisk)->delete([$oldPath, VideoThumbnail::pathFor($oldPath)]);
+            Storage::disk($oldDisk)->delete([$oldPath, ...VideoThumbnail::pathsFor($oldPath)]);
         }
 
         return Response::structured(['record' => McpRecordPayload::forModel($model->fresh(), $team)]);

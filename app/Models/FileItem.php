@@ -42,7 +42,7 @@ class FileItem extends Model implements LinkableRecord
             }
 
             if ($fileItem->disk !== null && $fileItem->path !== null) {
-                Storage::disk($fileItem->disk)->delete([$fileItem->path, VideoThumbnail::pathFor($fileItem->path)]);
+                Storage::disk($fileItem->disk)->delete([$fileItem->path, ...VideoThumbnail::pathsFor($fileItem->path)]);
             }
         });
     }

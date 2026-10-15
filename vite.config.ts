@@ -18,6 +18,11 @@ export default defineConfig({
         tailwindcss(),
         vue({
             template: {
+                compilerOptions: {
+                    // Keep in sync with FilePreview.test.mjs isCustomElement.
+                    isCustomElement: (tag) =>
+                        ['video-player', 'video-skin'].includes(tag),
+                },
                 transformAssetUrls: {
                     base: null,
                     includeAbsolute: false,

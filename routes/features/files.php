@@ -20,6 +20,12 @@ Route::middleware(EnsureTeamFeatureEnabled::class.':files')->group(function (): 
     Route::get('files/{file}/thumbnail', [FileController::class, 'thumbnail'])
         ->whereNumber('file')
         ->name('team.files.thumbnail');
+    Route::get('files/{file}/storyboard.vtt', [FileController::class, 'storyboard'])
+        ->whereNumber('file')
+        ->name('team.files.storyboard');
+    Route::get('files/{file}/storyboard.jpg', [FileController::class, 'storyboardImage'])
+        ->whereNumber('file')
+        ->name('team.files.storyboard-image');
     Route::post('files', [FileController::class, 'store'])->name('team.files.store');
     Route::patch('files/{file}', [FileController::class, 'update'])
         ->whereNumber('file')

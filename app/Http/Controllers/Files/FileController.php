@@ -12,6 +12,7 @@ use App\Models\Team;
 use App\Services\VideoThumbnail;
 use App\Support\FileTypes;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -124,6 +125,57 @@ class FileController extends Controller
         $response->headers->addCacheControlDirective('no-cache');
 
         return $response;
+    }
+
+    public function storyboard(Team $currentTeam, int $file, VideoThumbnail $thumbnails): Response
+    {
+        $file = FileItem::query()->whereBelongsTo($currentTeam)->findOrFail($file);
+        $this->authorize('view', $file);
+        $storyboard = $thumbnails->storyboardForFile($file);
+        abort_if($storyboard === null, 404);
+        $imageUrl = route('team.files.storyboard-image', ['current_team' => $currentTeam, 'file' => $file->id, 'v' => hash('xxh128', (string) $file->path)]);
+        $vtt = "WEBVTT\n\n";
+
+        for ($index = 0; $index < $storyboard['count']; $index++) {
+            $start = $index * $storyboard['duration'] / $storyboard['count'];
+            $end = ($index + 1) * $storyboard['duration'] / $storyboard['count'];
+            $x = ($index % $storyboard['columns']) * $storyboard['width'];
+            $y = intdiv($index, $storyboard['columns']) * $storyboard['height'];
+            $vtt .= $this->vttTime($start).' --> '.$this->vttTime($end)."\n".$imageUrl.'#xywh='.$x.','.$y.','.$storyboard['width'].','.$storyboard['height']."\n\n";
+        }
+
+        $response = response($vtt, 200, [
+            ...$this->headers($file),
+            'Content-Type' => 'text/vtt; charset=UTF-8',
+        ]);
+        $response->setPrivate();
+        $response->headers->addCacheControlDirective('no-cache');
+
+        return $response;
+    }
+
+    public function storyboardImage(Team $currentTeam, int $file, VideoThumbnail $thumbnails): BinaryFileResponse
+    {
+        $file = FileItem::query()->whereBelongsTo($currentTeam)->findOrFail($file);
+        $this->authorize('view', $file);
+        $storyboard = $thumbnails->storyboardForFile($file);
+        abort_if($storyboard === null || $file->disk === null, 404);
+        abort_unless(Storage::disk($file->disk)->exists($storyboard['path']), 404);
+        $response = response()->file(Storage::disk($file->disk)->path($storyboard['path']), [
+            ...$this->headers($file),
+            'Content-Type' => 'image/jpeg',
+        ]);
+        $response->setPrivate();
+        $response->headers->addCacheControlDirective('no-cache');
+
+        return $response;
+    }
+
+    private function vttTime(float $seconds): string
+    {
+        $milliseconds = (int) round($seconds * 1000);
+
+        return sprintf('%02d:%02d:%02d.%03d', intdiv($milliseconds, 3_600_000), intdiv($milliseconds, 60_000) % 60, intdiv($milliseconds, 1000) % 60, $milliseconds % 1000);
     }
 
     public function destroy(Team $currentTeam, int $file): RedirectResponse

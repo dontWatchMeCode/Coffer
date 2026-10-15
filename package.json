@@ -50,6 +50,7 @@
         "@tiptap/vue-3": "^3.22.3",
         "@unovis/ts": "^1.6.5",
         "@unovis/vue": "^1.6.5",
+        "@videojs/html": "^10.1.0",
         "@vueuse/core": "^12.8.2",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",

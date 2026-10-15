@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import '@videojs/html/video/player';
+import '@videojs/html/video/skin';
 import { ref, watch } from 'vue';
 import type { FileItem } from '@/types';
 
@@ -26,19 +28,41 @@ watch(
             />
         </div>
         <template v-else-if="file.previewKind === 'video' && file.previewUrl">
-            <video
+            <video-player
                 :key="file.previewUrl"
-                :src="file.previewUrl"
-                controls
-                playsinline
-                preload="metadata"
-                :aria-label="file.title"
-                class="max-h-[70vh] w-full rounded-xl border bg-black"
-                @error="videoFailed = true"
+                :poster="file.thumbnailUrl ?? undefined"
+                class="block w-full"
+                data-testid="file-video-player"
             >
-                Your browser cannot play this video. Download it to watch
-                locally.
-            </video>
+                <video-skin
+                    class="block aspect-video w-full"
+                    style="
+                        --media-accent-color: var(--primary);
+                        --media-accent-text-color: var(--primary-foreground);
+                        --media-border-radius: 0.75rem;
+                        --media-font-family: inherit;
+                        --media-object-fit: contain;
+                    "
+                >
+                    <video
+                        :src="file.previewUrl"
+                        playsinline
+                        preload="metadata"
+                        :aria-label="file.title"
+                        @error="videoFailed = true"
+                    >
+                        <track
+                            v-if="file.storyboardUrl"
+                            kind="metadata"
+                            label="thumbnails"
+                            :src="file.storyboardUrl"
+                            default
+                        />
+                        Your browser cannot play this video. Download it to
+                        watch locally.
+                    </video>
+                </video-skin>
+            </video-player>
             <p class="text-sm text-muted-foreground">
                 {{
                     videoFailed

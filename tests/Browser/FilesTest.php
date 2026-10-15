@@ -29,53 +29,44 @@ it('plays and seeks private video and preserves document download fallbacks', fu
 
     $this->actingAs($user);
     $page = visit('/'.$team->slug.'/files')->assertSee('Private video');
-    $thumbnailReady = false;
-    $deadline = microtime(true) + 10;
+    $waitFor = function (string $script, int $seconds) use ($page): bool {
+        $deadline = microtime(true) + $seconds;
 
-    while (microtime(true) < $deadline) {
-        $thumbnailReady = $page->script('Array.from(document.querySelectorAll("[data-testid=file-board-item] img")).some((image) => image.src.includes("/thumbnail") && image.complete && image.naturalWidth > 0)');
+        while (microtime(true) < $deadline) {
+            if ($page->script($script) === true) {
+                return true;
+            }
 
-        if ($thumbnailReady === true) {
-            break;
+            usleep(100_000);
         }
 
-        usleep(100_000);
-    }
+        return false;
+    };
+    $thumbnailReady = $waitFor('Array.from(document.querySelectorAll("[data-testid=file-board-item] img")).some((image) => image.src.includes("/thumbnail") && image.complete && image.naturalWidth > 0)', 10);
 
     expect($thumbnailReady)->toBeTrue('Expected a private JPEG video thumbnail on the card.');
     $page->assertNotPresent('[data-testid="file-board-item"] video');
     $page->click('text=Private video')
         ->assertSee('Video playback depends on browser and codec support.')
         ->assertPresent('[data-testid="file-preview"] video');
-    $ready = false;
-    $deadline = microtime(true) + 5;
-
-    while (microtime(true) < $deadline) {
-        $ready = $page->script('document.querySelector("video").readyState >= 1');
-
-        if ($ready === true) {
-            break;
-        }
-
-        usleep(100_000);
-    }
+    $ready = $waitFor('document.querySelector("video").readyState >= 1', 5);
 
     expect($ready)->toBeTrue('Expected private WebM metadata to load.');
     expect($page->script('document.querySelector("video").duration'))->toBeGreaterThan(1);
 
+    $page->hover('css=media-time-slider');
+    $hoverPreviewReady = $waitFor(<<<'JS'
+        (() => {
+            const thumbnail = document.querySelector('video-skin')?.shadowRoot?.querySelector('media-slider-thumbnail');
+            const image = thumbnail?.querySelector('img');
+            return Boolean(thumbnail && !thumbnail.hasAttribute('data-hidden') && image?.complete && image.naturalWidth > 0 && image.src.includes('storyboard.jpg'));
+        })()
+        JS, 10);
+
+    expect($hoverPreviewReady)->toBeTrue('Expected the Video.js timeline to show a private storyboard frame on hover.');
+
     $page->script('document.querySelector("video").currentTime = 1');
-    $seeked = false;
-    $deadline = microtime(true) + 5;
-
-    while (microtime(true) < $deadline) {
-        $seeked = $page->script('!document.querySelector("video").seeking && document.querySelector("video").currentTime >= 1');
-
-        if ($seeked === true) {
-            break;
-        }
-
-        usleep(100_000);
-    }
+    $seeked = $waitFor('!document.querySelector("video").seeking && document.querySelector("video").currentTime >= 1', 5);
 
     expect($seeked)->toBeTrue('Expected private WebM seeking to finish.');
     expect($page->script(<<<'JS'

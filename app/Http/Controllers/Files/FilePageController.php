@@ -73,7 +73,7 @@ class FilePageController extends Controller
                     ->through(fn (FileItem $f): array => $this->filePayload($f, $currentTeam))
             )),
             'uploadConstraints' => Inertia::optional(fn (): array => $this->uploadConstraints()),
-            'file' => $this->filePayload($file, $currentTeam, includeTextPreview: true),
+            'file' => $this->filePayload($file, $currentTeam, includeDetail: true),
             'recordLinks' => $this->recordLinksPayload($file, $currentTeam),
             'recordTags' => $this->recordTagsPayload($file, $currentTeam),
             'activityHistory' => $this->activityHistoryConfig($file),
@@ -83,10 +83,11 @@ class FilePageController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function filePayload(FileItem $file, Team $currentTeam, bool $includeTextPreview = false): array
+    private function filePayload(FileItem $file, Team $currentTeam, bool $includeDetail = false): array
     {
+        $previewKind = $file->previewKind();
         $hasInlinePreview = $file->disk !== null && $file->path !== null
-            && in_array($file->previewKind(), ['image', 'video'], true);
+            && in_array($previewKind, ['image', 'video'], true);
 
         return [
             'id' => $file->id,
@@ -97,15 +98,18 @@ class FilePageController extends Controller
             'size' => $file->size,
             'width' => $file->width,
             'height' => $file->height,
-            'previewKind' => $file->previewKind(),
+            'previewKind' => $previewKind,
             'previewUrl' => $hasInlinePreview ? route('team.files.inline', ['current_team' => $currentTeam, 'file' => $file->id]) : null,
-            'thumbnailUrl' => $hasInlinePreview && $file->previewKind() === 'video'
+            'thumbnailUrl' => $hasInlinePreview && $previewKind === 'video'
                 ? route('team.files.thumbnail', ['current_team' => $currentTeam, 'file' => $file->id, 'v' => hash('xxh128', (string) $file->path)])
                 : null,
+            ...($includeDetail ? ['storyboardUrl' => $hasInlinePreview && $previewKind === 'video'
+                ? route('team.files.storyboard', ['current_team' => $currentTeam, 'file' => $file->id, 'v' => hash('xxh128', (string) $file->path)])
+                : null] : []),
             'downloadUrl' => route('team.files.download', ['current_team' => $currentTeam, 'file' => $file->id]),
             'createdAt' => $file->created_at?->format(\DateTimeInterface::ATOM),
             'updatedAt' => $file->updated_at?->format(\DateTimeInterface::ATOM),
-            ...($includeTextPreview ? ['textPreview' => $this->textPreview($file)] : []),
+            ...($includeDetail ? ['textPreview' => $this->textPreview($file)] : []),
         ];
     }
 

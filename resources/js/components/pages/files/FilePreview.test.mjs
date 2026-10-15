@@ -11,6 +11,8 @@ const { descriptor } = parse(
 );
 const render = Vue.compile(descriptor.template.content, {
     prefixIdentifiers: true,
+    // Keep in sync with vite.config.ts isCustomElement.
+    isCustomElement: (tag) => ['video-player', 'video-skin'].includes(tag),
 });
 
 function fileItem(previewKind, extra = {}) {
@@ -21,6 +23,8 @@ function fileItem(previewKind, extra = {}) {
         previewUrl: '/team/files/1/inline',
         thumbnailUrl:
             previewKind === 'video' ? '/team/files/1/thumbnail' : null,
+        storyboardUrl:
+            previewKind === 'video' ? '/team/files/1/storyboard.vtt' : null,
         downloadUrl: '/team/files/1/download',
         ...extra,
     };
@@ -33,7 +37,11 @@ function renderPreview(file) {
                 file,
                 ...evaluateScript(
                     descriptor.scriptSetup.content,
-                    { vue: Vue },
+                    {
+                        vue: Vue,
+                        '@videojs/html/video/player': {},
+                        '@videojs/html/video/skin': {},
+                    },
                     { file },
                     '{ videoFailed }',
                 ),
@@ -43,10 +51,19 @@ function renderPreview(file) {
     );
 }
 
-test('videos use a private native player without autoplay and include a download fallback', async () => {
+test('videos use Video.js with private timeline thumbnails and a download fallback', async () => {
     const html = await renderPreview(fileItem('video'));
     assert.match(html, /<video[^>]*src="\/team\/files\/1\/inline"/);
-    assert.match(html, /controls/);
+    assert.match(
+        html,
+        /<video-player[^>]*poster="\/team\/files\/1\/thumbnail"/,
+    );
+    assert.doesNotMatch(html, /<video\s[^>]*poster=/);
+    assert.match(html, /<video-skin/);
+    assert.match(
+        html,
+        /kind="metadata"[^>]*label="thumbnails"[^>]*src="\/team\/files\/1\/storyboard.vtt"/,
+    );
     assert.match(html, /preload="metadata"/);
     assert.doesNotMatch(html, /autoplay/);
     assert.match(html, /Download video/);

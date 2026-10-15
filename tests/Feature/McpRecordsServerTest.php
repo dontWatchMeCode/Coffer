@@ -407,6 +407,8 @@ test('mcp file update can replace bytes', function () {
     $oldPath = $file->path;
     $oldThumbnail = VideoThumbnail::pathFor($oldPath);
     Storage::disk(McpFileContent::DISK)->put($oldThumbnail, 'cached thumbnail');
+    Storage::disk(McpFileContent::DISK)->put(VideoThumbnail::storyboardPathFor($oldPath), 'cached sprite');
+    Storage::disk(McpFileContent::DISK)->put(VideoThumbnail::metadataPathFor($oldPath), '{"duration":20}');
 
     Storage::disk(McpFileContent::DISK)->assertExists($oldPath);
 
@@ -429,6 +431,8 @@ test('mcp file update can replace bytes', function () {
     Storage::disk(McpFileContent::DISK)->assertExists($file->path);
     Storage::disk(McpFileContent::DISK)->assertMissing($oldPath);
     Storage::disk(McpFileContent::DISK)->assertMissing($oldThumbnail);
+    Storage::disk(McpFileContent::DISK)->assertMissing(VideoThumbnail::storyboardPathFor($oldPath));
+    Storage::disk(McpFileContent::DISK)->assertMissing(VideoThumbnail::metadataPathFor($oldPath));
 });
 
 test('mcp file update without content preserves existing bytes', function () {
