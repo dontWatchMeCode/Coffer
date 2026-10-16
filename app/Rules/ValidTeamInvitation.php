@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
+use App\Enums\TeamRole;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use Closure;
@@ -38,6 +39,12 @@ class ValidTeamInvitation implements ValidationRule
 
         if ($value->isExpired()) {
             $fail(__('This invitation has expired.'));
+
+            return;
+        }
+
+        if ($value->role === TeamRole::Owner) {
+            $fail(__('This invitation is invalid.'));
 
             return;
         }

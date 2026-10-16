@@ -61,9 +61,10 @@ COPY . .
 COPY --from=assets /app/public/build ./public/build
 COPY Caddyfile /etc/caddy/Caddyfile
 
-RUN composer dump-autoload --optimize \
+RUN rm -f public/hot \
+    && mkdir -p storage/app/private storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && composer dump-autoload --optimize \
     && php artisan package:discover --ansi \
-    && mkdir -p storage/app/public \
     && php artisan storage:link \
     && chown -R www-data:www-data storage bootstrap/cache
 

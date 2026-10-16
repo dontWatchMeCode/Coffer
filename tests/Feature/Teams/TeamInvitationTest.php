@@ -6,7 +6,7 @@ use App\Models\TeamInvitation;
 use App\Models\User;
 use Illuminate\Support\Facades\Notification;
 
-test('team invitations can be created', function () {
+test('team invitations can be created', function (string $role) {
     Notification::fake();
 
     $owner = User::factory()->create();
@@ -18,7 +18,7 @@ test('team invitations can be created', function () {
         ->actingAs($owner)
         ->post(route('teams.invitations.store', $team), [
             'email' => 'invited@example.com',
-            'role' => TeamRole::Member->value,
+            'role' => $role,
         ]);
 
     $response->assertRedirect(route('teams.edit', $team));
@@ -26,11 +26,14 @@ test('team invitations can be created', function () {
     $this->assertDatabaseHas('team_invitations', [
         'team_id' => $team->id,
         'email' => 'invited@example.com',
-        'role' => TeamRole::Member->value,
+        'role' => $role,
     ]);
-});
+})->with([
+    'admin' => TeamRole::Admin->value,
+    'member' => TeamRole::Member->value,
+]);
 
-test('team invitations can be created by admins', function () {
+test('team invitations can be created by admins', function (string $role) {
     Notification::fake();
 
     $owner = User::factory()->create();
@@ -44,11 +47,52 @@ test('team invitations can be created by admins', function () {
         ->actingAs($admin)
         ->post(route('teams.invitations.store', $team), [
             'email' => 'invited@example.com',
-            'role' => TeamRole::Member->value,
+            'role' => $role,
         ]);
 
     $response->assertRedirect(route('teams.edit', $team));
-});
+
+    $this->assertDatabaseHas('team_invitations', [
+        'team_id' => $team->id,
+        'email' => 'invited@example.com',
+        'role' => $role,
+    ]);
+})->with([
+    'admin' => TeamRole::Admin->value,
+    'member' => TeamRole::Member->value,
+]);
+
+test('owner invitations cannot be created', function (string $actorRole) {
+    Notification::fake();
+
+    $owner = User::factory()->create();
+    $admin = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
+
+    $actor = $actorRole === TeamRole::Admin->value ? $admin : $owner;
+
+    $response = $this
+        ->actingAs($actor)
+        ->post(route('teams.invitations.store', $team), [
+            'email' => 'invited@example.com',
+            'role' => TeamRole::Owner->value,
+        ]);
+
+    $response->assertSessionHasErrors('role');
+
+    $this->assertDatabaseMissing('team_invitations', [
+        'team_id' => $team->id,
+        'email' => 'invited@example.com',
+    ]);
+
+    Notification::assertNothingSent();
+})->with([
+    'owner' => TeamRole::Owner->value,
+    'admin' => TeamRole::Admin->value,
+]);
 
 test('existing team members cannot be invited', function () {
     Notification::fake();
@@ -133,7 +177,7 @@ test('team invitations can be cancelled by owners', function () {
     ]);
 });
 
-test('team invitations can be accepted', function () {
+test('team invitations can be accepted', function (string $role) {
     $owner = User::factory()->create();
     $invitedUser = User::factory()->create(['email' => 'invited@example.com']);
     $team = Team::factory()->create();
@@ -143,7 +187,7 @@ test('team invitations can be accepted', function () {
     $invitation = TeamInvitation::factory()->create([
         'team_id' => $team->id,
         'email' => 'invited@example.com',
-        'role' => TeamRole::Member,
+        'role' => TeamRole::from($role),
         'invited_by' => $owner->id,
     ]);
 
@@ -155,6 +199,42 @@ test('team invitations can be accepted', function () {
 
     expect($invitedUser->fresh()->belongsToTeam($team))->toBeTrue();
     expect($invitation->fresh()->accepted_at)->not->toBeNull();
+    expect($invitedUser->fresh()->teamRole($team)?->value)->toBe($role);
+})->with([
+    'admin' => TeamRole::Admin->value,
+    'member' => TeamRole::Member->value,
+]);
+
+test('owner invitations cannot be accepted', function () {
+    $owner = User::factory()->create();
+    $invitedUser = User::factory()->create(['email' => 'invited@example.com']);
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+
+    $currentTeamId = $invitedUser->fresh()->current_team_id;
+
+    $invitation = TeamInvitation::factory()->create([
+        'team_id' => $team->id,
+        'email' => 'invited@example.com',
+        'role' => TeamRole::Owner,
+        'invited_by' => $owner->id,
+    ]);
+
+    $response = $this
+        ->actingAs($invitedUser)
+        ->post(route('invitations.accept', $invitation));
+
+    $response->assertSessionHasErrors('invitation');
+
+    expect($invitedUser->fresh()->belongsToTeam($team))->toBeFalse();
+    expect($invitation->fresh()->accepted_at)->toBeNull();
+    expect($invitedUser->fresh()->current_team_id)->toBe($currentTeamId);
+
+    $this->assertDatabaseMissing('team_members', [
+        'team_id' => $team->id,
+        'user_id' => $invitedUser->id,
+    ]);
 });
 
 test('team invitations cannot be accepted by uninvited user', function () {
