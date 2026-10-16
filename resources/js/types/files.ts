@@ -10,8 +10,8 @@ export type FileItem = {
     previewKind: 'image' | 'video' | 'text' | null;
     previewUrl: string | null;
     thumbnailUrl: string | null;
-    // Detail payloads only; absent on lists.
-    storyboardUrl?: string | null;
+    // Video only; null for other kinds. Present on lists and detail.
+    storyboardUrl: string | null;
     textPreview?: { content: string; truncated: boolean } | null;
     downloadUrl: string;
     createdAt?: string | null;

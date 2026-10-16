@@ -103,9 +103,11 @@ class FilePageController extends Controller
             'thumbnailUrl' => $hasInlinePreview && $previewKind === 'video'
                 ? route('team.files.thumbnail', ['current_team' => $currentTeam, 'file' => $file->id, 'v' => hash('xxh128', (string) $file->path)])
                 : null,
-            ...($includeDetail ? ['storyboardUrl' => $hasInlinePreview && $previewKind === 'video'
+            // Advertised on lists too so video cards can scrub storyboard
+            // frames on hover without loading a player. Fetching stays lazy.
+            'storyboardUrl' => $hasInlinePreview && $previewKind === 'video'
                 ? route('team.files.storyboard', ['current_team' => $currentTeam, 'file' => $file->id, 'v' => hash('xxh128', (string) $file->path)])
-                : null] : []),
+                : null,
             'downloadUrl' => route('team.files.download', ['current_team' => $currentTeam, 'file' => $file->id]),
             'createdAt' => $file->created_at?->format(\DateTimeInterface::ATOM),
             'updatedAt' => $file->updated_at?->format(\DateTimeInterface::ATOM),

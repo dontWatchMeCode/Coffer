@@ -18,7 +18,7 @@ beforeEach(function () {
             return Process::result(output: '{"format":{"duration":"20.0"}}');
         }
 
-        file_put_contents($command[array_key_last($command)], UploadedFile::fake()->image('sprite.jpg', 640, 90)->getContent());
+        file_put_contents($command[array_key_last($command)], UploadedFile::fake()->image('sprite.jpg', 1280, 180)->getContent());
 
         return Process::result();
     });
@@ -45,7 +45,7 @@ test('private storyboards generate cached sprite cues spanning the whole video',
     expect($response->getContent())->toStartWith("WEBVTT\n")
         ->toContain('00:00:00.000 --> 00:00:05.000')
         ->toContain('00:00:15.000 --> 00:00:20.000')
-        ->toContain('#xywh=480,0,160,90')
+        ->toContain('#xywh=960,0,320,180')
         ->not->toContain('storage/')
         ->not->toContain($file->path);
     expect($response->headers->get('cache-control'))->toContain('private')->not->toContain('public');
@@ -60,17 +60,17 @@ test('private storyboards generate cached sprite cues spanning the whole video',
     Storage::disk('local')->assertExists(VideoThumbnail::metadataPathFor($file->path));
     expect(Storage::disk('local')->allFiles())->toHaveCount(3);
     expect(json_decode(Storage::disk('local')->get(VideoThumbnail::metadataPathFor($file->path)), true))
-        ->toMatchArray(['count' => 4, 'columns' => 4, 'width' => 160, 'height' => 90]);
+        ->toMatchArray(['count' => 4, 'columns' => 4, 'width' => 320, 'height' => 180, 'v' => 2]);
 });
 
-test('storyboard URLs are only advertised on video detail payloads', function () {
+test('storyboard URLs are advertised on video list and detail payloads', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
     $file = storyboardVideoFile($user);
     $this->actingAs($user)->get(route('team.files.show', ['current_team' => $team, 'file' => $file]))
         ->assertInertia(fn (Assert $page) => $page->where('file.storyboardUrl', fn (string $url): bool => str_contains($url, '/'.$team->slug.'/files/'.$file->id.'/storyboard.vtt?v=')));
     $this->get(route('team.files.index', ['current_team' => $team]))
-        ->assertInertia(fn (Assert $page) => $page->missing('files.data.0.storyboardUrl'));
+        ->assertInertia(fn (Assert $page) => $page->where('files.data.0.storyboardUrl', fn (string $url): bool => str_contains($url, '/'.$team->slug.'/files/'.$file->id.'/storyboard.vtt?v=')));
     Process::assertNothingRan();
 
     $image = FileItem::factory()->create(['team_id' => $team->id]);
@@ -156,16 +156,27 @@ test('webm storyboards probe and extract with the matroska format', function () 
     Process::assertRan(fn (PendingProcess $process): bool => $process->command[0] === 'ffmpeg' && in_array('matroska', $process->command, true));
 });
 
-test('corrupt storyboard metadata is cleaned up and regenerates on retry', function () {
+test('corrupt storyboard metadata is cleaned up and heals on first hit', function () {
     $user = User::factory()->create();
     $file = storyboardVideoFile($user);
     Storage::disk('local')->put(VideoThumbnail::storyboardPathFor($file->path), 'stale sprite');
     Storage::disk('local')->put(VideoThumbnail::metadataPathFor($file->path), 'not json');
     $url = route('team.files.storyboard', ['current_team' => $user->currentTeam, 'file' => $file]);
-    $this->actingAs($user)->get($url)->assertNotFound();
-    $this->get($url)->assertOk();
+    $this->actingAs($user)->get($url)->assertOk();
     expect(json_decode(Storage::disk('local')->get(VideoThumbnail::metadataPathFor($file->path)), true))
         ->toMatchArray(['count' => 4, 'columns' => 4]);
+});
+
+test('pre-upgrade storyboards without a layout version heal on first hit', function () {
+    $user = User::factory()->create();
+    $file = storyboardVideoFile($user);
+    Storage::disk('local')->put(VideoThumbnail::storyboardPathFor($file->path), 'stale sprite');
+    Storage::disk('local')->put(VideoThumbnail::metadataPathFor($file->path), json_encode(['duration' => 20.0, 'count' => 4, 'columns' => 4, 'width' => 160, 'height' => 90]));
+    $url = route('team.files.storyboard', ['current_team' => $user->currentTeam, 'file' => $file]);
+    $response = $this->actingAs($user)->get($url)->assertOk();
+    expect($response->getContent())->toContain('#xywh=960,0,320,180');
+    expect(json_decode(Storage::disk('local')->get(VideoThumbnail::metadataPathFor($file->path)), true))
+        ->toMatchArray(['count' => 4, 'columns' => 4, 'width' => 320, 'height' => 180, 'v' => 2]);
 });
 
 test('plain thumbnails never create storyboard assets', function () {
@@ -193,7 +204,7 @@ test('partial sprite rows address the second row start', function () {
             return Process::result(output: '{"format":{"duration":"30"}}');
         }
 
-        file_put_contents($command[array_key_last($command)], UploadedFile::fake()->image('sprite.jpg', 800, 180)->getContent());
+        file_put_contents($command[array_key_last($command)], UploadedFile::fake()->image('sprite.jpg', 1600, 360)->getContent());
 
         return Process::result();
     });
@@ -201,7 +212,7 @@ test('partial sprite rows address the second row start', function () {
     $file = storyboardVideoFile($user);
     $response = $this->actingAs($user)->get(route('team.files.storyboard', ['current_team' => $user->currentTeam, 'file' => $file]))->assertOk();
     expect(substr_count($response->getContent(), ' --> '))->toBe(6);
-    expect($response->getContent())->toContain('#xywh=0,90,160,90');
+    expect($response->getContent())->toContain('#xywh=0,180,320,180');
     Process::assertRan(fn (PendingProcess $process): bool => $process->command[0] === 'ffmpeg' && str_contains(implode(' ', $process->command), 'tile=5x2'));
 });
 
@@ -213,7 +224,7 @@ test('storyboard extraction is bounded to thirty tiles for longer videos', funct
             return Process::result(output: '{"format":{"duration":"7200"}}');
         }
 
-        file_put_contents($command[array_key_last($command)], UploadedFile::fake()->image('sprite.jpg', 800, 540)->getContent());
+        file_put_contents($command[array_key_last($command)], UploadedFile::fake()->image('sprite.jpg', 1600, 1080)->getContent());
 
         return Process::result();
     });
@@ -222,5 +233,5 @@ test('storyboard extraction is bounded to thirty tiles for longer videos', funct
     $response = $this->actingAs($user)->get(route('team.files.storyboard', ['current_team' => $user->currentTeam, 'file' => $file]))->assertOk();
     expect(substr_count($response->getContent(), ' --> '))->toBe(30);
     expect($response->getContent())->toContain('02:00:00.000');
-    Process::assertRan(fn (PendingProcess $process): bool => $process->command[0] === 'ffmpeg' && in_array('fps=30/7200.000000,scale=160:90:force_original_aspect_ratio=decrease,pad=160:90:(ow-iw)/2:(oh-ih)/2,tile=5x6', $process->command, true));
+    Process::assertRan(fn (PendingProcess $process): bool => $process->command[0] === 'ffmpeg' && in_array('fps=30/7200.000000,scale=320:180:force_original_aspect_ratio=decrease,pad=320:180:(ow-iw)/2:(oh-ih)/2,tile=5x6', $process->command, true));
 });

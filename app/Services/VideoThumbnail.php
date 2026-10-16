@@ -17,6 +17,12 @@ use Symfony\Component\Process\Exception\ProcessStartFailedException;
 
 class VideoThumbnail
 {
+    private const int STORYBOARD_VERSION = 2;
+
+    private const int TILE_WIDTH = 320;
+
+    private const int TILE_HEIGHT = 180;
+
     public static function pathFor(string $sourcePath): string
     {
         return $sourcePath.'.thumbnail.jpg';
@@ -43,7 +49,7 @@ class VideoThumbnail
         return $this->generate($file, false);
     }
 
-    /** @return array{path: string, duration: float, count: int, columns: int, width: int, height: int}|null */
+    /** @return array{path: string, duration: float, count: int, columns: int, width: int, height: int, v: int}|null */
     public function storyboardForFile(FileItem $file): ?array
     {
         $path = $this->generate($file, true);
@@ -52,50 +58,65 @@ class VideoThumbnail
             return null;
         }
 
+        $diskName = $file->disk;
+        $source = $file->path;
+        $layout = $this->readStoryboardLayout(Storage::disk($diskName), $source, $path);
+
+        if ($layout !== null) {
+            return $layout;
+        }
+
+        // Stale or corrupt assets were deleted above; regenerate once inline
+        // so pre-upgrade videos heal on first hit instead of 404ing.
+        $path = $this->generate($file, true);
+
+        if ($path === null) {
+            return null;
+        }
+
+        return $this->readStoryboardLayout(Storage::disk($diskName), $source, $path);
+    }
+
+    /** @return array{path: string, duration: float, count: int, columns: int, width: int, height: int, v: int}|null */
+    private function readStoryboardLayout(FilesystemAdapter $disk, string $source, string $path): ?array
+    {
         try {
-            $disk = Storage::disk($file->disk);
-            $json = $disk->get(self::metadataPathFor($file->path));
+            $json = $disk->get(self::metadataPathFor($source));
         } catch (FileNotFoundException) {
             return null;
         }
 
         $metadata = is_string($json) ? json_decode($json, true) : null;
 
-        if (! is_array($metadata)) {
-            $disk->delete([$path, self::metadataPathFor($file->path)]);
+        if (! is_array($metadata) || ($metadata['v'] ?? null) !== self::STORYBOARD_VERSION) {
+            // Pre-upgrade sprite with a coarser tile grid, or unreadable metadata.
+            $disk->delete([$path, self::metadataPathFor($source)]);
 
             return null;
         }
 
         $stored = $this->storedLayout($metadata);
 
-        if ($stored !== null) {
-            return ['path' => $path, ...$stored];
-        }
-
-        // Legacy sprites recorded duration only; recompute the grid.
-        $duration = $this->validDuration($metadata['duration'] ?? null);
-
-        if ($duration === null) {
-            $disk->delete([$path, self::metadataPathFor($file->path)]);
+        if ($stored === null) {
+            $disk->delete([$path, self::metadataPathFor($source)]);
 
             return null;
         }
 
-        return ['path' => $path, ...$this->layout($duration)];
+        return ['path' => $path, ...$stored];
     }
 
-    /** @return array{duration: float, count: int, columns: int, width: int, height: int} */
+    /** @return array{duration: float, count: int, columns: int, width: int, height: int, v: int} */
     private function layout(float $duration): array
     {
         $count = min(30, max(1, (int) ceil($duration / 5)));
 
-        return ['duration' => $duration, 'count' => $count, 'columns' => min(5, $count), 'width' => 160, 'height' => 90];
+        return ['duration' => $duration, 'count' => $count, 'columns' => min(5, $count), 'width' => self::TILE_WIDTH, 'height' => self::TILE_HEIGHT, 'v' => self::STORYBOARD_VERSION];
     }
 
     /**
      * @param array<string, mixed> $metadata
-     * @return array{duration: float, count: int, columns: int, width: int, height: int}|null */
+     * @return array{duration: float, count: int, columns: int, width: int, height: int, v: int}|null */
     private function storedLayout(array $metadata): ?array
     {
         $duration = $this->validDuration($metadata['duration'] ?? null);
@@ -116,7 +137,7 @@ class VideoThumbnail
             return null;
         }
 
-        return ['duration' => $duration, 'count' => $count, 'columns' => $columns, 'width' => $width, 'height' => $height];
+        return ['duration' => $duration, 'count' => $count, 'columns' => $columns, 'width' => $width, 'height' => $height, 'v' => self::STORYBOARD_VERSION];
     }
 
     private function validDuration(mixed $duration): ?float
@@ -128,7 +149,7 @@ class VideoThumbnail
         return (float) $duration;
     }
 
-    /** @return array{duration: float, count: int, columns: int, width: int, height: int}|null */
+    /** @return array{duration: float, count: int, columns: int, width: int, height: int, v: int}|null */
     private function probe(FileItem $file, string $path): ?array
     {
         $result = Process::timeout(5)->run([
@@ -190,7 +211,7 @@ class VideoThumbnail
                     }
 
                     $filter = $layout === null ? 'scale=min(640\,iw):-2' : 'fps='.$layout['count'].'/'.sprintf('%.6F', $layout['duration'])
-                        .',scale=160:90:force_original_aspect_ratio=decrease,pad=160:90:(ow-iw)/2:(oh-ih)/2,tile='.$layout['columns'].'x'.(int) ceil($layout['count'] / $layout['columns']);
+                        .',scale='.$layout['width'].':'.$layout['height'].':force_original_aspect_ratio=decrease,pad='.$layout['width'].':'.$layout['height'].':(ow-iw)/2:(oh-ih)/2,tile='.$layout['columns'].'x'.(int) ceil($layout['count'] / $layout['columns']);
                     $result = Process::timeout($storyboard ? 20 : 10)->run([
                         'ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error',
                         '-protocol_whitelist', 'file', '-threads', '1',
@@ -251,7 +272,11 @@ class VideoThumbnail
                 }
             });
         } catch (LockTimeoutException) {
-            return null;
+            // Another request holds the generation lock; it may have just
+            // finished, so serve its files instead of reporting a miss.
+            return $this->freshFileExists($disk, $thumbnail) && (! $storyboard || $this->freshFileExists($disk, $metadataPath))
+                ? $thumbnail
+                : null;
         }
     }
 

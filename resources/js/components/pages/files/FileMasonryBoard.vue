@@ -7,6 +7,13 @@ import EmptyState from '@/components/list/EmptyState.vue';
 import FileKindIcon from '@/components/pages/files/FileKindIcon.vue';
 import { Button } from '@/components/ui/button';
 import { formatBytes } from '@/lib/utils';
+import {
+    formatStoryboardTime,
+    parseStoryboardVtt,
+    storyboardCueForRatio,
+    storyboardTileStyle,
+} from '@/lib/video-storyboard';
+import type { VideoStoryboard } from '@/lib/video-storyboard';
 import type { FileItem } from '@/types';
 
 const props = defineProps<{
@@ -24,11 +31,28 @@ const columnWidth = ref(320);
 const gap = 16;
 const cardChrome = 92;
 const failedPreviews = ref(new Set<number>());
+// Storyboard caches are keyed by URL so re-uploads (new ?v= hash)
+// never reuse stale sprites.
+const storyboards = ref(new Map<string, VideoStoryboard>());
+const storyboardMissing = ref(new Map<string, number>());
+const storyboardLoading = ref(new Set<string>());
+const spriteReady = ref(new Set<string>());
+const hoverCanScrub = ref(false);
+const hoverTarget = ref<HTMLElement | null>(null);
+const hoveredFileId = ref<number | null>(null);
+const hoverRatio = ref(0);
+const hoverCueLabel = ref<string | null>(null);
+const hoverTileStyle = ref<Record<string, string> | null>(null);
 
 watch(
     () => props.files,
     () => {
         failedPreviews.value.clear();
+        hoverTarget.value = null;
+        hoveredFileId.value = null;
+        hoverRatio.value = 0;
+        hoverCueLabel.value = null;
+        hoverTileStyle.value = null;
     },
 );
 
@@ -75,6 +99,193 @@ function imageAspectRatio(file: FileItem): string {
         : '4 / 3';
 }
 
+function canScrubFile(file: FileItem): boolean {
+    return (
+        hoverCanScrub.value &&
+        file.previewKind === 'video' &&
+        !!file.storyboardUrl
+    );
+}
+
+function markStoryboardMissing(key: string): void {
+    const now = Date.now();
+
+    for (const [cachedKey, missedAt] of storyboardMissing.value) {
+        if (now - missedAt >= 60_000) {
+            storyboardMissing.value.delete(cachedKey);
+        }
+    }
+
+    storyboardMissing.value.set(key, now);
+}
+
+async function ensureStoryboard(file: FileItem): Promise<void> {
+    if (!canScrubFile(file) || !file.storyboardUrl) {
+        return;
+    }
+
+    const key = file.storyboardUrl;
+    const missedAt = storyboardMissing.value.get(key);
+
+    if (
+        storyboards.value.has(key) ||
+        storyboardLoading.value.has(key) ||
+        (missedAt !== undefined && Date.now() - missedAt < 60_000)
+    ) {
+        return;
+    }
+
+    storyboardMissing.value.delete(key);
+    storyboardLoading.value.add(key);
+
+    try {
+        const response = await fetch(key, { credentials: 'same-origin' });
+
+        if (!response.ok) {
+            markStoryboardMissing(key);
+
+            return;
+        }
+
+        const storyboard = parseStoryboardVtt(await response.text());
+
+        if (!storyboard) {
+            markStoryboardMissing(key);
+
+            return;
+        }
+
+        storyboards.value.set(key, storyboard);
+
+        const preload = new Image();
+
+        preload.onload = () => {
+            spriteReady.value.add(key);
+
+            if (hoveredFileId.value === file.id) {
+                updateHoverTile(file);
+            }
+        };
+        preload.onerror = () => {
+            markStoryboardMissing(key);
+            storyboards.value.delete(key);
+        };
+        preload.src = storyboard.imageUrl;
+    } catch {
+        markStoryboardMissing(key);
+    } finally {
+        storyboardLoading.value.delete(key);
+    }
+}
+
+function updateHoverTile(file: FileItem): void {
+    const target = hoverTarget.value;
+    const key = file.storyboardUrl;
+
+    if (!target || !target.isConnected || !key) {
+        return;
+    }
+
+    const rect = target.getBoundingClientRect();
+
+    if (rect.width <= 0 || rect.height <= 0) {
+        return;
+    }
+
+    const storyboard = storyboards.value.get(key);
+
+    if (!storyboard || !spriteReady.value.has(key)) {
+        return;
+    }
+
+    const found = storyboardCueForRatio(storyboard, hoverRatio.value);
+
+    if (!found) {
+        return;
+    }
+
+    const style = storyboardTileStyle(
+        storyboard,
+        found.cue,
+        rect.width,
+        rect.height,
+    );
+
+    if (!style) {
+        return;
+    }
+
+    hoverTileStyle.value = {
+        backgroundImage: `url("${storyboard.imageUrl}")`,
+        backgroundRepeat: 'no-repeat',
+        ...style,
+    };
+    hoverCueLabel.value = formatStoryboardTime(found.cue.start);
+}
+
+function handlePreviewEnter(event: MouseEvent, file: FileItem): void {
+    if (!canScrubFile(file)) {
+        return;
+    }
+
+    const target = event.currentTarget;
+
+    hoverTarget.value = target instanceof HTMLElement ? target : null;
+    hoveredFileId.value = file.id;
+    hoverRatio.value = 0;
+    hoverCueLabel.value = null;
+    hoverTileStyle.value = null;
+    void ensureStoryboard(file).then(() => {
+        if (hoveredFileId.value === file.id) {
+            updateHoverTile(file);
+        }
+    });
+}
+
+function handlePreviewMove(event: MouseEvent, file: FileItem): void {
+    if (!canScrubFile(file) || hoveredFileId.value !== file.id) {
+        return;
+    }
+
+    const target = event.currentTarget;
+
+    if (!(target instanceof HTMLElement)) {
+        return;
+    }
+
+    hoverTarget.value = target;
+
+    const rect = target.getBoundingClientRect();
+
+    if (rect.width <= 0 || rect.height <= 0) {
+        return;
+    }
+
+    hoverRatio.value = Math.min(
+        1,
+        Math.max(0, (event.clientX - rect.left) / rect.width),
+    );
+    updateHoverTile(file);
+}
+
+function handlePreviewLeave(): void {
+    hoverTarget.value = null;
+    hoveredFileId.value = null;
+    hoverRatio.value = 0;
+    hoverCueLabel.value = null;
+    hoverTileStyle.value = null;
+}
+
+function isScrubbing(file: FileItem): boolean {
+    return (
+        hoverCanScrub.value &&
+        hoveredFileId.value === file.id &&
+        !!file.storyboardUrl &&
+        hoverTileStyle.value !== null &&
+        spriteReady.value.has(file.storyboardUrl)
+    );
+}
+
 const virtualizer = useWindowVirtualizer(
     computed(() => ({
         count: props.files.length,
@@ -114,12 +325,26 @@ function handleResize(): void {
     updateScrollMargin();
     updateColumnWidth();
     virtualizer.value.measure();
+
+    if (hoveredFileId.value !== null) {
+        const hovered = props.files.find(
+            (file) => file.id === hoveredFileId.value,
+        );
+
+        if (hovered) {
+            updateHoverTile(hovered);
+        }
+    }
 }
 
 onMounted(() => {
     updateLanes();
     updateScrollMargin();
     updateColumnWidth();
+    hoverCanScrub.value =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(hover: hover)').matches;
     window.addEventListener('resize', handleResize);
 });
 
@@ -144,12 +369,19 @@ onUnmounted(() => {
                     @click="navigateToFile(files[virtualItem.index])"
                 >
                     <div
-                        class="relative bg-muted"
+                        class="relative overflow-hidden bg-muted"
                         :style="{
                             aspectRatio: imageAspectRatio(
                                 files[virtualItem.index],
                             ),
                         }"
+                        @mouseenter="
+                            handlePreviewEnter($event, files[virtualItem.index])
+                        "
+                        @mousemove="
+                            handlePreviewMove($event, files[virtualItem.index])
+                        "
+                        @mouseleave="handlePreviewLeave"
                     >
                         <img
                             v-if="previewImageUrl(files[virtualItem.index])"
@@ -179,6 +411,24 @@ onUnmounted(() => {
                                 {{ formatBytes(files[virtualItem.index].size) }}
                             </p>
                         </div>
+                        <div
+                            v-if="isScrubbing(files[virtualItem.index])"
+                            class="pointer-events-none absolute inset-0"
+                            :style="hoverTileStyle ?? undefined"
+                            aria-hidden="true"
+                        />
+                        <div
+                            v-if="isScrubbing(files[virtualItem.index])"
+                            class="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 bg-white/25"
+                            aria-hidden="true"
+                        >
+                            <div
+                                class="h-full bg-white"
+                                :style="{
+                                    width: `${Math.round(hoverRatio * 100)}%`,
+                                }"
+                            />
+                        </div>
                         <span
                             v-if="
                                 files[virtualItem.index].previewKind === 'video'
@@ -186,7 +436,12 @@ onUnmounted(() => {
                             class="pointer-events-none absolute bottom-2 left-2 flex items-center gap-1 rounded bg-black/65 px-2 py-1 text-xs text-white"
                         >
                             <FileKindIcon kind="video" class="h-3 w-3" />
-                            Video
+                            {{
+                                isScrubbing(files[virtualItem.index]) &&
+                                hoverCueLabel
+                                    ? hoverCueLabel
+                                    : 'Video'
+                            }}
                         </span>
                         <div
                             class="absolute inset-x-0 top-0 flex justify-end gap-1 bg-gradient-to-b from-black/45 to-transparent p-2 opacity-0 transition group-hover:opacity-100"

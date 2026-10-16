@@ -4,6 +4,7 @@ import test from 'node:test';
 import * as Vue from 'vue';
 import { parse } from 'vue/compiler-sfc';
 import { renderToString } from 'vue/server-renderer';
+import * as videoStoryboard from '../../../lib/video-storyboard.ts';
 import { evaluateScript } from '../../../lib/vue-test-helpers.mjs';
 
 const { descriptor } = parse(
@@ -109,6 +110,7 @@ function boardState(props) {
         board.scriptSetup.content,
         {
             vue: { ...Vue, onMounted() {}, onUnmounted() {} },
+            '@/lib/video-storyboard': videoStoryboard,
             '@tanstack/vue-virtual': {
                 useWindowVirtualizer: (options) =>
                     Vue.computed(() => ({
@@ -127,7 +129,7 @@ function boardState(props) {
             },
         },
         props,
-        '{ virtualItems, totalSize, itemStyle, imageAspectRatio, measureItem, previewImageUrl, failedPreviews }',
+        '{ virtualItems, totalSize, itemStyle, imageAspectRatio, measureItem, previewImageUrl, failedPreviews, hoverRatio, hoverCueLabel, hoverTileStyle, isScrubbing, handlePreviewEnter, handlePreviewMove, handlePreviewLeave }',
     );
 }
 
@@ -152,6 +154,21 @@ test('failed thumbnail images reactively fall back and reset when files refresh'
     ];
     await Vue.nextTick();
     assert.equal(imageUrl, '/team/files/1/thumbnail?v=2');
+});
+
+test('video scrub state starts idle and ignores moves without hover', async (t) => {
+    const props = Vue.reactive({ files: [fileItem('video')] });
+    const scope = Vue.effectScope();
+    t.after(() => scope.stop());
+    const state = scope.run(() => boardState(props));
+
+    assert.equal(state.isScrubbing(props.files[0]), false);
+    state.handlePreviewMove(
+        { clientX: 100, currentTarget: null },
+        props.files[0],
+    );
+    assert.equal(state.hoverRatio.value, 0);
+    assert.equal(state.hoverTileStyle.value, null);
 });
 
 test('the virtual board uses image thumbnails for videos without loading video players', async () => {
