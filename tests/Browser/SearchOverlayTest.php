@@ -76,6 +76,7 @@ it('keeps the search input anchored as result counts change', function () {
     $page->script(<<<'JS'
         (() => {
             const style = document.createElement('style');
+            style.nonce = document.querySelector('script[nonce]').nonce;
             style.textContent = '*, *::before, *::after { animation: none !important; transition: none !important; }';
             document.head.append(style);
         })()

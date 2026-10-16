@@ -44,7 +44,7 @@ The progress gradient starts at `#9d7bee` and ends at `--accent`. The chart area
 
 ## 3. Typography
 
-Use **IBM Plex Mono**, with `monospace` fallback, throughout—including buttons and chart labels. Load weights 400, 500, 600, and 700.
+Use the system-installed monospace stack (Tailwind default `var(--font-mono)`, applied app-wide via `--font-sans: var(--font-mono)`), throughout—including buttons and chart labels. Load no remote fonts.
 
 | Purpose | Size | Weight / treatment |
 | --- | --- | --- |
@@ -231,7 +231,7 @@ Forms, dialogs, loading, empty, error, and disabled states are not shown in the 
 
 ## 9. Review checklist
 
-- [ ] IBM Plex Mono throughout, including controls and charts.
+- [ ] System monospace stack throughout, including controls and charts; no remote font loading.
 - [ ] Shared color roles; no one-off palette drift.
 - [ ] Square, flat panels with compact header strips.
 - [ ] Solid outer borders and dashed repeated-row separators.

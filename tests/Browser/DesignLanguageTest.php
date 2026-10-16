@@ -61,7 +61,7 @@ it('preserves appearance and workspace controls across screen sizes', function (
 
     expect($metrics['overflow'])->toBeFalse()
         ->and($metrics['background'])->toBe($appearance === 'Dark' ? 'rgb(40, 42, 54)' : 'rgb(244, 243, 248)')
-        ->and($metrics['font'])->toContain('IBM Plex Mono')
+        ->and($metrics['font'])->toContain('ui-monospace')
         ->and($metrics['radius'])->toBe('0px');
 
     if ($width >= 1081) {

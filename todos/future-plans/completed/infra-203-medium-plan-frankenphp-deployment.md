@@ -24,6 +24,7 @@ Production switch to classic FrankenPHP behind reverse proxy, with Postgres prov
 - Dockerfile installs Node.js/npm for Vite asset compilation (multi-stage build) and `postgresql-client` (for `pg_dump` used by `backup:run --only-db`).
 - `php artisan storage:link` is baked into the image at build time (Dockerfile line 65).
 - Dockerfile asset build stage includes a placeholder `APP_KEY`; the real key must be set in production `.env`.
+- `laravel/mcp ^0.8.2` is a production dependency; `app.blade.php` loads no external fonts (system monospace stack) and guards inline script/style CSP nonces behind `csp.nonce_enabled` (`CSP_NONCE_ENABLED`, default true).
 
 ## Design Decisions
 

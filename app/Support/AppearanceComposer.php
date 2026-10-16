@@ -34,7 +34,7 @@ class AppearanceComposer
     private const array APPEARANCES = ['light', 'dark', 'system'];
 
     /** @return list<string> */
-    private static function lightIds(): array
+    private function lightIds(): array
     {
         return array_keys(array_filter(
             self::THEMES,
@@ -43,7 +43,7 @@ class AppearanceComposer
     }
 
     /** @return list<string> */
-    private static function darkIds(): array
+    private function darkIds(): array
     {
         return array_keys(array_filter(
             self::THEMES,
@@ -79,8 +79,8 @@ class AppearanceComposer
         $view->with([
             'appearance' => $appearance,
             'theme' => $theme,
-            'themeLightIds' => self::lightIds(),
-            'themeDarkIds' => self::darkIds(),
+            'themeLightIds' => $this->lightIds(),
+            'themeDarkIds' => $this->darkIds(),
         ]);
     }
 }
