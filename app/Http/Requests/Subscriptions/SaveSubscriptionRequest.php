@@ -29,7 +29,6 @@ class SaveSubscriptionRequest extends FormRequest
 
     public function withValidator(Validator $validator): void
     {
-        $validator->sometimes('first_billing_date', 'before:next_billing_date', fn ($input): bool => $input->first_billing_date !== null
-            && $input->next_billing_date !== null);
+        DomainRecordValidation::applySubscriptionRules($validator);
     }
 }

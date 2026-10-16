@@ -43,7 +43,7 @@ class McpRecordValidator
      */
     public static function rulesFor(string $type, bool $updating, Team $team, array $data = [], ?Model $model = null): array
     {
-        $rules = DomainRecordValidation::rulesFor($type, $updating, $team, $data, $model, includeMcpFileFields: true);
+        $rules = DomainRecordValidation::rulesFor($type, $updating, $team, $data, $model, includeMcpFileFields: true, includeNoteBlockIds: $type === 'note');
 
         if ($type === 'file' && $model instanceof FileItem && $model->path !== null && ! filled($data['content'] ?? null)) {
             foreach (['mime_type', 'size', 'width', 'height'] as $field) {
@@ -57,8 +57,7 @@ class McpRecordValidator
     public static function applyConditionalRules(Validator $validator, string $type): void
     {
         if ($type === 'subscription') {
-            $validator->sometimes('first_billing_date', 'before:next_billing_date', fn ($input): bool => $input->first_billing_date !== null
-                && $input->next_billing_date !== null);
+            DomainRecordValidation::applySubscriptionRules($validator);
         }
 
         if ($type === 'spreadsheet') {

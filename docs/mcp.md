@@ -71,7 +71,7 @@ Record data fields:
 
 ## Notes Through MCP
 
-Use `blocks` for notes. Each block has `type`, `position`, and optional `payload`. Supported types are `text`, `excalidraw`, and `mermaid`; text/Mermaid payloads use `content`, Excalidraw payloads use `scene`.
+Use `blocks` for notes. Each block has `type`, `position`, optional `id`, and optional `payload`. Supported types are `text`, `excalidraw`, and `mermaid`; text/Mermaid payloads use `content`, Excalidraw payloads use `scene`.
 
 ## Task Comments Through MCP
 

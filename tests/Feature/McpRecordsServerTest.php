@@ -651,6 +651,34 @@ test('note blocks can be updated through mcp', function () {
     expect($note->fresh()->blocks)->toHaveCount(1);
 });
 
+test('mcp note update accepts blocks with ids', function () {
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'note',
+        'data' => ['title' => 'Id Block Note', 'blocks' => [['type' => 'text', 'position' => 0, 'payload' => ['content' => 'Original']]]],
+    ])->assertOk();
+
+    $note = Note::query()->where('title', 'Id Block Note')->firstOrFail();
+    $blockId = (int) $note->blocks()->firstOrFail()->id;
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'note',
+        'id' => $note->id,
+        'data' => [
+            'blocks' => [
+                ['id' => $blockId, 'type' => 'text', 'position' => 0, 'payload' => ['content' => 'Updated via id']],
+            ],
+        ],
+    ])->assertOk();
+
+    $note = $note->fresh();
+
+    expect($note->blocks)->toHaveCount(1);
+    expect((int) $note->blocks->first()->id)->toBe($blockId);
+    expect($note->blocks->first()->payload['content'])->toBe('Updated via id');
+});
+
 test('linked records and tags can be managed through mcp', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

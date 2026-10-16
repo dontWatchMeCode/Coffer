@@ -157,7 +157,7 @@ Search and MCP:
 - Global search includes notes.
 - Note search uses the `n:` prefix.
 - MCP tokens can allow note read/write access.
-- Through MCP, use `blocks` with block `type`, `position`, and optional `payload`.
+- Through MCP, use `blocks` with block `type`, `position`, optional `id`, and optional `payload`.
 
 ## Log
 

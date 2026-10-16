@@ -239,24 +239,51 @@ class DomainRecordValidation
     }
 
     /**
-     * @param  callable(string): list<string>  $required
+     * Shared RTE block rules used by task comments and notes.
+     *
      * @return array<string, mixed>
      */
-    private static function noteRules(callable $required, bool $includeBlockIds): array
+    public static function rteBlockRules(bool $requireBlocks, bool $includeIds, bool $withContentCap = true): array
     {
         $rules = [
-            'title' => [...$required('title'), 'string', 'max:255'],
-            'blocks' => ['sometimes', 'nullable', 'array', 'max:50'],
+            'blocks' => $requireBlocks
+                ? ['required', 'array', 'min:1', 'max:50']
+                : ['sometimes', 'nullable', 'array', 'max:50'],
             'blocks.*.type' => ['required', 'string', Rule::in(['text', 'excalidraw', 'mermaid'])],
             'blocks.*.position' => ['required', 'integer', 'min:0'],
             'blocks.*.payload' => ['sometimes', 'nullable', 'array'],
         ];
 
-        if ($includeBlockIds) {
+        if ($withContentCap) {
+            $rules['blocks.*.payload.content'] = ['sometimes', 'nullable', 'string', 'max:10000'];
+        }
+
+        if ($includeIds) {
             $rules['blocks.*.id'] = ['sometimes', 'nullable', 'integer'];
         }
 
         return $rules;
+    }
+
+    /**
+     * Conditional billing-date ordering shared by web and MCP subscription validation.
+     */
+    public static function applySubscriptionRules(Validator $validator): void
+    {
+        $validator->sometimes('first_billing_date', 'before:next_billing_date', fn ($input): bool => $input->first_billing_date !== null
+            && $input->next_billing_date !== null);
+    }
+
+    /**
+     * @param  callable(string): list<string>  $required
+     * @return array<string, mixed>
+     */
+    private static function noteRules(callable $required, bool $includeBlockIds): array
+    {
+        return [
+            'title' => [...$required('title'), 'string', 'max:255'],
+            ...self::rteBlockRules(false, $includeBlockIds, false),
+        ];
     }
 
     /**
