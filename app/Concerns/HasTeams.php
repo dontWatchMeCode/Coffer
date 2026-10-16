@@ -16,7 +16,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\URL;
 
 trait HasTeams
 {
@@ -113,8 +112,6 @@ trait HasTeams
 
         $this->update(['current_team_id' => $team->id]);
         $this->setRelation('currentTeam', $team);
-
-        URL::defaults(['current_team' => $team->slug]);
 
         return true;
     }

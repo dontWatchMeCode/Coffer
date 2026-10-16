@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'enabled' => env('TELESCOPE_ENABLED', true),
+    'enabled' => env('TELESCOPE_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -116,6 +116,8 @@ return [
         'livewire*',
         'nova-api*',
         'pulse*',
+        'telescope*',
+        'up',
         '_boost*',
         '.well-known*',
     ],
@@ -185,7 +187,7 @@ return [
         Watchers\ModelWatcher::class => [
             'enabled' => env('TELESCOPE_MODEL_WATCHER', true),
             'events' => ['eloquent.*'],
-            'hydrations' => true,
+            'hydrations' => false,
         ],
 
         Watchers\NotificationWatcher::class => env('TELESCOPE_NOTIFICATION_WATCHER', true),

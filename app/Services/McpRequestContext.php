@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\McpToken;
 use App\Models\Team;
 use App\Models\User;
 use Laravel\Mcp\Request;
@@ -18,6 +19,19 @@ class McpRequestContext
 
         if (! $user instanceof User) {
             return Response::error('Authentication required.');
+        }
+
+        // Prefer the bearer token's team over session state: the middleware
+        // binds the validated token, so tool paths that bypass session auth
+        // still operate in the team the token was minted for.
+        if (app()->bound(McpToken::class)) {
+            $tokenTeam = app(McpToken::class)->team;
+
+            if ($tokenTeam instanceof Team && $user->belongsToTeam($tokenTeam)) {
+                return [$user, $tokenTeam];
+            }
+
+            return Response::error('Current team required.');
         }
 
         $user->loadTeamContext();

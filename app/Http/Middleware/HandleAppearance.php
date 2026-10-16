@@ -36,6 +36,24 @@ class HandleAppearance
 
     private const array APPEARANCES = ['light', 'dark', 'system'];
 
+    /** @return list<string> */
+    public static function lightIds(): array
+    {
+        return array_keys(array_filter(
+            self::THEMES,
+            fn (string $mode): bool => $mode === 'light',
+        ));
+    }
+
+    /** @return list<string> */
+    public static function darkIds(): array
+    {
+        return array_keys(array_filter(
+            self::THEMES,
+            fn (string $mode): bool => $mode === 'dark',
+        ));
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -64,14 +82,8 @@ class HandleAppearance
         }
 
         View::share('theme', $theme);
-        View::share('themeLightIds', array_keys(array_filter(
-            self::THEMES,
-            fn (string $mode): bool => $mode === 'light',
-        )));
-        View::share('themeDarkIds', array_keys(array_filter(
-            self::THEMES,
-            fn (string $mode): bool => $mode === 'dark',
-        )));
+        View::share('themeLightIds', self::lightIds());
+        View::share('themeDarkIds', self::darkIds());
 
         return $next($request);
     }

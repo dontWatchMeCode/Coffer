@@ -189,7 +189,7 @@ class VideoThumbnail
         }
 
         try {
-            return Cache::lock($cacheKey, $storyboard ? 45 : 15)->block($storyboard ? 32 : 12, function () use ($disk, $source, $thumbnail, $metadataPath, $cacheKey, $file, $storyboard): ?string {
+            return Cache::lock($cacheKey, $storyboard ? 45 : 15)->block(3, function () use ($disk, $source, $thumbnail, $metadataPath, $cacheKey, $file, $storyboard): ?string {
                 if ($this->freshFileExists($disk, $thumbnail) && (! $storyboard || $this->freshFileExists($disk, $metadataPath))) {
                     return $thumbnail;
                 }

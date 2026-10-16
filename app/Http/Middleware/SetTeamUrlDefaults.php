@@ -20,20 +20,17 @@ class SetTeamUrlDefaults
     {
         $user = $request->user();
 
-        if ($user === null) {
-            return $next($request);
+        $currentTeam = null;
+
+        if ($user !== null) {
+            $user->loadTeamContext();
+            $currentTeam = $user->currentTeam;
         }
 
-        $user->loadTeamContext();
-
-        $currentTeam = $user->currentTeam;
-
-        if ($currentTeam) {
-            URL::defaults([
-                'current_team' => $currentTeam->slug,
-                'team' => $currentTeam->slug,
-            ]);
-        }
+        URL::defaults([
+            'current_team' => $currentTeam?->slug,
+            'team' => $currentTeam?->slug,
+        ]);
 
         return $next($request);
     }

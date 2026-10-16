@@ -29,6 +29,9 @@ class AuthenticateMcpToken
         }
 
         $token = McpToken::query()
+            // Both relations must stay eager-loaded: SetTeamUrlDefaults
+            // relies on loadTeamContext()'s early-return preserving the
+            // team set below for URL defaults on MCP requests.
             ->with(['team', 'user.teams'])
             ->where('token_hash', McpToken::hashToken($plainTextToken))
             ->first();
@@ -65,6 +68,7 @@ class AuthenticateMcpToken
                 return $response;
             } finally {
                 Auth::resolveUsersUsing($previousUserResolver);
+                Auth::forgetGuards();
                 app()->forgetInstance(McpToken::class);
             }
         }, data: ['current_team_id' => $team->id]);

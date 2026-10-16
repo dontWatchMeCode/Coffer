@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Responses;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\URL;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -19,8 +18,6 @@ class LoginResponse implements LoginResponseContract
         if (! $team) {
             abort(403);
         }
-
-        URL::defaults(['current_team' => $team->slug]);
 
         return $request->wantsJson()
             ? new JsonResponse(['two_factor' => false], 200)
