@@ -71,7 +71,7 @@ class McpToken extends Model
             return false;
         }
 
-        if ($type !== 'task') {
+        if ($type !== 'task' && $type !== 'project') {
             return true;
         }
 

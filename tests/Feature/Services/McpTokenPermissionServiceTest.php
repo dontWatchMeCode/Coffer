@@ -244,6 +244,7 @@ it('respects task project scope in permission checks', function () {
     $blockedProject = Project::factory()->create(['team_id' => $team->id]);
     $token = McpToken::createToken($user, $team, 'Scoped', [
         'tasks' => 'write',
+        'projects' => 'write',
         'task_projects' => ['mode' => 'only', 'ids' => [$allowedProject->id]],
     ])[0];
 
@@ -252,7 +253,12 @@ it('respects task project scope in permission checks', function () {
     $service = app(McpTokenPermissionService::class);
 
     expect($service->can('task', 'write', null, ['project_id' => $allowedProject->id]))->toBeTrue()
-        ->and($service->can('task', 'write', null, ['project_id' => $blockedProject->id]))->toBeFalse();
+        ->and($service->can('task', 'write', null, ['project_id' => $blockedProject->id]))->toBeFalse()
+        ->and($service->can('project', 'read', $allowedProject))->toBeTrue()
+        ->and($service->can('project', 'write', $allowedProject))->toBeTrue()
+        ->and($service->can('project', 'read', $blockedProject))->toBeFalse()
+        ->and($service->can('project', 'write', $blockedProject))->toBeFalse()
+        ->and($service->can('project', 'write'))->toBeFalse();
 });
 
 it('does not apply project scope to non-task types', function () {

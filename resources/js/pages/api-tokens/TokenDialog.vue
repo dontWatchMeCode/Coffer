@@ -243,10 +243,13 @@ function handleSubmit(): void {
                 </div>
 
                 <div
-                    v-if="localForm.abilities.tasks !== 'none'"
+                    v-if="
+                        localForm.abilities.tasks !== 'none' ||
+                        localForm.abilities.projects !== 'none'
+                    "
                     class="space-y-3"
                 >
-                    <Label>Task project scope</Label>
+                    <Label>Project scope</Label>
                     <Select v-model="localForm.abilities.task_projects.mode">
                         <SelectTrigger class="w-full">
                             <SelectValue />

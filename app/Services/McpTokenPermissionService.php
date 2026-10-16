@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\McpToken;
+use App\Models\Project;
 use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Model;
@@ -118,15 +119,19 @@ class McpTokenPermissionService
      */
     private function projectId(string $type, ?Model $model, ?array $data): ?int
     {
-        if ($type !== 'task') {
-            return null;
+        if ($type === 'task') {
+            if (isset($data['project_id'])) {
+                return (int) $data['project_id'];
+            }
+
+            return $model instanceof Task ? (int) $model->project_id : null;
         }
 
-        if (isset($data['project_id'])) {
-            return (int) $data['project_id'];
+        if ($type === 'project' && $model instanceof Project) {
+            return (int) $model->getKey();
         }
 
-        return $model instanceof Task ? (int) $model->project_id : null;
+        return null;
     }
 
     private function tokenAllowsTypeLevel(McpToken $token, string $type, string $action): bool

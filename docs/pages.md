@@ -34,7 +34,7 @@ Search and MCP:
 
 - Global search includes tasks and projects.
 - Task search uses the `t:` prefix; project search uses the `p:` prefix.
-- MCP tokens can allow task read/write access and optionally limit tasks to selected projects.
+- MCP tokens can allow task/project read/write access and optionally limit tasks and projects to selected projects.
 - MCP tokens can allow project read/write access (`projects` ability, default `none`).
 - MCP exposes `records.task_comments.list` and `records.task_comments.add` for task comments.
 

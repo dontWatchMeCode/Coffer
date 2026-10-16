@@ -88,6 +88,7 @@ class McpRecordReadService
         $like = $this->likePattern($query);
         $records = [];
         $perTypeLimit = count($types) > 1 ? (int) ceil($limit / count($types)) : $limit;
+        $scopedProjectIds = $this->permissions->currentToken()?->taskProjectIds();
 
         foreach ($types as $type) {
             $definition = RecordTypeRegistry::definition($type);
@@ -97,8 +98,12 @@ class McpRecordReadService
             $models = $class::query()
                 ->whereBelongsTo($team)
                 ->when(
-                    $type === 'task' && $this->permissions->currentToken()?->taskProjectIds() !== null,
-                    fn ($recordQuery) => $recordQuery->whereIn('project_id', $this->permissions->currentToken()?->taskProjectIds() ?? []),
+                    $type === 'task' && $scopedProjectIds !== null,
+                    fn ($recordQuery) => $recordQuery->whereIn('project_id', $scopedProjectIds ?? []),
+                )
+                ->when(
+                    $type === 'project' && $scopedProjectIds !== null,
+                    fn ($recordQuery) => $recordQuery->whereIn('id', $scopedProjectIds ?? []),
                 )
                 ->where(function (Builder $recordQuery) use ($definition, $like): void {
                     foreach ($definition['columns'] as $index => $column) {

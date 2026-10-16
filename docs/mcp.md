@@ -8,7 +8,7 @@ The app exposes a team-scoped MCP records server for external clients and agents
 - Auth: bearer token generated from the team's MCP page.
 - Scope: the token's team only.
 - Permissions: record areas can be set to `none`, `read`, or `write`.
-- Tasks can also be limited to selected projects.
+- Tasks and projects can also be limited to selected projects.
 - Tokens can have an optional expiry date.
 
 ## Record Types
@@ -87,5 +87,5 @@ Only JPEG, PNG, GIF, and WebP content up to 100 MB is accepted. Data URI format 
 
 - Read tools only return record types allowed by the token.
 - Write tools require write permission for the target record type.
-- Task tools also respect project scope when configured.
+- Task and project tools also respect project scope when configured.
 - Standard team authorization still applies.

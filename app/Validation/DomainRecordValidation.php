@@ -12,6 +12,7 @@ use App\Support\FileTypes;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class DomainRecordValidation
 {
@@ -256,6 +257,68 @@ class DomainRecordValidation
         }
 
         return $rules;
+    }
+
+    /**
+     * Shared spreadsheet snapshot integrity checks (size cap + cell/column references).
+     */
+    public static function assertSpreadsheetSnapshot(Validator $validator, mixed $snapshot): void
+    {
+        if (! is_array($snapshot)) {
+            return;
+        }
+
+        $encodedSnapshot = json_encode($snapshot);
+
+        if ($encodedSnapshot === false || strlen($encodedSnapshot) > 2_000_000) {
+            $validator->errors()->add(
+                'snapshot',
+                'The spreadsheet may not exceed 2 MB.',
+            );
+
+            return;
+        }
+
+        $columns = $snapshot['columns'] ?? [];
+
+        if (! is_array($columns)) {
+            return;
+        }
+
+        $columnIds = [];
+
+        foreach ($columns as $column) {
+            if (is_array($column) && is_string($column['id'] ?? null)) {
+                $columnIds[] = $column['id'];
+            }
+        }
+
+        $rows = $snapshot['rows'] ?? [];
+
+        if (! is_array($rows)) {
+            return;
+        }
+
+        foreach ($rows as $rowIndex => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            if (! is_array($row['cells'] ?? null)) {
+                continue;
+            }
+
+            foreach (array_keys($row['cells']) as $columnId) {
+                if (! in_array((string) $columnId, $columnIds, true)) {
+                    $validator->errors()->add(
+                        sprintf('snapshot.rows.%s.cells', $rowIndex),
+                        'Cells must reference an existing column.',
+                    );
+
+                    break;
+                }
+            }
+        }
     }
 
     /**

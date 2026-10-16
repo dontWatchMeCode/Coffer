@@ -119,7 +119,7 @@ This is a concise feature map of the app.
 - Teams can create MCP bearer tokens.
 - Tokens can expire.
 - Tokens can be scoped per record area as none, read, or write.
-- Task access can be limited to selected projects.
+- Task and project access can be limited to selected projects.
 - The records server exposes schema, search, CRUD, links, tags, and task comment tools.
 - Files support optional base64 content upload through MCP create/update; raw bytes and public URLs are never exposed.
 - MCP record types are `task`, `project`, `calendar_event`, `contact`, `bookmark`, `subscription`, `note`, `collection`, `log_entry`, `file`, and `spreadsheet`.

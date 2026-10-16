@@ -33,6 +33,7 @@ use App\Models\Task;
 use App\Models\TaskComment;
 use App\Models\User;
 use App\Services\McpFileContent;
+use App\Services\RecordTypeRegistry;
 use App\Services\VideoThumbnail;
 use App\Support\FileTypes;
 use Illuminate\Support\Facades\Storage;
@@ -1139,6 +1140,60 @@ test('mcp project delete is blocked when only trashed tasks exist', function () 
     ])->assertHasErrors(['Cannot delete a project with tasks.']);
 
     expect(Project::query()->whereKey($project->id)->exists())->toBeTrue();
+});
+
+test('project scoped tokens cannot touch other projects', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $allowedProject = Project::factory()->create(['team_id' => $team->id, 'name' => 'Scoped Alpha Project']);
+    $blockedProject = Project::factory()->create(['team_id' => $team->id, 'name' => 'Scoped Beta Project']);
+
+    $token = McpToken::factory()->create([
+        'user_id' => $user->id,
+        'team_id' => $team->id,
+        'abilities' => [
+            ...array_fill_keys(RecordTypeRegistry::mcpResources(), 'none'),
+            'projects' => 'write',
+            'tasks' => 'write',
+            'task_projects' => ['mode' => 'only', 'ids' => [$allowedProject->id]],
+        ],
+    ])->load('team');
+
+    app()->instance(McpToken::class, $token);
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'project',
+        'id' => $blockedProject->id,
+    ])->assertHasErrors(['Permission denied.']);
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'project',
+        'id' => $blockedProject->id,
+        'data' => ['name' => 'Renamed Beta'],
+    ])->assertHasErrors(['Permission denied.']);
+
+    RecordsServer::actingAs($user)->tool(DeleteRecordTool::class, [
+        'type' => 'project',
+        'id' => $blockedProject->id,
+    ])->assertHasErrors(['Permission denied.']);
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'project',
+        'data' => ['name' => 'Scoped Gamma Project'],
+    ])->assertHasErrors(['Permission denied.']);
+
+    RecordsServer::actingAs($user)->tool(SearchRecordsTool::class, [
+        'query' => 'Scoped',
+        'type' => 'project',
+    ])->assertOk()->assertSee('Scoped Alpha Project')->assertDontSee('Scoped Beta Project');
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'project',
+        'id' => $allowedProject->id,
+    ])->assertOk()->assertSee('Scoped Alpha Project');
+
+    expect(Project::query()->where('name', 'Renamed Beta')->exists())->toBeFalse()
+        ->and(Project::query()->where('name', 'Scoped Gamma Project')->exists())->toBeFalse();
 });
 
 test('spreadsheet records roundtrip the full snapshot through mcp', function () {

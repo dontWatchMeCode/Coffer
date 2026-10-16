@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tasks;
 
+use App\Models\Project;
 use App\Models\Team;
+use App\Validation\DomainRecordValidation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class SaveProjectRequest extends FormRequest
 {
@@ -24,21 +25,13 @@ class SaveProjectRequest extends FormRequest
             abort(404);
         }
 
-        return [
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('projects', 'name')
-                    ->where(fn ($query) => $query->where('team_id', $team->id))
-                    ->ignore($this->route('project')),
-            ],
-            'description' => ['nullable', 'string'],
-            'archived' => ['nullable', 'boolean'],
-            'status_options' => ['nullable', 'array'],
-            'status_options.*.value' => ['required', 'string', 'regex:/^[a-z0-9_]+$/', 'distinct'],
-            'status_options.*.label' => ['required', 'string', 'max:40'],
-        ];
+        return DomainRecordValidation::rulesFor(
+            'project',
+            $this->isMethod('patch'),
+            $team,
+            $this->all(),
+            $this->routeProject($team),
+        );
     }
 
     /**
@@ -63,5 +56,22 @@ class SaveProjectRequest extends FormRequest
         if ($data !== []) {
             $this->merge($data);
         }
+    }
+
+    private function routeProject(Team $team): ?Project
+    {
+        $routeProject = $this->route('project');
+
+        if ($routeProject instanceof Project) {
+            return (int) $routeProject->team_id === (int) $team->id ? $routeProject : null;
+        }
+
+        if (! is_numeric($routeProject)) {
+            return null;
+        }
+
+        return Project::query()
+            ->whereBelongsTo($team)
+            ->find((int) $routeProject);
     }
 }
