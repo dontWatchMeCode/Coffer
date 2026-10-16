@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools;
 
-use App\Mcp\Tools\Concerns\RegistersForPlaintextTeams;
 use App\Services\McpRecordReadService;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -19,8 +18,6 @@ use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 #[IsReadOnly]
 class RecordsSchemaTool extends Tool
 {
-    use RegistersForPlaintextTeams;
-
     public function handle(Request $request, McpRecordReadService $records): Response|ResponseFactory
     {
         return $records->schema();

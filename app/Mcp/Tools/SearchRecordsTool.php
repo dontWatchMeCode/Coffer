@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools;
 
-use App\Mcp\Tools\Concerns\RegistersForPlaintextTeams;
 use App\Services\McpRecordReadService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
@@ -20,8 +19,6 @@ use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 #[IsReadOnly]
 class SearchRecordsTool extends Tool
 {
-    use RegistersForPlaintextTeams;
-
     public function handle(Request $request, McpRecordReadService $records): Response|ResponseFactory
     {
         return $records->search($request);
