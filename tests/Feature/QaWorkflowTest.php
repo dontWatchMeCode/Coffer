@@ -54,6 +54,7 @@ test('qa runs each step once', function () {
         'composer run-script ide-helper',
         'composer run-script rector',
         'composer run-script lint',
+        'composer run-script security',
         'npm run build',
         'npm run format',
         'npm run lint',

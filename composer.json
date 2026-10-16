@@ -83,7 +83,7 @@
         ],
         "security": [
             "composer audit",
-            "npm audit || true"
+            "node scripts/npm-audit-gate.mjs"
         ],
         "rector": [
             "vendor/bin/rector process"

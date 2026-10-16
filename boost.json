@@ -9,11 +9,13 @@
     "nightwatch_mcp": false,
     "sail": false,
     "skills": [
+        "infer-conventions",
         "fortify-development",
         "laravel-best-practices",
+        "testing-best-practices",
         "pulse-development",
         "wayfinder-development",
-        "pest-testing",
+        "telescope-debugging",
         "inertia-vue-development",
         "tailwindcss-development"
     ]

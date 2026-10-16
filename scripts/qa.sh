@@ -63,6 +63,7 @@ check_no_eslint_disable() {
 run_step "ide-helper" composer run-script ide-helper
 run_step "rector" composer run-script rector
 run_step "lint" composer run-script lint
+run_step "security" composer run-script security
 run_step "npm build" npm run build
 run_step "npm format" npm run format
 run_step "eslint-disable check" check_no_eslint_disable
