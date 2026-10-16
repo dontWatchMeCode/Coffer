@@ -70,6 +70,7 @@ run_step "eslint-disable check" check_no_eslint_disable
 run_step "inheritAttrs check" check_pages_have_inherit_attrs
 run_step "npm lint" npm run lint
 run_step "npm types:check" npm run types:check
+run_step "npm test" npm test
 run_step "analyse" composer run-script analyse
 run_step "test" composer run-script test
 

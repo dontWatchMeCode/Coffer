@@ -10,23 +10,59 @@ use App\Models\RecordCollection;
 use App\Models\Subscription;
 use App\Models\Task;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Inertia\Testing\AssertableInertia as Assert;
 
 use function Pest\Laravel\actingAs;
 
-test('bookmarks index returns cursor-paginated data', function () {
+test('bookmarks index traverses simple-paginated pages in order', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
-    Bookmark::factory()->count(30)->create(['team_id' => $team->id]);
+    foreach (range(1, 30) as $i) {
+        Bookmark::factory()->create([
+            'team_id' => $team->id,
+            'title' => sprintf('Bookmark %02d', $i),
+            'created_at' => now()->subMinutes(30 - $i),
+            'updated_at' => now()->subMinutes(30 - $i),
+        ]);
+    }
+
+    $pageOneTitles = collect(range(30, 6, -1))->map(fn (int $i): string => sprintf('Bookmark %02d', $i))->all();
+    $pageTwoTitles = collect(range(5, 1, -1))->map(fn (int $i): string => sprintf('Bookmark %02d', $i))->all();
 
     actingAs($user)
         ->get(route('team.bookmarks.index', ['current_team' => $team]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('bookmarks/Index')
-            ->has('bookmarks')
-            ->has('bookmarks.data')
+            ->has('bookmarks.data', 25)
+            ->where('bookmarks.current_page', 1)
+            ->where('bookmarks.per_page', 25)
+            ->where('bookmarks.data', fn (Collection $data): bool => $data->pluck('title')->all() === $pageOneTitles)
+            ->whereNotNull('bookmarks.next_page_url')
+            ->whereNull('bookmarks.prev_page_url')
+        );
+
+    actingAs($user)
+        ->get(route('team.bookmarks.index', ['current_team' => $team, 'page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('bookmarks/Index')
+            ->has('bookmarks.data', 5)
+            ->where('bookmarks.current_page', 2)
+            ->where('bookmarks.per_page', 25)
+            ->where('bookmarks.data', fn (Collection $data): bool => $data->pluck('title')->all() === $pageTwoTitles)
+            ->whereNull('bookmarks.next_page_url')
+            ->whereNotNull('bookmarks.prev_page_url')
+        );
+
+    actingAs($user)
+        ->get(route('team.bookmarks.index', ['current_team' => $team, 'page' => 3]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('bookmarks/Index')
+            ->has('bookmarks.data', 0)
         );
 });
 
@@ -48,23 +84,7 @@ test('bookmarks index supports search filter', function () {
         );
 });
 
-test('bookmarks index paginates with cursor', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    Bookmark::factory()->count(30)->create(['team_id' => $team->id]);
-
-    $response = actingAs($user)
-        ->get(route('team.bookmarks.index', ['current_team' => $team]))
-        ->assertOk();
-
-    $response->assertInertia(fn (Assert $page) => $page
-        ->component('bookmarks/Index')
-        ->has('bookmarks.data', 25)
-    );
-});
-
-test('contacts index returns cursor-paginated data with search', function () {
+test('contacts index supports search filter', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -81,37 +101,109 @@ test('contacts index returns cursor-paginated data with search', function () {
         );
 });
 
-test('notes index returns cursor-paginated data', function () {
+test('notes index traverses simple-paginated pages in order', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
-    Note::factory()->count(5)->create(['team_id' => $team->id]);
+    foreach (range(1, 30) as $i) {
+        Note::factory()->create([
+            'team_id' => $team->id,
+            'title' => sprintf('Note %02d', $i),
+            'created_at' => now()->subMinutes(30 - $i),
+            'updated_at' => now()->subMinutes(30 - $i),
+        ]);
+    }
+
+    $pageOneTitles = collect(range(30, 6, -1))->map(fn (int $i): string => sprintf('Note %02d', $i))->all();
+    $pageTwoTitles = collect(range(5, 1, -1))->map(fn (int $i): string => sprintf('Note %02d', $i))->all();
 
     actingAs($user)
         ->get(route('team.notes.index', ['current_team' => $team]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('notes/Index')
-            ->has('notes.data')
+            ->has('notes.data', 25)
+            ->where('notes.current_page', 1)
+            ->where('notes.per_page', 25)
+            ->where('notes.data', fn (Collection $data): bool => $data->pluck('title')->all() === $pageOneTitles)
+            ->whereNotNull('notes.next_page_url')
+            ->whereNull('notes.prev_page_url')
+        );
+
+    actingAs($user)
+        ->get(route('team.notes.index', ['current_team' => $team, 'page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('notes/Index')
+            ->has('notes.data', 5)
+            ->where('notes.current_page', 2)
+            ->where('notes.per_page', 25)
+            ->where('notes.data', fn (Collection $data): bool => $data->pluck('title')->all() === $pageTwoTitles)
+            ->whereNull('notes.next_page_url')
+            ->whereNotNull('notes.prev_page_url')
+        );
+
+    actingAs($user)
+        ->get(route('team.notes.index', ['current_team' => $team, 'page' => 3]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('notes/Index')
+            ->has('notes.data', 0)
         );
 });
 
-test('collections index returns cursor-paginated data', function () {
+test('collections index traverses simple-paginated pages in order', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
-    RecordCollection::factory()->count(5)->create(['team_id' => $team->id]);
+    foreach (range(1, 30) as $i) {
+        RecordCollection::factory()->create([
+            'team_id' => $team->id,
+            'title' => sprintf('Collection %02d', $i),
+            'created_at' => now()->subMinutes(30 - $i),
+            'updated_at' => now()->subMinutes(30 - $i),
+        ]);
+    }
+
+    $pageOneTitles = collect(range(30, 6, -1))->map(fn (int $i): string => sprintf('Collection %02d', $i))->all();
+    $pageTwoTitles = collect(range(5, 1, -1))->map(fn (int $i): string => sprintf('Collection %02d', $i))->all();
 
     actingAs($user)
         ->get(route('team.collections.index', ['current_team' => $team]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('collections/Index')
-            ->has('collections.data')
+            ->has('collections.data', 25)
+            ->where('collections.current_page', 1)
+            ->where('collections.per_page', 25)
+            ->where('collections.data', fn (Collection $data): bool => $data->pluck('title')->all() === $pageOneTitles)
+            ->whereNotNull('collections.next_page_url')
+            ->whereNull('collections.prev_page_url')
+        );
+
+    actingAs($user)
+        ->get(route('team.collections.index', ['current_team' => $team, 'page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('collections/Index')
+            ->has('collections.data', 5)
+            ->where('collections.current_page', 2)
+            ->where('collections.per_page', 25)
+            ->where('collections.data', fn (Collection $data): bool => $data->pluck('title')->all() === $pageTwoTitles)
+            ->whereNull('collections.next_page_url')
+            ->whereNotNull('collections.prev_page_url')
+        );
+
+    actingAs($user)
+        ->get(route('team.collections.index', ['current_team' => $team, 'page' => 3]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('collections/Index')
+            ->has('collections.data', 0)
         );
 });
 
-test('subscriptions index returns cursor-paginated data with search', function () {
+test('subscriptions index supports search filter', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -128,7 +220,7 @@ test('subscriptions index returns cursor-paginated data with search', function (
         );
 });
 
-test('log index returns cursor-paginated data with search', function () {
+test('log index supports search filter', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -197,19 +289,56 @@ test('calendar index supports search filter', function () {
         );
 });
 
-test('task show page returns paginated tasks', function () {
+test('task show page traverses simple-paginated tasks in position order', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
     $project = Project::factory()->create(['team_id' => $team->id]);
 
-    Task::factory()->count(3)->create(['team_id' => $team->id, 'project_id' => $project->id, 'created_by' => $user->id]);
+    foreach (range(1, 30) as $i) {
+        Task::factory()->create([
+            'team_id' => $team->id,
+            'project_id' => $project->id,
+            'created_by' => $user->id,
+            'title' => sprintf('Task %02d', $i),
+            'position' => $i,
+        ]);
+    }
+
+    $pageOneTitles = collect(range(1, 25))->map(fn (int $i): string => sprintf('Task %02d', $i))->all();
+    $pageTwoTitles = collect(range(26, 30))->map(fn (int $i): string => sprintf('Task %02d', $i))->all();
 
     actingAs($user)
         ->get(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('tasks/Show')
-            ->has('tasks.data', 3)
+            ->has('tasks.data', 25)
+            ->where('tasks.current_page', 1)
+            ->where('tasks.per_page', 25)
+            ->where('tasks.data', fn (Collection $data): bool => $data->pluck('title')->all() === $pageOneTitles)
+            ->whereNotNull('tasks.next_page_url')
+            ->whereNull('tasks.prev_page_url')
+        );
+
+    actingAs($user)
+        ->get(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id, 'page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tasks/Show')
+            ->has('tasks.data', 5)
+            ->where('tasks.current_page', 2)
+            ->where('tasks.per_page', 25)
+            ->where('tasks.data', fn (Collection $data): bool => $data->pluck('title')->all() === $pageTwoTitles)
+            ->whereNull('tasks.next_page_url')
+            ->whereNotNull('tasks.prev_page_url')
+        );
+
+    actingAs($user)
+        ->get(route('team.tasks.show', ['current_team' => $team, 'project' => $project->id, 'page' => 3]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tasks/Show')
+            ->has('tasks.data', 0)
         );
 });
 

@@ -73,7 +73,7 @@ test('non-members cannot access calendar page', function () {
         ->assertForbidden();
 });
 
-test('events are serialised with ISO 8601 timestamps', function () {
+test('events expose calendar date as Y-m-d with ISO 8601 timestamps', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -89,7 +89,13 @@ test('events are serialised with ISO 8601 timestamps', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('calendar/Index')
             ->has('calendarEvents', 1)
-            ->where('calendarEvents.0.date', '2026-04-20'),
+            ->where('calendarEvents.0.date', '2026-04-20')
+            ->where('calendarEvents.0.createdAt', fn (?string $createdAt): bool => is_string($createdAt)
+                && str_contains($createdAt, 'T')
+                && (bool) strtotime($createdAt))
+            ->where('calendarEvents.0.updatedAt', fn (?string $updatedAt): bool => is_string($updatedAt)
+                && str_contains($updatedAt, 'T')
+                && (bool) strtotime($updatedAt)),
         );
 });
 

@@ -41,6 +41,17 @@ jobs:
       - name: Generate Application Key
         run: php artisan key:generate
 
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: JS Tests
+        run: npm test
+
       - name: Tests
         run: ./vendor/bin/pest tests/Unit tests/Feature tests/Architecture
 

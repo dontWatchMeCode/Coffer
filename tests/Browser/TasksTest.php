@@ -3,21 +3,7 @@
 use App\Models\Project;
 use App\Models\User;
 
-it('tasks page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    Project::factory()->create(['team_id' => $team->id]);
-
-    $this->actingAs($user);
-
-    visit('/'.$team->slug.'/tasks')
-        ->assertSee('Tasks')
-        ->assertSee('Choose a project to work on or create a new one.')
-        ->assertNoJavaScriptErrors();
-});
-
-it('tasks page shows existing projects', function () {
+it('tasks page shows heading and existing projects', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -29,6 +15,8 @@ it('tasks page shows existing projects', function () {
     $this->actingAs($user);
 
     visit('/'.$team->slug.'/tasks')
+        ->assertSee('Tasks')
+        ->assertSee('Choose a project to work on or create a new one.')
         ->assertSee('Website Redesign')
         ->assertNoJavaScriptErrors();
 });

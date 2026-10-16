@@ -36,8 +36,18 @@ test('project task and comment relationships are defined', function () {
         ->and($comment->task->is($task))->toBeTrue();
 });
 
-test('task status is cast and defaults are applied', function () {
-    $task = Task::factory()->create();
+test('task database defaults apply when attributes are omitted', function () {
+    $user = User::factory()->create();
+    $project = Project::factory()->create(['team_id' => $user->current_team_id]);
+
+    // Omit status/progress/position/completed_at entirely so the database
+    // defaults (not TaskFactory::definition()) supply them.
+    $task = Task::create([
+        'team_id' => $project->team_id,
+        'project_id' => $project->id,
+        'created_by' => $user->id,
+        'title' => 'Database default task',
+    ])->fresh();
 
     expect($task->status)->toBe(TaskStatus::Planned->value)
         ->and($task->progress)->toBe(0)
@@ -180,7 +190,7 @@ test('tasks must belong to the same team as their project', function () {
         'status' => TaskStatus::Planned,
         'progress' => 0,
         'position' => 0,
-    ]))->toThrow(LogicException::class);
+    ]))->toThrow(LogicException::class, 'The task must belong to the same team as its project.');
 });
 
 test('task creators must belong to the task team', function () {

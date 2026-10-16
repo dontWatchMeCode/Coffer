@@ -281,32 +281,6 @@ it('respects search limit', function () {
     ])->assertOk()->assertSee('Limit Test Note 1')->assertSee('Limit Test Note 2')->assertDontSee('Limit Test Note 3');
 });
 
-it('creates all 8 record types through the service', function (string $type, array $data, string $class) {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-    $project = Project::factory()->create(['team_id' => $team->id]);
-
-    if ($type === 'task') {
-        $data['project_id'] = $project->id;
-    }
-
-    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
-        'type' => $type,
-        'data' => $data,
-    ])->assertOk();
-
-    expect($class::query()->whereBelongsTo($team)->count())->toBe(1);
-})->with([
-    'task' => ['task', ['title' => 'Full CRUD task', 'status' => TaskStatus::Planned->value], Task::class],
-    'calendar_event' => ['calendar_event', ['title' => 'Full CRUD event', 'date' => '2026-06-01'], CalendarEvent::class],
-    'contact' => ['contact', ['name' => 'Full CRUD contact'], Contact::class],
-    'bookmark' => ['bookmark', ['title' => 'Full CRUD bookmark', 'url' => 'https://example.com'], Bookmark::class],
-    'subscription' => ['subscription', ['name' => 'Full CRUD sub'], Subscription::class],
-    'note' => ['note', ['title' => 'Full CRUD note'], Note::class],
-    'collection' => ['collection', ['title' => 'Full CRUD collection'], RecordCollection::class],
-    'log_entry' => ['log_entry', ['body' => 'Full CRUD log entry'], LogEntry::class],
-]);
-
 it('deletes all 8 record types through the service', function (string $type, string $class) {
     $user = User::factory()->create();
     $team = $user->currentTeam;

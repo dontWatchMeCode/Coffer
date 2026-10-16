@@ -3,6 +3,7 @@
 use App\Models\Bookmark;
 use App\Models\CalendarEvent;
 use App\Models\Contact;
+use App\Models\FileItem;
 use App\Models\LogEntry;
 use App\Models\Note;
 use App\Models\Project;
@@ -13,10 +14,16 @@ use App\Models\Tag;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 use function Pest\Laravel\artisan;
 
-test('generates all record types including subscriptions and log entries', function () {
+beforeEach(function (): void {
+    Storage::fake('local');
+});
+
+test('generates records with tags, links, team, creator, and subscription coverage', function () {
     artisan('app:generate-test-records')->assertSuccessful();
 
     expect(Task::withoutGlobalScopes()->count())->toBe(1000);
@@ -27,12 +34,10 @@ test('generates all record types including subscriptions and log entries', funct
     expect(RecordCollection::withoutGlobalScopes()->count())->toBe(1000);
     expect(Subscription::withoutGlobalScopes()->count())->toBe(1000);
     expect(LogEntry::withoutGlobalScopes()->count())->toBe(1000);
-});
+    expect(FileItem::withoutGlobalScopes()->count())->toBe(1000);
+    expect(Project::withoutGlobalScopes()->count())->toBe(50);
 
-test('creates tags and attaches them to records', function () {
-    artisan('app:generate-test-records')->assertSuccessful();
-
-    expect(Tag::count())->toBeGreaterThan(0);
+    expect(Tag::count())->toBe(200);
 
     $taggedCount = 0;
     foreach ([Task::class, Bookmark::class, Contact::class, Note::class] as $type) {
@@ -40,15 +45,12 @@ test('creates tags and attaches them to records', function () {
     }
 
     expect($taggedCount)->toBeGreaterThan(0);
-});
-
-test('every record has at least one linked record', function () {
-    artisan('app:generate-test-records')->assertSuccessful();
 
     $types = [
         Bookmark::class,
         CalendarEvent::class,
         Contact::class,
+        FileItem::class,
         Note::class,
         Project::class,
         RecordCollection::class,
@@ -66,51 +68,49 @@ test('every record has at least one linked record', function () {
             })
             ->get()
             ->flatMap(function (RecordLink $link) use ($type): array {
+                $ids = [];
+
                 if ($link->left_type === $type) {
-                    return [(int) $link->left_id];
+                    $ids[] = (int) $link->left_id;
                 }
 
-                return [(int) $link->right_id];
+                if ($link->right_type === $type) {
+                    $ids[] = (int) $link->right_id;
+                }
+
+                return $ids;
             })
             ->unique()
-            ->flip()
             ->all();
 
-        foreach ($recordIds as $id) {
-            expect(isset($linkedIds[$id]))->toBeTrue("Record {$type}:{$id} has no linked records");
-        }
-    }
-});
+        $missing = array_values(array_diff($recordIds, $linkedIds));
 
-test('creates test user with expected credentials and active team', function () {
-    artisan('app:generate-test-records')->assertSuccessful();
+        expect($missing, 'Records '.$type.' without links: '.implode(',', array_slice($missing, 0, 20)))->toBeEmpty();
+    }
 
     $user = User::where('email', 'test@test.test')->first();
 
     expect($user)->not->toBeNull();
+    expect(Hash::check('test@test.test', $user->password))->toBeTrue();
     expect($user->email_verified_at)->not->toBeNull();
     expect($user->current_team_id)->not->toBeNull();
     expect($user->currentTeam)->not->toBeNull();
-});
-
-test('creates users with active teams and memberships', function () {
-    artisan('app:generate-test-records')->assertSuccessful();
+    expect($user->belongsToTeam($user->currentTeam))->toBeTrue();
+    expect($user->teams()->count())->toBeGreaterThan(0);
 
     $users = User::where('email', '!=', 'test@test.test')->get();
 
     expect($users)->toHaveCount(50);
-    expect(Project::withoutGlobalScopes()->count())->toBe(50);
 
-    foreach ($users as $user) {
-        expect($user->current_team_id)->not->toBeNull();
+    foreach ($users as $generatedUser) {
+        expect($generatedUser->current_team_id)->not->toBeNull();
+        expect($generatedUser->currentTeam)->not->toBeNull();
+        expect($generatedUser->belongsToTeam($generatedUser->currentTeam))->toBeTrue();
     }
 
-    $nonPersonalTeams = Team::where('is_personal', false)->count();
-    expect($nonPersonalTeams)->toBe(10);
-});
+    expect(Team::where('is_personal', false)->count())->toBe(10);
 
-test('tasks have a random user as creator', function () {
-    artisan('app:generate-test-records')->assertSuccessful();
+    $teamCount = Team::count();
 
     $creators = Task::withoutGlobalScopes()
         ->distinct()
@@ -120,10 +120,6 @@ test('tasks have a random user as creator', function () {
         ->count();
 
     expect($creators)->toBeGreaterThan(1);
-});
-
-test('subscriptions include inactive records and varied first billing dates', function () {
-    artisan('app:generate-test-records')->assertSuccessful();
 
     $subscriptions = Subscription::withoutGlobalScopes()->get(['is_active', 'first_billing_date']);
 
@@ -136,12 +132,22 @@ test('subscriptions include inactive records and varied first billing dates', fu
     expect($subscriptions->where('is_active', false)->count())->toBeGreaterThan(0);
     expect($subscriptions->where('is_active', true)->count())->toBeGreaterThan(0);
     expect($firstBillingMonths->count())->toBeGreaterThan(1);
-});
 
-test('can be run idempotently without errors', function () {
-    artisan('app:generate-test-records')->assertSuccessful();
     artisan('app:generate-test-records')->assertSuccessful();
 
     expect(Task::withoutGlobalScopes()->count())->toBe(1000);
+    expect(CalendarEvent::withoutGlobalScopes()->count())->toBe(1000);
+    expect(Contact::withoutGlobalScopes()->count())->toBe(1000);
+    expect(Bookmark::withoutGlobalScopes()->count())->toBe(1000);
+    expect(Note::withoutGlobalScopes()->count())->toBe(1000);
+    expect(RecordCollection::withoutGlobalScopes()->count())->toBe(1000);
+    expect(Subscription::withoutGlobalScopes()->count())->toBe(1000);
+    expect(LogEntry::withoutGlobalScopes()->count())->toBe(1000);
+    expect(FileItem::withoutGlobalScopes()->count())->toBe(1000);
+    expect(Project::withoutGlobalScopes()->count())->toBe(50);
+    expect(Tag::count())->toBe(200);
+    expect(Team::where('is_personal', false)->count())->toBe(10);
+    expect(Team::count())->toBe($teamCount);
+    expect(User::count())->toBe(51);
     expect(User::where('email', 'test@test.test')->count())->toBe(1);
 });

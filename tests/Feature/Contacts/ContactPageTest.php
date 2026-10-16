@@ -89,7 +89,7 @@ test('a contact can be created with multiple phones emails and links', function 
         ['label' => 'LinkedIn', 'value' => 'https://linkedin.com/in/jane'],
     ];
 
-    actingAs($user)
+    $response = actingAs($user)
         ->post(route('team.contacts.store', ['current_team' => $team]), [
             'name' => 'Jane Doe',
             'phone_numbers' => $phones,
@@ -97,10 +97,11 @@ test('a contact can be created with multiple phones emails and links', function 
             'links' => $links,
             'address' => '123 Main St',
             'additional_info' => 'Software Engineer',
-        ])
-        ->assertRedirect(route('team.contacts.show', ['current_team' => $team, 'contact' => 1]));
+        ]);
 
     $contact = Contact::where('team_id', $team->id)->first();
+
+    $response->assertRedirect(route('team.contacts.show', ['current_team' => $team, 'contact' => $contact->id]));
 
     expect($contact->name)->toBe('Jane Doe');
     expect($contact->phone_numbers)->toBe($phones);
@@ -530,32 +531,4 @@ test('non-members cannot access contact show page', function () {
     actingAs($user)
         ->get(route('team.contacts.show', ['current_team' => $otherTeam, 'contact' => 1]))
         ->assertForbidden();
-});
-
-test('creating a contact redirects to show page', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    actingAs($user)
-        ->post(route('team.contacts.store', ['current_team' => $team]), [
-            'name' => 'Redirect Test',
-        ])
-        ->assertRedirect(route('team.contacts.show', [
-            'current_team' => $team,
-            'contact' => Contact::whereName('Redirect Test')->first()->id,
-        ]));
-});
-
-test('deleting a contact redirects to index page', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $contact = Contact::factory()->create([
-        'team_id' => $team->id,
-        'name' => 'Will Be Deleted',
-    ]);
-
-    actingAs($user)
-        ->delete(route('team.contacts.destroy', ['current_team' => $team, 'contact' => $contact]))
-        ->assertRedirect(route('team.contacts.index', ['current_team' => $team]));
 });

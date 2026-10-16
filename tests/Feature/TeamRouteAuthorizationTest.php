@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Middleware\EnsureTeamMembership;
-use App\Models\Bookmark;
-use App\Policies\BookmarkPolicy;
+use App\Models\McpToken;
+use App\Models\RecordLink;
+use App\Models\Tag;
+use App\Models\TaskComment;
+use App\Models\Team;
+use App\Services\RecordTypeRegistry;
 use Illuminate\Routing\Route as IlluminateRoute;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +23,19 @@ it('protects every current team route with membership middleware', function () {
     });
 });
 
-it('discovers conventional policies automatically', function () {
-    expect(Gate::getPolicyFor(Bookmark::class))->toBeInstanceOf(BookmarkPolicy::class);
-});
+it('discovers conventional policies automatically', function (string $model) {
+    $policyClass = str_replace('App\\Models', 'App\\Policies', $model).'Policy';
+
+    expect(class_exists($policyClass))->toBeTrue()
+        ->and(Gate::getPolicyFor($model))->toBeInstanceOf($policyClass);
+})->with(array_values(array_unique([
+    ...array_map(
+        fn (array $definition): string => $definition['class'],
+        RecordTypeRegistry::definitions(),
+    ),
+    McpToken::class,
+    RecordLink::class,
+    Tag::class,
+    TaskComment::class,
+    Team::class,
+])));

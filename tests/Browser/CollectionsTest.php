@@ -5,18 +5,6 @@ use App\Models\RecordCollection;
 use App\Models\RecordLink;
 use App\Models\User;
 
-it('collections page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $this->actingAs($user);
-
-    visit('/'.$team->slug.'/collections')
-        ->assertSee('Collections')
-        ->assertSee('Group linked records')
-        ->assertNoJavaScriptErrors();
-});
-
 it('collections page shows existing collections and filters them', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
@@ -35,6 +23,8 @@ it('collections page shows existing collections and filters them', function () {
     $this->actingAs($user);
 
     visit('/'.$team->slug.'/collections')
+        ->assertSee('Collections')
+        ->assertSee('Group linked records')
         ->assertSee('Hiring Packet')
         ->assertSee('Launch Plan')
         ->fill('[data-testid="collections-search-input"]', 'Hiring')
@@ -43,7 +33,7 @@ it('collections page shows existing collections and filters them', function () {
         ->assertNoJavaScriptErrors();
 });
 
-it('collection show page can be rendered with linked records', function () {
+it('collection title can be updated from the show page', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -67,9 +57,16 @@ it('collection show page can be rendered with linked records', function () {
 
     $this->actingAs($user);
 
-    visit('/'.$team->slug.'/collections/'.$collection->id)
+    $page = visit('/'.$team->slug.'/collections/'.$collection->id)
         ->assertSee('Research Set')
         ->assertSee('Linked Records')
         ->assertSee('Competitor Notes')
-        ->assertNoJavaScriptErrors();
+        ->click('Edit')
+        ->fill('#collection-title', 'Updated Research Set')
+        ->click('Save changes');
+
+    waitForBrowserText($page, 'Updated Research Set');
+
+    expect($collection->fresh()->title)->toBe('Updated Research Set');
+    $page->assertNoJavaScriptErrors();
 });

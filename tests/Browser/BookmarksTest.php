@@ -3,18 +3,7 @@
 use App\Models\Bookmark;
 use App\Models\User;
 
-it('bookmarks page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $this->actingAs($user);
-
-    visit('/'.$team->slug.'/bookmarks')
-        ->assertSee('Bookmarks')
-        ->assertNoJavaScriptErrors();
-});
-
-it('bookmarks page shows existing bookmarks', function () {
+it('bookmarks page shows heading and existing bookmarks', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -27,24 +16,9 @@ it('bookmarks page shows existing bookmarks', function () {
     $this->actingAs($user);
 
     visit('/'.$team->slug.'/bookmarks')
+        ->assertSee('Bookmarks')
+        ->assertSee('Track useful links for your team.')
         ->assertSee('Laravel Docs')
-        ->assertNoJavaScriptErrors();
-});
-
-it('bookmark show page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $bookmark = Bookmark::factory()->create([
-        'team_id' => $team->id,
-        'title' => 'Vue.js Guide',
-        'url' => 'https://vuejs.org',
-    ]);
-
-    $this->actingAs($user);
-
-    visit('/'.$team->slug.'/bookmarks/'.$bookmark->id)
-        ->assertSee('Vue.js Guide')
         ->assertNoJavaScriptErrors();
 });
 
@@ -61,6 +35,8 @@ it('bookmark fields are shared by the edit form', function () {
     $this->actingAs($user);
 
     $page = visit('/'.$team->slug.'/bookmarks/'.$bookmark->id)
+        ->assertSee('Original Bookmark')
+        ->assertSee('https://example.com')
         ->click('Edit')
         ->fill('#edit-bookmark-title', 'Updated Bookmark')
         ->click('Save changes');

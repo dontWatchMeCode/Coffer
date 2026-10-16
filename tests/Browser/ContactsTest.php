@@ -3,18 +3,7 @@
 use App\Models\Contact;
 use App\Models\User;
 
-it('contacts page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $this->actingAs($user);
-
-    visit('/'.$team->slug.'/contacts')
-        ->assertSee('Contacts')
-        ->assertNoJavaScriptErrors();
-});
-
-it('contacts page shows existing contacts', function () {
+it('contacts page shows heading and existing contacts', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -26,23 +15,9 @@ it('contacts page shows existing contacts', function () {
     $this->actingAs($user);
 
     visit('/'.$team->slug.'/contacts')
+        ->assertSee('Contacts')
+        ->assertSee('Manage your team address book.')
         ->assertSee('Jane Smith')
-        ->assertNoJavaScriptErrors();
-});
-
-it('contact show page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $contact = Contact::factory()->create([
-        'team_id' => $team->id,
-        'name' => 'John Doe',
-    ]);
-
-    $this->actingAs($user);
-
-    visit('/'.$team->slug.'/contacts/'.$contact->id)
-        ->assertSee('John Doe')
         ->assertNoJavaScriptErrors();
 });
 
@@ -58,6 +33,7 @@ it('contact fields are shared by the edit form', function () {
     $this->actingAs($user);
 
     $page = visit('/'.$team->slug.'/contacts/'.$contact->id)
+        ->assertSee('Original Contact')
         ->click('Edit')
         ->fill('#edit-contact-name', 'Updated Contact')
         ->click('Save changes');

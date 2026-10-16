@@ -66,16 +66,17 @@ test('a bookmark can be created', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
-    actingAs($user)
+    $response = actingAs($user)
         ->post(route('team.bookmarks.store', ['current_team' => $team]), [
             'title' => 'Vue Docs',
             'url' => 'https://vuejs.org',
             'description' => 'Vue.js documentation',
             'notes' => 'Great framework',
-        ])
-        ->assertRedirect(route('team.bookmarks.show', ['current_team' => $team, 'bookmark' => 1]));
+        ]);
 
     $bookmark = Bookmark::where('team_id', $team->id)->first();
+
+    $response->assertRedirect(route('team.bookmarks.show', ['current_team' => $team, 'bookmark' => $bookmark->id]));
 
     expect($bookmark->title)->toBe('Vue Docs');
     expect($bookmark->url)->toBe('https://vuejs.org');
@@ -286,35 +287,6 @@ test('non-members cannot access bookmark show page', function () {
     actingAs($user)
         ->get(route('team.bookmarks.show', ['current_team' => $otherTeam, 'bookmark' => 1]))
         ->assertForbidden();
-});
-
-test('creating a bookmark redirects to show page', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    actingAs($user)
-        ->post(route('team.bookmarks.store', ['current_team' => $team]), [
-            'title' => 'Redirect Test',
-            'url' => 'https://example.com',
-        ])
-        ->assertRedirect(route('team.bookmarks.show', [
-            'current_team' => $team,
-            'bookmark' => Bookmark::whereTitle('Redirect Test')->first()->id,
-        ]));
-});
-
-test('deleting a bookmark redirects to index page', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $bookmark = Bookmark::factory()->create([
-        'team_id' => $team->id,
-        'title' => 'Will Be Deleted',
-    ]);
-
-    actingAs($user)
-        ->delete(route('team.bookmarks.destroy', ['current_team' => $team, 'bookmark' => $bookmark]))
-        ->assertRedirect(route('team.bookmarks.index', ['current_team' => $team]));
 });
 
 test('bookmarks can be created with nullable fields', function () {

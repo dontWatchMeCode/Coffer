@@ -29,9 +29,12 @@ it('returns paginated activity history', function () {
             'has_more',
         ]);
 
-    expect($response->json('total'))->toBeGreaterThanOrEqual(2);
+    expect($response->json('total'))->toBe(3);
     expect($response->json('has_more'))->toBeFalse();
     expect($response->json('activities'))->toHaveCount(3);
+
+    $ids = collect($response->json('activities'))->pluck('id')->all();
+    expect($ids)->toBe(collect($ids)->sortDesc()->values()->all());
 });
 
 it('paginates activity history', function () {
@@ -44,20 +47,43 @@ it('paginates activity history', function () {
         $note->update(['title' => 'Title '.$i]);
     }
 
-    $url = route('team.activity-history.index', [
+    $base = [
         'current_team' => $team,
         'subject_type' => 'note',
         'subject_id' => $note->id,
-        'page' => 1,
-    ]);
+    ];
 
-    $response = actingAs($user)
-        ->getJson($url)
+    $pageOne = actingAs($user)
+        ->getJson(route('team.activity-history.index', [...$base, 'page' => 1]))
         ->assertOk();
 
-    expect(count($response->json('activities')))->toBeLessThanOrEqual(15);
-    expect($response->json('total'))->toBeGreaterThanOrEqual(10);
-    expect($response->json('has_more'))->toBeTrue();
+    expect($pageOne->json('total'))->toBe(21);
+    expect($pageOne->json('activities'))->toHaveCount(15);
+    expect($pageOne->json('has_more'))->toBeTrue();
+
+    $pageTwo = actingAs($user)
+        ->getJson(route('team.activity-history.index', [...$base, 'page' => 2]))
+        ->assertOk();
+
+    expect($pageTwo->json('total'))->toBe(21);
+    expect($pageTwo->json('activities'))->toHaveCount(6);
+    expect($pageTwo->json('has_more'))->toBeFalse();
+
+    $pageOneIds = collect($pageOne->json('activities'))->pluck('id')->all();
+    $pageTwoIds = collect($pageTwo->json('activities'))->pluck('id')->all();
+
+    expect($pageOneIds)->toBe(collect($pageOneIds)->sortDesc()->values()->all());
+    expect($pageTwoIds)->toBe(collect($pageTwoIds)->sortDesc()->values()->all());
+    expect(array_intersect($pageOneIds, $pageTwoIds))->toBe([]);
+    expect(array_merge($pageOneIds, $pageTwoIds))->toHaveCount(21);
+
+    $terminal = actingAs($user)
+        ->getJson(route('team.activity-history.index', [...$base, 'page' => 3]))
+        ->assertOk();
+
+    expect($terminal->json('activities'))->toHaveCount(0);
+    expect($terminal->json('total'))->toBe(21);
+    expect($terminal->json('has_more'))->toBeFalse();
 });
 
 it('returns 422 for invalid subject type', function () {

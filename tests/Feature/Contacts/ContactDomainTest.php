@@ -63,74 +63,28 @@ test('team scoped records must match the current team when updating', function (
     ]))->toThrow(LogicException::class);
 });
 
-test('phone_numbers can be stored as JSON array', function () {
-    $phones = [
-        ['label' => 'Mobile', 'value' => '+1 555-0123'],
-        ['label' => 'Work', 'value' => '+1 555-0456'],
-    ];
+test('contact json attributes round-trip through the database', function (string $attribute, array $value) {
+    $contact = Contact::factory()->create([$attribute => $value]);
 
-    $contact = Contact::factory()->create(['phone_numbers' => $phones]);
+    expect($contact->fresh()->getAttribute($attribute))->toBe($value);
+})->with([
+    'phones' => ['phone_numbers', [['label' => 'Mobile', 'value' => '+1 555-0123'], ['label' => 'Work', 'value' => '+1 555-0456']]],
+    'emails' => ['email_addresses', [['label' => 'Work', 'value' => 'john@work.com'], ['label' => 'Personal', 'value' => 'john@home.com']]],
+    'links' => ['links', [['label' => 'Website', 'value' => 'https://example.com'], ['label' => 'LinkedIn', 'value' => 'https://linkedin.com/in/john']]],
+    'empty phones' => ['phone_numbers', []],
+]);
 
-    expect($contact->phone_numbers)->toBe($phones);
-});
+test('contact nullable attributes round-trip through the database', function (string $attribute) {
+    $contact = Contact::factory()->create([$attribute => null]);
 
-test('email_addresses can be stored as JSON array', function () {
-    $emails = [
-        ['label' => 'Work', 'value' => 'john@work.com'],
-        ['label' => 'Personal', 'value' => 'john@home.com'],
-    ];
-
-    $contact = Contact::factory()->create(['email_addresses' => $emails]);
-
-    expect($contact->email_addresses)->toBe($emails);
-});
-
-test('links can be stored as JSON array', function () {
-    $links = [
-        ['label' => 'Website', 'value' => 'https://example.com'],
-        ['label' => 'LinkedIn', 'value' => 'https://linkedin.com/in/john'],
-    ];
-
-    $contact = Contact::factory()->create(['links' => $links]);
-
-    expect($contact->links)->toBe($links);
-});
-
-test('phone_numbers is nullable', function () {
-    $contact = Contact::factory()->create(['phone_numbers' => null]);
-
-    expect($contact->phone_numbers)->toBeNull();
-});
-
-test('email_addresses is nullable', function () {
-    $contact = Contact::factory()->create(['email_addresses' => null]);
-
-    expect($contact->email_addresses)->toBeNull();
-});
-
-test('links is nullable', function () {
-    $contact = Contact::factory()->create(['links' => null]);
-
-    expect($contact->links)->toBeNull();
-});
-
-test('address is nullable', function () {
-    $contact = Contact::factory()->create(['address' => null]);
-
-    expect($contact->address)->toBeNull();
-});
-
-test('additional_info is nullable', function () {
-    $contact = Contact::factory()->create(['additional_info' => null]);
-
-    expect($contact->additional_info)->toBeNull();
-});
-
-test('empty phone arrays are stored as empty arrays', function () {
-    $contact = Contact::factory()->create(['phone_numbers' => []]);
-
-    expect($contact->phone_numbers)->toBe([]);
-});
+    expect($contact->fresh()->getAttribute($attribute))->toBeNull();
+})->with([
+    'phone_numbers',
+    'email_addresses',
+    'links',
+    'address',
+    'additional_info',
+]);
 
 test('deleting a team cascades to its contacts', function () {
     $team = Team::factory()->create();

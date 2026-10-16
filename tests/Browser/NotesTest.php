@@ -3,18 +3,6 @@
 use App\Models\Note;
 use App\Models\User;
 
-it('notes page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $this->actingAs($user);
-
-    visit('/'.$team->slug.'/notes')
-        ->assertSee('Notes')
-        ->assertSee('Capture team knowledge')
-        ->assertNoJavaScriptErrors();
-});
-
 it('notes page shows existing notes and filters them', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
@@ -34,6 +22,8 @@ it('notes page shows existing notes and filters them', function () {
     $this->actingAs($user);
 
     visit('/'.$team->slug.'/notes')
+        ->assertSee('Notes')
+        ->assertSee('Capture team knowledge')
         ->assertSee('Architecture Decision')
         ->assertSee('Sprint Notes')
         ->fill('[data-testid="notes-search-input"]', 'Architecture')
@@ -42,7 +32,7 @@ it('notes page shows existing notes and filters them', function () {
         ->assertNoJavaScriptErrors();
 });
 
-it('note show page can be rendered', function () {
+it('note title can be updated from the show page', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
@@ -53,9 +43,16 @@ it('note show page can be rendered', function () {
 
     $this->actingAs($user);
 
-    visit('/'.$team->slug.'/notes/'.$note->id)
+    $page = visit('/'.$team->slug.'/notes/'.$note->id)
         ->assertSee('Launch Checklist')
         ->assertSee('Linked Records')
         ->assertSee('Tags')
-        ->assertNoJavaScriptErrors();
+        ->click('Edit')
+        ->fill('#edit-note-title', 'Updated Note Title')
+        ->click('Save changes');
+
+    waitForBrowserText($page, 'Updated Note Title');
+
+    expect($note->fresh()->title)->toBe('Updated Note Title');
+    $page->assertNoJavaScriptErrors();
 });

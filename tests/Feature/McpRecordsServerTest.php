@@ -26,6 +26,7 @@ use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
 use App\Models\RecordLink;
+use App\Models\Subscription;
 use App\Models\Tag;
 use App\Models\Task;
 use App\Models\TaskComment;
@@ -65,6 +66,7 @@ test('records can be created for each supported type through mcp', function (str
         'calendar_event' => ['title' => $expected, 'date' => '2026-05-08'],
         'contact' => ['name' => $expected],
         'bookmark' => ['title' => $expected, 'url' => 'https://example.com/'.$type],
+        'subscription' => ['name' => $expected],
         'note' => ['title' => $expected, 'blocks' => [['type' => 'text', 'position' => 0, 'payload' => ['content' => 'MCP body']]]],
         'collection' => ['title' => $expected, 'description' => 'MCP collection'],
         'log_entry' => ['body' => $expected],
@@ -82,6 +84,7 @@ test('records can be created for each supported type through mcp', function (str
     ['calendar_event', 'MCP event', CalendarEvent::class],
     ['contact', 'MCP contact', Contact::class],
     ['bookmark', 'MCP bookmark', Bookmark::class],
+    ['subscription', 'MCP subscription', Subscription::class],
     ['note', 'MCP note', Note::class],
     ['collection', 'MCP collection', RecordCollection::class],
     ['log_entry', 'MCP log entry', LogEntry::class],
@@ -793,17 +796,6 @@ test('task comment tools respect mcp task project scope', function () {
         'task_id' => $blockedTask->id,
         'blocks' => taskCommentBlocks('Denied comment'),
     ])->assertHasErrors(['Permission denied.']);
-});
-
-test('mcp record tools are scoped to the authenticated users current team', function () {
-    $user = User::factory()->create();
-    $otherUser = User::factory()->create();
-    $foreignNote = Note::factory()->create(['team_id' => $otherUser->currentTeam->id]);
-
-    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
-        'type' => 'note',
-        'id' => $foreignNote->id,
-    ])->assertHasErrors(['Record not found.']);
 });
 
 test('self links are rejected through mcp', function () {
