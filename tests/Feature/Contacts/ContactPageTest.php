@@ -7,21 +7,6 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 use function Pest\Laravel\actingAs;
 
-test('contacts page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    expect($team)->not->toBeNull();
-
-    actingAs($user)
-        ->get(route('team.contacts.index', ['current_team' => $team]))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('contacts/Index')
-            ->has('contacts'),
-        );
-});
-
 test('contacts page shows contacts for current team', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

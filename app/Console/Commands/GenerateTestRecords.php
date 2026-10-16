@@ -31,12 +31,10 @@ use Laravel\Pulse\Facades\Pulse;
 use Laravel\Telescope\Contracts\EntriesRepository;
 use Laravel\Telescope\Telescope;
 
-#[Signature('app:generate-test-records')]
+#[Signature('app:generate-test-records {--count=1000 : Records to generate per record type}')]
 #[Description('Generate test records for all model types with tags, links, and log entries')]
 class GenerateTestRecords extends Command
 {
-    private const int PER_TYPE = 1000;
-
     private const int BATCH_SIZE = 100;
 
     private const int TAGS_PER_TEAM = 20;
@@ -60,9 +58,9 @@ class GenerateTestRecords extends Command
         Task::class,
     ];
 
-    public function handle(): void
+    public function handle(): int
     {
-        Pulse::ignore(function (): null {
+        return Pulse::ignore(function (): int {
             Telescope::stopRecording();
 
             $result = $this->generateRecords();
@@ -75,8 +73,20 @@ class GenerateTestRecords extends Command
         });
     }
 
-    protected function generateRecords(): null
+    protected function generateRecords(): int
     {
+        $count = filter_var(
+            is_string($raw = $this->option('count')) ? trim($raw) : $raw,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+
+        if ($count === false) {
+            $this->error('Invalid --count value. Provide a positive integer.');
+
+            return self::FAILURE;
+        }
+
         $this->info('Clearing existing test data...');
 
         RecordLink::query()->delete();
@@ -132,57 +142,58 @@ class GenerateTestRecords extends Command
 
         $allUsers = $users->concat([$testUser]);
 
-        $batches = self::PER_TYPE / self::BATCH_SIZE;
+        $batchSizes = $this->batchSizes($count);
+        $label = number_format($count);
 
-        $this->info('Generating 1,000 Tasks...');
-        for ($i = 0; $i < $batches; $i++) {
+        $this->info(sprintf('Generating %s Tasks...', $label));
+        foreach ($batchSizes as $batchSize) {
             Task::factory()
-                ->count(self::BATCH_SIZE)
+                ->count($batchSize)
                 ->recycle($projects)
                 ->state(fn (): array => ['created_by' => $allUsers->random()->id])
                 ->create();
         }
 
-        $this->info('Generating 1,000 Calendar Events...');
-        for ($i = 0; $i < $batches; $i++) {
-            CalendarEvent::factory()->count(self::BATCH_SIZE)->recycle($teams)->create();
+        $this->info(sprintf('Generating %s Calendar Events...', $label));
+        foreach ($batchSizes as $batchSize) {
+            CalendarEvent::factory()->count($batchSize)->recycle($teams)->create();
         }
 
-        $this->info('Generating 1,000 Contacts...');
-        for ($i = 0; $i < $batches; $i++) {
-            Contact::factory()->count(self::BATCH_SIZE)->recycle($teams)->create();
+        $this->info(sprintf('Generating %s Contacts...', $label));
+        foreach ($batchSizes as $batchSize) {
+            Contact::factory()->count($batchSize)->recycle($teams)->create();
         }
 
-        $this->info('Generating 1,000 Bookmarks...');
-        for ($i = 0; $i < $batches; $i++) {
-            Bookmark::factory()->count(self::BATCH_SIZE)->recycle($teams)->create();
+        $this->info(sprintf('Generating %s Bookmarks...', $label));
+        foreach ($batchSizes as $batchSize) {
+            Bookmark::factory()->count($batchSize)->recycle($teams)->create();
         }
 
-        $this->info('Generating 1,000 Notes...');
-        for ($i = 0; $i < $batches; $i++) {
-            Note::factory()->count(self::BATCH_SIZE)->recycle($teams)->create();
+        $this->info(sprintf('Generating %s Notes...', $label));
+        foreach ($batchSizes as $batchSize) {
+            Note::factory()->count($batchSize)->recycle($teams)->create();
         }
 
-        $this->info('Generating 1,000 Collections...');
-        for ($i = 0; $i < $batches; $i++) {
-            RecordCollection::factory()->count(self::BATCH_SIZE)->recycle($teams)->create();
+        $this->info(sprintf('Generating %s Collections...', $label));
+        foreach ($batchSizes as $batchSize) {
+            RecordCollection::factory()->count($batchSize)->recycle($teams)->create();
         }
 
-        $this->info('Generating 1,000 Subscriptions...');
-        for ($i = 0; $i < $batches; $i++) {
+        $this->info(sprintf('Generating %s Subscriptions...', $label));
+        foreach ($batchSizes as $batchSize) {
             Subscription::factory()
-                ->count(self::BATCH_SIZE)
+                ->count($batchSize)
                 ->recycle($teams)
                 ->state(fn (): array => self::subscriptionState())
                 ->create();
         }
 
-        $this->info('Generating 1,000 Log Entries...');
-        for ($i = 0; $i < $batches; $i++) {
-            LogEntry::factory()->count(self::BATCH_SIZE)->recycle($teams)->create();
+        $this->info(sprintf('Generating %s Log Entries...', $label));
+        foreach ($batchSizes as $batchSize) {
+            LogEntry::factory()->count($batchSize)->recycle($teams)->create();
         }
 
-        $this->createFiles($teams);
+        $this->createFiles($teams, $count);
 
         $this->createTags($teams);
         $this->createRecordLinks($teams);
@@ -190,7 +201,21 @@ class GenerateTestRecords extends Command
 
         $this->info('Done! Generated test records with tags, links, and log entries.');
 
-        return null;
+        return self::SUCCESS;
+    }
+
+    /**
+     * @return list<int>
+     */
+    protected function batchSizes(int $count): array
+    {
+        $sizes = [];
+
+        for ($remaining = $count; $remaining > 0; $remaining -= self::BATCH_SIZE) {
+            $sizes[] = min(self::BATCH_SIZE, $remaining);
+        }
+
+        return $sizes;
     }
 
     /**
@@ -277,9 +302,9 @@ class GenerateTestRecords extends Command
     /**
      * @param  Collection<int, Team>  $teams
      */
-    protected function createFiles($teams): void
+    protected function createFiles($teams, int $count): void
     {
-        $this->info('Generating 1,000 Files with placeholder images...');
+        $this->info('Generating '.number_format($count).' Files with placeholder images...');
 
         $disk = Storage::disk('local');
         $extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
@@ -292,9 +317,9 @@ class GenerateTestRecords extends Command
         ];
 
         $teamsCount = $teams->count();
-        $perTeam = (int) floor(self::PER_TYPE / $teamsCount);
-        $remainder = self::PER_TYPE % $teamsCount;
-        $progress = $this->output->createProgressBar(self::PER_TYPE);
+        $perTeam = (int) floor($count / $teamsCount);
+        $remainder = $count % $teamsCount;
+        $progress = $this->output->createProgressBar($count);
         $progress->start();
 
         $teamIndex = 0;

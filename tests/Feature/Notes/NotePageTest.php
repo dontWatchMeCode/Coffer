@@ -8,18 +8,6 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 use function Pest\Laravel\actingAs;
 
-test('notes page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    actingAs($user)
-        ->get(route('team.notes.index', ['current_team' => $team]))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('notes/Index')
-            ->has('notes'));
-});
-
 test('notes page shows notes for current team', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
@@ -87,7 +75,8 @@ test('a note can be created with a text block', function () {
         ->assertRedirect(route('team.notes.show', [
             'current_team' => $team,
             'note' => Note::whereTitle('New Note')->first()->id,
-        ]));
+        ]))
+        ->assertSessionHas('edit', true);
 
     $note = Note::where('team_id', $team->id)->first();
 
@@ -95,26 +84,6 @@ test('a note can be created with a text block', function () {
     expect($note->blocks)->toHaveCount(1);
     expect($note->blocks->first()->type)->toBe('text');
     expect($note->blocks->first()->payload['content'])->toBe('Body text');
-});
-
-test('creating a note flashes edit mode for the show page', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    $response = actingAs($user)
-        ->post(route('team.notes.store', ['current_team' => $team]), [
-            'title' => 'New Note',
-        ]);
-
-    $response->assertSessionHas('edit', true);
-
-    $note = Note::where('team_id', $team->id)->first();
-
-    actingAs($user)
-        ->get(route('team.notes.show', ['current_team' => $team, 'note' => $note]))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('notes/Index'));
 });
 
 test('a note can be created with an excalidraw block', function () {

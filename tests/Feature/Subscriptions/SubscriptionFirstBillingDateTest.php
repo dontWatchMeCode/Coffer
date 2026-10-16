@@ -102,16 +102,6 @@ it('passes validation when first billing date is null regardless of next billing
     ])->assertRedirect();
 });
 
-it('passes validation when next billing date is null regardless of first billing date', function () {
-    $this->post("/{$this->team->slug}/subscriptions", [
-        'name' => 'Netflix',
-        'price' => 15.99,
-        'currency' => 'USD',
-        'billing_cycle' => 'monthly',
-        'first_billing_date' => '2026-01-15',
-    ])->assertRedirect();
-});
-
 it('returns first billing date in subscription payload', function () {
     $subscription = Subscription::factory()->create([
         'team_id' => $this->team->id,

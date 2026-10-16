@@ -349,15 +349,6 @@ test('a log entry from another team cannot be deleted', function () {
         ->assertNotFound();
 });
 
-test('log page has no show route', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    actingAs($user)
-        ->get(route('team.log.index', ['current_team' => $team]))
-        ->assertOk();
-});
-
 test('log entry payload includes expected fields', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

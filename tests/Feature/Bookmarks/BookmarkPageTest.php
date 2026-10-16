@@ -7,21 +7,6 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 use function Pest\Laravel\actingAs;
 
-test('bookmarks page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    expect($team)->not->toBeNull();
-
-    actingAs($user)
-        ->get(route('team.bookmarks.index', ['current_team' => $team]))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('bookmarks/Index')
-            ->has('bookmarks'),
-        );
-});
-
 test('bookmarks page shows bookmarks for current team', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

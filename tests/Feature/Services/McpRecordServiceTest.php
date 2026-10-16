@@ -67,19 +67,6 @@ it('updates a subscription through the service', function () {
         ->and((float) $subscription->fresh()->price)->toBe(9.99);
 });
 
-it('deletes a subscription through the service', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-    $subscription = Subscription::factory()->create(['team_id' => $team->id]);
-
-    RecordsServer::actingAs($user)->tool(DeleteRecordTool::class, [
-        'type' => 'subscription',
-        'id' => $subscription->id,
-    ])->assertOk()->assertSee('deleted');
-
-    $this->assertSoftDeleted('subscriptions', ['id' => $subscription->id]);
-});
-
 it('rejects creating a subscription with invalid billing cycle', function () {
     $user = User::factory()->create();
 

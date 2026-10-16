@@ -101,13 +101,14 @@
             "@ide-helper",
             "@rector",
             "@lint",
-            "@php artisan wayfinder:generate --ansi --with-form",
             "npm run build",
             "npm run format",
             "npm run lint",
             "npm run types:check",
+            "npm test",
             "@analyse",
-            "@test"
+            "@php artisan config:clear --ansi",
+            "@php artisan test"
         ],
         "ci:check": [
             "Composer\\Config::disableProcessTimeout",

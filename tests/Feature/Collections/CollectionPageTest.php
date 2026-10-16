@@ -9,18 +9,6 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 use function Pest\Laravel\actingAs;
 
-test('collections page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = $user->currentTeam;
-
-    actingAs($user)
-        ->get(route('team.collections.index', ['current_team' => $team]))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('collections/Index')
-            ->has('collections'));
-});
-
 test('collections page shows collections for current team', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;

@@ -831,11 +831,9 @@ test('duplicate links are rejected through mcp', function () {
     ])->assertHasErrors(['Link already exists.']);
 });
 
-test('the web mcp route is registered', function () {
-    expect(route('mcp.records'))->toContain('/mcp/records');
-});
-
 test('the web mcp route reads team scoped records with a bearer token', function () {
+    expect(route('mcp.records'))->toContain('/mcp/records');
+
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
     $team = $user->currentTeam;
