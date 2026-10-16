@@ -4,6 +4,9 @@
 /public/build
 /public/hot
 /public/storage
+/public/frankenphp-worker.php
+/frankenphp
+**/caddy
 /storage/*.key
 /storage/debugbar
 /storage/pail

@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Concerns;
 
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Confirmed;
+use Illuminate\Validation\Rules\CurrentPassword;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rules\StringRule;
 
 trait PasswordValidationRules
 {
     /**
      * Get the validation rules used to validate passwords.
      *
-     * @return array<int, Rule|array<mixed>|string>
+     * @return list<Confirmed|Password|StringRule|string>
      */
     protected function passwordRules(): array
     {
@@ -22,7 +25,7 @@ trait PasswordValidationRules
     /**
      * Get the validation rules used to validate the current password.
      *
-     * @return array<int, Rule|array<mixed>|string>
+     * @return list<CurrentPassword|StringRule|string>
      */
     protected function currentPasswordRules(): array
     {

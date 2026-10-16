@@ -270,7 +270,7 @@ class DomainRecordValidation
      */
     public static function applySubscriptionRules(Validator $validator): void
     {
-        $validator->sometimes('first_billing_date', Rule::date()->before('next_billing_date'), fn ($input): bool => $input->first_billing_date !== null
+        $validator->sometimes('first_billing_date', [Rule::date()->before('next_billing_date')], fn ($input): bool => $input->first_billing_date !== null
             && $input->next_billing_date !== null);
     }
 

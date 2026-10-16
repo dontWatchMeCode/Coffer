@@ -15,3 +15,6 @@ database/*.sqlite*
 public/build
 public/hot
 public/storage
+public/frankenphp-worker.php
+frankenphp
+**/caddy

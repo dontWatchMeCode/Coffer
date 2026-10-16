@@ -7,29 +7,29 @@ severity: medium
 
 # Plan FrankenPHP Deployment
 
-Production switch to classic FrankenPHP behind reverse proxy, with Postgres provided by Docker Compose. Fully implemented.
+Production runs Octane on the FrankenPHP server behind reverse proxy, with Postgres provided by Docker Compose. Native image build, repeated-request appearance/CSP checks, worker reload, and graceful shutdown verified in an isolated container.
 
 ## Implementation Notes
 
-- `laravel/octane` not installed — Octane worker mode intentionally deferred; worker-safety hardening landed instead (see below) with tested coverage for the known cross-request leak vectors a future Octane switch would hit.
-- Docker Compose (`compose.yml`) defines five services: `app` (FrankenPHP HTTP), `setup` (one-shot backup, migrations, and Laravel cache warmup), `queue` (queue worker), `scheduler`, and `postgres` (Postgres 18).
+- `laravel/octane ^2.22` installed; image runs `php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=80 --admin-port=2019 --max-requests=500 --log-level=info --no-interaction`. Worker-safety hardening below covers the known cross-request leak vectors for the Octane worker.
+- Docker Compose (`compose.yml`) defines five services: `app` (Octane FrankenPHP worker), `setup` (one-shot backup, migrations, and Laravel cache warmup), `queue` (queue worker), `scheduler`, and `postgres` (Postgres 18). Image is `dunglas/frankenphp:1.13-php8.5` (Octane minimum 1.13) with runtime `pcntl`. `octane:install` generates the worker script during image build; generated scripts and local binaries are excluded from Git and the Docker build context.
 - The `setup` service shares `bootstrap/cache` with app, queue, and scheduler via the `app-cache` volume so cached config/routes/events are visible to runtime services.
-- The `setup` service runs `php artisan backup:run --only-db --disable-notifications || true` (non-blocking) before `optimize:clear && migrate --force && optimize`. Backups store on the `backups` filesystem disk (`storage/app/backups`) mapped to the `app-backups` Docker volume, which is also mounted to `app`, `queue`, and `scheduler`. The backup monitor in `config/backup.php` also uses the `backups` disk.
+- The `setup` service runs `php artisan backup:run --only-db --disable-notifications && php artisan migrate --force && php artisan optimize:clear && php artisan optimize`. Backup failure stops setup and prevents dependent services from starting. Backups store on the `backups` filesystem disk (`storage/app/backups`) mapped to the `app-backups` Docker volume, which is also mounted to `app`, `queue`, and `scheduler`. The backup monitor in `config/backup.php` also uses the `backups` disk.
 - App binds to `127.0.0.1:8080:80` — listens on port 80 internally, published on 127.0.0.1:8080 for reverse proxy (Traefik or similar).
-- Caddyfile disables `auto_https` (TLS terminated upstream) and serves on `:80`; no `encode` directive — no backend compression.
+- Plain `Caddyfile` deleted; app uses the bundled Octane FrankenPHP Caddyfile. TLS stays upstream; admin port 2019 keeps the default localhost binding and is not published.
 - Config defaults remain sqlite; production deployment switches to Postgres via `.env` overrides (`DB_CONNECTION=pgsql`) for app database, cache, sessions, and queues.
 - Pulse enabled with database ingest/storage (writes to Postgres in production).
 - `subscriptions:rollover` scheduled command exists; scheduler service runs `php artisan schedule:work` to execute it.
 - Healthcheck on app service hits `/up` endpoint internally on port 80.
 - Dockerfile installs Node.js/npm for Vite asset compilation (multi-stage build) and `postgresql-client` (for `pg_dump` used by `backup:run --only-db`).
-- `php artisan storage:link` is baked into the image at build time (Dockerfile line 65).
+- `php artisan storage:link` is baked into the image at build time (Dockerfile line 69).
 - Dockerfile asset build stage includes a placeholder `APP_KEY`; the real key must be set in production `.env`.
 - `laravel/mcp ^0.8.2` is a production dependency; `app.blade.php` loads no external fonts (system monospace stack) and guards inline script/style CSP nonces behind `csp.nonce_enabled` (`CSP_NONCE_ENABLED`, default true).
 
 ## Design Decisions
 
-- Classic FrankenPHP chosen over Octane; Octane re-evaluated only after production behavior is stable. Worker-safety hardening (below) removes the known blockers.
-- Worker-safety hardening (covered by `tests/Feature/Octane/WorkerReuseTest.php`, 5 sequential-request tests in one process — not a real Octane integration run):
+- Octane with FrankenPHP server chosen; no singleton rewrites required. Worker-safety hardening (below) covers the known blockers.
+- Worker-safety hardening (covered by `tests/Feature/Octane/WorkerReuseTest.php`, 5 sequential-request tests in one process, plus `tests/Feature/OctaneWorkerTest.php`, 4 actual-worker lifecycle tests reusing the real Octane `Worker` factory, not the FrankenPHP transport — covering token team scopes, auth/context error cleanup, browser sessions/Inertia props, cookie appearance + CSP):
   - `phpstan.neon` enables `checkOctaneCompatibility`.
   - URL-default leaks fixed: `SetTeamUrlDefaults` always resets `URL::defaults` (guest-safe), moved before `HandleInertiaRequests` in `bootstrap/app.php`; `HasTeams::switchTeam` and login/register responses no longer set global URL defaults (team switch now resets them in `EnsureTeamMembership`).
   - MCP guard fix: `AuthenticateMcpToken` calls `Auth::forgetGuards()` after resolving the token user; `McpRequestContext` prefers the bound token's team over session state.
@@ -47,7 +47,7 @@ Production switch to classic FrankenPHP behind reverse proxy, with Postgres prov
 
 ## Acceptance Criteria
 
-- [x] Deployment mode is chosen: classic FrankenPHP
+- [x] Deployment mode is chosen: Octane on FrankenPHP
 - [x] Production backing services are documented or configured
 - [x] HTTP start command is defined
 - [x] Queue worker process is defined if queues remain enabled
@@ -58,6 +58,6 @@ Production switch to classic FrankenPHP behind reverse proxy, with Postgres prov
 
 1. Set production `.env` values, including `APP_URL`, `APP_KEY`, `DB_*`, `TRUSTED_PROXIES=*`, and `SESSION_SECURE_COOKIE=true`. Run `php artisan key:generate --force` first if `APP_KEY` is not already set.
 2. Run `docker compose build`.
-3. Run `docker compose up -d --force-recreate`; Compose starts Postgres, then runs the one-shot `setup` service (`backup:run --only-db --disable-notifications || true`, `optimize:clear`, `migrate --force`, `optimize`) before starting `app`, `queue`, and `scheduler`.
+3. Run `docker compose up -d --force-recreate`; Compose starts Postgres, then runs the one-shot `setup` service (`backup:run --only-db --disable-notifications`, `migrate --force`, `optimize:clear`, `optimize`) before starting `app`, `queue`, and `scheduler`. If backup or another setup step fails, resolve it before starting dependent services. The Octane worker restarts via this rebuild/recreate (no separate reload).
 4. Run `docker compose run --rm app php artisan storage:link` if the public storage link does not exist (already baked into image build, but safe to re-run).
 5. On later deploys, run `docker compose exec app php artisan queue:restart` before recreating `queue` and `scheduler`.

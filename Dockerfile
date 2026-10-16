@@ -1,4 +1,4 @@
-FROM dunglas/frankenphp:1-php8.5 AS assets
+FROM dunglas/frankenphp:1.13-php8.5 AS assets
 
 WORKDIR /app
 
@@ -38,7 +38,7 @@ RUN mkdir -p bootstrap/cache storage/framework/views storage/framework/cache sto
     && php artisan wayfinder:generate --with-form \
     && npm run build
 
-FROM dunglas/frankenphp:1-php8.5 AS app
+FROM dunglas/frankenphp:1.13-php8.5 AS app
 
 WORKDIR /app
 
@@ -47,6 +47,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 RUN install-php-extensions \
+    pcntl \
     pdo_pgsql \
     zip
 
@@ -59,15 +60,15 @@ COPY --from=assets /app/vendor ./vendor
 
 COPY . .
 COPY --from=assets /app/public/build ./public/build
-COPY Caddyfile /etc/caddy/Caddyfile
 
 RUN rm -f public/hot \
     && mkdir -p storage/app/private storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && composer dump-autoload --optimize \
     && php artisan package:discover --ansi \
+    && php artisan octane:install --server=frankenphp --no-interaction \
     && php artisan storage:link \
     && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 80
 
-CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+CMD ["php", "artisan", "octane:start", "--server=frankenphp", "--host=0.0.0.0", "--port=80", "--admin-port=2019", "--max-requests=500", "--log-level=info", "--no-interaction"]
