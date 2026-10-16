@@ -19,8 +19,8 @@ class ActivityHistoryController extends Controller
     public function index(Request $request, Team $currentTeam): JsonResponse
     {
         $validated = $request->validate([
-            'subject_type' => ['required', 'string', Rule::in(array_keys(RecordTypeRegistry::definitions()))],
-            'subject_id' => ['required', 'integer', 'min:1'],
+            'subject_type' => [Rule::required(), Rule::string(), Rule::in(array_keys(RecordTypeRegistry::definitions()))],
+            'subject_id' => [Rule::required(), 'integer', 'min:1'],
         ]);
 
         $class = RecordTypeRegistry::classFor((string) $validated['subject_type']);

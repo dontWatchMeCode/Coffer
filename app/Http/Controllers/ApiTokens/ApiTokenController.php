@@ -103,7 +103,7 @@ class ApiTokenController extends Controller
             Validator::make([
                 'ids' => $ids,
             ], [
-                'ids' => ['array'],
+                'ids' => [Rule::array()],
                 'ids.*' => [Rule::exists('projects', 'id')->where('team_id', $team->id)],
             ])->validate();
         }

@@ -91,76 +91,76 @@ class DomainRecordValidation
     public static function rulesFor(string $type, bool $updating, ?Team $team = null, array $data = [], ?Model $model = null, array $requiredWhenPresent = [], bool $includeMcpFileFields = false, bool $includeHttpFileUpload = false, bool $includeNoteBlockIds = false): array
     {
         $required = fn (string $field): array => self::requiredRule($updating, $requiredWhenPresent[$field] ?? true);
-        $optional = fn (): array => $updating ? ['sometimes'] : [];
+        $optional = fn (): array => $updating ? [Rule::sometimes()] : [];
 
         return match ($type) {
             'task' => [
                 'project_id' => [...$required('project_id'), 'integer', Rule::exists('projects', 'id')->where(fn ($query) => $query->where('team_id', $team?->id))],
-                'assigned_to' => [...$optional(), 'nullable', 'integer', Rule::exists('team_members', 'user_id')->where(fn ($query) => $query->where('team_id', $team?->id))],
-                'title' => [...$required('title'), 'string', 'max:255'],
-                'description' => [...$optional(), 'nullable', 'string'],
+                'assigned_to' => [...$optional(), Rule::nullable(), 'integer', Rule::exists('team_members', 'user_id')->where(fn ($query) => $query->where('team_id', $team?->id))],
+                'title' => [...$required('title'), Rule::string(), 'max:255'],
+                'description' => [...$optional(), Rule::nullable(), Rule::string()],
                 'status' => [...$required('status'), Rule::in(self::taskStatusValues($team, $data, $model))],
                 'progress' => [...$optional(), 'integer', 'between:0,100'],
-                'time_estimate' => [...$optional(), 'nullable', 'integer', 'min:0'],
-                'position' => [...$optional(), 'nullable', 'integer', 'min:0'],
-                'due_at' => [...$optional(), 'nullable', 'date'],
+                'time_estimate' => [...$optional(), Rule::nullable(), 'integer', 'min:0'],
+                'position' => [...$optional(), Rule::nullable(), 'integer', 'min:0'],
+                'due_at' => [...$optional(), Rule::nullable(), Rule::date()],
             ],
             'calendar_event' => [
-                'title' => [...$required('title'), 'string', 'max:255'],
-                'description' => [...$optional(), 'nullable', 'string'],
-                'date' => [...$required('date'), 'date'],
-                'time' => [...$optional(), 'nullable', 'date_format:H:i'],
+                'title' => [...$required('title'), Rule::string(), 'max:255'],
+                'description' => [...$optional(), Rule::nullable(), Rule::string()],
+                'date' => [...$required('date'), Rule::date()],
+                'time' => [...$optional(), Rule::nullable(), Rule::date()->format('H:i')],
             ],
             'contact' => [
-                'name' => [...$required('name'), 'string', 'max:255'],
-                'phone_numbers' => [...$optional(), 'nullable', 'array', 'max:20'],
-                'phone_numbers.*.label' => ['nullable', 'string', 'max:100'],
-                'phone_numbers.*.value' => ['required', 'string', 'max:255'],
-                'email_addresses' => [...$optional(), 'nullable', 'array', 'max:20'],
-                'email_addresses.*.label' => ['nullable', 'string', 'max:100'],
-                'email_addresses.*.value' => ['required', 'email', 'max:255'],
-                'links' => [...$optional(), 'nullable', 'array', 'max:20'],
-                'links.*.label' => ['nullable', 'string', 'max:100'],
-                'links.*.value' => ['required', 'url', 'max:2048'],
-                'address' => [...$optional(), 'nullable', 'string'],
-                'additional_info' => [...$optional(), 'nullable', 'string'],
+                'name' => [...$required('name'), Rule::string(), 'max:255'],
+                'phone_numbers' => [...$optional(), Rule::nullable(), Rule::array(), 'max:20'],
+                'phone_numbers.*.label' => [Rule::nullable(), Rule::string(), 'max:100'],
+                'phone_numbers.*.value' => [Rule::required(), Rule::string(), 'max:255'],
+                'email_addresses' => [...$optional(), Rule::nullable(), Rule::array(), 'max:20'],
+                'email_addresses.*.label' => [Rule::nullable(), Rule::string(), 'max:100'],
+                'email_addresses.*.value' => [Rule::required(), Rule::email(), 'max:255'],
+                'links' => [...$optional(), Rule::nullable(), Rule::array(), 'max:20'],
+                'links.*.label' => [Rule::nullable(), Rule::string(), 'max:100'],
+                'links.*.value' => [Rule::required(), Rule::url(), 'max:2048'],
+                'address' => [...$optional(), Rule::nullable(), Rule::string()],
+                'additional_info' => [...$optional(), Rule::nullable(), Rule::string()],
             ],
             'bookmark' => [
-                'title' => [...$required('title'), 'string', 'max:255'],
-                'url' => [...$required('url'), 'string', 'url', 'max:2048'],
-                'description' => [...$optional(), 'nullable', 'string', 'max:500'],
-                'notes' => [...$optional(), 'nullable', 'string'],
+                'title' => [...$required('title'), Rule::string(), 'max:255'],
+                'url' => [...$required('url'), Rule::string(), Rule::url(), 'max:2048'],
+                'description' => [...$optional(), Rule::nullable(), Rule::string(), 'max:500'],
+                'notes' => [...$optional(), Rule::nullable(), Rule::string()],
             ],
             'subscription' => [
-                'name' => [...$required('name'), 'string', 'max:255'],
-                'price' => [...$optional(), 'nullable', 'numeric', 'min:0', 'max:999999.99'],
-                'currency' => [...$optional(), 'nullable', 'string', 'max:3'],
-                'billing_cycle' => [...$optional(), 'nullable', 'string', Rule::in(['weekly', 'monthly', 'yearly'])],
-                'next_billing_date' => [...$optional(), 'nullable', 'date'],
-                'first_billing_date' => [...$optional(), 'nullable', 'date'],
-                'url' => [...$optional(), 'nullable', 'string', 'url', 'max:2048'],
-                'description' => [...$optional(), 'nullable', 'string', 'max:500'],
-                'notes' => [...$optional(), 'nullable', 'string'],
-                'is_active' => $updating ? ['sometimes', 'boolean'] : ['nullable', 'boolean'],
-                'category' => [...$optional(), 'nullable', 'string', 'max:100'],
+                'name' => [...$required('name'), Rule::string(), 'max:255'],
+                'price' => [...$optional(), Rule::nullable(), Rule::numeric(), 'min:0', 'max:999999.99'],
+                'currency' => [...$optional(), Rule::nullable(), Rule::string(), 'max:3'],
+                'billing_cycle' => [...$optional(), Rule::nullable(), Rule::string(), Rule::in(['weekly', 'monthly', 'yearly'])],
+                'next_billing_date' => [...$optional(), Rule::nullable(), Rule::date()],
+                'first_billing_date' => [...$optional(), Rule::nullable(), Rule::date()],
+                'url' => [...$optional(), Rule::nullable(), Rule::string(), Rule::url(), 'max:2048'],
+                'description' => [...$optional(), Rule::nullable(), Rule::string(), 'max:500'],
+                'notes' => [...$optional(), Rule::nullable(), Rule::string()],
+                'is_active' => $updating ? [Rule::sometimes(), Rule::boolean()] : [Rule::nullable(), Rule::boolean()],
+                'category' => [...$optional(), Rule::nullable(), Rule::string(), 'max:100'],
             ],
             'note' => self::noteRules($required, $includeNoteBlockIds),
             'collection' => [
-                'title' => [...$required('title'), 'string', 'max:255'],
-                'description' => [...$optional(), 'nullable', 'string'],
+                'title' => [...$required('title'), Rule::string(), 'max:255'],
+                'description' => [...$optional(), Rule::nullable(), Rule::string()],
             ],
             'log_entry' => [
-                'body' => [...$required('body'), 'string', 'max:5000'],
-                'category' => [...$optional(), 'nullable', 'string', 'max:80'],
+                'body' => [...$required('body'), Rule::string(), 'max:5000'],
+                'category' => [...$optional(), Rule::nullable(), Rule::string(), 'max:80'],
             ],
             'file' => self::fileRules($updating, $required, $optional, $includeMcpFileFields, $includeHttpFileUpload),
             'project' => [
-                'name' => [...$required('name'), 'string', 'max:255', Rule::unique('projects', 'name')->where(fn ($query) => $query->where('team_id', $team?->id))->ignore($model?->getKey())],
-                'description' => [...$optional(), 'nullable', 'string'],
-                'archived' => [...$optional(), 'nullable', 'boolean'],
-                'status_options' => [...$optional(), 'nullable', 'array'],
-                'status_options.*.value' => ['required', 'string', 'regex:/^[a-z0-9_]+$/', 'distinct'],
-                'status_options.*.label' => ['required', 'string', 'max:40'],
+                'name' => [...$required('name'), Rule::string(), 'max:255', Rule::unique('projects', 'name')->where(fn ($query) => $query->where('team_id', $team?->id))->ignore($model?->getKey())],
+                'description' => [...$optional(), Rule::nullable(), Rule::string()],
+                'archived' => [...$optional(), Rule::nullable(), Rule::boolean()],
+                'status_options' => [...$optional(), Rule::nullable(), Rule::array()],
+                'status_options.*.value' => [Rule::required(), Rule::string(), Rule::regex('/^[a-z0-9_]+$/'), Rule::distinct()],
+                'status_options.*.label' => [Rule::required(), Rule::string(), 'max:40'],
             ],
             'spreadsheet' => self::spreadsheetRules($required, $data),
             default => [],
@@ -190,10 +190,10 @@ class DomainRecordValidation
     private static function requiredRule(bool $updating, bool $requiredWhenPresent): array
     {
         if (! $updating) {
-            return ['required'];
+            return [Rule::required()];
         }
 
-        return $requiredWhenPresent ? ['sometimes', 'required'] : ['sometimes'];
+        return $requiredWhenPresent ? [Rule::sometimes(), Rule::required()] : [Rule::sometimes()];
     }
 
     /**
@@ -204,28 +204,28 @@ class DomainRecordValidation
     private static function spreadsheetRules(callable $required, array $data): array
     {
         $rules = [
-            'title' => [...$required('title'), 'string', 'max:255'],
-            'snapshot' => ['sometimes', 'array'],
+            'title' => [...$required('title'), Rule::string(), 'max:255'],
+            'snapshot' => [Rule::sometimes(), Rule::array()],
         ];
 
         $snapshotPresent = array_key_exists('snapshot', $data) && is_array($data['snapshot']);
 
         if ($snapshotPresent) {
             $rules += [
-                'snapshot.version' => ['required', 'integer', 'in:1'],
-                'snapshot.columns' => ['required', 'array', 'min:1', 'max:50'],
-                'snapshot.columns.*.id' => ['required', 'string', 'max:100', 'distinct'],
-                'snapshot.columns.*.name' => ['required', 'string', 'max:100'],
-                'snapshot.columns.*.type' => ['required', Rule::in(['text', 'number', 'date', 'select', 'checkbox'])],
-                'snapshot.columns.*.width' => ['required', 'integer', 'min:80', 'max:500'],
-                'snapshot.columns.*.hidden' => ['required', 'boolean'],
-                'snapshot.columns.*.options' => ['present', 'array', 'max:50'],
-                'snapshot.columns.*.options.*' => ['string', 'max:100'],
-                'snapshot.rows' => ['required', 'array', 'max:1000'],
-                'snapshot.rows.*.id' => ['required', 'string', 'max:100', 'distinct'],
-                'snapshot.rows.*.cells' => ['present', 'array', 'max:50'],
+                'snapshot.version' => [Rule::required(), 'integer', Rule::in([1])],
+                'snapshot.columns' => [Rule::required(), Rule::array(), 'min:1', 'max:50'],
+                'snapshot.columns.*.id' => [Rule::required(), Rule::string(), 'max:100', Rule::distinct()],
+                'snapshot.columns.*.name' => [Rule::required(), Rule::string(), 'max:100'],
+                'snapshot.columns.*.type' => [Rule::required(), Rule::in(['text', 'number', 'date', 'select', 'checkbox'])],
+                'snapshot.columns.*.width' => [Rule::required(), 'integer', 'min:80', 'max:500'],
+                'snapshot.columns.*.hidden' => [Rule::required(), Rule::boolean()],
+                'snapshot.columns.*.options' => [Rule::present(), Rule::array(), 'max:50'],
+                'snapshot.columns.*.options.*' => [Rule::string(), 'max:100'],
+                'snapshot.rows' => [Rule::required(), Rule::array(), 'max:1000'],
+                'snapshot.rows.*.id' => [Rule::required(), Rule::string(), 'max:100', Rule::distinct()],
+                'snapshot.rows.*.cells' => [Rule::present(), Rule::array(), 'max:50'],
                 'snapshot.rows.*.cells.*' => [
-                    'nullable',
+                    Rule::nullable(),
                     function (string $attribute, mixed $value, Closure $fail): void {
                         if (! is_scalar($value) || (is_string($value) && mb_strlen($value) > 10000)) {
                             $fail(sprintf('The %s value is invalid.', $attribute));
@@ -247,19 +247,19 @@ class DomainRecordValidation
     {
         $rules = [
             'blocks' => $requireBlocks
-                ? ['required', 'array', 'min:1', 'max:50']
-                : ['sometimes', 'nullable', 'array', 'max:50'],
-            'blocks.*.type' => ['required', 'string', Rule::in(['text', 'excalidraw', 'mermaid'])],
-            'blocks.*.position' => ['required', 'integer', 'min:0'],
-            'blocks.*.payload' => ['sometimes', 'nullable', 'array'],
+                ? [Rule::required(), Rule::array(), 'min:1', 'max:50']
+                : [Rule::sometimes(), Rule::nullable(), Rule::array(), 'max:50'],
+            'blocks.*.type' => [Rule::required(), Rule::string(), Rule::in(['text', 'excalidraw', 'mermaid'])],
+            'blocks.*.position' => [Rule::required(), 'integer', 'min:0'],
+            'blocks.*.payload' => [Rule::sometimes(), Rule::nullable(), Rule::array()],
         ];
 
         if ($withContentCap) {
-            $rules['blocks.*.payload.content'] = ['sometimes', 'nullable', 'string', 'max:10000'];
+            $rules['blocks.*.payload.content'] = [Rule::sometimes(), Rule::nullable(), Rule::string(), 'max:10000'];
         }
 
         if ($includeIds) {
-            $rules['blocks.*.id'] = ['sometimes', 'nullable', 'integer'];
+            $rules['blocks.*.id'] = [Rule::sometimes(), Rule::nullable(), 'integer'];
         }
 
         return $rules;
@@ -270,7 +270,7 @@ class DomainRecordValidation
      */
     public static function applySubscriptionRules(Validator $validator): void
     {
-        $validator->sometimes('first_billing_date', 'before:next_billing_date', fn ($input): bool => $input->first_billing_date !== null
+        $validator->sometimes('first_billing_date', Rule::date()->before('next_billing_date'), fn ($input): bool => $input->first_billing_date !== null
             && $input->next_billing_date !== null);
     }
 
@@ -281,7 +281,7 @@ class DomainRecordValidation
     private static function noteRules(callable $required, bool $includeBlockIds): array
     {
         return [
-            'title' => [...$required('title'), 'string', 'max:255'],
+            'title' => [...$required('title'), Rule::string(), 'max:255'],
             ...self::rteBlockRules(false, $includeBlockIds, false),
         ];
     }
@@ -356,17 +356,16 @@ class DomainRecordValidation
     private static function fileRules(bool $updating, callable $required, callable $optional, bool $includeMcpFileFields, bool $includeHttpFileUpload): array
     {
         $rules = [
-            'title' => [...$required('title'), 'string', 'max:255'],
-            'description' => [...$optional(), 'nullable', 'string'],
+            'title' => [...$required('title'), Rule::string(), 'max:255'],
+            'description' => [...$optional(), Rule::nullable(), Rule::string()],
         ];
 
         if ($includeHttpFileUpload) {
             $rules['file'] = $updating
-                ? ['prohibited']
+                ? [Rule::prohibited()]
                 : [
-                    'required',
-                    'file',
-                    'max:'.FileTypes::MAX_UPLOAD_KILOBYTES,
+                    Rule::required(),
+                    Rule::file()->max(FileTypes::MAX_UPLOAD_KILOBYTES),
                     'mimes:'.implode(',', FileTypes::extensions()),
                     'mimetypes:'.implode(',', FileTypes::mimeTypes()),
                 ];
@@ -374,13 +373,13 @@ class DomainRecordValidation
 
         if ($includeMcpFileFields) {
             return array_merge($rules, [
-                'description' => [...$optional(), 'nullable', 'string', 'max:5000'],
-                'original_name' => [...$optional(), 'nullable', 'string', 'max:255'],
-                'mime_type' => [...$optional(), 'nullable', 'string', 'max:127'],
-                'size' => [...$optional(), 'nullable', 'integer', 'min:0'],
-                'width' => [...$optional(), 'nullable', 'integer', 'min:0'],
-                'height' => [...$optional(), 'nullable', 'integer', 'min:0'],
-                'content' => [...$optional(), 'nullable', 'string', 'max:'.(int) ceil(FileTypes::MAX_UPLOAD_KILOBYTES * 1024 * 4 / 3 + 500)],
+                'description' => [...$optional(), Rule::nullable(), Rule::string(), 'max:5000'],
+                'original_name' => [...$optional(), Rule::nullable(), Rule::string(), 'max:255'],
+                'mime_type' => [...$optional(), Rule::nullable(), Rule::string(), 'max:127'],
+                'size' => [...$optional(), Rule::nullable(), 'integer', 'min:0'],
+                'width' => [...$optional(), Rule::nullable(), 'integer', 'min:0'],
+                'height' => [...$optional(), Rule::nullable(), 'integer', 'min:0'],
+                'content' => [...$optional(), Rule::nullable(), Rule::string(), 'max:'.(int) ceil(FileTypes::MAX_UPLOAD_KILOBYTES * 1024 * 4 / 3 + 500)],
             ]);
         }
 

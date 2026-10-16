@@ -41,8 +41,8 @@ class McpRecordWriteService
 
         [$user, $team] = $context;
         $validated = $request->validate([
-            'type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpTypes())],
-            'data' => ['required', 'array'],
+            'type' => [Rule::required(), Rule::string(), Rule::in(RecordTypeRegistry::mcpTypes())],
+            'data' => [Rule::required(), Rule::array()],
         ]);
         $class = McpRecordResolver::classFor($validated['type']);
 
@@ -125,9 +125,9 @@ class McpRecordWriteService
 
         [$user, $team] = $context;
         $validated = $request->validate([
-            'type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpTypes())],
-            'id' => ['required', 'integer', 'min:1'],
-            'data' => ['required', 'array'],
+            'type' => [Rule::required(), Rule::string(), Rule::in(RecordTypeRegistry::mcpTypes())],
+            'id' => [Rule::required(), 'integer', 'min:1'],
+            'data' => [Rule::required(), Rule::array()],
         ]);
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 

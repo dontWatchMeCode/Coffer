@@ -9,6 +9,7 @@ use App\Models\Team;
 use App\Support\FileTypes;
 use App\Validation\DomainRecordValidation;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class McpRecordValidator
@@ -47,7 +48,7 @@ class McpRecordValidator
 
         if ($type === 'file' && $model instanceof FileItem && $model->path !== null && ! filled($data['content'] ?? null)) {
             foreach (['mime_type', 'size', 'width', 'height'] as $field) {
-                $rules[$field] = ['prohibited'];
+                $rules[$field] = [Rule::prohibited()];
             }
         }
 

@@ -39,8 +39,8 @@ class McpRecordResolver
     public static function validateTypeAndId(Request $request, ?array $types = null): array
     {
         return $request->validate([
-            'type' => ['required', 'string', Rule::in($types ?? RecordTypeRegistry::mcpTypes())],
-            'id' => ['required', 'integer', 'min:1'],
+            'type' => [Rule::required(), Rule::string(), Rule::in($types ?? RecordTypeRegistry::mcpTypes())],
+            'id' => [Rule::required(), 'integer', 'min:1'],
         ]);
     }
 

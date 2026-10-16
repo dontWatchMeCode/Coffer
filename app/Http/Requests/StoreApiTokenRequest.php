@@ -30,17 +30,17 @@ class StoreApiTokenRequest extends FormRequest
         $abilityRules = [];
 
         foreach (RecordTypeRegistry::mcpResources() as $resource) {
-            $abilityRules['abilities.'.$resource] = ['required', 'string', Rule::in(McpToken::PERMISSION_LEVELS)];
+            $abilityRules['abilities.'.$resource] = [Rule::required(), Rule::string(), Rule::in(McpToken::PERMISSION_LEVELS)];
         }
 
         return [
-            'name' => ['required', 'string', 'max:100'],
-            'expires_at' => ['nullable', 'date', 'after:today'],
-            'abilities' => ['required', 'array'],
+            'name' => [Rule::required(), Rule::string(), 'max:100'],
+            'expires_at' => [Rule::nullable(), Rule::date()->after('today')],
+            'abilities' => [Rule::required(), Rule::array()],
             ...$abilityRules,
-            'abilities.task_projects' => ['required', 'array'],
-            'abilities.task_projects.mode' => ['required', 'string', Rule::in(['all', 'only'])],
-            'abilities.task_projects.ids' => ['array'],
+            'abilities.task_projects' => [Rule::required(), Rule::array()],
+            'abilities.task_projects.mode' => [Rule::required(), Rule::string(), Rule::in(['all', 'only'])],
+            'abilities.task_projects.ids' => [Rule::array()],
             'abilities.task_projects.ids.*' => ['integer'],
         ];
     }

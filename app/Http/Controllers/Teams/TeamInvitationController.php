@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
@@ -32,7 +33,7 @@ class TeamInvitationController extends Controller
 
         $validator = Validator::make(
             ['invitation' => $invitation],
-            ['invitation' => ['required', new ValidTeamInvitation($user)]],
+            ['invitation' => [Rule::required(), new ValidTeamInvitation($user)]],
         );
 
         if ($validator->fails()) {

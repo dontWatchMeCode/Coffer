@@ -159,10 +159,10 @@ class McpRecordLinkService
     private function linkedPair(Request $request, Team $team): array
     {
         $validated = $request->validate([
-            'source_type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpLinkableTypes())],
-            'source_id' => ['required', 'integer', 'min:1'],
-            'target_type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpLinkableTypes())],
-            'target_id' => ['required', 'integer', 'min:1'],
+            'source_type' => [Rule::required(), Rule::string(), Rule::in(RecordTypeRegistry::mcpLinkableTypes())],
+            'source_id' => [Rule::required(), 'integer', 'min:1'],
+            'target_type' => [Rule::required(), Rule::string(), Rule::in(RecordTypeRegistry::mcpLinkableTypes())],
+            'target_id' => [Rule::required(), 'integer', 'min:1'],
         ]);
 
         return [

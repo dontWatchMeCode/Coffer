@@ -8,6 +8,7 @@ use App\Models\Team;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class DeleteTeamRequest extends FormRequest
@@ -28,7 +29,7 @@ class DeleteTeamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string'],
+            'name' => [Rule::required(), Rule::string()],
         ];
     }
 

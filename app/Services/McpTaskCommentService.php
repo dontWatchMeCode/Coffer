@@ -9,6 +9,7 @@ use App\Models\TaskComment;
 use App\Models\Team;
 use App\Validation\DomainRecordValidation;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
@@ -30,8 +31,8 @@ class McpTaskCommentService
 
         [$user, $team] = $context;
         $validated = $request->validate([
-            'task_id' => ['required', 'integer', 'min:1'],
-            'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'task_id' => [Rule::required(), 'integer', 'min:1'],
+            'limit' => [Rule::nullable(), 'integer', 'min:1', 'max:100'],
         ]);
         $task = $this->resolveTask($team, (int) $validated['task_id']);
 
@@ -68,7 +69,7 @@ class McpTaskCommentService
 
         [$user, $team] = $context;
         $validated = $request->validate([
-            'task_id' => ['required', 'integer', 'min:1'],
+            'task_id' => [Rule::required(), 'integer', 'min:1'],
             ...DomainRecordValidation::rteBlockRules(true, false),
         ]);
         $task = $this->resolveTask($team, (int) $validated['task_id']);

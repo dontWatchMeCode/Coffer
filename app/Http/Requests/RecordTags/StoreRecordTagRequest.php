@@ -7,20 +7,19 @@ namespace App\Http\Requests\RecordTags;
 use App\Models\RecordLink;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\In;
 
 class StoreRecordTagRequest extends FormRequest
 {
     /**
-     * @return array<string, array<int, string|In>>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
         return [
-            'from_type' => ['required', 'string', Rule::in(array_keys(RecordLink::taggableMap()))],
-            'from_id' => ['required', 'integer', 'min:1'],
-            'tag_id' => ['nullable', 'integer', 'min:1', 'required_without:name'],
-            'name' => ['nullable', 'string', 'max:50', 'required_without:tag_id'],
+            'from_type' => [Rule::required(), Rule::string(), Rule::in(array_keys(RecordLink::taggableMap()))],
+            'from_id' => [Rule::required(), 'integer', 'min:1'],
+            'tag_id' => [Rule::nullable(), 'integer', 'min:1', Rule::requiredWithout('name')],
+            'name' => [Rule::nullable(), Rule::string(), 'max:50', Rule::requiredWithout('tag_id')],
         ];
     }
 }

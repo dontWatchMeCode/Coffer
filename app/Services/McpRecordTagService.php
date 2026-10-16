@@ -141,10 +141,10 @@ class McpRecordTagService
     private function tagRequest(Request $request, Team $team, User $user): array|Response
     {
         $validated = $request->validate([
-            'type' => ['required', 'string', Rule::in(RecordTypeRegistry::mcpTaggableTypes())],
-            'id' => ['required', 'integer', 'min:1'],
-            'tags' => ['required', 'array', 'min:1', 'max:20'],
-            'tags.*' => ['required', 'string', 'max:50'],
+            'type' => [Rule::required(), Rule::string(), Rule::in(RecordTypeRegistry::mcpTaggableTypes())],
+            'id' => [Rule::required(), 'integer', 'min:1'],
+            'tags' => [Rule::required(), Rule::array(), 'min:1', 'max:20'],
+            'tags.*' => [Rule::required(), Rule::string(), 'max:50'],
         ]);
         $model = McpRecordResolver::resolveRecord($team, $validated['type'], (int) $validated['id']);
 

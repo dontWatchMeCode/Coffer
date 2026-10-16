@@ -7,19 +7,18 @@ namespace App\Http\Requests\RecordTags;
 use App\Models\RecordLink;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\In;
 
 class DeleteRecordTagRequest extends FormRequest
 {
     /**
-     * @return array<string, array<int, string|In>>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
         return [
-            'from_type' => ['required', 'string', Rule::in(array_keys(RecordLink::taggableMap()))],
-            'from_id' => ['required', 'integer', 'min:1'],
-            'tag_id' => ['required', 'integer', 'min:1'],
+            'from_type' => [Rule::required(), Rule::string(), Rule::in(array_keys(RecordLink::taggableMap()))],
+            'from_id' => [Rule::required(), 'integer', 'min:1'],
+            'tag_id' => [Rule::required(), 'integer', 'min:1'],
         ];
     }
 }

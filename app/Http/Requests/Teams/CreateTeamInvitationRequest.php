@@ -27,8 +27,8 @@ class CreateTeamInvitationRequest extends FormRequest
         }
 
         return [
-            'email' => ['required', 'string', 'email', 'max:255', new UniqueTeamInvitation($team)],
-            'role' => ['required', 'string', Rule::in(array_column(TeamRole::assignable(), 'value'))],
+            'email' => [Rule::required(), Rule::string(), Rule::email(), 'max:255', new UniqueTeamInvitation($team)],
+            'role' => [Rule::required(), Rule::string(), Rule::in(array_column(TeamRole::assignable(), 'value'))],
         ];
     }
 }

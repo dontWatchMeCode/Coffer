@@ -9,6 +9,7 @@ use App\Models\Team;
 use App\Rules\TeamName;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SaveTeamRequest extends FormRequest
 {
@@ -20,13 +21,13 @@ class SaveTeamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', new TeamName],
-            'default_task_status_options' => ['nullable', 'array'],
-            'default_task_status_options.*.value' => ['required', 'string', 'regex:/^[a-z0-9_]+$/', 'distinct'],
-            'default_task_status_options.*.label' => ['required', 'string', 'max:40'],
-            'feature_settings' => ['nullable', 'array'],
+            'name' => [Rule::required(), Rule::string(), 'max:255', new TeamName],
+            'default_task_status_options' => [Rule::nullable(), Rule::array()],
+            'default_task_status_options.*.value' => [Rule::required(), Rule::string(), Rule::regex('/^[a-z0-9_]+$/'), Rule::distinct()],
+            'default_task_status_options.*.label' => [Rule::required(), Rule::string(), 'max:40'],
+            'feature_settings' => [Rule::nullable(), Rule::array()],
             ...collect(TeamFeature::values())
-                ->mapWithKeys(fn (string $feature): array => ['feature_settings.'.$feature => ['required', 'boolean']])
+                ->mapWithKeys(fn (string $feature): array => ['feature_settings.'.$feature => [Rule::required(), Rule::boolean()]])
                 ->all(),
         ];
     }

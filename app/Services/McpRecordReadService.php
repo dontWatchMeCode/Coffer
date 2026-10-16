@@ -62,9 +62,9 @@ class McpRecordReadService
         [, $team] = $context;
         $mcpTypes = RecordTypeRegistry::mcpTypes();
         $validated = $request->validate([
-            'query' => ['required', 'string', 'max:255'],
-            'type' => ['nullable', 'string', Rule::in($mcpTypes)],
-            'limit' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'query' => [Rule::required(), Rule::string(), 'max:255'],
+            'type' => [Rule::nullable(), Rule::string(), Rule::in($mcpTypes)],
+            'limit' => [Rule::nullable(), 'integer', 'min:1', 'max:50'],
         ]);
 
         $query = trim((string) $validated['query']);
