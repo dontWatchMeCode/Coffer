@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Middleware;
+namespace App\Support;
 
-use Closure;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\View;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\View\View;
 
-class HandleAppearance
+class AppearanceComposer
 {
     /**
      * Single source of truth for theme ids and their modes.
@@ -37,7 +34,7 @@ class HandleAppearance
     private const array APPEARANCES = ['light', 'dark', 'system'];
 
     /** @return list<string> */
-    public static function lightIds(): array
+    private static function lightIds(): array
     {
         return array_keys(array_filter(
             self::THEMES,
@@ -46,7 +43,7 @@ class HandleAppearance
     }
 
     /** @return list<string> */
-    public static function darkIds(): array
+    private static function darkIds(): array
     {
         return array_keys(array_filter(
             self::THEMES,
@@ -55,17 +52,15 @@ class HandleAppearance
     }
 
     /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
+     * Resolve appearance at render time without retaining request data on the worker.
      */
-    public function handle(Request $request, Closure $next): Response
+    public function compose(View $view): void
     {
+        $request = request();
         $appearance = $request->cookie('appearance') ?? 'system';
         $appearance = in_array($appearance, self::APPEARANCES, true)
             ? $appearance
             : 'system';
-        View::share('appearance', $appearance);
 
         $theme = $request->cookie('theme') ?? 'daybreak';
         $theme = is_string($theme) && array_key_exists($theme, self::THEMES)
@@ -81,10 +76,11 @@ class HandleAppearance
             $theme = 'dracula';
         }
 
-        View::share('theme', $theme);
-        View::share('themeLightIds', self::lightIds());
-        View::share('themeDarkIds', self::darkIds());
-
-        return $next($request);
+        $view->with([
+            'appearance' => $appearance,
+            'theme' => $theme,
+            'themeLightIds' => self::lightIds(),
+            'themeDarkIds' => self::darkIds(),
+        ]);
     }
 }

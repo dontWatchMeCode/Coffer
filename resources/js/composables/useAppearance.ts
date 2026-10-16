@@ -37,7 +37,7 @@ export type ThemeOption = {
 };
 
 /**
- * Client-side mirror of HandleAppearance::THEMES. Keep ids, modes, and
+ * Client-side mirror of AppearanceComposer::THEMES. Keep ids, modes, and
  * swatches in sync with the PHP list and the palettes in app.css.
  */
 export const THEMES: readonly ThemeOption[] = [
@@ -274,7 +274,7 @@ export function useAppearance(): UseAppearanceReturn {
             adoptStoredTheme();
         } else {
             // An explicit mode cannot render a cross-mode palette, so fall
-            // back to the mode default (mirrors HandleAppearance coercion).
+            // back to the mode default (mirrors AppearanceComposer coercion).
             const effective = themeForMode(getStoredTheme(), value);
 
             theme.value = effective;

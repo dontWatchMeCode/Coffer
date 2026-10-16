@@ -11,7 +11,7 @@ Production switch to classic FrankenPHP behind reverse proxy, with Postgres prov
 
 ## Implementation Notes
 
-- `laravel/octane` not installed — Octane worker mode intentionally deferred; worker-safety hardening landed instead (see below) so a future Octane switch inherits no cross-request leaks.
+- `laravel/octane` not installed — Octane worker mode intentionally deferred; worker-safety hardening landed instead (see below) with tested coverage for the known cross-request leak vectors a future Octane switch would hit.
 - Docker Compose (`compose.yml`) defines five services: `app` (FrankenPHP HTTP), `setup` (one-shot backup, migrations, and Laravel cache warmup), `queue` (queue worker), `scheduler`, and `postgres` (Postgres 18).
 - The `setup` service shares `bootstrap/cache` with app, queue, and scheduler via the `app-cache` volume so cached config/routes/events are visible to runtime services.
 - The `setup` service runs `php artisan backup:run --only-db --disable-notifications || true` (non-blocking) before `optimize:clear && migrate --force && optimize`. Backups store on the `backups` filesystem disk (`storage/app/backups`) mapped to the `app-backups` Docker volume, which is also mounted to `app`, `queue`, and `scheduler`. The backup monitor in `config/backup.php` also uses the `backups` disk.
@@ -28,11 +28,12 @@ Production switch to classic FrankenPHP behind reverse proxy, with Postgres prov
 ## Design Decisions
 
 - Classic FrankenPHP chosen over Octane; Octane re-evaluated only after production behavior is stable. Worker-safety hardening (below) removes the known blockers.
-- Worker-safety hardening (uncommitted at time of writing, covered by `tests/Feature/Octane/WorkerReuseTest.php`, 3 tests):
+- Worker-safety hardening (covered by `tests/Feature/Octane/WorkerReuseTest.php`, 5 sequential-request tests in one process — not a real Octane integration run):
   - `phpstan.neon` enables `checkOctaneCompatibility`.
   - URL-default leaks fixed: `SetTeamUrlDefaults` always resets `URL::defaults` (guest-safe), moved before `HandleInertiaRequests` in `bootstrap/app.php`; `HasTeams::switchTeam` and login/register responses no longer set global URL defaults (team switch now resets them in `EnsureTeamMembership`).
   - MCP guard fix: `AuthenticateMcpToken` calls `Auth::forgetGuards()` after resolving the token user; `McpRequestContext` prefers the bound token's team over session state.
-  - MCP resets: `routes/ai.php` runs `SetTeamUrlDefaults` + `HandleAppearance` on the MCP route (`Mcp::web()` skips the `web` group); `AppServiceProvider::boot` shares cold-worker appearance/view defaults.
+  - Appearance resolved per render: `App\Support\AppearanceComposer` registered via `View::composer('app', ...)` reads request cookies at render time (no `View::share` boot defaults, no `HandleAppearance` middleware in `bootstrap/app.php` or the MCP route); tested per-render theme resolution outside `web` middleware.
+  - MCP resets: `routes/ai.php` runs only `SetTeamUrlDefaults` on the MCP route (`Mcp::web()` skips the `web` group); MCP failure path tested to clear token auth/team context, and guest follow-up requests assert null Inertia auth/team plus cleared URL defaults.
   - Fortify response contracts changed `singleton` → `bind` (no stale per-request state on reused workers).
   - Telescope disabled by default (`TELESCOPE_ENABLED=false`), ignores `telescope*`/`up`, model hydrations off; Pulse ignores `/up` healthchecks; Sentry default `sample_rate` 0.2 and `continue_after_response` false.
   - CSP headers registered: `AddCspHeaders` appended to `web` middleware (policy in `config/csp.php`).

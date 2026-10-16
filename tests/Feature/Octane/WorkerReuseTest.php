@@ -1,9 +1,14 @@
 <?php
 
+use App\Http\Middleware\AuthenticateMcpToken;
 use App\Models\McpToken;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
+use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
+use Inertia\Inertia;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('sequential requests in one process do not leak team url defaults or inertia auth', function () {
@@ -59,7 +64,15 @@ test('guest request after an authenticated request sees no leaked team context',
 
     $this->get(route('dashboard'))->assertRedirect(route('login'));
 
-    expect(route('dashboard'))->not->toContain($teamA->slug);
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('auth.user', null)
+            ->where('currentTeam', null)
+            ->has('teams', 0));
+
+    expect(URL::getDefaultParameters())
+        ->toMatchArray(['current_team' => null, 'team' => null]);
 });
 
 test('mcp-authed request does not leak guard user into the next web request', function () {
@@ -79,5 +92,40 @@ test('mcp-authed request does not leak guard user into the next web request', fu
         ->assertSuccessful();
 
     // Same process, no session: a leaked SessionGuard user would 200 here.
+    $this->get(route('dashboard'))->assertRedirect(route('login'));
+});
+
+test('appearance is resolved for each render even outside the web middleware', function () {
+    Route::get('/worker-appearance', fn () => Inertia::render('Welcome'));
+
+    $this->withUnencryptedCookies(['appearance' => 'dark', 'theme' => 'espresso'])
+        ->get(route('home'))
+        ->assertOk()
+        ->assertSee('data-theme="espresso"', false);
+
+    $this->call('GET', '/worker-appearance')
+        ->assertOk()
+        ->assertSee('data-theme="daybreak"', false)
+        ->assertDontSee('class="dark"', false);
+
+    $this->call('GET', '/worker-appearance', cookies: ['appearance' => 'light', 'theme' => 'sage'])
+        ->assertOk()
+        ->assertSee('data-theme="sage"', false);
+});
+
+test('failed mcp requests clear token auth and team context before the next request', function () {
+    $user = User::factory()->create();
+    [, $plainTextToken] = McpToken::createToken($user, $user->currentTeam, 'Failed worker request', [
+        'notes' => 'read',
+    ]);
+
+    Route::get('/worker-mcp-failure', fn () => abort(403))
+        ->middleware(AuthenticateMcpToken::class);
+
+    $this->withToken($plainTextToken)->get('/worker-mcp-failure')->assertForbidden();
+
+    expect(app()->bound(McpToken::class))->toBeFalse();
+    expect(Context::get('current_team_id'))->toBeNull();
+
     $this->get(route('dashboard'))->assertRedirect(route('login'));
 });
