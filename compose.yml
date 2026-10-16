@@ -25,7 +25,7 @@ services:
       context: .
     env_file:
       - .env
-    command: sh -c "php artisan backup:run --only-db --disable-notifications || true; php artisan migrate --force && php artisan optimize:clear && php artisan optimize"
+    command: sh -c "php artisan backup:run --only-db --disable-notifications && php artisan migrate --force && php artisan optimize:clear && php artisan optimize"
     volumes:
       - app-backups:/app/storage/app/backups
       - app-cache:/app/bootstrap/cache
