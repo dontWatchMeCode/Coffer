@@ -61,6 +61,69 @@ class McpRecordValidator
                 && $input->next_billing_date !== null);
         }
 
+        if ($type === 'spreadsheet') {
+            $validator->after(function (Validator $validator): void {
+                $data = $validator->getData();
+                $snapshot = $data['snapshot'] ?? null;
+
+                if (! is_array($snapshot)) {
+                    return;
+                }
+
+                $encodedSnapshot = json_encode($snapshot);
+
+                if ($encodedSnapshot === false || strlen($encodedSnapshot) > 2_000_000) {
+                    $validator->errors()->add(
+                        'snapshot',
+                        'The spreadsheet may not exceed 2 MB.',
+                    );
+
+                    return;
+                }
+
+                $columns = $snapshot['columns'] ?? [];
+
+                if (! is_array($columns)) {
+                    return;
+                }
+
+                $columnIds = [];
+
+                foreach ($columns as $column) {
+                    if (is_array($column) && is_string($column['id'] ?? null)) {
+                        $columnIds[] = $column['id'];
+                    }
+                }
+
+                $rows = $snapshot['rows'] ?? [];
+
+                if (! is_array($rows)) {
+                    return;
+                }
+
+                foreach ($rows as $rowIndex => $row) {
+                    if (! is_array($row)) {
+                        continue;
+                    }
+
+                    if (! is_array($row['cells'] ?? null)) {
+                        continue;
+                    }
+
+                    foreach (array_keys($row['cells']) as $columnId) {
+                        if (! in_array((string) $columnId, $columnIds, true)) {
+                            $validator->errors()->add(
+                                sprintf('snapshot.rows.%s.cells', $rowIndex),
+                                'Cells must reference an existing column.',
+                            );
+
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+
         if ($type === 'file') {
             $validator->after(function (Validator $validator): void {
                 $data = $validator->getData();

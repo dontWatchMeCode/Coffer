@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\Team;
 use App\Support\FileTypes;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
 
@@ -29,6 +30,8 @@ class DomainRecordValidation
             'collection' => ['title', 'description'],
             'log_entry' => ['body', 'category'],
             'file' => ['title', 'description', 'original_name', 'mime_type', 'size', 'width', 'height', 'content'],
+            'project' => ['name', 'description', 'archived', 'status_options'],
+            'spreadsheet' => ['title', 'snapshot'],
             default => [],
         };
     }
@@ -48,6 +51,8 @@ class DomainRecordValidation
             'collection' => ['title'],
             'log_entry' => ['body'],
             'file' => ['title'],
+            'project' => ['name'],
+            'spreadsheet' => ['title'],
             default => [],
         };
     }
@@ -66,6 +71,12 @@ class DomainRecordValidation
                 'original_name' => 'Used as display name and filename seed when content is provided.',
                 'size' => 'Auto-populated from decoded bytes when content is provided.',
                 'mime_type' => 'Auto-detected from decoded bytes when content is provided.',
+            ],
+            'project' => [
+                'status_options' => 'May be omitted on create (defaults to the team task statuses). Names are unique within the team.',
+            ],
+            'spreadsheet' => [
+                'snapshot' => 'Full workbook snapshot {version, columns, rows}. May be omitted on create (defaults to a blank workbook). Returned by records.get; records.search returns column_count/row_count instead of the full snapshot.',
             ],
             default => [],
         };
@@ -142,6 +153,15 @@ class DomainRecordValidation
                 'category' => [...$optional(), 'nullable', 'string', 'max:80'],
             ],
             'file' => self::fileRules($updating, $required, $optional, $includeMcpFileFields, $includeHttpFileUpload),
+            'project' => [
+                'name' => [...$required('name'), 'string', 'max:255', Rule::unique('projects', 'name')->where(fn ($query) => $query->where('team_id', $team?->id))->ignore($model?->getKey())],
+                'description' => [...$optional(), 'nullable', 'string'],
+                'archived' => [...$optional(), 'nullable', 'boolean'],
+                'status_options' => [...$optional(), 'nullable', 'array'],
+                'status_options.*.value' => ['required', 'string', 'regex:/^[a-z0-9_]+$/', 'distinct'],
+                'status_options.*.label' => ['required', 'string', 'max:40'],
+            ],
+            'spreadsheet' => self::spreadsheetRules($required, $data),
             default => [],
         };
     }
@@ -173,6 +193,48 @@ class DomainRecordValidation
         }
 
         return $requiredWhenPresent ? ['sometimes', 'required'] : ['sometimes'];
+    }
+
+    /**
+     * @param  callable(string): list<string>  $required
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private static function spreadsheetRules(callable $required, array $data): array
+    {
+        $rules = [
+            'title' => [...$required('title'), 'string', 'max:255'],
+            'snapshot' => ['sometimes', 'array'],
+        ];
+
+        $snapshotPresent = array_key_exists('snapshot', $data) && is_array($data['snapshot']);
+
+        if ($snapshotPresent) {
+            $rules += [
+                'snapshot.version' => ['required', 'integer', 'in:1'],
+                'snapshot.columns' => ['required', 'array', 'min:1', 'max:50'],
+                'snapshot.columns.*.id' => ['required', 'string', 'max:100', 'distinct'],
+                'snapshot.columns.*.name' => ['required', 'string', 'max:100'],
+                'snapshot.columns.*.type' => ['required', Rule::in(['text', 'number', 'date', 'select', 'checkbox'])],
+                'snapshot.columns.*.width' => ['required', 'integer', 'min:80', 'max:500'],
+                'snapshot.columns.*.hidden' => ['required', 'boolean'],
+                'snapshot.columns.*.options' => ['present', 'array', 'max:50'],
+                'snapshot.columns.*.options.*' => ['string', 'max:100'],
+                'snapshot.rows' => ['required', 'array', 'max:1000'],
+                'snapshot.rows.*.id' => ['required', 'string', 'max:100', 'distinct'],
+                'snapshot.rows.*.cells' => ['present', 'array', 'max:50'],
+                'snapshot.rows.*.cells.*' => [
+                    'nullable',
+                    function (string $attribute, mixed $value, Closure $fail): void {
+                        if (! is_scalar($value) || (is_string($value) && mb_strlen($value) > 10000)) {
+                            $fail(sprintf('The %s value is invalid.', $attribute));
+                        }
+                    },
+                ],
+            ];
+        }
+
+        return $rules;
     }
 
     /**

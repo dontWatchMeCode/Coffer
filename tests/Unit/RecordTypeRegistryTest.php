@@ -33,10 +33,12 @@ it('derives MCP types from record definitions', function () {
             'collection',
             'log_entry',
             'file',
+            'project',
+            'spreadsheet',
         ])
         ->and(RecordTypeRegistry::mcpResourceFor('task'))->toBe('tasks')
-        ->and(RecordTypeRegistry::mcpResourceFor('project'))->toBeNull()
-        ->and(RecordTypeRegistry::mcpResourceFor('spreadsheet'))->toBeNull()
+        ->and(RecordTypeRegistry::mcpResourceFor('project'))->toBe('projects')
+        ->and(RecordTypeRegistry::mcpResourceFor('spreadsheet'))->toBe('spreadsheets')
         ->and(RecordTypeRegistry::classFor('project'))->toBe(Project::class)
         ->and(RecordTypeRegistry::classFor('spreadsheet'))->toBe(SpreadsheetWorkbook::class);
 });
@@ -52,6 +54,8 @@ it('derives ordered MCP permission resources and labels', function () {
         'collections' => 'Collections',
         'log_entries' => 'Log',
         'files' => 'Files',
+        'projects' => 'Projects',
+        'spreadsheets' => 'Spreadsheets',
     ])->and(RecordTypeRegistry::mcpResources())
         ->toBe(array_keys(RecordTypeRegistry::mcpResourceLabels()));
 });

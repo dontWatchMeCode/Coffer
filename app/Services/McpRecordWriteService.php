@@ -8,6 +8,8 @@ use App\Actions\Records\SaveNote;
 use App\Actions\Records\SaveSubscription;
 use App\Models\FileItem;
 use App\Models\Note;
+use App\Models\Project;
+use App\Models\SpreadsheetWorkbook;
 use App\Models\Subscription;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -53,6 +55,14 @@ class McpRecordWriteService
         }
 
         Gate::forUser($user)->authorize('create', $class);
+
+        if ($validated['type'] === 'project' && ! array_key_exists('status_options', $validated['data'])) {
+            $validated['data']['status_options'] = $team->taskStatusDefaults();
+        }
+
+        if ($validated['type'] === 'spreadsheet' && empty($validated['data']['snapshot'])) {
+            $validated['data']['snapshot'] = SpreadsheetWorkbook::defaultSnapshot();
+        }
 
         $validator = Validator::make(
             $validated['data'],
@@ -198,6 +208,11 @@ class McpRecordWriteService
         }
 
         Gate::forUser($user)->authorize('delete', $model);
+
+        if ($model instanceof Project && $model->tasks()->withTrashed()->exists()) {
+            return Response::error('Cannot delete a project with tasks.');
+        }
+
         $model->delete();
 
         return Response::structured(['deleted' => ['type' => $validated['type'], 'id' => (int) $validated['id']]]);

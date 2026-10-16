@@ -15,7 +15,7 @@ use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tool;
 
 #[Name('records.create')]
-#[Description('Create a task, calendar event, contact, bookmark, note, collection, log entry, or file in the current team. File records may include base64-encoded content.')]
+#[Description('Create a task, project, calendar event, contact, bookmark, subscription, note, collection, log entry, file, or spreadsheet in the current team. File records may include base64-encoded content. Spreadsheet records accept a full workbook snapshot.')]
 class CreateRecordTool extends Tool
 {
     use RegistersForWritableTokens;

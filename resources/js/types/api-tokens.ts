@@ -9,7 +9,9 @@ export type ApiTokenResource =
     | 'notes'
     | 'collections'
     | 'log_entries'
-    | 'files';
+    | 'files'
+    | 'projects'
+    | 'spreadsheets';
 
 export type ApiTokenProjectScope = {
     mode: 'all' | 'only';

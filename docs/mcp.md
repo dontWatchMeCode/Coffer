@@ -14,6 +14,7 @@ The app exposes a team-scoped MCP records server for external clients and agents
 ## Record Types
 
 - `task`
+- `project`
 - `calendar_event`
 - `contact`
 - `bookmark`
@@ -22,6 +23,7 @@ The app exposes a team-scoped MCP records server for external clients and agents
 - `collection`
 - `log_entry`
 - `file`
+- `spreadsheet`
 
 ## Tools
 
@@ -56,6 +58,7 @@ Tool input fields:
 Record data fields:
 
 - `task`: `project_id`, `assigned_to`, `title`, `description`, `status`, `progress`, `time_estimate`, `position`, `due_at`. Create requires `project_id`, `title`, `status`.
+- `project`: `name`, `description`, `archived`, `status_options`. Create requires `name`; names are unique within the team, `status_options` defaults to the team task statuses, delete is blocked while tasks (including trashed) exist.
 - `calendar_event`: `title`, `description`, `date`, `time`. Create requires `title`, `date`.
 - `contact`: `name`, `phone_numbers`, `email_addresses`, `links`, `address`, `additional_info`. Create requires `name`.
 - `bookmark`: `title`, `url`, `description`, `notes`. Create requires `title`, `url`.
@@ -64,6 +67,7 @@ Record data fields:
 - `collection`: `title`, `description`. Create requires `title`.
 - `log_entry`: `body`, `category`. Create requires `body`.
 - `file`: `title`, `description`, `original_name`, `mime_type`, `size`, `width`, `height`, `content`. Create requires `title`.
+- `spreadsheet`: `title`, `snapshot`. Create requires `title`; `snapshot` is optional on create (defaults to a blank workbook). Search returns `column_count`/`row_count`; get returns the full snapshot.
 
 ## Notes Through MCP
 

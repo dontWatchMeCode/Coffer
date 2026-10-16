@@ -26,6 +26,7 @@ use App\Models\Note;
 use App\Models\Project;
 use App\Models\RecordCollection;
 use App\Models\RecordLink;
+use App\Models\SpreadsheetWorkbook;
 use App\Models\Subscription;
 use App\Models\Tag;
 use App\Models\Task;
@@ -59,7 +60,7 @@ test('the records mcp server describes its supported schema', function () {
 test('records can be created for each supported type through mcp', function (string $type, string $expected, string $class) {
     $user = User::factory()->create();
     $team = $user->currentTeam;
-    $project = Project::factory()->create(['team_id' => $team->id]);
+    $project = $type === 'task' ? Project::factory()->create(['team_id' => $team->id]) : null;
 
     $data = match ($type) {
         'task' => ['project_id' => $project->id, 'title' => $expected, 'status' => TaskStatus::Planned->value],
@@ -71,6 +72,8 @@ test('records can be created for each supported type through mcp', function (str
         'collection' => ['title' => $expected, 'description' => 'MCP collection'],
         'log_entry' => ['body' => $expected],
         'file' => ['title' => $expected, 'original_name' => 'test.pdf', 'mime_type' => 'application/pdf', 'size' => 1024],
+        'project' => ['name' => $expected],
+        'spreadsheet' => ['title' => $expected, 'snapshot' => SpreadsheetWorkbook::defaultSnapshot()],
     };
 
     RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
@@ -89,6 +92,8 @@ test('records can be created for each supported type through mcp', function (str
     ['collection', 'MCP collection', RecordCollection::class],
     ['log_entry', 'MCP log entry', LogEntry::class],
     ['file', 'MCP file', FileItem::class],
+    ['project', 'MCP project', Project::class],
+    ['spreadsheet', 'MCP spreadsheet', SpreadsheetWorkbook::class],
 ]);
 
 test('records can be searched read updated and deleted through mcp', function () {
@@ -1051,4 +1056,222 @@ test('mcp task project scope is enforced', function () {
         'type' => 'task',
         'data' => ['project_id' => $allowedProject->id, 'title' => 'Allowed task', 'status' => TaskStatus::Planned->value],
     ])->assertOk()->assertSee('Allowed task');
+});
+
+test('project records can be searched read updated and deleted through mcp', function () {
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'project',
+        'data' => ['name' => 'Alpha MCP Project', 'description' => 'Managed via MCP'],
+    ])->assertOk()->assertSee('Alpha MCP Project');
+
+    $project = Project::query()->where('name', 'Alpha MCP Project')->firstOrFail();
+
+    expect($project->status_options)->toBe($user->currentTeam->taskStatusDefaults());
+
+    RecordsServer::actingAs($user)->tool(SearchRecordsTool::class, [
+        'query' => 'Alpha MCP',
+        'type' => 'project',
+    ])->assertOk()->assertSee('Alpha MCP Project');
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'project',
+        'id' => $project->id,
+    ])->assertOk()->assertSee('Alpha MCP Project');
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'project',
+        'id' => $project->id,
+        'data' => ['name' => 'Updated MCP Project'],
+    ])->assertOk()->assertSee('Updated MCP Project');
+
+    RecordsServer::actingAs($user)->tool(DeleteRecordTool::class, [
+        'type' => 'project',
+        'id' => $project->id,
+    ])->assertOk()->assertSee('deleted');
+
+    expect(Project::query()->whereKey($project->id)->exists())->toBeFalse();
+});
+
+test('mcp project names are unique within the team', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    Project::factory()->create(['team_id' => $team->id, 'name' => 'Unique MCP Project']);
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'project',
+        'data' => ['name' => 'Unique MCP Project'],
+    ])->assertHasErrors(['The name has already been taken.']);
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'project',
+        'data' => ['name' => 'Bad Status Project', 'status_options' => [['value' => 'Bad Value', 'label' => 'Bad']]],
+    ])->assertHasErrors();
+
+    expect(Project::query()->whereBelongsTo($team)->count())->toBe(1);
+});
+
+test('mcp project delete is blocked when tasks exist', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    Task::factory()->create(['team_id' => $team->id, 'project_id' => $project->id]);
+
+    RecordsServer::actingAs($user)->tool(DeleteRecordTool::class, [
+        'type' => 'project',
+        'id' => $project->id,
+    ])->assertHasErrors(['Cannot delete a project with tasks.']);
+
+    expect(Project::query()->whereKey($project->id)->exists())->toBeTrue();
+});
+
+test('mcp project delete is blocked when only trashed tasks exist', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $task = Task::factory()->create(['team_id' => $team->id, 'project_id' => $project->id]);
+    $task->delete();
+
+    RecordsServer::actingAs($user)->tool(DeleteRecordTool::class, [
+        'type' => 'project',
+        'id' => $project->id,
+    ])->assertHasErrors(['Cannot delete a project with tasks.']);
+
+    expect(Project::query()->whereKey($project->id)->exists())->toBeTrue();
+});
+
+test('spreadsheet records roundtrip the full snapshot through mcp', function () {
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'spreadsheet',
+        'data' => ['title' => 'Alpha MCP Sheet', 'snapshot' => SpreadsheetWorkbook::defaultSnapshot()],
+    ])->assertOk()->assertSee('Alpha MCP Sheet');
+
+    $sheet = SpreadsheetWorkbook::query()->where('title', 'Alpha MCP Sheet')->firstOrFail();
+
+    expect($sheet->snapshot['version'])->toBe(1)
+        ->and($sheet->snapshot['columns'])->toHaveCount(3);
+
+    RecordsServer::actingAs($user)->tool(SearchRecordsTool::class, [
+        'query' => 'Alpha MCP',
+        'type' => 'spreadsheet',
+    ])->assertOk()->assertSee('Alpha MCP Sheet');
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'spreadsheet',
+        'id' => $sheet->id,
+    ])->assertOk()->assertSee('Alpha MCP Sheet')->assertSee('Not started');
+
+    $snapshot = $sheet->fresh()->snapshot;
+    $snapshot['rows'] = [['id' => $snapshot['rows'][0]['id'], 'cells' => [$snapshot['columns'][0]['id'] => 'Hello']]];
+
+    RecordsServer::actingAs($user)->tool(UpdateRecordTool::class, [
+        'type' => 'spreadsheet',
+        'id' => $sheet->id,
+        'data' => ['title' => 'Updated MCP Sheet', 'snapshot' => $snapshot],
+    ])->assertOk()->assertSee('Updated MCP Sheet');
+
+    expect($sheet->fresh()->snapshot['rows'][0]['cells'])->toBe([$snapshot['columns'][0]['id'] => 'Hello']);
+
+    RecordsServer::actingAs($user)->tool(DeleteRecordTool::class, [
+        'type' => 'spreadsheet',
+        'id' => $sheet->id,
+    ])->assertOk()->assertSee('deleted');
+
+    $this->assertSoftDeleted('spreadsheet_workbooks', ['id' => $sheet->id]);
+});
+
+test('mcp spreadsheet create defaults the snapshot when omitted', function () {
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'spreadsheet',
+        'data' => ['title' => 'Defaulted Sheet'],
+    ])->assertOk()->assertSee('Defaulted Sheet');
+
+    $sheet = SpreadsheetWorkbook::query()->where('title', 'Defaulted Sheet')->firstOrFail();
+
+    expect($sheet->snapshot['version'])->toBe(1)
+        ->and($sheet->snapshot['columns'])->not->toBeEmpty();
+});
+
+test('mcp spreadsheet search omits the snapshot and reports counts', function () {
+    $user = User::factory()->create();
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'spreadsheet',
+        'data' => ['title' => 'Counted MCP Sheet', 'snapshot' => SpreadsheetWorkbook::defaultSnapshot()],
+    ])->assertOk();
+
+    RecordsServer::actingAs($user)->tool(SearchRecordsTool::class, [
+        'query' => 'Counted MCP',
+        'type' => 'spreadsheet',
+    ])->assertOk()
+        ->assertSee('Counted MCP Sheet')
+        ->assertSee('column_count')
+        ->assertSee('row_count')
+        ->assertDontSee('snapshot')
+        ->assertDontSee('Not started');
+});
+
+test('mcp spreadsheet validation rejects invalid snapshots', function () {
+    $user = User::factory()->create();
+
+    $badType = SpreadsheetWorkbook::defaultSnapshot();
+    $badType['columns'][0]['type'] = 'formula';
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'spreadsheet',
+        'data' => ['title' => 'Bad Type Sheet', 'snapshot' => $badType],
+    ])->assertHasErrors();
+
+    $badCell = SpreadsheetWorkbook::defaultSnapshot();
+    $badCell['rows'] = [['id' => 'row-1', 'cells' => ['unknown-column' => 'x']]];
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'spreadsheet',
+        'data' => ['title' => 'Bad Cell Sheet', 'snapshot' => $badCell],
+    ])->assertHasErrors(['Cells must reference an existing column.']);
+
+    expect(SpreadsheetWorkbook::query()->count())->toBe(0);
+});
+
+test('mcp project and spreadsheet access defaults to none for legacy tokens', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $sheet = SpreadsheetWorkbook::factory()->create(['team_id' => $team->id, 'title' => 'Legacy Sheet']);
+
+    $token = McpToken::factory()->create([
+        'user_id' => $user->id,
+        'team_id' => $team->id,
+        'abilities' => [
+            'tasks' => 'write',
+            'task_projects' => ['mode' => 'all', 'ids' => []],
+        ],
+    ])->load('team');
+
+    app()->instance(McpToken::class, $token);
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'project',
+        'id' => $project->id,
+    ])->assertHasErrors(['Permission denied.']);
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'project',
+        'data' => ['name' => 'Denied Project'],
+    ])->assertHasErrors();
+
+    RecordsServer::actingAs($user)->tool(GetRecordTool::class, [
+        'type' => 'spreadsheet',
+        'id' => $sheet->id,
+    ])->assertHasErrors(['Permission denied.']);
+
+    RecordsServer::actingAs($user)->tool(CreateRecordTool::class, [
+        'type' => 'spreadsheet',
+        'data' => ['title' => 'Denied Sheet'],
+    ])->assertHasErrors();
 });

@@ -116,7 +116,7 @@ class McpRecordReadService
                     break 2;
                 }
 
-                $records[] = McpRecordPayload::forModel($model, $team);
+                $records[] = McpRecordPayload::forModel($model, $team, forSearch: true);
             }
         }
 

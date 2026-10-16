@@ -35,6 +35,7 @@ Search and MCP:
 - Global search includes tasks and projects.
 - Task search uses the `t:` prefix; project search uses the `p:` prefix.
 - MCP tokens can allow task read/write access and optionally limit tasks to selected projects.
+- MCP tokens can allow project read/write access (`projects` ability, default `none`).
 - MCP exposes `records.task_comments.list` and `records.task_comments.add` for task comments.
 
 ## Calendar
@@ -254,4 +255,5 @@ Search and MCP:
 
 - Global search includes spreadsheets.
 - Spreadsheet search uses the `x:` prefix.
-- Spreadsheets are not exposed as MCP record types.
+- MCP tokens can allow spreadsheet read/write access (`spreadsheets` ability, default `none`).
+- MCP spreadsheets support full CRUD on `title` plus the full workbook `snapshot`; `snapshot` is optional on create (defaults to a blank workbook). Search returns `column_count`/`row_count`; get returns the full snapshot.

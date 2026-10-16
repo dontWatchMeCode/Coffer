@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Contracts\LinkableRecord;
 use App\Models\FileItem;
 use App\Models\Note;
+use App\Models\SpreadsheetWorkbook;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -16,7 +17,7 @@ class McpRecordPayload
     /**
      * @return array<string, mixed>
      */
-    public static function forModel(?Model $model, Team $team, bool $includeRelations = false): array
+    public static function forModel(?Model $model, Team $team, bool $includeRelations = false, bool $forSearch = false): array
     {
         if (! $model instanceof Model) {
             return [];
@@ -27,9 +28,16 @@ class McpRecordPayload
         $dataFields = match (true) {
             $model instanceof Note => array_diff($fields, ['blocks']),
             $model instanceof FileItem => array_diff($fields, ['content']),
+            $model instanceof SpreadsheetWorkbook && $forSearch => array_diff($fields, ['snapshot']),
             default => $fields,
         };
         $data = Arr::only($model->toArray(), $dataFields);
+
+        if ($model instanceof SpreadsheetWorkbook && $forSearch) {
+            $snapshot = $model->getAttribute('snapshot');
+            $data['column_count'] = is_array($snapshot['columns'] ?? null) ? count($snapshot['columns']) : 0;
+            $data['row_count'] = is_array($snapshot['rows'] ?? null) ? count($snapshot['rows']) : 0;
+        }
 
         if ($model instanceof Note && in_array('blocks', $fields, true)) {
             if (! $model->relationLoaded('blocks')) {
