@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\Filterable;
+use App\Concerns\HasActivityLog;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Concerns\HasRteBlocks;
@@ -16,14 +17,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
-use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['team_id', 'title'])]
 class Note extends Model implements LinkableRecord
 {
     use BelongsToTeam;
     use Filterable;
+    use HasActivityLog;
 
     /** @use HasFactory<NoteFactory> */
     use HasFactory;
@@ -31,7 +31,6 @@ class Note extends Model implements LinkableRecord
     use HasRecordLinks;
     use HasRecordTags;
     use HasRteBlocks;
-    use LogsActivity;
     use SoftDeletes;
 
     protected static function booted(): void
@@ -45,13 +44,15 @@ class Note extends Model implements LinkableRecord
         });
     }
 
-    public function getActivitylogOptions(): LogOptions
+    protected static function activityLogName(): string
     {
-        return LogOptions::defaults()
-            ->useLogName('notes')
-            ->logOnly(['title'])
-            ->logOnlyDirty()
-            ->dontLogEmptyChanges();
+        return 'notes';
+    }
+
+    /** @return list<string> */
+    protected static function activityLogAttributes(): array
+    {
+        return ['title'];
     }
 
     public function textExcerpt(int $limit = 180): ?string

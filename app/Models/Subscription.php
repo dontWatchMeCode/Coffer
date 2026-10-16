@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\Filterable;
+use App\Concerns\HasActivityLog;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
@@ -16,30 +17,30 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
-use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['team_id', 'name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'first_billing_date', 'url', 'description', 'notes', 'is_active'])]
 class Subscription extends Model implements LinkableRecord
 {
     use BelongsToTeam;
     use Filterable;
+    use HasActivityLog;
 
     /** @use HasFactory<SubscriptionFactory> */
     use HasFactory;
 
     use HasRecordLinks;
     use HasRecordTags;
-    use LogsActivity;
     use SoftDeletes;
 
-    public function getActivitylogOptions(): LogOptions
+    protected static function activityLogName(): string
     {
-        return LogOptions::defaults()
-            ->useLogName('subscriptions')
-            ->logOnly(['name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'first_billing_date', 'url', 'description', 'notes', 'is_active', 'subscription_category_id'])
-            ->logOnlyDirty()
-            ->dontLogEmptyChanges();
+        return 'subscriptions';
+    }
+
+    /** @return list<string> */
+    protected static function activityLogAttributes(): array
+    {
+        return ['name', 'price', 'currency', 'billing_cycle', 'next_billing_date', 'first_billing_date', 'url', 'description', 'notes', 'is_active', 'subscription_category_id'];
     }
 
     protected function casts(): array

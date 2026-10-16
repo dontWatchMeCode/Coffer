@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
+use App\Concerns\HasActivityLog;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
@@ -14,28 +15,28 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
-use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['team_id', 'name', 'description', 'archived', 'status_options'])]
 class Project extends Model implements LinkableRecord
 {
     use BelongsToTeam;
+    use HasActivityLog;
 
     /** @use HasFactory<ProjectFactory> */
     use HasFactory;
 
     use HasRecordLinks;
     use HasRecordTags;
-    use LogsActivity;
 
-    public function getActivitylogOptions(): LogOptions
+    protected static function activityLogName(): string
     {
-        return LogOptions::defaults()
-            ->useLogName('projects')
-            ->logOnly(['name', 'description'])
-            ->logOnlyDirty()
-            ->dontLogEmptyChanges();
+        return 'projects';
+    }
+
+    /** @return list<string> */
+    protected static function activityLogAttributes(): array
+    {
+        return ['name', 'description'];
     }
 
     /**

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\Filterable;
+use App\Concerns\HasActivityLog;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
@@ -14,30 +15,30 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
-use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['team_id', 'title', 'description', 'date', 'time'])]
 class CalendarEvent extends Model implements LinkableRecord
 {
     use BelongsToTeam;
     use Filterable;
+    use HasActivityLog;
 
     /** @use HasFactory<CalendarEventFactory> */
     use HasFactory;
 
     use HasRecordLinks;
     use HasRecordTags;
-    use LogsActivity;
     use SoftDeletes;
 
-    public function getActivitylogOptions(): LogOptions
+    protected static function activityLogName(): string
     {
-        return LogOptions::defaults()
-            ->useLogName('calendar')
-            ->logOnly(['title', 'description', 'date', 'time'])
-            ->logOnlyDirty()
-            ->dontLogEmptyChanges();
+        return 'calendar';
+    }
+
+    /** @return list<string> */
+    protected static function activityLogAttributes(): array
+    {
+        return ['title', 'description', 'date', 'time'];
     }
 
     protected function casts(): array

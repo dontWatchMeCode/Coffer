@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\Filterable;
+use App\Concerns\HasActivityLog;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
@@ -18,30 +19,30 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use LogicException;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
-use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['team_id', 'project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'time_estimate', 'position', 'due_at'])]
 class Task extends Model implements LinkableRecord
 {
     use BelongsToTeam;
     use Filterable;
+    use HasActivityLog;
 
     /** @use HasFactory<TaskFactory> */
     use HasFactory;
 
     use HasRecordLinks;
     use HasRecordTags;
-    use LogsActivity;
     use SoftDeletes;
 
-    public function getActivitylogOptions(): LogOptions
+    protected static function activityLogName(): string
     {
-        return LogOptions::defaults()
-            ->useLogName('tasks')
-            ->logOnly(['project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'time_estimate', 'position', 'due_at'])
-            ->logOnlyDirty()
-            ->dontLogEmptyChanges();
+        return 'tasks';
+    }
+
+    /** @return list<string> */
+    protected static function activityLogAttributes(): array
+    {
+        return ['project_id', 'assigned_to', 'created_by', 'title', 'description', 'status', 'progress', 'time_estimate', 'position', 'due_at'];
     }
 
     /**

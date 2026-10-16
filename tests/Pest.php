@@ -1,10 +1,14 @@
 <?php
 
+use App\Models\Team;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Pest\Browser\Api\AwaitableWebpage;
 use Pest\Browser\Api\Webpage;
 use Pest\Browser\Playwright\Playwright;
 use Tests\TestCase;
+
+use function Pest\Laravel\actingAs;
 
 pest()->beforeEach(function () {
     Playwright::setTimeout(3_000);
@@ -120,4 +124,16 @@ function taskCommentBlocks(string $content): array
         'position' => 0,
         'payload' => ['content' => $content],
     ]];
+}
+
+/**
+ * @return array{0: User, 1: Team}
+ */
+function signIn(?User $user = null): array
+{
+    $user ??= User::factory()->create();
+
+    actingAs($user);
+
+    return [$user, $user->currentTeam];
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
+use App\Concerns\HasActivityLog;
 use App\Concerns\HasRteBlocks;
 use Database\Factories\TaskCommentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,27 +13,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
-use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable(['team_id', 'task_id', 'user_id', 'source', 'mcp_token_id', 'mcp_token_name'])]
 class TaskComment extends Model
 {
     use BelongsToTeam;
+    use HasActivityLog;
 
     /** @use HasFactory<TaskCommentFactory> */
     use HasFactory;
 
     use HasRteBlocks;
-    use LogsActivity;
 
-    public function getActivitylogOptions(): LogOptions
+    protected static function activityLogName(): string
     {
-        return LogOptions::defaults()
-            ->useLogName('task_comments')
-            ->logOnly(['updated_at'])
-            ->logOnlyDirty()
-            ->dontLogEmptyChanges();
+        return 'task_comments';
+    }
+
+    /** @return list<string> */
+    protected static function activityLogAttributes(): array
+    {
+        return ['updated_at'];
     }
 
     protected function afterBlocksSynced(): void

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\Filterable;
+use App\Concerns\HasActivityLog;
 use App\Concerns\HasRecordLinks;
 use App\Concerns\HasRecordTags;
 use App\Contracts\LinkableRecord;
@@ -14,8 +15,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
-use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * @property list<array{label: string|null, value: string}>|null $phone_numbers
@@ -27,22 +26,24 @@ class Contact extends Model implements LinkableRecord
 {
     use BelongsToTeam;
     use Filterable;
+    use HasActivityLog;
 
     /** @use HasFactory<ContactFactory> */
     use HasFactory;
 
     use HasRecordLinks;
     use HasRecordTags;
-    use LogsActivity;
     use SoftDeletes;
 
-    public function getActivitylogOptions(): LogOptions
+    protected static function activityLogName(): string
     {
-        return LogOptions::defaults()
-            ->useLogName('contacts')
-            ->logOnly(['name', 'phone_numbers', 'email_addresses', 'links', 'address', 'additional_info'])
-            ->logOnlyDirty()
-            ->dontLogEmptyChanges();
+        return 'contacts';
+    }
+
+    /** @return list<string> */
+    protected static function activityLogAttributes(): array
+    {
+        return ['name', 'phone_numbers', 'email_addresses', 'links', 'address', 'additional_info'];
     }
 
     protected function casts(): array
